@@ -1,0 +1,19 @@
+[package]
+name = "drift-vaults"
+version = "0.1.0"
+description = "Created with Anchor"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib", "lib"]
+name = "drift_vaults"
+
+[features]
+no-entrypoint = []
+cpi = ["no-entrypoint"]
+default = []
+
+[dependencies]
+anchor-lang = { git = "https://github.com/drift-labs/anchor.git", rev = "ed950fe", version = "0.26.0" }
+drift = { git = "https://github.com/drift-labs/protocol-v2.git", features = ["cpi", "mainnet-beta"] }
+bytemuck = { version = "1.4.0" }
