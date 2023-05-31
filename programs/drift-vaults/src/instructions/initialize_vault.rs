@@ -1,10 +1,9 @@
 use anchor_lang::prelude::*;
-use drift::state::state::State;
 use drift::program::Drift;
 use drift::cpi::accounts::{InitializeUserStats, InitializeUser};
 use crate::{Vault, Size};
 
-pub fn initialize(ctx: Context<Initialize>, name: [u8; 32]) -> Result<()> {
+pub fn initialize_vault(ctx: Context<InitializeVault>, name: [u8; 32]) -> Result<()> {
     let bump = ctx.bumps.get("vault").unwrap();
 
     let signature_seeds = [
@@ -60,7 +59,7 @@ pub fn initialize(ctx: Context<Initialize>, name: [u8; 32]) -> Result<()> {
 #[instruction(
     name: [u8; 32],
 )]
-pub struct Initialize<'info> {
+pub struct InitializeVault<'info> {
     #[account(
         init,
         seeds = [b"vault", name.as_ref()],

@@ -5,6 +5,7 @@ import {AdminClient, BN, getUserAccountPublicKey, getUserStatsAccountPublicKey} 
 import {mockUSDCMint} from "./testHelpers";
 import {Keypair, PublicKey} from "@solana/web3.js";
 import { assert } from 'chai';
+import {VaultClient} from "../ts/sdk/src/vaultClient";
 
 function encodeName(name: string): number[] {
 	if (name.length > 32) {
@@ -35,6 +36,11 @@ describe("drift-vaults", () => {
 		wallet: provider.wallet
 	});
 
+	const vaultClient = new VaultClient({
+		driftClient: adminClient,
+		program: program,
+	});
+
 	let usdcMint: Keypair;
 
 	before(async () => {
@@ -44,23 +50,9 @@ describe("drift-vaults", () => {
 	})
 
 	it("Is initialized!", async () => {
-		const encodedName = encodeName('crisp vault');
-		const vault = PublicKey.findProgramAddressSync(
-			[Buffer.from(anchor.utils.bytes.utf8.encode('vault')), Buffer.from(encodedName)],
-			program.programId
-		)[0];
+		const name = 'crisp vault';
 
-		const userStatsKey = await getUserStatsAccountPublicKey(adminClient.program.programId, vault);
-
-		const userKey = await getUserAccountPublicKey(adminClient.program.programId, vault);
-
-		const tx = await program.methods.initialize(encodedName).accounts({
-			driftUserStats: userStatsKey,
-			driftUser: userKey,
-			driftState: await adminClient.getStatePublicKey(),
-			vault,
-			driftProgram: adminClient.program.programId,
-		}).rpc();
+		await vaultClient.initializeVault(name);
 
 		await adminClient.fetchAccounts();
 		assert(adminClient.getStateAccount().numberOfAuthorities.eq(new BN(1)));

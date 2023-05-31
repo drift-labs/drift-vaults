@@ -1,3 +1,3 @@
-pub use initialize::*;
+pub use initialize_vault::*;
 
-mod initialize;
+mod initialize_vault;
