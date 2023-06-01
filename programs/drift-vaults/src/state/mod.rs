@@ -1,5 +1,5 @@
-pub use vault::*;
 pub use traits::*;
+pub use vault::*;
 
-mod vault;
 mod traits;
+mod vault;

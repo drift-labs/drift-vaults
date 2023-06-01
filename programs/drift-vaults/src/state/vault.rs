@@ -1,5 +1,5 @@
-use anchor_lang::prelude::*;
 use crate::Size;
+use anchor_lang::prelude::*;
 
 #[account(zero_copy)]
 #[derive(Eq, PartialEq, Debug)]
