@@ -15,4 +15,8 @@ pub mod drift_vaults {
     pub fn initialize_vault(ctx: Context<InitializeVault>, name: [u8; 32]) -> Result<()> {
         instructions::initialize_vault(ctx, name)
     }
+
+    pub fn initialize_vault_depositor(ctx: Context<InitializeVaultDepositor>) -> Result<()> {
+        instructions::initialize_vault_depositor(ctx)
+    }
 }

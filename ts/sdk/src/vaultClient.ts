@@ -6,8 +6,8 @@ import {
 import { Program } from '@coral-xyz/anchor';
 import { DriftVaults } from './types/drift_vaults';
 import { encodeName } from './name';
-import { getVaultAddressSync } from './addresses';
-import { TransactionSignature } from '@solana/web3.js';
+import { getVaultAddressSync, getVaultDepositorAddressSync } from './addresses';
+import { PublicKey, TransactionSignature } from '@solana/web3.js';
 
 export class VaultClient {
 	driftClient: DriftClient;
@@ -46,6 +46,23 @@ export class VaultClient {
 				driftState,
 				vault,
 				driftProgram: this.driftClient.program.programId,
+			})
+			.rpc();
+	}
+
+	public async initializeVaultDepositor(
+		vault: PublicKey
+	): Promise<TransactionSignature> {
+		const vaultDepositor = getVaultDepositorAddressSync(
+			this.program.programId,
+			vault
+		);
+
+		return await this.program.methods
+			.initializeVaultDepositor()
+			.accounts({
+				vaultDepositor,
+				vault,
 			})
 			.rpc();
 	}

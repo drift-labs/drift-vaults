@@ -1,10 +1,13 @@
 {
+    "license": "Apache-2.0",
     "scripts": {
         "prettify": "prettier --check './ts/sdk/src/**/*.ts' './tests/**.ts'",
         "prettify:fix": "prettier --write './ts/sdk/src/**/*.ts' './tests/**.ts'",
         "lint": "eslint . --ext ts --quiet",
         "lint:fix": "eslint . --ext ts --fix",
-        "prepare": "husky install"
+        "prepare": "husky install",
+        "update-types": "cp target/types/drift_vaults.ts ts/sdk/src/types/drift_vaults.ts",
+        "anchor-tests": "yarn update-types && yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
     },
     "devDependencies": {
         "chai": "^4.3.4",

@@ -670,6 +670,7 @@ dependencies = [
  "anchor-lang",
  "bytemuck",
  "drift",
+ "static_assertions",
 ]
 
 [[package]]

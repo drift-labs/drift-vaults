@@ -59,9 +59,72 @@ export type DriftVaults = {
 					};
 				}
 			];
+		},
+		{
+			name: 'initializeVaultDepositor';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'vaultDepositor';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'authority';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'payer';
+					isMut: true;
+					isSigner: true;
+				},
+				{
+					name: 'rent';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'systemProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [];
 		}
 	];
 	accounts: [
+		{
+			name: 'vaultDepositor';
+			type: {
+				kind: 'struct';
+				fields: [
+					{
+						name: 'vault';
+						docs: ['The vault deposited into'];
+						type: 'publicKey';
+					},
+					{
+						name: 'pubkey';
+						docs: [
+							"The vault depositor account's pubkey. It is a pda of vault and authority"
+						];
+						type: 'publicKey';
+					},
+					{
+						name: 'authority';
+						docs: [
+							'The authority is the address w permission to deposit/withdraw'
+						];
+						type: 'publicKey';
+					}
+				];
+			};
+		},
 		{
 			name: 'vault';
 			type: {
@@ -107,6 +170,13 @@ export type DriftVaults = {
 					}
 				];
 			};
+		}
+	];
+	errors: [
+		{
+			code: 6000;
+			name: 'Default';
+			msg: 'Default';
 		}
 	];
 };
@@ -173,8 +243,71 @@ export const IDL: DriftVaults = {
 				},
 			],
 		},
+		{
+			name: 'initializeVaultDepositor',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'vaultDepositor',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'authority',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'payer',
+					isMut: true,
+					isSigner: true,
+				},
+				{
+					name: 'rent',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'systemProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [],
+		},
 	],
 	accounts: [
+		{
+			name: 'vaultDepositor',
+			type: {
+				kind: 'struct',
+				fields: [
+					{
+						name: 'vault',
+						docs: ['The vault deposited into'],
+						type: 'publicKey',
+					},
+					{
+						name: 'pubkey',
+						docs: [
+							"The vault depositor account's pubkey. It is a pda of vault and authority",
+						],
+						type: 'publicKey',
+					},
+					{
+						name: 'authority',
+						docs: [
+							'The authority is the address w permission to deposit/withdraw',
+						],
+						type: 'publicKey',
+					},
+				],
+			},
+		},
 		{
 			name: 'vault',
 			type: {
@@ -220,6 +353,13 @@ export const IDL: DriftVaults = {
 					},
 				],
 			},
+		},
+	],
+	errors: [
+		{
+			code: 6000,
+			name: 'Default',
+			msg: 'Default',
 		},
 	],
 };

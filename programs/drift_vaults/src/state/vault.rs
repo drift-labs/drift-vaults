@@ -1,5 +1,6 @@
 use crate::Size;
 use anchor_lang::prelude::*;
+use static_assertions::const_assert_eq;
 
 #[account(zero_copy)]
 #[derive(Eq, PartialEq, Debug)]
@@ -23,12 +24,4 @@ impl Size for Vault {
     const SIZE: usize = 169;
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn impl_size() {
-        assert_eq!(super::Vault::SIZE, std::mem::size_of::<Vault>() + 8)
-    }
-}
+const_assert_eq!(Vault::SIZE, std::mem::size_of::<Vault>() + 8);

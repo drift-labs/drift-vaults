@@ -16,4 +16,4 @@ address = "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
 program = "./deps/drift.so"
 
 [scripts]
-test = "yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+test = "yarn anchor-tests"

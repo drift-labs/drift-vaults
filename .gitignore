@@ -7,3 +7,5 @@ node_modules
 test-ledger
 .idea
 migrations
+ts/sdk/src/**/*.js
+ts/sdk/src/**/*.js.map

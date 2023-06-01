@@ -5,7 +5,9 @@ import { AdminClient, BN } from '@drift-labs/sdk';
 import { mockUSDCMint } from './testHelpers';
 import { Keypair } from '@solana/web3.js';
 import { assert } from 'chai';
-import { VaultClient } from '../ts/sdk/src/vaultClient';
+import { VaultClient } from '../ts/sdk/src';
+import { getVaultAddressSync } from '../ts/sdk/src';
+import { encodeName } from '../ts/sdk/lib/name';
 
 describe('driftVaults', () => {
 	// Configure the client to use the local cluster.
@@ -31,19 +33,28 @@ describe('driftVaults', () => {
 
 	let usdcMint: Keypair;
 
+	const vaultName = 'crisp vault';
+	const vault = getVaultAddressSync(program.programId, encodeName(vaultName));
+
 	before(async () => {
 		usdcMint = await mockUSDCMint(provider);
 		await adminClient.initialize(usdcMint.publicKey, false);
 		await adminClient.subscribe();
 	});
 
-	it('Is initialized!', async () => {
-		const name = 'crisp vault';
+	after(async () => {
+		await adminClient.unsubscribe();
+	});
 
-		await vaultClient.initializeVault(name);
+	it('Initialize Vault', async () => {
+		await vaultClient.initializeVault(vaultName);
 
 		await adminClient.fetchAccounts();
 		assert(adminClient.getStateAccount().numberOfAuthorities.eq(new BN(1)));
 		assert(adminClient.getStateAccount().numberOfSubAccounts.eq(new BN(1)));
+	});
+
+	it('Initialize Vault Depositor', async () => {
+		await vaultClient.initializeVaultDepositor(vault);
 	});
 });
