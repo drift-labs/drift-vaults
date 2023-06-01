@@ -7,7 +7,7 @@ import { Keypair } from '@solana/web3.js';
 import { assert } from 'chai';
 import { VaultClient } from '../ts/sdk/src/vaultClient';
 
-describe('drift-vaults', () => {
+describe('driftVaults', () => {
 	// Configure the client to use the local cluster.
 	const provider = anchor.AnchorProvider.local(undefined, {
 		preflightCommitment: 'confirmed',
