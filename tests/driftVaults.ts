@@ -2,7 +2,7 @@ import * as anchor from '@coral-xyz/anchor';
 import { DriftVaults } from '../target/types/drift_vaults';
 import { Program } from '@coral-xyz/anchor';
 import { AdminClient, BN } from '@drift-labs/sdk';
-import { mockUSDCMint } from './testHelpers';
+import { initializeQuoteSpotMarket, mockUSDCMint } from './testHelpers';
 import { Keypair } from '@solana/web3.js';
 import { assert } from 'chai';
 import { VaultClient } from '../ts/sdk/src';
@@ -40,6 +40,7 @@ describe('driftVaults', () => {
 		usdcMint = await mockUSDCMint(provider);
 		await adminClient.initialize(usdcMint.publicKey, false);
 		await adminClient.subscribe();
+		await initializeQuoteSpotMarket(adminClient, usdcMint.publicKey);
 	});
 
 	after(async () => {
@@ -47,7 +48,7 @@ describe('driftVaults', () => {
 	});
 
 	it('Initialize Vault', async () => {
-		await vaultClient.initializeVault(vaultName);
+		await vaultClient.initializeVault(vaultName, 0);
 
 		await adminClient.fetchAccounts();
 		assert(adminClient.getStateAccount().numberOfAuthorities.eq(new BN(1)));

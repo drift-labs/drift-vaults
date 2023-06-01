@@ -12,16 +12,21 @@ pub struct Vault {
     pub pubkey: Pubkey,
     /// The authority of the vault who has ability to update vault params
     pub authority: Pubkey,
+    /// The vaults token account. Used to receive tokens between deposits and withdrawals
+    pub token_account: Pubkey,
     /// The drift user stats account for the vault
     pub user_stats: Pubkey,
     /// The drift user account for the vault
     pub user: Pubkey,
+    /// The spot market index the vault deposits into/withdraws from
+    pub spot_market_index: u16,
     /// The bump for the vault pda
     pub bump: u8,
+    pub padding: [u8; 1],
 }
 
 impl Size for Vault {
-    const SIZE: usize = 169;
+    const SIZE: usize = 204;
 }
 
 const_assert_eq!(Vault::SIZE, std::mem::size_of::<Vault>() + 8);

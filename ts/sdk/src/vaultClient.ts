@@ -6,7 +6,11 @@ import {
 import { Program } from '@coral-xyz/anchor';
 import { DriftVaults } from './types/drift_vaults';
 import { encodeName } from './name';
-import { getVaultAddressSync, getVaultDepositorAddressSync } from './addresses';
+import {
+	getTokenVaultAddressSync,
+	getVaultAddressSync,
+	getVaultDepositorAddressSync,
+} from './addresses';
 import { PublicKey, TransactionSignature } from '@solana/web3.js';
 
 export class VaultClient {
@@ -24,11 +28,21 @@ export class VaultClient {
 		this.program = program;
 	}
 
-	public async initializeVault(name: string): Promise<TransactionSignature> {
+	public async initializeVault(
+		name: string,
+		spotMarketIndex: number
+	): Promise<TransactionSignature> {
 		const encodedName = encodeName(name);
 		const vault = getVaultAddressSync(this.program.programId, encodedName);
+		const tokenAccount = getTokenVaultAddressSync(
+			this.program.programId,
+			vault
+		);
 
 		const driftState = await this.driftClient.getStatePublicKey();
+		const driftSpotMarket =
+			this.driftClient.getSpotMarketAccount(spotMarketIndex);
+
 		const userStatsKey = await getUserStatsAccountPublicKey(
 			this.driftClient.program.programId,
 			vault
@@ -39,12 +53,15 @@ export class VaultClient {
 		);
 
 		return await this.program.methods
-			.initializeVault(encodedName)
+			.initializeVault(encodedName, spotMarketIndex)
 			.accounts({
+				driftSpotMarket: driftSpotMarket.pubkey,
+				driftSpotMarketMint: driftSpotMarket.mint,
 				driftUserStats: userStatsKey,
 				driftUser: userKey,
 				driftState,
 				vault,
+				tokenAccount,
 				driftProgram: this.driftClient.program.programId,
 			})
 			.rpc();

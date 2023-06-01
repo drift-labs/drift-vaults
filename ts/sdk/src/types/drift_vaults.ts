@@ -11,6 +11,11 @@ export type DriftVaults = {
 					isSigner: false;
 				},
 				{
+					name: 'tokenAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
 					name: 'driftUserStats';
 					isMut: true;
 					isSigner: false;
@@ -23,6 +28,16 @@ export type DriftVaults = {
 				{
 					name: 'driftState';
 					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftSpotMarket';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftSpotMarketMint';
+					isMut: false;
 					isSigner: false;
 				},
 				{
@@ -49,6 +64,11 @@ export type DriftVaults = {
 					name: 'driftProgram';
 					isMut: false;
 					isSigner: false;
+				},
+				{
+					name: 'tokenProgram';
+					isMut: false;
+					isSigner: false;
 				}
 			];
 			args: [
@@ -57,6 +77,10 @@ export type DriftVaults = {
 					type: {
 						array: ['u8', 32];
 					};
+				},
+				{
+					name: 'spotMarketIndex';
+					type: 'u16';
 				}
 			];
 		},
@@ -154,6 +178,13 @@ export type DriftVaults = {
 						type: 'publicKey';
 					},
 					{
+						name: 'tokenAccount';
+						docs: [
+							'The vaults token account. Used to receive tokens between deposits and withdrawals'
+						];
+						type: 'publicKey';
+					},
+					{
 						name: 'userStats';
 						docs: ['The drift user stats account for the vault'];
 						type: 'publicKey';
@@ -164,9 +195,22 @@ export type DriftVaults = {
 						type: 'publicKey';
 					},
 					{
+						name: 'spotMarketIndex';
+						docs: [
+							'The spot market index the vault deposits into/withdraws from'
+						];
+						type: 'u16';
+					},
+					{
 						name: 'bump';
 						docs: ['The bump for the vault pda'];
 						type: 'u8';
+					},
+					{
+						name: 'padding';
+						type: {
+							array: ['u8', 1];
+						};
 					}
 				];
 			};
@@ -194,6 +238,11 @@ export const IDL: DriftVaults = {
 					isSigner: false,
 				},
 				{
+					name: 'tokenAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
 					name: 'driftUserStats',
 					isMut: true,
 					isSigner: false,
@@ -206,6 +255,16 @@ export const IDL: DriftVaults = {
 				{
 					name: 'driftState',
 					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftSpotMarket',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftSpotMarketMint',
+					isMut: false,
 					isSigner: false,
 				},
 				{
@@ -233,6 +292,11 @@ export const IDL: DriftVaults = {
 					isMut: false,
 					isSigner: false,
 				},
+				{
+					name: 'tokenProgram',
+					isMut: false,
+					isSigner: false,
+				},
 			],
 			args: [
 				{
@@ -240,6 +304,10 @@ export const IDL: DriftVaults = {
 					type: {
 						array: ['u8', 32],
 					},
+				},
+				{
+					name: 'spotMarketIndex',
+					type: 'u16',
 				},
 			],
 		},
@@ -337,6 +405,13 @@ export const IDL: DriftVaults = {
 						type: 'publicKey',
 					},
 					{
+						name: 'tokenAccount',
+						docs: [
+							'The vaults token account. Used to receive tokens between deposits and withdrawals',
+						],
+						type: 'publicKey',
+					},
+					{
 						name: 'userStats',
 						docs: ['The drift user stats account for the vault'],
 						type: 'publicKey',
@@ -347,9 +422,22 @@ export const IDL: DriftVaults = {
 						type: 'publicKey',
 					},
 					{
+						name: 'spotMarketIndex',
+						docs: [
+							'The spot market index the vault deposits into/withdraws from',
+						],
+						type: 'u16',
+					},
+					{
 						name: 'bump',
 						docs: ['The bump for the vault pda'],
 						type: 'u8',
+					},
+					{
+						name: 'padding',
+						type: {
+							array: ['u8', 1],
+						},
 					},
 				],
 			},

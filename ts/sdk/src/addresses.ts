@@ -26,3 +26,16 @@ export function getVaultDepositorAddressSync(
 		programId
 	)[0];
 }
+
+export function getTokenVaultAddressSync(
+	programId: PublicKey,
+	vault: PublicKey
+) {
+	return PublicKey.findProgramAddressSync(
+		[
+			Buffer.from(anchor.utils.bytes.utf8.encode('vault_token_account')),
+			vault.toBuffer(),
+		],
+		programId
+	)[0];
+}

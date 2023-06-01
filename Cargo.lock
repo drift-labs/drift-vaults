@@ -668,6 +668,7 @@ name = "drift-vaults"
 version = "0.1.0"
 dependencies = [
  "anchor-lang",
+ "anchor-spl",
  "bytemuck",
  "drift",
  "static_assertions",
