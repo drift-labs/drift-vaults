@@ -17,7 +17,6 @@ pub fn update_depositor_shares(vault_depositor: VaultDepositor, amount: u64) -> 
     Ok(())
 }
 
-
 pub fn deposit<'info>(ctx: Context<'_, '_, '_, 'info, Deposit<'info>>, amount: u64) -> Result<()> {
     let vault = ctx.accounts.vault.load()?;
     let name = vault.name;

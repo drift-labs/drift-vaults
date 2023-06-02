@@ -43,12 +43,6 @@ pub fn log10_iter(n: u128) -> u128 {
     result
 }
 
-
-
-
-
-
-
 pub fn vault_amount_to_vault_shares(
     amount: u64,
     total_shares: u128,

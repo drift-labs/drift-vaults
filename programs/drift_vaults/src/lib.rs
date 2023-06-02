@@ -4,8 +4,8 @@ use state::*;
 
 mod error;
 mod instructions;
-mod state;
 pub mod macros;
+mod state;
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 

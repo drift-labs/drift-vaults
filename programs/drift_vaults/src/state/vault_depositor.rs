@@ -1,13 +1,13 @@
+use crate::error::ErrorCode;
 use crate::Size;
 use anchor_lang::prelude::*;
-use crate::error::ErrorCode;
 
-use static_assertions::const_assert_eq;
-use crate::state::vault::Vault;
 use crate::math_error;
-use crate::validate;
 use crate::safe_decrement;
 use crate::safe_increment;
+use crate::state::vault::Vault;
+use crate::validate;
+use static_assertions::const_assert_eq;
 
 #[account(zero_copy)]
 #[derive(Eq, PartialEq, Debug)]
@@ -29,7 +29,6 @@ pub struct VaultDepositor {
     pub last_valid_ts: i64,
 
     pub cost_basis: i64,
-
 }
 
 impl Size for VaultDepositor {
@@ -63,19 +62,19 @@ impl VaultDepositor {
         self.vault_shares
     }
 
-    pub fn increase_vault_shares(&mut self, delta: u128, vault: &Vault) ->  Result<()> {
+    pub fn increase_vault_shares(&mut self, delta: u128, vault: &Vault) -> Result<()> {
         self.validate_base(vault)?;
         safe_increment!(self.vault_shares, delta);
         Ok(())
     }
 
-    pub fn decrease_vault_shares(&mut self, delta: u128, vault: &Vault) ->  Result<()> {
+    pub fn decrease_vault_shares(&mut self, delta: u128, vault: &Vault) -> Result<()> {
         self.validate_base(vault)?;
         safe_decrement!(self.vault_shares, delta);
         Ok(())
     }
 
-    pub fn update_vault_shares(&mut self, new_shares: u128, vault: &Vault) ->  Result<()> {
+    pub fn update_vault_shares(&mut self, new_shares: u128, vault: &Vault) -> Result<()> {
         self.validate_base(vault)?;
         self.vault_shares = new_shares;
 
