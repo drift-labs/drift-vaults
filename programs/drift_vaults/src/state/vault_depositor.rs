@@ -190,6 +190,21 @@ impl VaultDepositor {
         vault.user_shares = vault.user_shares.safe_add(n_shares)?;
 
         // let vault_shares_after = self.checked_vault_shares(vault)?;
+        emit!(VaultDepositorRecord {
+            ts: now,
+            vault: vault.pubkey,
+            user_authority: self.authority,
+            action: VaultDepositorAction::Withdraw,
+            amount: amount,
+            spot_market_index: vault.spot_market_index,
+            vault_amount_before: vault_amount,
+            vault_shares_before,
+            // user_vault_shares_before,
+            // total_vault_shares_before,
+            // vault_shares_after,
+            // total_vault_shares_after: vault.total_shares,
+            // user_vault_shares_after: vault.user_shares,
+        });
 
         Ok(())
     }

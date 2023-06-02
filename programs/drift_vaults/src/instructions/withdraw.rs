@@ -12,6 +12,8 @@ use drift::math::margin::{
 use drift::program::Drift;
 use drift::state::perp_market_map::{get_writable_perp_market_set, MarketSet};
 use drift::state::user::User;
+use crate::validate;
+use crate::error::ErrorCode;
 
 pub fn withdraw<'info>(
     ctx: Context<'_, '_, '_, 'info, Withdraw<'info>>,
@@ -21,8 +23,13 @@ pub fn withdraw<'info>(
     let vault = &mut ctx.accounts.vault.load_mut()?;
     let vault_depositor = &mut ctx.accounts.vault_depositor.load_mut()?;
 
-    let vault_amount: u64 = 100; // todo
-    vault_depositor.withdraw(vault_amount, *ctx.accounts.authority.key, vault, clock.unix_timestamp)?;
+    // todo, use calculate_net_usd_value in margin.rs
+    let (net_usd_value, all_oracles_valid) = (100_u64, true); 
+    validate!(
+        all_oracles_valid,
+        ErrorCode::Default
+    )?;
+    vault_depositor.withdraw(net_usd_value, *ctx.accounts.authority.key, vault, clock.unix_timestamp)?;
 
     let name = vault.name;
     let bump = vault.bump;
