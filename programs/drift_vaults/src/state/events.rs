@@ -1,7 +1,6 @@
 use anchor_lang::prelude::*;
 use borsh::{BorshDeserialize, BorshSerialize};
 
-
 #[event]
 #[derive(Default)]
 pub struct VaultRecord {
@@ -19,6 +18,8 @@ pub struct VaultDepositorRecord {
     pub action: VaultDepositorAction,
     pub amount: u64,
 
+    pub spot_market_index: u16,
+    pub vault_shares_before: u128,
     pub vault_amount_before: u64,
 }
 

@@ -17,7 +17,13 @@ pub fn withdraw<'info>(
     ctx: Context<'_, '_, '_, 'info, Withdraw<'info>>,
     amount: u64,
 ) -> Result<()> {
-    let vault = ctx.accounts.vault.load()?;
+    let clock = &Clock::get()?;
+    let vault = &mut ctx.accounts.vault.load_mut()?;
+    let vault_depositor = &mut ctx.accounts.vault_depositor.load_mut()?;
+
+    let vault_amount: u64 = 100; // todo
+    vault_depositor.withdraw(vault_amount, *ctx.accounts.authority.key, vault, clock.unix_timestamp)?;
+
     let name = vault.name;
     let bump = vault.bump;
     let spot_market_index = vault.spot_market_index;
@@ -53,8 +59,6 @@ pub fn withdraw<'info>(
     };
     let cpi_context = CpiContext::new_with_signer(cpi_program, cpi_accounts, signers);
     token::transfer(cpi_context, amount)?;
-
-    let clock = &Clock::get()?;
 
     let remaining_accounts_iter = &mut ctx.remaining_accounts.iter().peekable();
     let AccountMaps {

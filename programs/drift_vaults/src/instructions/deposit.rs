@@ -18,7 +18,14 @@ pub fn update_depositor_shares(vault_depositor: VaultDepositor, amount: u64) -> 
 }
 
 pub fn deposit<'info>(ctx: Context<'_, '_, '_, 'info, Deposit<'info>>, amount: u64) -> Result<()> {
-    let vault = ctx.accounts.vault.load()?;
+    let clock = &Clock::get()?;
+
+    let vault = &mut ctx.accounts.vault.load_mut()?;
+    let vault_depositor = &mut ctx.accounts.vault_depositor.load_mut()?;
+
+    let vault_amount: u64 = 100; // todo
+    vault_depositor.deposit(amount, vault_amount, vault, clock.unix_timestamp)?;
+
     let name = vault.name;
     let bump = vault.bump;
     let spot_market_index = vault.spot_market_index;
@@ -53,8 +60,6 @@ pub fn deposit<'info>(ctx: Context<'_, '_, '_, 'info, Deposit<'info>>, amount: u
     let cpi_context = CpiContext::new_with_signer(cpi_program, cpi_accounts, signers)
         .with_remaining_accounts(ctx.remaining_accounts.into());
     drift::cpi::deposit(cpi_context, spot_market_index, amount, false)?;
-
-    let clock = &Clock::get()?;
 
     let remaining_accounts_iter = &mut ctx.remaining_accounts.iter().peekable();
     let AccountMaps {

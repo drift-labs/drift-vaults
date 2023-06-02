@@ -1,4 +1,5 @@
 use crate::{Vault, VaultDepositor};
+
 use anchor_lang::prelude::*;
 
 pub fn is_authority_for_vault_depositor(

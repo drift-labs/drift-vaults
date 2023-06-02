@@ -1,14 +1,32 @@
 use anchor_lang::prelude::*;
 
+pub type VaultResult<T = ()> = std::result::Result<T, ErrorCode>;
+
 #[error_code]
 #[derive(PartialEq, Eq)]
 pub enum ErrorCode {
     #[msg("Default")]
     Default,
-    #[msg("Math Error")]
+    #[msg("Vault Math Error")]
     MathError,
     #[msg("InvalidVaultRebase")]
     InvalidVaultRebase,
+    #[msg("InvalidVaultSharesDetected")]
+    InvalidVaultSharesDetected,
+    #[msg("TryingToRemoveLiquidityTooFast")]
+    TryingToRemoveLiquidityTooFast,
+    #[msg("InvalidIFUnstake")]
+    InvalidIFUnstake,
+    #[msg("InvalidIFUnstakeSize")]
+    InvalidIFUnstakeSize,
+    #[msg("InvalidVaultDepositorWithdrawCancel")]
+    InvalidVaultDepositorWithdrawCancel,
+    #[msg("InsufficientVaultShares")]
+    InsufficientVaultShares,
+    #[msg("InvalidVaultWithdrawSize")]
+    InvalidVaultWithdrawSize,
+    #[msg("InvalidVaultForNewDepositors")]
+    InvalidVaultForNewDepositors,
 }
 
 #[macro_export]

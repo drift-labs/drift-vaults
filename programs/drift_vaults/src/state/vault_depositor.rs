@@ -9,6 +9,45 @@ use crate::state::vault::Vault;
 use crate::validate;
 use static_assertions::const_assert_eq;
 
+use crate::events::{VaultDepositorAction, VaultDepositorRecord};
+
+use drift::math::insurance::{if_shares_to_vault_amount, vault_amount_to_if_shares};
+
+use drift::math::casting::Cast;
+use drift::math::safe_math::SafeMath;
+
+pub fn calculate_vault_shares_lost(
+    vault_depositor: &VaultDepositor,
+    vault: &Vault,
+    vault_balance: u64,
+) -> Result<u128> {
+    let n_shares = vault_depositor.last_withdraw_request_shares;
+
+    let amount = if_shares_to_vault_amount(n_shares, vault.total_shares, vault_balance)?;
+
+    let vault_shares_lost = if amount > vault_depositor.last_withdraw_request_value {
+        let new_n_shares = vault_amount_to_if_shares(
+            vault_depositor.last_withdraw_request_value,
+            vault.total_shares - n_shares,
+            vault_balance - vault_depositor.last_withdraw_request_value,
+        )?;
+
+        validate!(
+            new_n_shares <= n_shares,
+            ErrorCode::InvalidVaultSharesDetected,
+            "Issue calculating delta if_shares after canceling request {} < {}",
+            new_n_shares,
+            n_shares
+        )?;
+
+        n_shares.safe_sub(new_n_shares)?
+    } else {
+        0
+    };
+
+    Ok(vault_shares_lost)
+}
+
 #[account(zero_copy)]
 #[derive(Eq, PartialEq, Debug)]
 #[repr(C)]
@@ -79,5 +118,153 @@ impl VaultDepositor {
         self.vault_shares = new_shares;
 
         Ok(())
+    }
+
+    pub fn apply_rebase(self: &mut VaultDepositor, vault: &mut Vault) -> Result<()> {
+        if vault.shares_base != self.vault_shares_base {
+            validate!(
+                vault.shares_base > self.vault_shares_base,
+                ErrorCode::InvalidVaultRebase,
+                "Rebase expo out of bounds"
+            )?;
+
+            let expo_diff = (vault.shares_base - self.vault_shares_base).cast::<u32>()?;
+
+            let rebase_divisor = 10_u128.pow(expo_diff);
+
+            msg!(
+                "rebasing vault depositor: base: {} -> {} ",
+                self.vault_shares_base,
+                vault.shares_base,
+            );
+
+            self.vault_shares_base = vault.shares_base;
+
+            let old_vault_shares = self.unchecked_vault_shares();
+            let new_vault_shares = old_vault_shares.safe_div(rebase_divisor)?;
+
+            msg!("rebasing vault depositor: shares -> {} ", new_vault_shares);
+
+            self.update_vault_shares(new_vault_shares, vault)?;
+
+            self.last_withdraw_request_shares =
+                self.last_withdraw_request_shares.safe_div(rebase_divisor)?;
+        }
+
+        Ok(())
+    }
+
+    pub fn deposit(
+        self: &mut VaultDepositor,
+        amount: u64,
+        vault_amount: u64,
+        vault: &mut Vault,
+        now: i64,
+    ) -> Result<()> {
+        validate!(
+            !(vault_amount == 0 && vault.total_shares != 0),
+            ErrorCode::InvalidVaultForNewDepositors,
+            "Vault balance should be non-zero for new stakers to enter"
+        )?;
+
+        vault.apply_rebase(vault_amount)?;
+        self.apply_rebase(vault)?;
+
+        let vault_shares_before = self.checked_vault_shares(vault)?;
+        // let total_vault_shares_before = vault.total_shares;
+        // let user_vault_shares_before = vault.user_shares;
+
+        let n_shares = vault_amount_to_if_shares(amount, vault.total_shares, vault_amount)?;
+
+        // reset cost basis if no shares
+        self.cost_basis = if vault_shares_before == 0 {
+            amount.cast()?
+        } else {
+            self.cost_basis.safe_add(amount.cast()?)?
+        };
+
+        self.increase_vault_shares(n_shares, vault)?;
+
+        vault.total_shares = vault.total_shares.safe_add(n_shares)?;
+
+        vault.user_shares = vault.user_shares.safe_add(n_shares)?;
+
+        // let vault_shares_after = self.checked_vault_shares(vault)?;
+
+        Ok(())
+    }
+
+    pub fn withdraw(
+        self: &mut VaultDepositor,
+        vault_amount: u64,
+        user_authority: Pubkey,
+        vault: &mut Vault,
+        now: i64,
+    ) -> Result<u64> {
+        let time_since_withdraw_request = now.safe_sub(self.last_withdraw_request_ts)?;
+
+        validate!(
+            time_since_withdraw_request >= vault.redeem_period,
+            ErrorCode::TryingToRemoveLiquidityTooFast
+        )?;
+
+        vault.apply_rebase(vault_amount)?;
+        self.apply_rebase(vault)?;
+
+        let vault_shares_before: u128 = self.checked_vault_shares(vault)?;
+        // let total_vault_shares_before = vault.total_shares;
+        // let user_vault_shares_before = vault.user_shares;
+
+        let n_shares = self.last_withdraw_request_shares;
+
+        validate!(
+            n_shares > 0,
+            ErrorCode::InvalidIFUnstake,
+            "Must submit withdraw request and wait the escrow period"
+        )?;
+
+        validate!(
+            vault_shares_before >= n_shares,
+            ErrorCode::InsufficientVaultShares
+        )?;
+
+        let amount = if_shares_to_vault_amount(n_shares, vault.total_shares, vault_amount)?;
+
+        let _vault_shares_lost = calculate_vault_shares_lost(self, vault, vault_amount)?;
+
+        let withdraw_amount = amount.min(self.last_withdraw_request_value);
+
+        self.decrease_vault_shares(n_shares, vault)?;
+
+        self.cost_basis = self.cost_basis.safe_sub(withdraw_amount.cast()?)?;
+
+        vault.total_shares = vault.total_shares.safe_sub(n_shares)?;
+
+        vault.user_shares = vault.user_shares.safe_sub(n_shares)?;
+
+        // reset vault_depositor withdraw request info
+        self.last_withdraw_request_shares = 0;
+        self.last_withdraw_request_value = 0;
+        self.last_withdraw_request_ts = now;
+
+        // let vault_shares_after = self.checked_vault_shares(vault)?;
+
+        emit!(VaultDepositorRecord {
+            ts: now,
+            vault: vault.pubkey,
+            user_authority: user_authority,
+            action: VaultDepositorAction::Withdraw,
+            amount: withdraw_amount,
+            spot_market_index: vault.spot_market_index,
+            vault_amount_before: vault_amount,
+            vault_shares_before,
+            // user_vault_shares_before,
+            // total_vault_shares_before,
+            // vault_shares_after,
+            // total_vault_shares_after: vault.total_shares,
+            // user_vault_shares_after: vault.user_shares,
+        });
+
+        Ok(withdraw_amount)
     }
 }
