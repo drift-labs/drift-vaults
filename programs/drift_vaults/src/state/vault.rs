@@ -25,6 +25,7 @@ pub struct Vault {
     pub padding: [u8; 1],
 
     pub shares_base: u128,
+    pub total_shares: u128,
 }
 
 impl Vault {
@@ -34,7 +35,7 @@ impl Vault {
 }
 
 impl Size for Vault {
-    const SIZE: usize = 212;
+    const SIZE: usize = 228;
 }
 
 // const_assert_eq!(Vault::SIZE, std::mem::size_of::<Vault>() + 8);
