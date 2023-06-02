@@ -23,4 +23,11 @@ pub mod drift_vaults {
     pub fn initialize_vault_depositor(ctx: Context<InitializeVaultDepositor>) -> Result<()> {
         instructions::initialize_vault_depositor(ctx)
     }
+
+    pub fn deposit<'info>(
+        ctx: Context<'_, '_, '_, 'info, Deposit<'info>>,
+        amount: u64,
+    ) -> Result<()> {
+        instructions::deposit(ctx, amount)
+    }
 }
