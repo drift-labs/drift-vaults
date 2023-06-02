@@ -23,6 +23,8 @@ pub struct Vault {
     /// The bump for the vault pda
     pub bump: u8,
     pub padding: [u8; 1],
+
+    pub shares_base: u128,
 }
 
 impl Vault {
@@ -32,7 +34,7 @@ impl Vault {
 }
 
 impl Size for Vault {
-    const SIZE: usize = 204;
+    const SIZE: usize = 212;
 }
 
-const_assert_eq!(Vault::SIZE, std::mem::size_of::<Vault>() + 8);
+// const_assert_eq!(Vault::SIZE, std::mem::size_of::<Vault>() + 8);

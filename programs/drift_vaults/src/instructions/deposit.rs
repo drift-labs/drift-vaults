@@ -13,6 +13,11 @@ use drift::program::Drift;
 use drift::state::perp_market_map::{get_writable_perp_market_set, MarketSet};
 use drift::state::user::User;
 
+pub fn update_depositor_shares(vault_depositor: VaultDepositor, amount: u64) -> Result<()> {
+    Ok(())
+}
+
+
 pub fn deposit<'info>(ctx: Context<'_, '_, '_, 'info, Deposit<'info>>, amount: u64) -> Result<()> {
     let vault = ctx.accounts.vault.load()?;
     let name = vault.name;
