@@ -1,6 +1,8 @@
 use crate::constraints::{
     is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
 };
+use crate::error::ErrorCode;
+use crate::validate;
 use crate::{Vault, VaultDepositor};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
@@ -12,8 +14,6 @@ use drift::math::margin::{
 use drift::program::Drift;
 use drift::state::perp_market_map::{get_writable_perp_market_set, MarketSet};
 use drift::state::user::User;
-use crate::validate;
-use crate::error::ErrorCode;
 
 pub fn deposit<'info>(ctx: Context<'_, '_, '_, 'info, Deposit<'info>>, amount: u64) -> Result<()> {
     let clock = &Clock::get()?;
@@ -21,12 +21,9 @@ pub fn deposit<'info>(ctx: Context<'_, '_, '_, 'info, Deposit<'info>>, amount: u
     let vault = &mut ctx.accounts.vault.load_mut()?;
     let vault_depositor = &mut ctx.accounts.vault_depositor.load_mut()?;
 
-     // todo, use calculate_net_usd_value in margin.rs
-     let (net_usd_value, all_oracles_valid) = (100_u64, true); 
-     validate!(
-        all_oracles_valid,
-        ErrorCode::Default
-    )?;
+    // todo, use calculate_net_usd_value in margin.rs
+    let (net_usd_value, all_oracles_valid) = (100_u64, true);
+    validate!(all_oracles_valid, ErrorCode::Default)?;
     vault_depositor.deposit(amount, net_usd_value, vault, clock.unix_timestamp)?;
 
     let name = vault.name;

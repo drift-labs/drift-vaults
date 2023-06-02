@@ -1,6 +1,8 @@
 use crate::constraints::{
     is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
 };
+use crate::error::ErrorCode;
+use crate::validate;
 use crate::{Vault, VaultDepositor};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
@@ -12,8 +14,6 @@ use drift::math::margin::{
 use drift::program::Drift;
 use drift::state::perp_market_map::{get_writable_perp_market_set, MarketSet};
 use drift::state::user::User;
-use crate::validate;
-use crate::error::ErrorCode;
 
 pub fn withdraw<'info>(
     ctx: Context<'_, '_, '_, 'info, Withdraw<'info>>,
@@ -24,12 +24,14 @@ pub fn withdraw<'info>(
     let vault_depositor = &mut ctx.accounts.vault_depositor.load_mut()?;
 
     // todo, use calculate_net_usd_value in margin.rs
-    let (net_usd_value, all_oracles_valid) = (100_u64, true); 
-    validate!(
-        all_oracles_valid,
-        ErrorCode::Default
+    let (net_usd_value, all_oracles_valid) = (100_u64, true);
+    validate!(all_oracles_valid, ErrorCode::Default)?;
+    vault_depositor.withdraw(
+        net_usd_value,
+        *ctx.accounts.authority.key,
+        vault,
+        clock.unix_timestamp,
     )?;
-    vault_depositor.withdraw(net_usd_value, *ctx.accounts.authority.key, vault, clock.unix_timestamp)?;
 
     let name = vault.name;
     let bump = vault.bump;
