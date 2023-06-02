@@ -29,7 +29,7 @@ pub fn deposit<'info>(ctx: Context<'_, '_, '_, 'info, Deposit<'info>>, amount: u
     let cpi_context = CpiContext::new(cpi_program, cpi_accounts);
     token::transfer(cpi_context, amount)?;
 
-    let signature_seeds = [b"vault", name.as_ref(), bytemuck::bytes_of(&bump)];
+    let signature_seeds = Vault::get_vault_signer_seeds(&name, &bump);
     let signers = &[&signature_seeds[..]];
 
     let cpi_program = ctx.accounts.drift_program.to_account_info().clone();

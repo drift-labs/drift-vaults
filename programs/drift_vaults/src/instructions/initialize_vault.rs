@@ -12,7 +12,7 @@ pub fn initialize_vault(
 ) -> Result<()> {
     let bump = ctx.bumps.get("vault").ok_or(ErrorCode::Default)?;
 
-    let signature_seeds = [b"vault", name.as_ref(), bytemuck::bytes_of(bump)];
+    let signature_seeds = Vault::get_vault_signer_seeds(name.as_ref(), bump);
     let signers = &[&signature_seeds[..]];
     let cpi_program = ctx.accounts.drift_program.to_account_info().clone();
     let cpi_accounts = InitializeUserStats {

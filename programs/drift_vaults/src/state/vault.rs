@@ -25,6 +25,12 @@ pub struct Vault {
     pub padding: [u8; 1],
 }
 
+impl Vault {
+    pub fn get_vault_signer_seeds<'a>(name: &'a [u8], bump: &'a u8) -> [&'a [u8]; 3] {
+        [b"vault".as_ref(), name, bytemuck::bytes_of(bump)]
+    }
+}
+
 impl Size for Vault {
     const SIZE: usize = 204;
 }
