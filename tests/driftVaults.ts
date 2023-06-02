@@ -98,4 +98,35 @@ describe('driftVaults', () => {
 
 		await printTxLogs(provider.connection, txSig);
 	});
+
+	it('Withdraw', async () => {
+		const vaultAccount = await program.account.vault.fetch(vault);
+		const vaultDepositor = getVaultDepositorAddressSync(
+			program.programId,
+			vault
+		);
+		const remainingAccounts = adminClient.getRemainingAccounts({
+			userAccounts: [],
+			writableSpotMarketIndexes: [0],
+		});
+
+		const txSig = await program.methods
+			.withdraw(usdcAmount)
+			.accounts({
+				userTokenAccount: userUSDCAccount.publicKey,
+				vault,
+				vaultDepositor,
+				vaultTokenAccount: vaultAccount.tokenAccount,
+				driftUser: vaultAccount.user,
+				driftUserStats: vaultAccount.userStats,
+				driftState: await adminClient.getStatePublicKey(),
+				driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
+				driftSigner: adminClient.getStateAccount().signer,
+				driftProgram: adminClient.program.programId,
+			})
+			.remainingAccounts(remainingAccounts)
+			.rpc();
+
+		await printTxLogs(provider.connection, txSig);
+	});
 });
