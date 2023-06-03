@@ -20,7 +20,15 @@ pub struct VaultDepositorRecord {
 
     pub spot_market_index: u16,
     pub vault_shares_before: u128,
+    pub vault_shares_after: u128,
+
     pub vault_amount_before: u64,
+
+    pub user_vault_shares_before: u128,
+    pub total_vault_shares_before: u128,
+
+    pub user_vault_shares_after: u128,
+    pub total_vault_shares_after: u128,
 }
 
 #[derive(Clone, Copy, BorshSerialize, BorshDeserialize, PartialEq, Eq)]

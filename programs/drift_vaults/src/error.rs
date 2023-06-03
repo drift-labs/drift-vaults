@@ -13,12 +13,10 @@ pub enum ErrorCode {
     InvalidVaultRebase,
     #[msg("InvalidVaultSharesDetected")]
     InvalidVaultSharesDetected,
-    #[msg("TryingToRemoveLiquidityTooFast")]
-    TryingToRemoveLiquidityTooFast,
-    #[msg("InvalidIFUnstake")]
-    InvalidIFUnstake,
-    #[msg("InvalidIFUnstakeSize")]
-    InvalidIFUnstakeSize,
+    #[msg("CannotWithdrawBeforeRedeemPeriodEnd")]
+    CannotWithdrawBeforeRedeemPeriodEnd,
+    #[msg("InvalidVaultWithdraw")]
+    InvalidVaultWithdraw,
     #[msg("InvalidVaultDepositorWithdrawCancel")]
     InvalidVaultDepositorWithdrawCancel,
     #[msg("InsufficientVaultShares")]

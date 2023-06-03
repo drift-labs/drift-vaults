@@ -171,8 +171,8 @@ impl VaultDepositor {
         self.apply_rebase(vault)?;
 
         let vault_shares_before = self.checked_vault_shares(vault)?;
-        // let total_vault_shares_before = vault.total_shares;
-        // let user_vault_shares_before = vault.user_shares;
+        let total_vault_shares_before = vault.total_shares;
+        let user_vault_shares_before = vault.user_shares;
 
         let n_shares = vault_amount_to_if_shares(amount, vault.total_shares, vault_amount)?;
 
@@ -189,7 +189,7 @@ impl VaultDepositor {
 
         vault.user_shares = vault.user_shares.safe_add(n_shares)?;
 
-        // let vault_shares_after = self.checked_vault_shares(vault)?;
+        let vault_shares_after = self.checked_vault_shares(vault)?;
         emit!(VaultDepositorRecord {
             ts: now,
             vault: vault.pubkey,
@@ -199,11 +199,124 @@ impl VaultDepositor {
             spot_market_index: vault.spot_market_index,
             vault_amount_before: vault_amount,
             vault_shares_before,
-            // user_vault_shares_before,
-            // total_vault_shares_before,
-            // vault_shares_after,
-            // total_vault_shares_after: vault.total_shares,
-            // user_vault_shares_after: vault.user_shares,
+            user_vault_shares_before,
+            total_vault_shares_before,
+            vault_shares_after,
+            total_vault_shares_after: vault.total_shares,
+            user_vault_shares_after: vault.user_shares,
+        });
+
+        Ok(())
+    }
+
+    pub fn request_withdraw(
+        self: &mut VaultDepositor,
+        n_shares: u128,
+        vault_amount: u64,
+        vault: &mut Vault,
+        now: i64,
+    ) -> Result<u64> {
+        self.last_withdraw_request_shares = n_shares;
+        vault.apply_rebase(vault_amount)?;
+        self.apply_rebase(vault)?;
+
+        let vault_shares_before: u128 = self.checked_vault_shares(vault)?;
+        let total_vault_shares_before = vault.total_shares;
+        let user_vault_shares_before = vault.user_shares;
+
+        validate!(
+            self.last_withdraw_request_shares <= self.checked_vault_shares(vault)?,
+            ErrorCode::InvalidVaultWithdrawSize,
+            "last_withdraw_request_shares exceeds vault_shares {} > {}",
+            self.last_withdraw_request_shares,
+            self.checked_vault_shares(vault)?
+        )?;
+
+        validate!(
+            self.vault_shares_base == vault.shares_base,
+            ErrorCode::InvalidVaultRebase,
+            "vault depositor shares_base != vault shares_base"
+        )?;
+
+        self.last_withdraw_request_value = if_shares_to_vault_amount(
+            self.last_withdraw_request_shares,
+            vault.total_shares,
+            vault_amount,
+        )?
+        .min(vault_amount.saturating_sub(1));
+
+        validate!(
+            self.last_withdraw_request_value == 0
+                || self.last_withdraw_request_value < vault_amount,
+            ErrorCode::InvalidVaultWithdrawSize,
+            "Requested withdraw value is not below Insurance Fund balance"
+        )?;
+
+        let vault_shares_after = self.checked_vault_shares(vault)?;
+
+        emit!(VaultDepositorRecord {
+            ts: now,
+            vault: vault.pubkey,
+            user_authority: self.authority,
+            action: VaultDepositorAction::WithdrawRequest,
+            amount: self.last_withdraw_request_value,
+            spot_market_index: vault.spot_market_index,
+            vault_amount_before: vault_amount,
+            vault_shares_before,
+            user_vault_shares_before,
+            total_vault_shares_before,
+            vault_shares_after,
+            total_vault_shares_after: vault.total_shares,
+            user_vault_shares_after: vault.user_shares,
+        });
+
+        self.last_withdraw_request_ts = now;
+
+        Ok(self.last_withdraw_request_value)
+    }
+
+    pub fn cancel_withdraw_request(
+        self: &mut VaultDepositor,
+        vault_amount: u64,
+        vault: &mut Vault,
+        now: i64,
+    ) -> Result<()> {
+        vault.apply_rebase(vault_amount)?;
+        self.apply_rebase(vault)?;
+
+        let vault_shares_before: u128 = self.checked_vault_shares(vault)?;
+        let total_vault_shares_before = vault.total_shares;
+        let user_vault_shares_before = vault.user_shares;
+
+        validate!(
+            self.vault_shares_base == vault.shares_base,
+            ErrorCode::InvalidVaultRebase,
+            "vault depositor shares_base != vault shares_base"
+        )?;
+
+        let vault_shares_lost = calculate_vault_shares_lost(self, vault, vault_amount)?;
+        self.decrease_vault_shares(vault_shares_lost, vault)?;
+
+        vault.total_shares = vault.total_shares.safe_sub(vault_shares_lost)?;
+
+        vault.user_shares = vault.user_shares.safe_sub(vault_shares_lost)?;
+
+        let vault_shares_after = self.checked_vault_shares(vault)?;
+
+        emit!(VaultDepositorRecord {
+            ts: now,
+            vault: vault.pubkey,
+            user_authority: self.authority,
+            action: VaultDepositorAction::CancelWithdrawRequest,
+            amount: 0,
+            spot_market_index: vault.spot_market_index,
+            vault_amount_before: vault_amount,
+            vault_shares_before,
+            user_vault_shares_before,
+            total_vault_shares_before,
+            vault_shares_after,
+            total_vault_shares_after: vault.total_shares,
+            user_vault_shares_after: vault.user_shares,
         });
 
         Ok(())
@@ -220,22 +333,23 @@ impl VaultDepositor {
 
         validate!(
             time_since_withdraw_request >= vault.redeem_period,
-            ErrorCode::TryingToRemoveLiquidityTooFast
+            ErrorCode::CannotWithdrawBeforeRedeemPeriodEnd
         )?;
 
         vault.apply_rebase(vault_amount)?;
         self.apply_rebase(vault)?;
 
         let vault_shares_before: u128 = self.checked_vault_shares(vault)?;
-        // let total_vault_shares_before = vault.total_shares;
-        // let user_vault_shares_before = vault.user_shares;
+        let total_vault_shares_before = vault.total_shares;
+        let user_vault_shares_before = vault.user_shares;
 
         let n_shares = self.last_withdraw_request_shares;
 
         validate!(
             n_shares > 0,
-            ErrorCode::InvalidIFUnstake,
-            "Must submit withdraw request and wait the escrow period"
+            ErrorCode::InvalidVaultWithdraw,
+            "Must submit withdraw request and wait the redeem_period ({} seconds)",
+            vault.redeem_period
         )?;
 
         validate!(
@@ -262,7 +376,7 @@ impl VaultDepositor {
         self.last_withdraw_request_value = 0;
         self.last_withdraw_request_ts = now;
 
-        // let vault_shares_after = self.checked_vault_shares(vault)?;
+        let vault_shares_after = self.checked_vault_shares(vault)?;
 
         emit!(VaultDepositorRecord {
             ts: now,
@@ -273,11 +387,11 @@ impl VaultDepositor {
             spot_market_index: vault.spot_market_index,
             vault_amount_before: vault_amount,
             vault_shares_before,
-            // user_vault_shares_before,
-            // total_vault_shares_before,
-            // vault_shares_after,
-            // total_vault_shares_after: vault.total_shares,
-            // user_vault_shares_after: vault.user_shares,
+            user_vault_shares_before,
+            total_vault_shares_before,
+            vault_shares_after,
+            total_vault_shares_after: vault.total_shares,
+            user_vault_shares_after: vault.user_shares,
         });
 
         Ok(withdraw_amount)
