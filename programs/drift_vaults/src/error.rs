@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 
-pub type VaultResult<T = ()> = std::result::Result<T, ErrorCode>;
+// pub type VaultResult<T = ()> = std::result::Result<T, ErrorCode>;
 
 #[error_code]
 #[derive(PartialEq, Eq)]

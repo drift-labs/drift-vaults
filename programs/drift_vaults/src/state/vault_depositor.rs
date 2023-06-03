@@ -195,7 +195,7 @@ impl VaultDepositor {
             vault: vault.pubkey,
             user_authority: self.authority,
             action: VaultDepositorAction::Withdraw,
-            amount: amount,
+            amount,
             spot_market_index: vault.spot_market_index,
             vault_amount_before: vault_amount,
             vault_shares_before,
@@ -267,7 +267,7 @@ impl VaultDepositor {
         emit!(VaultDepositorRecord {
             ts: now,
             vault: vault.pubkey,
-            user_authority: user_authority,
+            user_authority,
             action: VaultDepositorAction::Withdraw,
             amount: withdraw_amount,
             spot_market_index: vault.spot_market_index,

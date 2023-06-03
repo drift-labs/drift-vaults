@@ -10,10 +10,8 @@ import {
 } from './testHelpers';
 import { Keypair } from '@solana/web3.js';
 import { assert } from 'chai';
-import { VaultClient } from '../ts/sdk/src';
-import { getVaultAddressSync } from '../ts/sdk/src';
-import { encodeName } from '../ts/sdk/lib/name';
-import { getVaultDepositorAddressSync } from '../ts/sdk/lib';
+import { VaultClient, getVaultAddressSync, getVaultDepositorAddressSync } from '../ts/sdk/src';
+import { encodeName } from '../ts/sdk/src/name';
 
 describe('driftVaults', () => {
 	// Configure the client to use the local cluster.
