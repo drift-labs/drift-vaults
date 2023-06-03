@@ -25,6 +25,8 @@ pub enum ErrorCode {
     InvalidVaultWithdrawSize,
     #[msg("InvalidVaultForNewDepositors")]
     InvalidVaultForNewDepositors,
+    #[msg("VaultWithdrawRequestInProgress")]
+    VaultWithdrawRequestInProgress,
 }
 
 #[macro_export]

@@ -1,7 +1,6 @@
 use crate::Size;
 use anchor_lang::prelude::*;
 use drift::math::casting::Cast;
-use drift::math::helpers::standardize_value_with_remainder_i128;
 use drift::math::insurance::calculate_rebase_info;
 use drift::math::safe_math::SafeMath;
 use static_assertions::const_assert_eq;

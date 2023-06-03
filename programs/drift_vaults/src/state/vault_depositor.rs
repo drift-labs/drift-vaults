@@ -216,6 +216,17 @@ impl VaultDepositor {
         vault: &mut Vault,
         now: i64,
     ) -> Result<u64> {
+        validate!(
+            n_shares > 0,
+            ErrorCode::InvalidVaultWithdrawSize,
+            "Requested n_shares = 0"
+        )?;
+        validate!(
+            self.last_withdraw_request_shares == 0,
+            ErrorCode::VaultWithdrawRequestInProgress,
+            "Vault withdraw request is already in progress"
+        )?;
+
         self.last_withdraw_request_shares = n_shares;
         vault.apply_rebase(vault_amount)?;
         self.apply_rebase(vault)?;

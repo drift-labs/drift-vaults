@@ -33,6 +33,13 @@ pub mod drift_vaults {
         instructions::deposit(ctx, amount)
     }
 
+    pub fn request_withdraw<'info>(
+        ctx: Context<'_, '_, '_, 'info, RequestWithdraw<'info>>,
+        amount: u64,
+    ) -> Result<()> {
+        instructions::request_withdraw(ctx, amount)
+    }
+
     pub fn withdraw<'info>(
         ctx: Context<'_, '_, '_, 'info, Withdraw<'info>>,
         amount: u64,
