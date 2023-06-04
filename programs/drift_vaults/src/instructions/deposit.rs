@@ -94,6 +94,7 @@ pub fn deposit<'info>(ctx: Context<'_, '_, '_, 'info, Deposit<'info>>, amount: u
 
 #[derive(Accounts)]
 pub struct Deposit<'info> {
+    #[account(mut)]
     pub vault: AccountLoader<'info, Vault>,
     #[account(
         mut,

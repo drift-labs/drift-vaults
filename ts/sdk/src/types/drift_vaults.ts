@@ -125,7 +125,7 @@ export type DriftVaults = {
 			accounts: [
 				{
 					name: 'vault';
-					isMut: false;
+					isMut: true;
 					isSigner: false;
 				},
 				{
@@ -187,11 +187,57 @@ export type DriftVaults = {
 			];
 		},
 		{
-			name: 'withdraw';
+			name: 'requestWithdraw';
 			accounts: [
 				{
 					name: 'vault';
 					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'vaultDepositor';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'authority';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'vaultTokenAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUser';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftState';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [
+				{
+					name: 'amount';
+					type: 'u64';
+				}
+			];
+		},
+		{
+			name: 'withdraw';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
 					isSigner: false;
 				},
 				{
@@ -285,30 +331,41 @@ export type DriftVaults = {
 					},
 					{
 						name: 'vaultShares';
+						docs: [
+							"share of vault owned by this depoistor. vault_shares / vault.total_shares is depositor's ownership of vault_equity"
+						];
 						type: 'u128';
 					},
 					{
 						name: 'vaultSharesBase';
-						type: 'u128';
+						docs: ['exponent for vault_shares decimal places'];
+						type: 'u32';
 					},
 					{
 						name: 'lastWithdrawRequestShares';
+						docs: ['requested vault shares for withdraw'];
 						type: 'u128';
 					},
 					{
 						name: 'lastWithdrawRequestValue';
+						docs: [
+							'requested value (in vault spot_market_index) of shares for withdraw'
+						];
 						type: 'u64';
 					},
 					{
 						name: 'lastWithdrawRequestTs';
+						docs: ['request ts of vault withdraw'];
 						type: 'i64';
 					},
 					{
 						name: 'lastValidTs';
+						docs: ['creation ts of vault depositor'];
 						type: 'i64';
 					},
 					{
 						name: 'costBasis';
+						docs: ['lifetime net deposits for the vault'];
 						type: 'i64';
 					}
 				];
@@ -379,18 +436,28 @@ export type DriftVaults = {
 					},
 					{
 						name: 'redeemPeriod';
+						docs: [
+							'the period (in seconds) that a vault depositor must wait after requesting a withdraw to complete withdraw'
+						];
 						type: 'i64';
 					},
 					{
 						name: 'sharesBase';
-						type: 'u128';
+						docs: [
+							'the base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)'
+						];
+						type: 'u32';
 					},
 					{
 						name: 'userShares';
+						docs: [
+							'the sum of all shares held by the users (vault depositors)'
+						];
 						type: 'u128';
 					},
 					{
 						name: 'totalShares';
+						docs: ['the sum of all shares (including vault authority)'];
 						type: 'u128';
 					}
 				];
@@ -414,6 +481,20 @@ export type DriftVaults = {
 					},
 					{
 						name: 'Withdraw';
+					}
+				];
+			};
+		},
+		{
+			name: 'WithdrawUnit';
+			type: {
+				kind: 'enum';
+				variants: [
+					{
+						name: 'Shares';
+					},
+					{
+						name: 'Token';
 					}
 				];
 			};
@@ -481,8 +562,33 @@ export type DriftVaults = {
 					index: false;
 				},
 				{
+					name: 'vaultSharesAfter';
+					type: 'u128';
+					index: false;
+				},
+				{
 					name: 'vaultAmountBefore';
 					type: 'u64';
+					index: false;
+				},
+				{
+					name: 'userVaultSharesBefore';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'totalVaultSharesBefore';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'userVaultSharesAfter';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'totalVaultSharesAfter';
+					type: 'u128';
 					index: false;
 				}
 			];
@@ -511,38 +617,38 @@ export type DriftVaults = {
 		},
 		{
 			code: 6004;
-			name: 'TryingToRemoveLiquidityTooFast';
-			msg: 'TryingToRemoveLiquidityTooFast';
+			name: 'CannotWithdrawBeforeRedeemPeriodEnd';
+			msg: 'CannotWithdrawBeforeRedeemPeriodEnd';
 		},
 		{
 			code: 6005;
-			name: 'InvalidIFUnstake';
-			msg: 'InvalidIFUnstake';
+			name: 'InvalidVaultWithdraw';
+			msg: 'InvalidVaultWithdraw';
 		},
 		{
 			code: 6006;
-			name: 'InvalidIFUnstakeSize';
-			msg: 'InvalidIFUnstakeSize';
-		},
-		{
-			code: 6007;
 			name: 'InvalidVaultDepositorWithdrawCancel';
 			msg: 'InvalidVaultDepositorWithdrawCancel';
 		},
 		{
-			code: 6008;
+			code: 6007;
 			name: 'InsufficientVaultShares';
 			msg: 'InsufficientVaultShares';
 		},
 		{
-			code: 6009;
+			code: 6008;
 			name: 'InvalidVaultWithdrawSize';
 			msg: 'InvalidVaultWithdrawSize';
 		},
 		{
-			code: 6010;
+			code: 6009;
 			name: 'InvalidVaultForNewDepositors';
 			msg: 'InvalidVaultForNewDepositors';
+		},
+		{
+			code: 6010;
+			name: 'VaultWithdrawRequestInProgress';
+			msg: 'VaultWithdrawRequestInProgress';
 		}
 	];
 };
@@ -674,7 +780,7 @@ export const IDL: DriftVaults = {
 			accounts: [
 				{
 					name: 'vault',
-					isMut: false,
+					isMut: true,
 					isSigner: false,
 				},
 				{
@@ -736,11 +842,57 @@ export const IDL: DriftVaults = {
 			],
 		},
 		{
-			name: 'withdraw',
+			name: 'requestWithdraw',
 			accounts: [
 				{
 					name: 'vault',
 					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'vaultDepositor',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'authority',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'vaultTokenAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUser',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftState',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [
+				{
+					name: 'amount',
+					type: 'u64',
+				},
+			],
+		},
+		{
+			name: 'withdraw',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
 					isSigner: false,
 				},
 				{
@@ -834,30 +986,41 @@ export const IDL: DriftVaults = {
 					},
 					{
 						name: 'vaultShares',
+						docs: [
+							"share of vault owned by this depoistor. vault_shares / vault.total_shares is depositor's ownership of vault_equity",
+						],
 						type: 'u128',
 					},
 					{
 						name: 'vaultSharesBase',
-						type: 'u128',
+						docs: ['exponent for vault_shares decimal places'],
+						type: 'u32',
 					},
 					{
 						name: 'lastWithdrawRequestShares',
+						docs: ['requested vault shares for withdraw'],
 						type: 'u128',
 					},
 					{
 						name: 'lastWithdrawRequestValue',
+						docs: [
+							'requested value (in vault spot_market_index) of shares for withdraw',
+						],
 						type: 'u64',
 					},
 					{
 						name: 'lastWithdrawRequestTs',
+						docs: ['request ts of vault withdraw'],
 						type: 'i64',
 					},
 					{
 						name: 'lastValidTs',
+						docs: ['creation ts of vault depositor'],
 						type: 'i64',
 					},
 					{
 						name: 'costBasis',
+						docs: ['lifetime net deposits for the vault'],
 						type: 'i64',
 					},
 				],
@@ -928,18 +1091,28 @@ export const IDL: DriftVaults = {
 					},
 					{
 						name: 'redeemPeriod',
+						docs: [
+							'the period (in seconds) that a vault depositor must wait after requesting a withdraw to complete withdraw',
+						],
 						type: 'i64',
 					},
 					{
 						name: 'sharesBase',
-						type: 'u128',
+						docs: [
+							'the base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)',
+						],
+						type: 'u32',
 					},
 					{
 						name: 'userShares',
+						docs: [
+							'the sum of all shares held by the users (vault depositors)',
+						],
 						type: 'u128',
 					},
 					{
 						name: 'totalShares',
+						docs: ['the sum of all shares (including vault authority)'],
 						type: 'u128',
 					},
 				],
@@ -963,6 +1136,20 @@ export const IDL: DriftVaults = {
 					},
 					{
 						name: 'Withdraw',
+					},
+				],
+			},
+		},
+		{
+			name: 'WithdrawUnit',
+			type: {
+				kind: 'enum',
+				variants: [
+					{
+						name: 'Shares',
+					},
+					{
+						name: 'Token',
 					},
 				],
 			},
@@ -1030,8 +1217,33 @@ export const IDL: DriftVaults = {
 					index: false,
 				},
 				{
+					name: 'vaultSharesAfter',
+					type: 'u128',
+					index: false,
+				},
+				{
 					name: 'vaultAmountBefore',
 					type: 'u64',
+					index: false,
+				},
+				{
+					name: 'userVaultSharesBefore',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'totalVaultSharesBefore',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'userVaultSharesAfter',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'totalVaultSharesAfter',
+					type: 'u128',
 					index: false,
 				},
 			],
@@ -1060,38 +1272,38 @@ export const IDL: DriftVaults = {
 		},
 		{
 			code: 6004,
-			name: 'TryingToRemoveLiquidityTooFast',
-			msg: 'TryingToRemoveLiquidityTooFast',
+			name: 'CannotWithdrawBeforeRedeemPeriodEnd',
+			msg: 'CannotWithdrawBeforeRedeemPeriodEnd',
 		},
 		{
 			code: 6005,
-			name: 'InvalidIFUnstake',
-			msg: 'InvalidIFUnstake',
+			name: 'InvalidVaultWithdraw',
+			msg: 'InvalidVaultWithdraw',
 		},
 		{
 			code: 6006,
-			name: 'InvalidIFUnstakeSize',
-			msg: 'InvalidIFUnstakeSize',
-		},
-		{
-			code: 6007,
 			name: 'InvalidVaultDepositorWithdrawCancel',
 			msg: 'InvalidVaultDepositorWithdrawCancel',
 		},
 		{
-			code: 6008,
+			code: 6007,
 			name: 'InsufficientVaultShares',
 			msg: 'InsufficientVaultShares',
 		},
 		{
-			code: 6009,
+			code: 6008,
 			name: 'InvalidVaultWithdrawSize',
 			msg: 'InvalidVaultWithdrawSize',
 		},
 		{
-			code: 6010,
+			code: 6009,
 			name: 'InvalidVaultForNewDepositors',
 			msg: 'InvalidVaultForNewDepositors',
+		},
+		{
+			code: 6010,
+			name: 'VaultWithdrawRequestInProgress',
+			msg: 'VaultWithdrawRequestInProgress',
 		},
 	],
 };
