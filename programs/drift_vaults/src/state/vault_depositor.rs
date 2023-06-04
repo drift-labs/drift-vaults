@@ -16,38 +16,6 @@ use drift::math::insurance::{if_shares_to_vault_amount, vault_amount_to_if_share
 use drift::math::casting::Cast;
 use drift::math::safe_math::SafeMath;
 
-pub fn calculate_vault_shares_lost(
-    vault_depositor: &VaultDepositor,
-    vault: &Vault,
-    vault_balance: u64,
-) -> Result<u128> {
-    let n_shares = vault_depositor.last_withdraw_request_shares;
-
-    let amount = if_shares_to_vault_amount(n_shares, vault.total_shares, vault_balance)?;
-
-    let vault_shares_lost = if amount > vault_depositor.last_withdraw_request_value {
-        let new_n_shares = vault_amount_to_if_shares(
-            vault_depositor.last_withdraw_request_value,
-            vault.total_shares - n_shares,
-            vault_balance - vault_depositor.last_withdraw_request_value,
-        )?;
-
-        validate!(
-            new_n_shares <= n_shares,
-            ErrorCode::InvalidVaultSharesDetected,
-            "Issue calculating delta if_shares after canceling request {} < {}",
-            new_n_shares,
-            n_shares
-        )?;
-
-        n_shares.safe_sub(new_n_shares)?
-    } else {
-        0
-    };
-
-    Ok(vault_shares_lost)
-}
-
 #[account(zero_copy)]
 #[derive(Eq, PartialEq, Debug)]
 #[repr(C)]
@@ -60,7 +28,7 @@ pub struct VaultDepositor {
     pub authority: Pubkey,
 
     vault_shares: u128,
-    pub vault_shares_base: u128, // exponent for vault_shares decimal places (for rebase)
+    pub vault_shares_base: u32, // exponent for vault_shares decimal places (for rebase)
 
     pub last_withdraw_request_shares: u128, // get zero as 0 when not in escrow
     pub last_withdraw_request_value: u64,
@@ -71,13 +39,13 @@ pub struct VaultDepositor {
 }
 
 impl Size for VaultDepositor {
-    const SIZE: usize = 176;
+    const SIZE: usize = 168 + 8;
 }
 
-// const_assert_eq!(
-//     VaultDepositor::SIZE,
-//     std::mem::size_of::<VaultDepositor>() + 8
-// );
+const_assert_eq!(
+    VaultDepositor::SIZE,
+    std::mem::size_of::<VaultDepositor>() + 8
+);
 
 impl VaultDepositor {
     fn validate_base(&self, vault: &Vault) -> Result<()> {
@@ -120,7 +88,13 @@ impl VaultDepositor {
         Ok(())
     }
 
-    pub fn apply_rebase(self: &mut VaultDepositor, vault: &mut Vault) -> Result<()> {
+    pub fn apply_rebase(
+        self: &mut VaultDepositor,
+        vault: &mut Vault,
+        vault_equity: u64,
+    ) -> Result<()> {
+        vault.apply_rebase(vault_equity)?;
+
         if vault.shares_base != self.vault_shares_base {
             validate!(
                 vault.shares_base > self.vault_shares_base,
@@ -154,27 +128,58 @@ impl VaultDepositor {
         Ok(())
     }
 
+    pub fn calculate_vault_shares_lost(
+        self: &VaultDepositor,
+        vault: &Vault,
+        vault_balance: u64,
+    ) -> Result<u128> {
+        let n_shares = self.last_withdraw_request_shares;
+
+        let amount = if_shares_to_vault_amount(n_shares, vault.total_shares, vault_balance)?;
+
+        let vault_shares_lost = if amount > self.last_withdraw_request_value {
+            let new_n_shares = vault_amount_to_if_shares(
+                self.last_withdraw_request_value,
+                vault.total_shares - n_shares,
+                vault_balance - self.last_withdraw_request_value,
+            )?;
+
+            validate!(
+                new_n_shares <= n_shares,
+                ErrorCode::InvalidVaultSharesDetected,
+                "Issue calculating delta if_shares after canceling request {} < {}",
+                new_n_shares,
+                n_shares
+            )?;
+
+            n_shares.safe_sub(new_n_shares)?
+        } else {
+            0
+        };
+
+        Ok(vault_shares_lost)
+    }
+
     pub fn deposit(
         self: &mut VaultDepositor,
         amount: u64,
-        vault_amount: u64,
+        vault_equity: u64,
         vault: &mut Vault,
         now: i64,
     ) -> Result<()> {
         validate!(
-            !(vault_amount == 0 && vault.total_shares != 0),
+            !(vault_equity == 0 && vault.total_shares != 0),
             ErrorCode::InvalidVaultForNewDepositors,
-            "Vault balance should be non-zero for new stakers to enter"
+            "Vault balance should be non-zero for new depositors to enter"
         )?;
 
-        vault.apply_rebase(vault_amount)?;
-        self.apply_rebase(vault)?;
+        self.apply_rebase(vault, vault_equity)?;
 
         let vault_shares_before = self.checked_vault_shares(vault)?;
         let total_vault_shares_before = vault.total_shares;
         let user_vault_shares_before = vault.user_shares;
 
-        let n_shares = vault_amount_to_if_shares(amount, vault.total_shares, vault_amount)?;
+        let n_shares = vault_amount_to_if_shares(amount, vault.total_shares, vault_equity)?;
 
         // reset cost basis if no shares
         self.cost_basis = if vault_shares_before == 0 {
@@ -194,10 +199,10 @@ impl VaultDepositor {
             ts: now,
             vault: vault.pubkey,
             user_authority: self.authority,
-            action: VaultDepositorAction::Withdraw,
+            action: VaultDepositorAction::Deposit,
             amount,
             spot_market_index: vault.spot_market_index,
-            vault_amount_before: vault_amount,
+            vault_amount_before: vault_equity,
             vault_shares_before,
             user_vault_shares_before,
             total_vault_shares_before,
@@ -212,7 +217,7 @@ impl VaultDepositor {
     pub fn request_withdraw(
         self: &mut VaultDepositor,
         n_shares: u128,
-        vault_amount: u64,
+        vault_equity: u64,
         vault: &mut Vault,
         now: i64,
     ) -> Result<u64> {
@@ -228,8 +233,7 @@ impl VaultDepositor {
         )?;
 
         self.last_withdraw_request_shares = n_shares;
-        vault.apply_rebase(vault_amount)?;
-        self.apply_rebase(vault)?;
+        self.apply_rebase(vault, vault_equity)?;
 
         let vault_shares_before: u128 = self.checked_vault_shares(vault)?;
         let total_vault_shares_before = vault.total_shares;
@@ -252,13 +256,13 @@ impl VaultDepositor {
         self.last_withdraw_request_value = if_shares_to_vault_amount(
             self.last_withdraw_request_shares,
             vault.total_shares,
-            vault_amount,
+            vault_equity,
         )?
-        .min(vault_amount.saturating_sub(1));
+        .min(vault_equity.saturating_sub(1));
 
         validate!(
             self.last_withdraw_request_value == 0
-                || self.last_withdraw_request_value < vault_amount,
+                || self.last_withdraw_request_value < vault_equity,
             ErrorCode::InvalidVaultWithdrawSize,
             "Requested withdraw value is not below Insurance Fund balance"
         )?;
@@ -272,7 +276,7 @@ impl VaultDepositor {
             action: VaultDepositorAction::WithdrawRequest,
             amount: self.last_withdraw_request_value,
             spot_market_index: vault.spot_market_index,
-            vault_amount_before: vault_amount,
+            vault_amount_before: vault_equity,
             vault_shares_before,
             user_vault_shares_before,
             total_vault_shares_before,
@@ -288,12 +292,11 @@ impl VaultDepositor {
 
     pub fn cancel_withdraw_request(
         self: &mut VaultDepositor,
-        vault_amount: u64,
+        vault_equity: u64,
         vault: &mut Vault,
         now: i64,
     ) -> Result<()> {
-        vault.apply_rebase(vault_amount)?;
-        self.apply_rebase(vault)?;
+        self.apply_rebase(vault, vault_equity)?;
 
         let vault_shares_before: u128 = self.checked_vault_shares(vault)?;
         let total_vault_shares_before = vault.total_shares;
@@ -305,7 +308,7 @@ impl VaultDepositor {
             "vault depositor shares_base != vault shares_base"
         )?;
 
-        let vault_shares_lost = calculate_vault_shares_lost(self, vault, vault_amount)?;
+        let vault_shares_lost = self.calculate_vault_shares_lost(vault, vault_equity)?;
         self.decrease_vault_shares(vault_shares_lost, vault)?;
 
         vault.total_shares = vault.total_shares.safe_sub(vault_shares_lost)?;
@@ -321,7 +324,7 @@ impl VaultDepositor {
             action: VaultDepositorAction::CancelWithdrawRequest,
             amount: 0,
             spot_market_index: vault.spot_market_index,
-            vault_amount_before: vault_amount,
+            vault_amount_before: vault_equity,
             vault_shares_before,
             user_vault_shares_before,
             total_vault_shares_before,
@@ -335,7 +338,7 @@ impl VaultDepositor {
 
     pub fn withdraw(
         self: &mut VaultDepositor,
-        vault_amount: u64,
+        vault_equity: u64,
         user_authority: Pubkey,
         vault: &mut Vault,
         now: i64,
@@ -347,8 +350,7 @@ impl VaultDepositor {
             ErrorCode::CannotWithdrawBeforeRedeemPeriodEnd
         )?;
 
-        vault.apply_rebase(vault_amount)?;
-        self.apply_rebase(vault)?;
+        self.apply_rebase(vault, vault_equity)?;
 
         let vault_shares_before: u128 = self.checked_vault_shares(vault)?;
         let total_vault_shares_before = vault.total_shares;
@@ -368,9 +370,9 @@ impl VaultDepositor {
             ErrorCode::InsufficientVaultShares
         )?;
 
-        let amount = if_shares_to_vault_amount(n_shares, vault.total_shares, vault_amount)?;
+        let amount = if_shares_to_vault_amount(n_shares, vault.total_shares, vault_equity)?;
 
-        let _vault_shares_lost = calculate_vault_shares_lost(self, vault, vault_amount)?;
+        let _vault_shares_lost = self.calculate_vault_shares_lost(vault, vault_equity)?;
 
         let withdraw_amount = amount.min(self.last_withdraw_request_value);
 
@@ -396,7 +398,7 @@ impl VaultDepositor {
             action: VaultDepositorAction::Withdraw,
             amount: withdraw_amount,
             spot_market_index: vault.spot_market_index,
-            vault_amount_before: vault_amount,
+            vault_amount_before: vault_equity,
             vault_shares_before,
             user_vault_shares_before,
             total_vault_shares_before,

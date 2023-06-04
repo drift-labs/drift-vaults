@@ -18,13 +18,13 @@ use drift::state::user::User;
 pub fn deposit<'info>(ctx: Context<'_, '_, '_, 'info, Deposit<'info>>, amount: u64) -> Result<()> {
     let clock = &Clock::get()?;
 
-    let vault = &mut ctx.accounts.vault.load_mut()?;
-    let vault_depositor = &mut ctx.accounts.vault_depositor.load_mut()?;
+    let mut vault = ctx.accounts.vault.load_mut()?;
+    let mut vault_depositor = ctx.accounts.vault_depositor.load_mut()?;
 
     // todo, use calculate_net_usd_value in margin.rs
     let (net_usd_value, all_oracles_valid) = (100_u64, true);
     validate!(all_oracles_valid, ErrorCode::Default)?;
-    vault_depositor.deposit(amount, net_usd_value, vault, clock.unix_timestamp)?;
+    vault_depositor.deposit(amount, net_usd_value, &mut vault, clock.unix_timestamp)?;
 
     let name = vault.name;
     let bump = vault.bump;

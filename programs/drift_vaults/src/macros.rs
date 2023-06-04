@@ -1,5 +1,3 @@
-use anchor_lang::prelude::*;
-
 #[macro_export]
 macro_rules! validate {
         ($assert:expr, $err:expr) => {{

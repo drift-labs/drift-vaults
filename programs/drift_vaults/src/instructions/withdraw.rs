@@ -20,8 +20,8 @@ pub fn withdraw<'info>(
     amount: u64,
 ) -> Result<()> {
     let clock = &Clock::get()?;
-    let vault = &mut ctx.accounts.vault.load_mut()?;
-    let vault_depositor = &mut ctx.accounts.vault_depositor.load_mut()?;
+    let mut vault = ctx.accounts.vault.load_mut()?;
+    let mut vault_depositor = ctx.accounts.vault_depositor.load_mut()?;
 
     // todo, use calculate_net_usd_value in margin.rs
     let (net_usd_value, all_oracles_valid) = (100_u64, true);
@@ -29,7 +29,7 @@ pub fn withdraw<'info>(
     vault_depositor.withdraw(
         net_usd_value,
         *ctx.accounts.authority.key,
-        vault,
+        &mut vault,
         clock.unix_timestamp,
     )?;
 

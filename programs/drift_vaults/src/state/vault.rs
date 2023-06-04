@@ -26,10 +26,13 @@ pub struct Vault {
     /// The bump for the vault pda
     pub bump: u8,
     pub padding: [u8; 1],
-
+    /// the period (in seconds) that a vault depositor must wait after requesting a withdraw to complete withdraw
     pub redeem_period: i64,
-    pub shares_base: u128,
+    /// the base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)  
+    pub shares_base: u32,
+    /// the sum of all shares held by the users (vault depositors)
     pub user_shares: u128,
+    /// the sum of all shares (including vault authority)
     pub total_shares: u128,
 }
 
@@ -40,10 +43,10 @@ impl Vault {
 }
 
 impl Size for Vault {
-    const SIZE: usize = 228;
+    const SIZE: usize = 248 + 8;
 }
 
-// const_assert_eq!(Vault::SIZE, std::mem::size_of::<Vault>() + 8);
+const_assert_eq!(Vault::SIZE, std::mem::size_of::<Vault>() + 8);
 
 impl Vault {
     pub fn apply_rebase(&mut self, vault_balance: u64) -> Result<()> {
@@ -53,7 +56,7 @@ impl Vault {
 
             self.total_shares = self.total_shares.safe_div(rebase_divisor)?;
             self.user_shares = self.user_shares.safe_div(rebase_divisor)?;
-            self.shares_base = self.shares_base.safe_add(expo_diff.cast::<u128>()?)?;
+            self.shares_base = self.shares_base.safe_add(expo_diff)?;
 
             msg!("rebasing vault: expo_diff={}", expo_diff);
         }

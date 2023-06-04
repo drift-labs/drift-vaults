@@ -10,7 +10,11 @@ import {
 } from './testHelpers';
 import { Keypair } from '@solana/web3.js';
 import { assert } from 'chai';
-import { VaultClient, getVaultAddressSync, getVaultDepositorAddressSync } from '../ts/sdk/src';
+import {
+	VaultClient,
+	getVaultAddressSync,
+	getVaultDepositorAddressSync,
+} from '../ts/sdk/src';
 import { encodeName } from '../ts/sdk/src/name';
 
 describe('driftVaults', () => {

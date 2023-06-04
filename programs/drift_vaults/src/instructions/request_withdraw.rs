@@ -5,13 +5,12 @@ use crate::error::ErrorCode;
 use crate::validate;
 use crate::{Vault, VaultDepositor};
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Token, TokenAccount, Transfer};
+use anchor_spl::token::TokenAccount;
 use drift::instructions::optional_accounts::{load_maps, AccountMaps};
 use drift::math::insurance::vault_amount_to_if_shares;
 use drift::math::margin::{
     calculate_margin_requirement_and_total_collateral, MarginRequirementType,
 };
-use drift::program::Drift;
 use drift::state::perp_market_map::{get_writable_perp_market_set, MarketSet};
 use drift::state::user::User;
 
@@ -21,7 +20,7 @@ pub fn request_withdraw<'info>(
 ) -> Result<()> {
     let clock = &Clock::get()?;
     let vault = &mut ctx.accounts.vault.load_mut()?;
-    let vault_depositor = &mut ctx.accounts.vault_depositor.load_mut()?;
+    let mut vault_depositor = ctx.accounts.vault_depositor.load_mut()?;
 
     // todo, use calculate_net_usd_value in margin.rs
     let (net_usd_value, all_oracles_valid) = (100_u64, true);
@@ -101,19 +100,4 @@ pub struct RequestWithdraw<'info> {
     pub drift_user: AccountLoader<'info, User>,
     /// CHECK: checked in drift cpi
     pub drift_state: AccountInfo<'info>,
-    #[account(
-        mut,
-        token::mint = vault_token_account.mint
-    )]
-    pub drift_spot_market_vault: Box<Account<'info, TokenAccount>>,
-    /// CHECK: checked in drift cpi
-    pub drift_signer: AccountInfo<'info>,
-    #[account(
-        mut,
-        token::authority = authority,
-        token::mint = vault_token_account.mint
-    )]
-    pub user_token_account: Box<Account<'info, TokenAccount>>,
-    pub drift_program: Program<'info, Drift>,
-    pub token_program: Program<'info, Token>,
 }
