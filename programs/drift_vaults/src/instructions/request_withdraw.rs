@@ -3,7 +3,7 @@ use crate::constraints::{
 };
 use crate::error::ErrorCode;
 use crate::validate;
-use crate::{Vault, VaultDepositor};
+use crate::{Vault, VaultDepositor, WithdrawUnit};
 use anchor_lang::prelude::*;
 use anchor_spl::token::TokenAccount;
 use drift::instructions::optional_accounts::{load_maps, AccountMaps};
@@ -28,7 +28,13 @@ pub fn request_withdraw<'info>(
 
     let n_shares: u128 = vault_amount_to_if_shares(amount, vault.total_shares, net_usd_value)?;
 
-    vault_depositor.request_withdraw(n_shares, net_usd_value, vault, clock.unix_timestamp)?;
+    vault_depositor.request_withdraw(
+        n_shares,
+        WithdrawUnit::Shares,
+        net_usd_value,
+        vault,
+        clock.unix_timestamp,
+    )?;
 
     let spot_market_index = vault.spot_market_index;
     let remaining_accounts_iter = &mut ctx.remaining_accounts.iter().peekable();

@@ -16,6 +16,12 @@ use drift::math::insurance::{if_shares_to_vault_amount, vault_amount_to_if_share
 use drift::math::casting::Cast;
 use drift::math::safe_math::SafeMath;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum WithdrawUnit {
+    Shares,
+    Token,
+}
+
 #[account(zero_copy)]
 #[derive(Eq, PartialEq, Debug)]
 #[repr(C)]
@@ -220,11 +226,31 @@ impl VaultDepositor {
 
     pub fn request_withdraw(
         self: &mut VaultDepositor,
-        n_shares: u128,
+        withdraw_amount: u128,
+        withdraw_unit: WithdrawUnit,
         vault_equity: u64,
         vault: &mut Vault,
         now: i64,
-    ) -> Result<u64> {
+    ) -> Result<()> {
+        let (n_tokens, n_shares) = match withdraw_unit {
+            WithdrawUnit::Token => {
+                let n_tokens: u64 = withdraw_amount.cast()?;
+                let n_shares: u128 =
+                    vault_amount_to_if_shares(n_tokens, vault.total_shares, vault_equity)?;
+                (n_tokens, n_shares)
+            }
+            WithdrawUnit::Shares => {
+                let n_shares: u128 = withdraw_amount;
+                let n_tokens: u64 = if_shares_to_vault_amount(
+                    self.last_withdraw_request_shares,
+                    vault.total_shares,
+                    vault_equity,
+                )?
+                .min(vault_equity.saturating_sub(1));
+                (n_tokens, n_shares)
+            }
+        };
+
         validate!(
             n_shares > 0,
             ErrorCode::InvalidVaultWithdrawSize,
@@ -257,18 +283,15 @@ impl VaultDepositor {
             "vault depositor shares_base != vault shares_base"
         )?;
 
-        self.last_withdraw_request_value = if_shares_to_vault_amount(
-            self.last_withdraw_request_shares,
-            vault.total_shares,
-            vault_equity,
-        )?
-        .min(vault_equity.saturating_sub(1));
+        self.last_withdraw_request_value = n_tokens;
 
         validate!(
             self.last_withdraw_request_value == 0
                 || self.last_withdraw_request_value < vault_equity,
             ErrorCode::InvalidVaultWithdrawSize,
-            "Requested withdraw value is not below Insurance Fund balance"
+            "Requested withdraw value {} is not below vault_equity {}",
+            self.last_withdraw_request_value,
+            vault_equity
         )?;
 
         let vault_shares_after = self.checked_vault_shares(vault)?;
@@ -291,7 +314,7 @@ impl VaultDepositor {
 
         self.last_withdraw_request_ts = now;
 
-        Ok(self.last_withdraw_request_value)
+        Ok(())
     }
 
     pub fn cancel_withdraw_request(
