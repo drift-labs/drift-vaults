@@ -28,13 +28,7 @@ pub fn request_withdraw<'info>(
 
     let n_shares: u128 = vault_amount_to_if_shares(amount, vault.total_shares, net_usd_value)?;
 
-    vault_depositor.request_withdraw(
-        n_shares,
-        net_usd_value,
-        // *ctx.accounts.authority.key,
-        vault,
-        clock.unix_timestamp,
-    )?;
+    vault_depositor.request_withdraw(n_shares, net_usd_value, vault, clock.unix_timestamp)?;
 
     let spot_market_index = vault.spot_market_index;
     let remaining_accounts_iter = &mut ctx.remaining_accounts.iter().peekable();

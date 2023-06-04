@@ -26,15 +26,19 @@ pub struct VaultDepositor {
     pub pubkey: Pubkey,
     /// The authority is the address w permission to deposit/withdraw
     pub authority: Pubkey,
-
+    /// share of vault owned by this depoistor. vault_shares / vault.total_shares is depositor's ownership of vault_equity
     vault_shares: u128,
-    pub vault_shares_base: u32, // exponent for vault_shares decimal places (for rebase)
-
-    pub last_withdraw_request_shares: u128, // get zero as 0 when not in escrow
+    /// exponent for vault_shares decimal places
+    pub vault_shares_base: u32,
+    /// requested vault shares for withdraw
+    pub last_withdraw_request_shares: u128,
+    /// requested value (in vault spot_market_index) of shares for withdraw
     pub last_withdraw_request_value: u64,
+    /// request ts of vault withdraw
     pub last_withdraw_request_ts: i64,
+    /// creation ts of vault depositor
     pub last_valid_ts: i64,
-
+    /// lifetime net deposits for the vault
     pub cost_basis: i64,
 }
 
