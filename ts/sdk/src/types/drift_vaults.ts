@@ -690,26 +690,21 @@ export type DriftVaults = {
 		},
 		{
 			code: 6006;
-			name: 'InvalidVaultDepositorWithdrawCancel';
-			msg: 'InvalidVaultDepositorWithdrawCancel';
-		},
-		{
-			code: 6007;
 			name: 'InsufficientVaultShares';
 			msg: 'InsufficientVaultShares';
 		},
 		{
-			code: 6008;
+			code: 6007;
 			name: 'InvalidVaultWithdrawSize';
 			msg: 'InvalidVaultWithdrawSize';
 		},
 		{
-			code: 6009;
+			code: 6008;
 			name: 'InvalidVaultForNewDepositors';
 			msg: 'InvalidVaultForNewDepositors';
 		},
 		{
-			code: 6010;
+			code: 6009;
 			name: 'VaultWithdrawRequestInProgress';
 			msg: 'VaultWithdrawRequestInProgress';
 		}
@@ -1408,26 +1403,21 @@ export const IDL: DriftVaults = {
 		},
 		{
 			code: 6006,
-			name: 'InvalidVaultDepositorWithdrawCancel',
-			msg: 'InvalidVaultDepositorWithdrawCancel',
-		},
-		{
-			code: 6007,
 			name: 'InsufficientVaultShares',
 			msg: 'InsufficientVaultShares',
 		},
 		{
-			code: 6008,
+			code: 6007,
 			name: 'InvalidVaultWithdrawSize',
 			msg: 'InvalidVaultWithdrawSize',
 		},
 		{
-			code: 6009,
+			code: 6008,
 			name: 'InvalidVaultForNewDepositors',
 			msg: 'InvalidVaultForNewDepositors',
 		},
 		{
-			code: 6010,
+			code: 6009,
 			name: 'VaultWithdrawRequestInProgress',
 			msg: 'VaultWithdrawRequestInProgress',
 		},

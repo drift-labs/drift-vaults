@@ -15,8 +15,6 @@ pub enum ErrorCode {
     CannotWithdrawBeforeRedeemPeriodEnd,
     #[msg("InvalidVaultWithdraw")]
     InvalidVaultWithdraw,
-    #[msg("InvalidVaultDepositorWithdrawCancel")]
-    InvalidVaultDepositorWithdrawCancel,
     #[msg("InsufficientVaultShares")]
     InsufficientVaultShares,
     #[msg("InvalidVaultWithdrawSize")]
