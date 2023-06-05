@@ -6,7 +6,7 @@ use drift::math::safe_math::SafeMath;
 use static_assertions::const_assert_eq;
 
 #[account(zero_copy)]
-#[derive(Eq, PartialEq, Debug)]
+#[derive(Default, Eq, PartialEq, Debug)]
 #[repr(C)]
 pub struct Vault {
     /// The name of the vault. Vault pubkey is derived from this name.
@@ -34,6 +34,10 @@ pub struct Vault {
     pub user_shares: u128,
     /// the sum of all shares (including vault authority)
     pub total_shares: u128,
+    /// percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION
+    pub profit_share: u32,
+    /// vault admin only collect incentive fees during periods when returns are higher than this amount: PERCENTAGE_PRECISION
+    pub hurdle_rate: u32, // todo: not implemented yet
 }
 
 impl Vault {
@@ -43,7 +47,7 @@ impl Vault {
 }
 
 impl Size for Vault {
-    const SIZE: usize = 248 + 8;
+    const SIZE: usize = 256 + 8;
 }
 
 const_assert_eq!(Vault::SIZE, std::mem::size_of::<Vault>() + 8);

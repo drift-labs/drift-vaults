@@ -112,6 +112,16 @@ describe('driftVaults', () => {
 			writableSpotMarketIndexes: [0],
 		});
 
+		const vaultDepositorAccount = await program.account.vaultDepositor.fetch(
+			vaultDepositor
+		);
+		assert(vaultDepositorAccount.lastWithdrawRequestValue.eq(new BN(0)));
+		console.log(
+			'vaultDepositorAccount.vaultShares:',
+			vaultDepositorAccount.vaultShares.toString()
+		);
+		assert(vaultDepositorAccount.vaultShares.eq(new BN(1_000_000_000)));
+
 		// request withdraw
 		console.log('request withdraw');
 		const requestTxSig = await program.methods
@@ -133,25 +143,40 @@ describe('driftVaults', () => {
 
 		await printTxLogs(provider.connection, requestTxSig);
 
+		const vaultDepositorAccountAfter =
+			await program.account.vaultDepositor.fetch(vaultDepositor);
+		assert(vaultDepositorAccountAfter.vaultShares.eq(new BN(1_000_000_000)));
+		console.log(
+			'vaultDepositorAccountAfter.lastWithdrawRequestShares:',
+			vaultDepositorAccountAfter.lastWithdrawRequestShares.toString()
+		);
+		assert(!vaultDepositorAccountAfter.lastWithdrawRequestShares.eq(new BN(0)));
+		assert(!vaultDepositorAccountAfter.lastWithdrawRequestValue.eq(new BN(0)));
+
 		// do withdraw
 		console.log('do withdraw');
-		const txSig = await program.methods
-			.withdraw(usdcAmount)
-			.accounts({
-				userTokenAccount: userUSDCAccount.publicKey,
-				vault,
-				vaultDepositor,
-				vaultTokenAccount: vaultAccount.tokenAccount,
-				driftUser: vaultAccount.user,
-				driftUserStats: vaultAccount.userStats,
-				driftState: await adminClient.getStatePublicKey(),
-				driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
-				driftSigner: adminClient.getStateAccount().signer,
-				driftProgram: adminClient.program.programId,
-			})
-			.remainingAccounts(remainingAccounts)
-			.rpc();
+		try {
+			const txSig = await program.methods
+				.withdraw(usdcAmount)
+				.accounts({
+					userTokenAccount: userUSDCAccount.publicKey,
+					vault,
+					vaultDepositor,
+					vaultTokenAccount: vaultAccount.tokenAccount,
+					driftUser: vaultAccount.user,
+					driftUserStats: vaultAccount.userStats,
+					driftState: await adminClient.getStatePublicKey(),
+					driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
+					driftSigner: adminClient.getStateAccount().signer,
+					driftProgram: adminClient.program.programId,
+				})
+				.remainingAccounts(remainingAccounts)
+				.rpc();
 
-		await printTxLogs(provider.connection, txSig);
+			await printTxLogs(provider.connection, txSig);
+		} catch (e) {
+			console.error(e);
+			assert(false);
+		}
 	});
 });

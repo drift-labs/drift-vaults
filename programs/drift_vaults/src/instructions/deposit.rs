@@ -43,6 +43,8 @@ pub fn deposit<'info>(ctx: Context<'_, '_, '_, 'info, Deposit<'info>>, amount: u
         calculate_net_usd_value(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
     validate!(all_oracles_valid, ErrorCode::Default)?;
+    validate!(net_usd_value >= 0, ErrorCode::Default)?;
+
     let non_negative_net_usd_value = net_usd_value.max(0).cast()?;
     msg!(
         "net_usd_value: {}, non_negative_net_usd_value:{}",

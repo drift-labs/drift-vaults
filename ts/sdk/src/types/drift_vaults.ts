@@ -337,11 +337,6 @@ export type DriftVaults = {
 						type: 'u128';
 					},
 					{
-						name: 'vaultSharesBase';
-						docs: ['exponent for vault_shares decimal places'];
-						type: 'u32';
-					},
-					{
 						name: 'lastWithdrawRequestShares';
 						docs: ['requested vault shares for withdraw'];
 						type: 'u128';
@@ -367,6 +362,18 @@ export type DriftVaults = {
 						name: 'costBasis';
 						docs: ['lifetime net deposits for the vault'];
 						type: 'i64';
+					},
+					{
+						name: 'cumulativeProfitShareAmount';
+						docs: [
+							'token amount of gains depositor has paid performance fees on'
+						];
+						type: 'i64';
+					},
+					{
+						name: 'vaultSharesBase';
+						docs: ['exponent for vault_shares decimal places'];
+						type: 'u32';
 					}
 				];
 			};
@@ -459,6 +466,20 @@ export type DriftVaults = {
 						name: 'totalShares';
 						docs: ['the sum of all shares (including vault authority)'];
 						type: 'u128';
+					},
+					{
+						name: 'profitShare';
+						docs: [
+							"percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION"
+						];
+						type: 'u32';
+					},
+					{
+						name: 'hurdleRate';
+						docs: [
+							'vault admin only collect incentive fees during periods when returns are higher than this amount: PERCENTAGE_PRECISION'
+						];
+						type: 'u32';
 					}
 				];
 			};
@@ -535,7 +556,7 @@ export type DriftVaults = {
 					index: false;
 				},
 				{
-					name: 'userAuthority';
+					name: 'depositorAuthority';
 					type: 'publicKey';
 					index: false;
 				},
@@ -992,11 +1013,6 @@ export const IDL: DriftVaults = {
 						type: 'u128',
 					},
 					{
-						name: 'vaultSharesBase',
-						docs: ['exponent for vault_shares decimal places'],
-						type: 'u32',
-					},
-					{
 						name: 'lastWithdrawRequestShares',
 						docs: ['requested vault shares for withdraw'],
 						type: 'u128',
@@ -1022,6 +1038,18 @@ export const IDL: DriftVaults = {
 						name: 'costBasis',
 						docs: ['lifetime net deposits for the vault'],
 						type: 'i64',
+					},
+					{
+						name: 'cumulativeProfitShareAmount',
+						docs: [
+							'token amount of gains depositor has paid performance fees on',
+						],
+						type: 'i64',
+					},
+					{
+						name: 'vaultSharesBase',
+						docs: ['exponent for vault_shares decimal places'],
+						type: 'u32',
 					},
 				],
 			},
@@ -1115,6 +1143,20 @@ export const IDL: DriftVaults = {
 						docs: ['the sum of all shares (including vault authority)'],
 						type: 'u128',
 					},
+					{
+						name: 'profitShare',
+						docs: [
+							"percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION",
+						],
+						type: 'u32',
+					},
+					{
+						name: 'hurdleRate',
+						docs: [
+							'vault admin only collect incentive fees during periods when returns are higher than this amount: PERCENTAGE_PRECISION',
+						],
+						type: 'u32',
+					},
 				],
 			},
 		},
@@ -1190,7 +1232,7 @@ export const IDL: DriftVaults = {
 					index: false,
 				},
 				{
-					name: 'userAuthority',
+					name: 'depositorAuthority',
 					type: 'publicKey',
 					index: false,
 				},

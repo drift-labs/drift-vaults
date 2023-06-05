@@ -44,6 +44,7 @@ pub fn withdraw<'info>(
     let (net_usd_value, all_oracles_valid) =
         calculate_net_usd_value(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
     validate!(all_oracles_valid, ErrorCode::Default)?;
+    validate!(net_usd_value >= 0, ErrorCode::Default)?;
 
     let non_negative_net_usd_value = net_usd_value.max(0).cast()?;
 
@@ -53,12 +54,10 @@ pub fn withdraw<'info>(
         non_negative_net_usd_value
     );
 
-    vault_depositor.withdraw(
-        non_negative_net_usd_value,
-        *ctx.accounts.authority.key,
-        &mut vault,
-        clock.unix_timestamp,
-    )?;
+    let user_withdraw_amount =
+        vault_depositor.withdraw(non_negative_net_usd_value, &mut vault, clock.unix_timestamp)?;
+
+    msg!("user_withdraw_amount: {}", user_withdraw_amount,);
 
     let name = vault.name;
     let bump = vault.bump;
@@ -86,7 +85,7 @@ pub fn withdraw<'info>(
     };
     let cpi_context = CpiContext::new_with_signer(cpi_program, cpi_accounts, signers)
         .with_remaining_accounts(ctx.remaining_accounts.into());
-    drift::cpi::withdraw(cpi_context, spot_market_index, amount, false)?;
+    drift::cpi::withdraw(cpi_context, spot_market_index, user_withdraw_amount, false)?;
 
     let cpi_program = ctx.accounts.token_program.to_account_info().clone();
     let cpi_accounts = Transfer {
