@@ -132,6 +132,7 @@ mod vault_depositor {
         assert_eq!(vault.user_shares, 0);
         assert_eq!(vault.total_shares, 105000000);
         assert_eq!(withdraw_amount, amount * 2 - amount * 2 / 20);
+        assert_eq!(vd.cumulative_profit_share_amount, 100000000); // $100
 
         vault_equity -= withdraw_amount;
 
@@ -140,5 +141,26 @@ mod vault_depositor {
             if_shares_to_vault_amount(admin_owned_shares, vault.total_shares, vault_equity)
                 .unwrap();
         assert_eq!(admin_owned_amount, 210000000); // $210
+
+        let admin_withdraw = vault
+            .admin_withdraw(
+                10 * QUOTE_PRECISION,
+                WithdrawUnit::Token,
+                vault_equity,
+                now + 100,
+            )
+            .unwrap();
+        assert_eq!(admin_withdraw, 10000000);
+        assert_eq!(vault.total_shares, 100000000);
+        vault_equity -= admin_withdraw;
+
+        let admin_withdraw = vault
+            .admin_withdraw(200000000, WithdrawUnit::Token, vault_equity, now + 100)
+            .unwrap();
+        assert_eq!(admin_withdraw, 200000000);
+        assert_eq!(vault.total_shares, 0);
+        vault_equity -= admin_withdraw;
+
+        assert_eq!(vault_equity, 0);
     }
 }
