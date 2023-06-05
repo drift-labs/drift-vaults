@@ -124,8 +124,12 @@ describe('driftVaults', () => {
 
 		// request withdraw
 		console.log('request withdraw');
+		class WithdrawUnit {
+			static readonly SHARES = { shares: {} };
+			static readonly TOKEN = { token: {} };
+		}
 		const requestTxSig = await program.methods
-			.requestWithdraw(usdcAmount)
+			.requestWithdraw(usdcAmount, WithdrawUnit.TOKEN)
 			.accounts({
 				// userTokenAccount: userUSDCAccount.publicKey,
 				vault,

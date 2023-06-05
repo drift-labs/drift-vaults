@@ -1,5 +1,6 @@
+#[cfg(test)]
 mod vault_depositor {
-    use crate::{Size, Vault, VaultDepositor, WithdrawUnit};
+    use crate::{Vault, VaultDepositor, WithdrawUnit};
     use anchor_lang::prelude::Pubkey;
     use drift::math::casting::Cast;
     use drift::math::constants::{QUOTE_PRECISION, QUOTE_PRECISION_U64};

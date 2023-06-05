@@ -229,6 +229,12 @@ export type DriftVaults = {
 				{
 					name: 'amount';
 					type: 'u64';
+				},
+				{
+					name: 'withdrawUnit';
+					type: {
+						defined: 'WithdrawUnit';
+					};
 				}
 			];
 		},
@@ -536,7 +542,7 @@ export type DriftVaults = {
 					index: false;
 				},
 				{
-					name: 'vaultAmountBefore';
+					name: 'vaultEquityBefore';
 					type: 'u64';
 					index: false;
 				}
@@ -588,7 +594,7 @@ export type DriftVaults = {
 					index: false;
 				},
 				{
-					name: 'vaultAmountBefore';
+					name: 'vaultEquityBefore';
 					type: 'u64';
 					index: false;
 				},
@@ -906,6 +912,12 @@ export const IDL: DriftVaults = {
 					name: 'amount',
 					type: 'u64',
 				},
+				{
+					name: 'withdrawUnit',
+					type: {
+						defined: 'WithdrawUnit',
+					},
+				},
 			],
 		},
 		{
@@ -1212,7 +1224,7 @@ export const IDL: DriftVaults = {
 					index: false,
 				},
 				{
-					name: 'vaultAmountBefore',
+					name: 'vaultEquityBefore',
 					type: 'u64',
 					index: false,
 				},
@@ -1264,7 +1276,7 @@ export const IDL: DriftVaults = {
 					index: false,
 				},
 				{
-					name: 'vaultAmountBefore',
+					name: 'vaultEquityBefore',
 					type: 'u64',
 					index: false,
 				},

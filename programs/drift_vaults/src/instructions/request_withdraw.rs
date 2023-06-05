@@ -19,6 +19,7 @@ use drift::state::user::User;
 pub fn request_withdraw<'info>(
     ctx: Context<'_, '_, '_, 'info, RequestWithdraw<'info>>,
     amount: u64,
+    withdraw_unit: WithdrawUnit,
 ) -> Result<()> {
     let clock = &Clock::get()?;
     let vault = &mut ctx.accounts.vault.load_mut()?;
@@ -53,7 +54,7 @@ pub fn request_withdraw<'info>(
 
     vault_depositor.request_withdraw(
         n_shares,
-        WithdrawUnit::Shares,
+        withdraw_unit,
         non_negative_net_usd_value,
         vault,
         clock.unix_timestamp,

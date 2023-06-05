@@ -1,6 +1,8 @@
 use crate::error::ErrorCode;
 use crate::Size;
 use anchor_lang::prelude::*;
+use borsh::{BorshDeserialize, BorshSerialize};
+
 use drift::math::constants::PERCENTAGE_PRECISION;
 
 use crate::math_error;
@@ -498,7 +500,7 @@ impl VaultDepositor {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
 pub enum WithdrawUnit {
     Shares,
     Token,
