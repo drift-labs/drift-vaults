@@ -8,8 +8,10 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 use drift::cpi::accounts::Withdraw as DriftWithdraw;
 use drift::instructions::optional_accounts::{load_maps, AccountMaps};
+use drift::math::casting::Cast;
 use drift::math::margin::{
-    calculate_margin_requirement_and_total_collateral, MarginRequirementType,
+    calculate_margin_requirement_and_total_collateral, calculate_net_usd_value,
+    MarginRequirementType,
 };
 use drift::program::Drift;
 use drift::state::perp_market_map::{get_writable_perp_market_set, MarketSet};
@@ -23,11 +25,36 @@ pub fn withdraw<'info>(
     let mut vault = ctx.accounts.vault.load_mut()?;
     let mut vault_depositor = ctx.accounts.vault_depositor.load_mut()?;
 
-    // todo, use calculate_net_usd_value in margin.rs
-    let (net_usd_value, all_oracles_valid) = (100_u64, true);
+    let user = ctx.accounts.drift_user.load()?;
+    let spot_market_index = vault.spot_market_index;
+
+    let remaining_accounts_iter = &mut ctx.remaining_accounts.iter().peekable();
+    let AccountMaps {
+        perp_market_map,
+        spot_market_map,
+        mut oracle_map,
+    } = load_maps(
+        remaining_accounts_iter,
+        &MarketSet::new(),
+        &get_writable_perp_market_set(spot_market_index),
+        clock.slot,
+        None,
+    )?;
+
+    let (net_usd_value, all_oracles_valid) =
+        calculate_net_usd_value(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
     validate!(all_oracles_valid, ErrorCode::Default)?;
-    vault_depositor.withdraw(
+
+    let non_negative_net_usd_value = net_usd_value.max(0).cast()?;
+
+    msg!(
+        "net_usd_value: {}, non_negative_net_usd_value:{}",
         net_usd_value,
+        non_negative_net_usd_value
+    );
+
+    vault_depositor.withdraw(
+        non_negative_net_usd_value,
         *ctx.accounts.authority.key,
         &mut vault,
         clock.unix_timestamp,
@@ -37,6 +64,7 @@ pub fn withdraw<'info>(
     let bump = vault.bump;
     let spot_market_index = vault.spot_market_index;
     drop(vault);
+    drop(user);
 
     let signature_seeds = Vault::get_vault_signer_seeds(&name, &bump);
     let signers = &[&signature_seeds[..]];

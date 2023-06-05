@@ -7,9 +7,11 @@ use crate::{Vault, VaultDepositor, WithdrawUnit};
 use anchor_lang::prelude::*;
 use anchor_spl::token::TokenAccount;
 use drift::instructions::optional_accounts::{load_maps, AccountMaps};
+use drift::math::casting::Cast;
 use drift::math::insurance::vault_amount_to_if_shares;
 use drift::math::margin::{
-    calculate_margin_requirement_and_total_collateral, MarginRequirementType,
+    calculate_margin_requirement_and_total_collateral, calculate_net_usd_value,
+    MarginRequirementType,
 };
 use drift::state::perp_market_map::{get_writable_perp_market_set, MarketSet};
 use drift::state::user::User;
@@ -22,16 +24,36 @@ pub fn request_withdraw<'info>(
     let vault = &mut ctx.accounts.vault.load_mut()?;
     let mut vault_depositor = ctx.accounts.vault_depositor.load_mut()?;
 
-    // todo, use calculate_net_usd_value in margin.rs
-    let (net_usd_value, all_oracles_valid) = (100_u64, true);
+    let user = ctx.accounts.drift_user.load()?;
+    let spot_market_index = vault.spot_market_index;
+
+    let remaining_accounts_iter = &mut ctx.remaining_accounts.iter().peekable();
+    let AccountMaps {
+        perp_market_map,
+        spot_market_map,
+        mut oracle_map,
+    } = load_maps(
+        remaining_accounts_iter,
+        &MarketSet::new(),
+        &get_writable_perp_market_set(spot_market_index),
+        clock.slot,
+        None,
+    )?;
+
+    let (net_usd_value, all_oracles_valid) =
+        calculate_net_usd_value(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
+
     validate!(all_oracles_valid, ErrorCode::Default)?;
 
-    let n_shares: u128 = vault_amount_to_if_shares(amount, vault.total_shares, net_usd_value)?;
+    let non_negative_net_usd_value = net_usd_value.max(0).cast()?;
+
+    let n_shares: u128 =
+        vault_amount_to_if_shares(amount, vault.total_shares, non_negative_net_usd_value)?;
 
     vault_depositor.request_withdraw(
         n_shares,
         WithdrawUnit::Shares,
-        net_usd_value,
+        non_negative_net_usd_value,
         vault,
         clock.unix_timestamp,
     )?;
@@ -71,6 +93,7 @@ pub fn request_withdraw<'info>(
 
 #[derive(Accounts)]
 pub struct RequestWithdraw<'info> {
+    #[account(mut)]
     pub vault: AccountLoader<'info, Vault>,
     #[account(
         mut,

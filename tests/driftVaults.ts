@@ -112,6 +112,29 @@ describe('driftVaults', () => {
 			writableSpotMarketIndexes: [0],
 		});
 
+		// request withdraw
+		console.log('request withdraw');
+		const requestTxSig = await program.methods
+			.requestWithdraw(usdcAmount)
+			.accounts({
+				// userTokenAccount: userUSDCAccount.publicKey,
+				vault,
+				vaultDepositor,
+				vaultTokenAccount: vaultAccount.tokenAccount,
+				driftUser: vaultAccount.user,
+				driftUserStats: vaultAccount.userStats,
+				driftState: await adminClient.getStatePublicKey(),
+				// driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
+				// driftSigner: adminClient.getStateAccount().signer,
+				// driftProgram: adminClient.program.programId,
+			})
+			.remainingAccounts(remainingAccounts)
+			.rpc();
+
+		await printTxLogs(provider.connection, requestTxSig);
+
+		// do withdraw
+		console.log('do withdraw');
 		const txSig = await program.methods
 			.withdraw(usdcAmount)
 			.accounts({
