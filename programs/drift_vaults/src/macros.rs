@@ -20,17 +20,3 @@ macro_rules! validate {
         }
     }};
 }
-
-#[macro_export]
-macro_rules! safe_increment {
-    ($struct:expr, $value:expr) => {{
-        $struct = $struct.checked_add($value).ok_or_else(math_error!())?
-    }};
-}
-
-#[macro_export]
-macro_rules! safe_decrement {
-    ($struct:expr, $value:expr) => {{
-        $struct = $struct.checked_sub($value).ok_or_else(math_error!())?
-    }};
-}

@@ -5,9 +5,6 @@ use borsh::{BorshDeserialize, BorshSerialize};
 
 use drift::math::constants::PERCENTAGE_PRECISION;
 
-use crate::math_error;
-use crate::safe_decrement;
-use crate::safe_increment;
 use crate::state::vault::Vault;
 use crate::validate;
 use static_assertions::const_assert_eq;
@@ -96,13 +93,13 @@ impl VaultDepositor {
 
     pub fn increase_vault_shares(&mut self, delta: u128, vault: &Vault) -> Result<()> {
         self.validate_base(vault)?;
-        safe_increment!(self.vault_shares, delta);
+        self.vault_shares = self.vault_shares.safe_add(delta)?;
         Ok(())
     }
 
     pub fn decrease_vault_shares(&mut self, delta: u128, vault: &Vault) -> Result<()> {
         self.validate_base(vault)?;
-        safe_decrement!(self.vault_shares, delta);
+        self.vault_shares = self.vault_shares.safe_sub(delta)?;
         Ok(())
     }
 
