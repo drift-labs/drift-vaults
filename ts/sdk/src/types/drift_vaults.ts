@@ -239,6 +239,47 @@ export type DriftVaults = {
 			];
 		},
 		{
+			name: 'cancelRequestWithdraw';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'vaultDepositor';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'authority';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'vaultTokenAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUser';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftState';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [];
+		},
+		{
 			name: 'withdraw';
 			accounts: [
 				{
@@ -302,12 +343,7 @@ export type DriftVaults = {
 					isSigner: false;
 				}
 			];
-			args: [
-				{
-					name: 'amount';
-					type: 'u64';
-				}
-			];
+			args: [];
 		}
 	];
 	accounts: [
@@ -921,6 +957,47 @@ export const IDL: DriftVaults = {
 			],
 		},
 		{
+			name: 'cancelRequestWithdraw',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'vaultDepositor',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'authority',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'vaultTokenAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUser',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftState',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [],
+		},
+		{
 			name: 'withdraw',
 			accounts: [
 				{
@@ -984,12 +1061,7 @@ export const IDL: DriftVaults = {
 					isSigner: false,
 				},
 			],
-			args: [
-				{
-					name: 'amount',
-					type: 'u64',
-				},
-			],
+			args: [],
 		},
 	],
 	accounts: [

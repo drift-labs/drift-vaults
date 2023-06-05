@@ -161,7 +161,7 @@ describe('driftVaults', () => {
 		console.log('do withdraw');
 		try {
 			const txSig = await program.methods
-				.withdraw(usdcAmount)
+				.withdraw()
 				.accounts({
 					userTokenAccount: userUSDCAccount.publicKey,
 					vault,
