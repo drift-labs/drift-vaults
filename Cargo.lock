@@ -642,7 +642,7 @@ dependencies = [
 [[package]]
 name = "drift"
 version = "2.31.0-beta.6"
-source = "git+https://github.com/drift-labs/protocol-v2.git?rev=28d63e1#28d63e1084f9309c1780c8a07efc583ad38353e2"
+source = "git+https://github.com/drift-labs/protocol-v2.git?rev=099cbca#099cbca35f23c6840c90271c436c9ca5ee455d73"
 dependencies = [
  "anchor-lang",
  "anchor-spl",

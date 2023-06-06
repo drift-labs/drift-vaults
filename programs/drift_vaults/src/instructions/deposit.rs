@@ -9,7 +9,7 @@ use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 use drift::cpi::accounts::Deposit as DriftDeposit;
 use drift::instructions::optional_accounts::{load_maps, AccountMaps};
 use drift::math::casting::Cast;
-use drift::math::margin::calculate_net_usd_value;
+use drift::math::margin::calculate_user_equity;
 use drift::program::Drift;
 use drift::state::perp_market_map::{get_writable_perp_market_set, MarketSet};
 use drift::state::user::User;
@@ -36,22 +36,15 @@ pub fn deposit<'info>(ctx: Context<'_, '_, '_, 'info, Deposit<'info>>, amount: u
         None,
     )?;
 
-    let (net_usd_value, all_oracles_valid) =
-        calculate_net_usd_value(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
+    let (vault_equity, all_oracles_valid) =
+        calculate_user_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
     validate!(all_oracles_valid, ErrorCode::Default)?;
-    validate!(net_usd_value >= 0, ErrorCode::Default)?;
-
-    let non_negative_net_usd_value = net_usd_value.max(0).cast()?;
-    msg!(
-        "net_usd_value: {}, non_negative_net_usd_value:{}",
-        net_usd_value,
-        non_negative_net_usd_value
-    );
+    validate!(vault_equity >= 0, ErrorCode::Default)?;
 
     vault_depositor.deposit(
         amount,
-        non_negative_net_usd_value,
+        vault_equity.cast()?,
         &mut vault,
         clock.unix_timestamp,
     )?;

@@ -9,7 +9,7 @@ use anchor_spl::token::TokenAccount;
 use drift::instructions::optional_accounts::{load_maps, AccountMaps};
 use drift::math::casting::Cast;
 use drift::math::insurance::vault_amount_to_if_shares;
-use drift::math::margin::calculate_net_usd_value;
+use drift::math::margin::calculate_user_equity;
 use drift::state::perp_market_map::MarketSet;
 use drift::state::user::User;
 
@@ -37,21 +37,19 @@ pub fn request_withdraw<'info>(
         None,
     )?;
 
-    let (net_usd_value, all_oracles_valid) =
-        calculate_net_usd_value(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
+    let (vault_equity, all_oracles_valid) =
+        calculate_user_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
     validate!(all_oracles_valid, ErrorCode::Default)?;
-    validate!(net_usd_value >= 0, ErrorCode::Default)?;
-
-    let non_negative_net_usd_value = net_usd_value.max(0).cast()?;
+    validate!(vault_equity >= 0, ErrorCode::Default)?;
 
     let n_shares: u128 =
-        vault_amount_to_if_shares(amount, vault.total_shares, non_negative_net_usd_value)?;
+        vault_amount_to_if_shares(amount, vault.total_shares, vault_equity.cast()?)?;
 
     vault_depositor.request_withdraw(
         n_shares,
         withdraw_unit,
-        non_negative_net_usd_value,
+        vault_equity.cast()?,
         vault,
         clock.unix_timestamp,
     )?;

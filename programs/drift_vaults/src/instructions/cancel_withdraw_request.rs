@@ -8,7 +8,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::TokenAccount;
 use drift::instructions::optional_accounts::{load_maps, AccountMaps};
 use drift::math::casting::Cast;
-use drift::math::margin::calculate_net_usd_value;
+use drift::math::margin::calculate_user_equity;
 use drift::state::perp_market_map::MarketSet;
 use drift::state::user::User;
 
@@ -34,19 +34,13 @@ pub fn cancel_withdraw_request<'info>(
         None,
     )?;
 
-    let (net_usd_value, all_oracles_valid) =
-        calculate_net_usd_value(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
+    let (vault_equity, all_oracles_valid) =
+        calculate_user_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
     validate!(all_oracles_valid, ErrorCode::Default)?;
-    validate!(net_usd_value >= 0, ErrorCode::Default)?;
+    validate!(vault_equity >= 0, ErrorCode::Default)?;
 
-    let non_negative_net_usd_value = net_usd_value.max(0).cast()?;
-
-    vault_depositor.cancel_withdraw_request(
-        non_negative_net_usd_value,
-        vault,
-        clock.unix_timestamp,
-    )?;
+    vault_depositor.cancel_withdraw_request(vault_equity.cast()?, vault, clock.unix_timestamp)?;
 
     Ok(())
 }
