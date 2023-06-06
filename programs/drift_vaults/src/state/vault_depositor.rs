@@ -191,9 +191,10 @@ impl VaultDepositor {
         total_amount: u64,
         vault: &Vault,
     ) -> Result<u128> {
-        let profit = self
-            .cost_basis
-            .safe_sub(self.cumulative_profit_share_amount)?;
+        let profit = total_amount.cast::<i64>()?.safe_sub(
+            self.cost_basis
+                .safe_add(self.cumulative_profit_share_amount)?,
+        )?;
         if profit > 0 {
             let profit_u128 = profit.cast::<u128>()?;
             let frac_profit_withdrawn = profit_u128
@@ -236,12 +237,7 @@ impl VaultDepositor {
         let n_shares = vault_amount_to_depositor_shares(amount, vault.total_shares, vault_equity)?;
 
         // reset cost basis if no shares
-        self.cost_basis = if vault_shares_before == 0 {
-            amount.cast()?
-        } else {
-            self.cost_basis.safe_add(amount.cast()?)?
-        };
-
+        self.cost_basis = self.cost_basis.safe_add(amount.cast()?)?;
         self.increase_vault_shares(n_shares, vault)?;
 
         vault.total_shares = vault.total_shares.safe_add(n_shares)?;
