@@ -10,7 +10,7 @@ use drift::instructions::optional_accounts::{load_maps, AccountMaps};
 use drift::math::casting::Cast;
 use drift::math::insurance::vault_amount_to_if_shares;
 use drift::math::margin::calculate_net_usd_value;
-use drift::state::perp_market_map::{get_writable_perp_market_set, MarketSet};
+use drift::state::perp_market_map::MarketSet;
 use drift::state::user::User;
 
 pub fn request_withdraw<'info>(
@@ -23,7 +23,6 @@ pub fn request_withdraw<'info>(
     let mut vault_depositor = ctx.accounts.vault_depositor.load_mut()?;
 
     let user = ctx.accounts.drift_user.load()?;
-    let spot_market_index = vault.spot_market_index;
 
     let remaining_accounts_iter = &mut ctx.remaining_accounts.iter().peekable();
     let AccountMaps {
@@ -33,7 +32,7 @@ pub fn request_withdraw<'info>(
     } = load_maps(
         remaining_accounts_iter,
         &MarketSet::new(),
-        &get_writable_perp_market_set(spot_market_index),
+        &MarketSet::new(),
         clock.slot,
         None,
     )?;
