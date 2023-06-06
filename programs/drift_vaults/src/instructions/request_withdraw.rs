@@ -9,10 +9,7 @@ use anchor_spl::token::TokenAccount;
 use drift::instructions::optional_accounts::{load_maps, AccountMaps};
 use drift::math::casting::Cast;
 use drift::math::insurance::vault_amount_to_if_shares;
-use drift::math::margin::{
-    calculate_margin_requirement_and_total_collateral, calculate_net_usd_value,
-    MarginRequirementType,
-};
+use drift::math::margin::calculate_net_usd_value;
 use drift::state::perp_market_map::{get_writable_perp_market_set, MarketSet};
 use drift::state::user::User;
 
@@ -59,36 +56,6 @@ pub fn request_withdraw<'info>(
         vault,
         clock.unix_timestamp,
     )?;
-
-    let spot_market_index = vault.spot_market_index;
-    let remaining_accounts_iter = &mut ctx.remaining_accounts.iter().peekable();
-
-    let AccountMaps {
-        perp_market_map,
-        spot_market_map,
-        mut oracle_map,
-    } = load_maps(
-        remaining_accounts_iter,
-        &MarketSet::new(),
-        &get_writable_perp_market_set(spot_market_index),
-        clock.slot,
-        None,
-    )?;
-
-    let user = ctx.accounts.drift_user.load()?;
-
-    let (margin_requirement, total_collateral, _, _) =
-        calculate_margin_requirement_and_total_collateral(
-            &user,
-            &perp_market_map,
-            MarginRequirementType::Initial,
-            &spot_market_map,
-            &mut oracle_map,
-            None,
-        )?;
-
-    msg!("total collateral: {}", total_collateral);
-    msg!("margin requirement: {}", margin_requirement);
 
     Ok(())
 }

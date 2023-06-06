@@ -9,10 +9,7 @@ use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 use drift::cpi::accounts::Deposit as DriftDeposit;
 use drift::instructions::optional_accounts::{load_maps, AccountMaps};
 use drift::math::casting::Cast;
-use drift::math::margin::{
-    calculate_margin_requirement_and_total_collateral, calculate_net_usd_value,
-    MarginRequirementType,
-};
+use drift::math::margin::calculate_net_usd_value;
 use drift::program::Drift;
 use drift::state::perp_market_map::{get_writable_perp_market_set, MarketSet};
 use drift::state::user::User;
@@ -93,21 +90,6 @@ pub fn deposit<'info>(ctx: Context<'_, '_, '_, 'info, Deposit<'info>>, amount: u
     let cpi_context = CpiContext::new_with_signer(cpi_program, cpi_accounts, signers)
         .with_remaining_accounts(ctx.remaining_accounts.into());
     drift::cpi::deposit(cpi_context, spot_market_index, amount, false)?;
-
-    let user = ctx.accounts.drift_user.load()?; // reload
-
-    let (margin_requirement, total_collateral, _, _) =
-        calculate_margin_requirement_and_total_collateral(
-            &user,
-            &perp_market_map,
-            MarginRequirementType::Initial,
-            &spot_market_map,
-            &mut oracle_map,
-            None,
-        )?;
-
-    msg!("total collateral: {}", total_collateral);
-    msg!("margin requirement: {}", margin_requirement);
 
     Ok(())
 }
