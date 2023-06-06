@@ -141,26 +141,5 @@ mod vault_depositor {
             if_shares_to_vault_amount(admin_owned_shares, vault.total_shares, vault_equity)
                 .unwrap();
         assert_eq!(admin_owned_amount, 210000000); // $210
-
-        let admin_withdraw = vault
-            .admin_withdraw(
-                10 * QUOTE_PRECISION,
-                WithdrawUnit::Token,
-                vault_equity,
-                now + 100,
-            )
-            .unwrap();
-        assert_eq!(admin_withdraw, 10000000);
-        assert_eq!(vault.total_shares, 100000000);
-        vault_equity -= admin_withdraw;
-
-        let admin_withdraw = vault
-            .admin_withdraw(200000000, WithdrawUnit::Token, vault_equity, now + 100)
-            .unwrap();
-        assert_eq!(admin_withdraw, 200000000);
-        assert_eq!(vault.total_shares, 0);
-        vault_equity -= admin_withdraw;
-
-        assert_eq!(vault_equity, 0);
     }
 }

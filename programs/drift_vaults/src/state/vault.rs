@@ -1,13 +1,8 @@
-use crate::error::ErrorCode;
 use crate::Size;
-use crate::WithdrawUnit;
 
-use crate::events::{VaultDepositorAction, VaultDepositorRecord};
-use crate::validate;
 use anchor_lang::prelude::*;
 use drift::math::casting::Cast;
 use drift::math::insurance::calculate_rebase_info;
-use drift::math::insurance::{if_shares_to_vault_amount, vault_amount_to_if_shares};
 use drift::math::safe_math::SafeMath;
 use static_assertions::const_assert_eq;
 
@@ -76,91 +71,5 @@ impl Vault {
         }
 
         Ok(())
-    }
-
-    pub fn admin_deposit(&mut self, amount: u64, vault_equity: u64, now: i64) -> Result<()> {
-        let user_vault_shares_before = self.user_shares;
-        let total_vault_shares_before = self.total_shares;
-        let vault_shares_before = self.total_shares.safe_sub(self.user_shares)?;
-
-        let n_shares = vault_amount_to_if_shares(amount, total_vault_shares_before, vault_equity)?;
-
-        self.total_shares = self.total_shares.safe_add(n_shares)?;
-        let vault_shares_after = self.total_shares.safe_sub(self.user_shares)?;
-
-        emit!(VaultDepositorRecord {
-            ts: now,
-            vault: self.pubkey,
-            depositor_authority: self.authority,
-            action: VaultDepositorAction::Deposit,
-            amount: 0,
-            spot_market_index: self.spot_market_index,
-            vault_equity_before: vault_equity,
-            vault_shares_before,
-            user_vault_shares_before,
-            total_vault_shares_before,
-            vault_shares_after,
-            total_vault_shares_after: self.total_shares,
-            user_vault_shares_after: self.user_shares,
-        });
-
-        Ok(())
-    }
-
-    pub fn admin_withdraw(
-        &mut self,
-        withdraw_amount: u128,
-        withdraw_unit: WithdrawUnit,
-        vault_equity: u64,
-        now: i64,
-    ) -> Result<u64> {
-        let (n_tokens, n_shares) = match withdraw_unit {
-            WithdrawUnit::Token => {
-                let n_tokens: u64 = withdraw_amount.cast()?;
-                let n_shares: u128 =
-                    vault_amount_to_if_shares(n_tokens, self.total_shares, vault_equity)?;
-                (n_tokens, n_shares)
-            }
-            WithdrawUnit::Shares => {
-                let n_shares: u128 = withdraw_amount;
-                let n_tokens: u64 =
-                    if_shares_to_vault_amount(n_shares, self.total_shares, vault_equity)?
-                        .min(vault_equity);
-                (n_tokens, n_shares)
-            }
-        };
-
-        let user_vault_shares_before = self.user_shares;
-        let total_vault_shares_before = self.total_shares;
-        let vault_shares_before = self.total_shares.safe_sub(self.user_shares)?;
-
-        validate!(
-            vault_shares_before >= n_shares,
-            ErrorCode::InvalidVaultWithdrawSize,
-            "vault_shares_before={} < n_shares={}",
-            vault_shares_before,
-            n_shares
-        )?;
-
-        self.total_shares = self.total_shares.safe_sub(n_shares)?;
-        let vault_shares_after = self.total_shares.safe_sub(self.user_shares)?;
-
-        emit!(VaultDepositorRecord {
-            ts: now,
-            vault: self.pubkey,
-            depositor_authority: self.authority,
-            action: VaultDepositorAction::Withdraw,
-            amount: 0,
-            spot_market_index: self.spot_market_index,
-            vault_equity_before: vault_equity,
-            vault_shares_before,
-            user_vault_shares_before,
-            total_vault_shares_before,
-            vault_shares_after,
-            total_vault_shares_after: self.total_shares,
-            user_vault_shares_after: self.user_shares,
-        });
-
-        Ok(n_tokens)
     }
 }
