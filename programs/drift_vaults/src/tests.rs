@@ -162,5 +162,25 @@ mod vault_depositor {
         vault_equity -= admin_withdraw;
 
         assert_eq!(vault_equity, 0);
+
+        // back after profits
+        let amount: u64 = 1000 * QUOTE_PRECISION_U64;
+        assert_eq!(vd.cost_basis, -100000000);
+        vd.deposit(amount, vault_equity, vault, now + 20).unwrap();
+        assert_eq!(vd.cost_basis, 900000000);
+        assert_eq!(vd.cumulative_profit_share_amount, 100_000_000);
+        vault_equity = 5000 * QUOTE_PRECISION_U64; // up 400%
+        vd.request_withdraw(
+            5000 * QUOTE_PRECISION,
+            WithdrawUnit::Token,
+            vault_equity,
+            vault,
+            now + 20,
+        )
+        .unwrap();
+        let withdraw_amount = vd.withdraw(vault_equity, vault, now + 20).unwrap();
+        assert_eq!(withdraw_amount, vault_equity - 400 * QUOTE_PRECISION_U64);
+        assert_eq!(vd.cost_basis, -4_100_000_000);
+        assert_eq!(vd.cumulative_profit_share_amount, -vd.cost_basis); // 900?
     }
 }
