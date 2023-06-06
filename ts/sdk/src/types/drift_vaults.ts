@@ -85,6 +85,37 @@ export type DriftVaults = {
 			];
 		},
 		{
+			name: 'updateDelegate';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'authority';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'driftUser';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [
+				{
+					name: 'delegate';
+					type: 'publicKey';
+				}
+			];
+		},
+		{
 			name: 'initializeVaultDepositor';
 			accounts: [
 				{
@@ -665,46 +696,41 @@ export type DriftVaults = {
 		},
 		{
 			code: 6001;
-			name: 'MathError';
-			msg: 'Vault Math Error';
-		},
-		{
-			code: 6002;
 			name: 'InvalidVaultRebase';
 			msg: 'InvalidVaultRebase';
 		},
 		{
-			code: 6003;
+			code: 6002;
 			name: 'InvalidVaultSharesDetected';
 			msg: 'InvalidVaultSharesDetected';
 		},
 		{
-			code: 6004;
+			code: 6003;
 			name: 'CannotWithdrawBeforeRedeemPeriodEnd';
 			msg: 'CannotWithdrawBeforeRedeemPeriodEnd';
 		},
 		{
-			code: 6005;
+			code: 6004;
 			name: 'InvalidVaultWithdraw';
 			msg: 'InvalidVaultWithdraw';
 		},
 		{
-			code: 6006;
+			code: 6005;
 			name: 'InsufficientVaultShares';
 			msg: 'InsufficientVaultShares';
 		},
 		{
-			code: 6007;
+			code: 6006;
 			name: 'InvalidVaultWithdrawSize';
 			msg: 'InvalidVaultWithdrawSize';
 		},
 		{
-			code: 6008;
+			code: 6007;
 			name: 'InvalidVaultForNewDepositors';
 			msg: 'InvalidVaultForNewDepositors';
 		},
 		{
-			code: 6009;
+			code: 6008;
 			name: 'VaultWithdrawRequestInProgress';
 			msg: 'VaultWithdrawRequestInProgress';
 		}
@@ -794,6 +820,37 @@ export const IDL: DriftVaults = {
 				{
 					name: 'spotMarketIndex',
 					type: 'u16',
+				},
+			],
+		},
+		{
+			name: 'updateDelegate',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'authority',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'driftUser',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [
+				{
+					name: 'delegate',
+					type: 'publicKey',
 				},
 			],
 		},
@@ -1378,46 +1435,41 @@ export const IDL: DriftVaults = {
 		},
 		{
 			code: 6001,
-			name: 'MathError',
-			msg: 'Vault Math Error',
-		},
-		{
-			code: 6002,
 			name: 'InvalidVaultRebase',
 			msg: 'InvalidVaultRebase',
 		},
 		{
-			code: 6003,
+			code: 6002,
 			name: 'InvalidVaultSharesDetected',
 			msg: 'InvalidVaultSharesDetected',
 		},
 		{
-			code: 6004,
+			code: 6003,
 			name: 'CannotWithdrawBeforeRedeemPeriodEnd',
 			msg: 'CannotWithdrawBeforeRedeemPeriodEnd',
 		},
 		{
-			code: 6005,
+			code: 6004,
 			name: 'InvalidVaultWithdraw',
 			msg: 'InvalidVaultWithdraw',
 		},
 		{
-			code: 6006,
+			code: 6005,
 			name: 'InsufficientVaultShares',
 			msg: 'InsufficientVaultShares',
 		},
 		{
-			code: 6007,
+			code: 6006,
 			name: 'InvalidVaultWithdrawSize',
 			msg: 'InvalidVaultWithdrawSize',
 		},
 		{
-			code: 6008,
+			code: 6007,
 			name: 'InvalidVaultForNewDepositors',
 			msg: 'InvalidVaultForNewDepositors',
 		},
 		{
-			code: 6009,
+			code: 6008,
 			name: 'VaultWithdrawRequestInProgress',
 			msg: 'VaultWithdrawRequestInProgress',
 		},

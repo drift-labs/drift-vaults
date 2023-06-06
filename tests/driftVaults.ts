@@ -1,7 +1,7 @@
 import * as anchor from '@coral-xyz/anchor';
 import { DriftVaults } from '../target/types/drift_vaults';
 import { Program } from '@coral-xyz/anchor';
-import { AdminClient, BN } from '@drift-labs/sdk';
+import { AdminClient, BN, UserAccount } from '@drift-labs/sdk';
 import {
 	initializeQuoteSpotMarket,
 	mockUSDCMint,
@@ -182,5 +182,25 @@ describe('driftVaults', () => {
 			console.error(e);
 			assert(false);
 		}
+	});
+
+	it('Update Delegate', async () => {
+		const vaultAccount = await program.account.vault.fetch(vault);
+		const delegateKeyPair = Keypair.generate();
+		const txSig = await program.methods
+			.updateDelegate(delegateKeyPair.publicKey)
+			.accounts({
+				vault,
+				driftUser: vaultAccount.user,
+				driftProgram: adminClient.program.programId,
+			})
+			.rpc();
+
+		const user = (await adminClient.program.account.user.fetch(
+			vaultAccount.user
+		)) as UserAccount;
+		assert(user.delegate.equals(delegateKeyPair.publicKey));
+
+		await printTxLogs(provider.connection, txSig);
 	});
 });

@@ -22,6 +22,13 @@ pub mod drift_vaults {
         instructions::initialize_vault(ctx, name, spot_market_index)
     }
 
+    pub fn update_delegate<'info>(
+        ctx: Context<'_, '_, '_, 'info, UpdateDelegate<'info>>,
+        delegate: Pubkey,
+    ) -> Result<()> {
+        instructions::update_delegate(ctx, delegate)
+    }
+
     pub fn initialize_vault_depositor(ctx: Context<InitializeVaultDepositor>) -> Result<()> {
         instructions::initialize_vault_depositor(ctx)
     }
