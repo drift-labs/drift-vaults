@@ -121,7 +121,7 @@ jobs:
           npm install --global mocha
 
       - name: build sdk
-        run: cd ts/sdk/ && yarn && yarn build && cd ../..
+        run: cd ts/sdk/ && yarn && tsc && cd ../..
 
       - name: run anchor tests
         run: anchor test
