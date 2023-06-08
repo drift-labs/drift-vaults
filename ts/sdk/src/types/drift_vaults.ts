@@ -422,7 +422,7 @@ export type DriftVaults = {
 						type: 'i64';
 					},
 					{
-						name: 'costBasis';
+						name: 'netDeposits';
 						docs: ['lifetime net deposits for the vault'];
 						type: 'i64';
 					},
@@ -1151,7 +1151,7 @@ export const IDL: DriftVaults = {
 						type: 'i64',
 					},
 					{
-						name: 'costBasis',
+						name: 'netDeposits',
 						docs: ['lifetime net deposits for the vault'],
 						type: 'i64',
 					},

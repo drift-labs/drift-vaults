@@ -39,11 +39,11 @@ pub struct VaultDepositor {
     pub last_withdraw_request_ts: i64,
     /// creation ts of vault depositor
     pub last_valid_ts: i64,
-    /// lifetime net deposits for the vault
-    pub cost_basis: i64,
-    /// token amount of gains depositor has paid performance fees on
+    /// lifetime net deposits of vault depositor for the vault
+    pub net_deposits: i64,
+    /// the token amount of gains the vault depositor has paid performance fees on
     pub cumulative_profit_share_amount: i64,
-    /// exponent for vault_shares decimal places
+    /// the exponent for vault_shares decimal places
     pub vault_shares_base: u32,
 }
 
@@ -68,7 +68,7 @@ impl VaultDepositor {
             last_withdraw_request_shares: 0,
             last_withdraw_request_ts: 0,
             last_valid_ts: now,
-            cost_basis: 0,
+            net_deposits: 0,
             cumulative_profit_share_amount: 0,
         }
     }
@@ -192,7 +192,7 @@ impl VaultDepositor {
         vault: &Vault,
     ) -> Result<u128> {
         let profit = total_amount.cast::<i64>()?.safe_sub(
-            self.cost_basis
+            self.net_deposits
                 .safe_add(self.cumulative_profit_share_amount)?,
         )?;
         if profit > 0 {
@@ -237,7 +237,7 @@ impl VaultDepositor {
         let n_shares = vault_amount_to_depositor_shares(amount, vault.total_shares, vault_equity)?;
 
         // reset cost basis if no shares
-        self.cost_basis = self.cost_basis.safe_add(amount.cast()?)?;
+        self.net_deposits = self.net_deposits.safe_add(amount.cast()?)?;
         self.increase_vault_shares(n_shares, vault)?;
 
         vault.total_shares = vault.total_shares.safe_add(n_shares)?;
@@ -459,7 +459,7 @@ impl VaultDepositor {
 
         self.decrease_vault_shares(n_shares, vault)?;
 
-        self.cost_basis = self.cost_basis.safe_sub(withdraw_amount.cast()?)?;
+        self.net_deposits = self.net_deposits.safe_sub(withdraw_amount.cast()?)?;
 
         vault.total_shares = vault
             .total_shares
