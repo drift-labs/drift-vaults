@@ -236,18 +236,13 @@ export type DriftVaults = {
 					isSigner: true;
 				},
 				{
-					name: 'vaultTokenAccount';
-					isMut: true;
-					isSigner: false;
-				},
-				{
 					name: 'driftUserStats';
-					isMut: true;
+					isMut: false;
 					isSigner: false;
 				},
 				{
 					name: 'driftUser';
-					isMut: true;
+					isMut: false;
 					isSigner: false;
 				},
 				{
@@ -288,18 +283,13 @@ export type DriftVaults = {
 					isSigner: true;
 				},
 				{
-					name: 'vaultTokenAccount';
-					isMut: true;
-					isSigner: false;
-				},
-				{
 					name: 'driftUserStats';
-					isMut: true;
+					isMut: false;
 					isSigner: false;
 				},
 				{
 					name: 'driftUser';
-					isMut: true;
+					isMut: false;
 					isSigner: false;
 				},
 				{
@@ -975,18 +965,13 @@ export const IDL: DriftVaults = {
 					isSigner: true,
 				},
 				{
-					name: 'vaultTokenAccount',
-					isMut: true,
-					isSigner: false,
-				},
-				{
 					name: 'driftUserStats',
-					isMut: true,
+					isMut: false,
 					isSigner: false,
 				},
 				{
 					name: 'driftUser',
-					isMut: true,
+					isMut: false,
 					isSigner: false,
 				},
 				{
@@ -1027,18 +1012,13 @@ export const IDL: DriftVaults = {
 					isSigner: true,
 				},
 				{
-					name: 'vaultTokenAccount',
-					isMut: true,
-					isSigner: false,
-				},
-				{
 					name: 'driftUserStats',
-					isMut: true,
+					isMut: false,
 					isSigner: false,
 				},
 				{
 					name: 'driftUser',
-					isMut: true,
+					isMut: false,
 					isSigner: false,
 				},
 				{

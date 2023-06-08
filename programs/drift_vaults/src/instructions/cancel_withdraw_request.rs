@@ -5,7 +5,6 @@ use crate::error::ErrorCode;
 use crate::validate;
 use crate::{Vault, VaultDepositor};
 use anchor_lang::prelude::*;
-use anchor_spl::token::TokenAccount;
 use drift::instructions::optional_accounts::{load_maps, AccountMaps};
 use drift::math::casting::Cast;
 use drift::math::margin::calculate_user_equity;
@@ -58,19 +57,11 @@ pub struct CancelWithdrawRequest<'info> {
     pub vault_depositor: AccountLoader<'info, VaultDepositor>,
     pub authority: Signer<'info>,
     #[account(
-        mut,
-        seeds = [b"vault_token_account".as_ref(), vault.key().as_ref()],
-        bump,
-    )]
-    pub vault_token_account: Box<Account<'info, TokenAccount>>,
-    #[account(
-        mut,
         constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?
     )]
     /// CHECK: checked in drift cpi
     pub drift_user_stats: AccountInfo<'info>,
     #[account(
-        mut,
         constraint = is_user_for_vault(&vault, &drift_user.key())?
     )]
     /// CHECK: checked in drift cpi
