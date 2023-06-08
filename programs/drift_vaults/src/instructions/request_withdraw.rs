@@ -45,7 +45,6 @@ pub fn request_withdraw<'info>(
         .cast()?;
     drop(spot_market);
 
-
     vault_depositor.request_withdraw(
         withdraw_amount.cast()?,
         withdraw_unit,
