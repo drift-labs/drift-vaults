@@ -1,7 +1,7 @@
 import * as anchor from '@coral-xyz/anchor';
 import { DriftVaults } from '../target/types/drift_vaults';
 import { Program } from '@coral-xyz/anchor';
-import { AdminClient, BN, UserAccount } from '@drift-labs/sdk';
+import { AdminClient, BN } from '@drift-labs/sdk';
 import {
 	initializeQuoteSpotMarket,
 	mockUSDCMint,
@@ -10,12 +10,10 @@ import {
 } from './testHelpers';
 import { Keypair } from '@solana/web3.js';
 import { assert } from 'chai';
-import {
-	VaultClient,
-	getVaultAddressSync,
-	getVaultDepositorAddressSync,
-} from '../ts/sdk/src';
-import { encodeName } from '../ts/sdk/src/name';
+import { VaultClient } from '../ts/sdk/src';
+import { getVaultAddressSync } from '../ts/sdk/src';
+import { encodeName } from '../ts/sdk/lib/name';
+import { getVaultDepositorAddressSync } from '../ts/sdk/lib';
 
 describe('driftVaults', () => {
 	// Configure the client to use the local cluster.
@@ -112,94 +110,22 @@ describe('driftVaults', () => {
 			writableSpotMarketIndexes: [0],
 		});
 
-		const vaultDepositorAccount = await program.account.vaultDepositor.fetch(
-			vaultDepositor
-		);
-		assert(vaultDepositorAccount.lastWithdrawRequestValue.eq(new BN(0)));
-		console.log(
-			'vaultDepositorAccount.vaultShares:',
-			vaultDepositorAccount.vaultShares.toString()
-		);
-		assert(vaultDepositorAccount.vaultShares.eq(new BN(1_000_000_000)));
-
-		// request withdraw
-		console.log('request withdraw');
-		class WithdrawUnit {
-			static readonly SHARES = { shares: {} };
-			static readonly TOKEN = { token: {} };
-		}
-		const requestTxSig = await program.methods
-			.requestWithdraw(usdcAmount, WithdrawUnit.TOKEN)
+		const txSig = await program.methods
+			.withdraw(usdcAmount)
 			.accounts({
-				// userTokenAccount: userUSDCAccount.publicKey,
+				userTokenAccount: userUSDCAccount.publicKey,
 				vault,
 				vaultDepositor,
 				vaultTokenAccount: vaultAccount.tokenAccount,
 				driftUser: vaultAccount.user,
 				driftUserStats: vaultAccount.userStats,
 				driftState: await adminClient.getStatePublicKey(),
-				// driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
-				// driftSigner: adminClient.getStateAccount().signer,
-				// driftProgram: adminClient.program.programId,
+				driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
+				driftSigner: adminClient.getStateAccount().signer,
+				driftProgram: adminClient.program.programId,
 			})
 			.remainingAccounts(remainingAccounts)
 			.rpc();
-
-		await printTxLogs(provider.connection, requestTxSig);
-
-		const vaultDepositorAccountAfter =
-			await program.account.vaultDepositor.fetch(vaultDepositor);
-		assert(vaultDepositorAccountAfter.vaultShares.eq(new BN(1_000_000_000)));
-		console.log(
-			'vaultDepositorAccountAfter.lastWithdrawRequestShares:',
-			vaultDepositorAccountAfter.lastWithdrawRequestShares.toString()
-		);
-		assert(!vaultDepositorAccountAfter.lastWithdrawRequestShares.eq(new BN(0)));
-		assert(!vaultDepositorAccountAfter.lastWithdrawRequestValue.eq(new BN(0)));
-
-		// do withdraw
-		console.log('do withdraw');
-		try {
-			const txSig = await program.methods
-				.withdraw()
-				.accounts({
-					userTokenAccount: userUSDCAccount.publicKey,
-					vault,
-					vaultDepositor,
-					vaultTokenAccount: vaultAccount.tokenAccount,
-					driftUser: vaultAccount.user,
-					driftUserStats: vaultAccount.userStats,
-					driftState: await adminClient.getStatePublicKey(),
-					driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
-					driftSigner: adminClient.getStateAccount().signer,
-					driftProgram: adminClient.program.programId,
-				})
-				.remainingAccounts(remainingAccounts)
-				.rpc();
-
-			await printTxLogs(provider.connection, txSig);
-		} catch (e) {
-			console.error(e);
-			assert(false);
-		}
-	});
-
-	it('Update Delegate', async () => {
-		const vaultAccount = await program.account.vault.fetch(vault);
-		const delegateKeyPair = Keypair.generate();
-		const txSig = await program.methods
-			.updateDelegate(delegateKeyPair.publicKey)
-			.accounts({
-				vault,
-				driftUser: vaultAccount.user,
-				driftProgram: adminClient.program.programId,
-			})
-			.rpc();
-
-		const user = (await adminClient.program.account.user.fetch(
-			vaultAccount.user
-		)) as UserAccount;
-		assert(user.delegate.equals(delegateKeyPair.publicKey));
 
 		await printTxLogs(provider.connection, txSig);
 	});
