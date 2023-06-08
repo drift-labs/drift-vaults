@@ -445,8 +445,6 @@ impl VaultDepositor {
 
         let amount = depositor_shares_to_vault_amount(n_shares, vault.total_shares, vault_equity)?;
 
-        let _vault_shares_lost = self.calculate_vault_shares_lost(vault, vault_equity)?;
-
         let withdraw_amount = amount.min(self.last_withdraw_request_value);
         msg!(
             "amount={}, last_withdraw_request_value={}",
@@ -462,10 +460,6 @@ impl VaultDepositor {
             vault.total_shares,
             vault_equity,
         )?;
-
-        // let profit_share = 0;
-
-        // let profit_share_shares = 0;
 
         self.decrease_vault_shares(n_shares, vault)?;
 
