@@ -1,24 +1,39 @@
 use crate::constraints::{
     is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
 };
+use crate::AccountMapProvider;
 use crate::{Vault, VaultDepositor};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 use drift::cpi::accounts::Deposit as DriftDeposit;
-use drift::instructions::optional_accounts::{load_maps, AccountMaps};
-use drift::math::margin::{
-    calculate_margin_requirement_and_total_collateral, MarginRequirementType,
-};
+use drift::instructions::optional_accounts::AccountMaps;
 use drift::program::Drift;
-use drift::state::perp_market_map::{get_writable_perp_market_set, MarketSet};
 use drift::state::user::User;
 
 pub fn deposit<'info>(ctx: Context<'_, '_, '_, 'info, Deposit<'info>>, amount: u64) -> Result<()> {
-    let vault = ctx.accounts.vault.load()?;
+    let clock = &Clock::get()?;
+
+    let mut vault = ctx.accounts.vault.load_mut()?;
+    let mut vault_depositor = ctx.accounts.vault_depositor.load_mut()?;
+
+    let user = ctx.accounts.drift_user.load()?;
+    let spot_market_index = vault.spot_market_index;
+
+    let AccountMaps {
+        perp_market_map,
+        spot_market_map,
+        mut oracle_map,
+    } = ctx.load_maps(clock.slot, Some(spot_market_index))?;
+
+    let vault_equity =
+        vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
+
+    vault_depositor.deposit(amount, vault_equity, &mut vault, clock.unix_timestamp)?;
+
     let name = vault.name;
     let bump = vault.bump;
-    let spot_market_index = vault.spot_market_index;
     drop(vault);
+    drop(user);
 
     let cpi_program = ctx.accounts.token_program.to_account_info().clone();
     let cpi_accounts = Transfer {
@@ -50,41 +65,12 @@ pub fn deposit<'info>(ctx: Context<'_, '_, '_, 'info, Deposit<'info>>, amount: u
         .with_remaining_accounts(ctx.remaining_accounts.into());
     drift::cpi::deposit(cpi_context, spot_market_index, amount, false)?;
 
-    let clock = &Clock::get()?;
-
-    let remaining_accounts_iter = &mut ctx.remaining_accounts.iter().peekable();
-    let AccountMaps {
-        perp_market_map,
-        spot_market_map,
-        mut oracle_map,
-    } = load_maps(
-        remaining_accounts_iter,
-        &MarketSet::new(),
-        &get_writable_perp_market_set(spot_market_index),
-        clock.slot,
-        None,
-    )?;
-
-    let user = ctx.accounts.drift_user.load()?;
-
-    let (margin_requirement, total_collateral, _, _) =
-        calculate_margin_requirement_and_total_collateral(
-            &user,
-            &perp_market_map,
-            MarginRequirementType::Initial,
-            &spot_market_map,
-            &mut oracle_map,
-            None,
-        )?;
-
-    msg!("total collateral: {}", total_collateral);
-    msg!("margin requirement: {}", margin_requirement);
-
     Ok(())
 }
 
 #[derive(Accounts)]
 pub struct Deposit<'info> {
+    #[account(mut)]
     pub vault: AccountLoader<'info, Vault>,
     #[account(
         mut,
