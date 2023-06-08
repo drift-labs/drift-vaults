@@ -150,6 +150,12 @@ impl VaultDepositor {
                 self.last_withdraw_request_shares.safe_div(rebase_divisor)?;
         }
 
+        validate!(
+            self.vault_shares_base == vault.shares_base,
+            ErrorCode::InvalidVaultRebase,
+            "vault depositor shares_base != vault shares_base"
+        )?;
+
         Ok(())
     }
 
@@ -259,6 +265,8 @@ impl VaultDepositor {
             vault_shares_after,
             total_vault_shares_after: vault.total_shares,
             user_vault_shares_after: vault.user_shares,
+            profit_share: 0,
+            management_fee: 0,
         });
 
         Ok(())
@@ -272,6 +280,8 @@ impl VaultDepositor {
         vault: &mut Vault,
         now: i64,
     ) -> Result<()> {
+        self.apply_rebase(vault, vault_equity)?;
+
         let (withdraw_value, n_shares) = match withdraw_unit {
             WithdrawUnit::Token => {
                 let withdraw_value: u64 = withdraw_amount.cast()?;
@@ -303,7 +313,6 @@ impl VaultDepositor {
         )?;
 
         self.last_withdraw_request_shares = n_shares;
-        self.apply_rebase(vault, vault_equity)?;
 
         let vault_shares_before: u128 = self.checked_vault_shares(vault)?;
         let total_vault_shares_before = vault.total_shares;
@@ -315,12 +324,6 @@ impl VaultDepositor {
             "last_withdraw_request_shares exceeds vault_shares {} > {}",
             self.last_withdraw_request_shares,
             self.checked_vault_shares(vault)?
-        )?;
-
-        validate!(
-            self.vault_shares_base == vault.shares_base,
-            ErrorCode::InvalidVaultRebase,
-            "vault depositor shares_base != vault shares_base"
         )?;
 
         self.last_withdraw_request_value = withdraw_value;
@@ -350,6 +353,8 @@ impl VaultDepositor {
             vault_shares_after,
             total_vault_shares_after: vault.total_shares,
             user_vault_shares_after: vault.user_shares,
+            profit_share: 0,
+            management_fee: 0,
         });
 
         self.last_withdraw_request_ts = now;
@@ -368,12 +373,6 @@ impl VaultDepositor {
         let vault_shares_before: u128 = self.checked_vault_shares(vault)?;
         let total_vault_shares_before = vault.total_shares;
         let user_vault_shares_before = vault.user_shares;
-
-        validate!(
-            self.vault_shares_base == vault.shares_base,
-            ErrorCode::InvalidVaultRebase,
-            "vault depositor shares_base != vault shares_base"
-        )?;
 
         let vault_shares_lost = self.calculate_vault_shares_lost(vault, vault_equity)?;
         self.decrease_vault_shares(vault_shares_lost, vault)?;
@@ -398,6 +397,8 @@ impl VaultDepositor {
             vault_shares_after,
             total_vault_shares_after: vault.total_shares,
             user_vault_shares_after: vault.user_shares,
+            profit_share: 0,
+            management_fee: 0,
         });
 
         Ok(())
@@ -448,14 +449,12 @@ impl VaultDepositor {
             self.last_withdraw_request_value
         );
 
-        let profit_share =
-            self.calculate_profit_share_and_update(withdraw_amount, total_amount, vault)?;
+        let profit_share: u64 = self
+            .calculate_profit_share_and_update(withdraw_amount, total_amount, vault)?
+            .cast()?;
 
-        let profit_share_shares = vault_amount_to_depositor_shares(
-            profit_share.cast()?,
-            vault.total_shares,
-            vault_equity,
-        )?;
+        let profit_share_shares: u128 =
+            vault_amount_to_depositor_shares(profit_share, vault.total_shares, vault_equity)?;
 
         self.decrease_vault_shares(n_shares, vault)?;
 
@@ -463,7 +462,7 @@ impl VaultDepositor {
 
         vault.total_shares = vault
             .total_shares
-            .safe_sub(n_shares.safe_sub(profit_share_shares.cast()?)?)?;
+            .safe_sub(n_shares.safe_sub(profit_share_shares)?)?;
 
         vault.user_shares = vault.user_shares.safe_sub(n_shares)?;
 
@@ -488,6 +487,8 @@ impl VaultDepositor {
             vault_shares_after,
             total_vault_shares_after: vault.total_shares,
             user_vault_shares_after: vault.user_shares,
+            profit_share,
+            management_fee: 0,
         });
 
         let user_withdraw_amount = withdraw_amount.safe_sub(profit_share.cast()?)?;

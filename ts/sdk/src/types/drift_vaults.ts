@@ -674,6 +674,16 @@ export type DriftVaults = {
 					name: 'totalVaultSharesAfter';
 					type: 'u128';
 					index: false;
+				},
+				{
+					name: 'profitShare';
+					type: 'u64';
+					index: false;
+				},
+				{
+					name: 'managementFee';
+					type: 'u64';
+					index: false;
 				}
 			];
 		}
@@ -1402,6 +1412,16 @@ export const IDL: DriftVaults = {
 				{
 					name: 'totalVaultSharesAfter',
 					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'profitShare',
+					type: 'u64',
+					index: false,
+				},
+				{
+					name: 'managementFee',
+					type: 'u64',
 					index: false,
 				},
 			],
