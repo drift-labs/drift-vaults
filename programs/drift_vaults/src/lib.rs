@@ -7,6 +7,7 @@ mod instructions;
 pub mod macros;
 mod state;
 pub mod tests;
+mod validation;
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 

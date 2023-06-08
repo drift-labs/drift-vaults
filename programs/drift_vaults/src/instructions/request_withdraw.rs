@@ -1,9 +1,8 @@
 use crate::constraints::{
     is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
 };
-use crate::error::ErrorCode;
 use crate::state::account_maps::AccountMapProvider;
-use crate::validate;
+use crate::validation::validate_equity;
 use crate::{Vault, VaultDepositor, WithdrawUnit};
 use anchor_lang::prelude::*;
 use drift::instructions::optional_accounts::AccountMaps;
@@ -28,11 +27,9 @@ pub fn request_withdraw<'info>(
         mut oracle_map,
     } = ctx.load_maps(clock.slot, None)?;
 
-    let (vault_equity, all_oracles_valid) =
-        calculate_user_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
-
-    validate!(all_oracles_valid, ErrorCode::Default)?;
-    validate!(vault_equity >= 0, ErrorCode::Default)?;
+    let vault_equity =
+        calculate_user_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)
+            .and_then(validate_equity)?;
 
     vault_depositor.request_withdraw(
         withdraw_amount.cast()?,
