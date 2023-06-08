@@ -8,14 +8,13 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::TokenAccount;
 use drift::instructions::optional_accounts::{load_maps, AccountMaps};
 use drift::math::casting::Cast;
-use drift::math::insurance::vault_amount_to_if_shares;
 use drift::math::margin::calculate_user_equity;
 use drift::state::perp_market_map::MarketSet;
 use drift::state::user::User;
 
 pub fn request_withdraw<'info>(
     ctx: Context<'_, '_, '_, 'info, RequestWithdraw<'info>>,
-    amount: u64,
+    withdraw_amount: u64,
     withdraw_unit: WithdrawUnit,
 ) -> Result<()> {
     let clock = &Clock::get()?;
@@ -43,11 +42,8 @@ pub fn request_withdraw<'info>(
     validate!(all_oracles_valid, ErrorCode::Default)?;
     validate!(vault_equity >= 0, ErrorCode::Default)?;
 
-    let n_shares: u128 =
-        vault_amount_to_if_shares(amount, vault.total_shares, vault_equity.cast()?)?;
-
     vault_depositor.request_withdraw(
-        n_shares,
+        withdraw_amount.cast()?,
         withdraw_unit,
         vault_equity.cast()?,
         vault,

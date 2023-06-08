@@ -156,17 +156,17 @@ impl VaultDepositor {
     pub fn calculate_vault_shares_lost(
         self: &VaultDepositor,
         vault: &Vault,
-        vault_balance: u64,
+        vault_equity: u64,
     ) -> Result<u128> {
         let n_shares = self.last_withdraw_request_shares;
 
-        let amount = depositor_shares_to_vault_amount(n_shares, vault.total_shares, vault_balance)?;
+        let amount = depositor_shares_to_vault_amount(n_shares, vault.total_shares, vault_equity)?;
 
         let vault_shares_lost = if amount > self.last_withdraw_request_value {
             let new_n_shares = vault_amount_to_depositor_shares(
                 self.last_withdraw_request_value,
-                vault.total_shares - n_shares,
-                vault_balance - self.last_withdraw_request_value,
+                vault.total_shares.safe_sub(n_shares)?,
+                vault_equity.safe_sub(self.last_withdraw_request_value)?,
             )?;
 
             validate!(
@@ -276,19 +276,22 @@ impl VaultDepositor {
         vault: &mut Vault,
         now: i64,
     ) -> Result<()> {
-        let (n_tokens, n_shares) = match withdraw_unit {
+        let (withdraw_value, n_shares) = match withdraw_unit {
             WithdrawUnit::Token => {
-                let n_tokens: u64 = withdraw_amount.cast()?;
-                let n_shares: u128 =
-                    vault_amount_to_depositor_shares(n_tokens, vault.total_shares, vault_equity)?;
-                (n_tokens, n_shares)
+                let withdraw_value: u64 = withdraw_amount.cast()?;
+                let n_shares: u128 = vault_amount_to_depositor_shares(
+                    withdraw_value,
+                    vault.total_shares,
+                    vault_equity,
+                )?;
+                (withdraw_value, n_shares)
             }
             WithdrawUnit::Shares => {
                 let n_shares: u128 = withdraw_amount;
-                let n_tokens: u64 =
+                let withdraw_value: u64 =
                     depositor_shares_to_vault_amount(n_shares, vault.total_shares, vault_equity)?
                         .min(vault_equity);
-                (n_tokens, n_shares)
+                (withdraw_value, n_shares)
             }
         };
 
@@ -324,7 +327,7 @@ impl VaultDepositor {
             "vault depositor shares_base != vault shares_base"
         )?;
 
-        self.last_withdraw_request_value = n_tokens;
+        self.last_withdraw_request_value = withdraw_value;
 
         validate!(
             self.last_withdraw_request_value == 0

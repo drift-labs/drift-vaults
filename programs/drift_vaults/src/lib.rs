@@ -42,10 +42,10 @@ pub mod drift_vaults {
 
     pub fn request_withdraw<'info>(
         ctx: Context<'_, '_, '_, 'info, RequestWithdraw<'info>>,
-        amount: u64,
+        withdraw_amount: u64,
         withdraw_unit: WithdrawUnit,
     ) -> Result<()> {
-        instructions::request_withdraw(ctx, amount, withdraw_unit)
+        instructions::request_withdraw(ctx, withdraw_amount, withdraw_unit)
     }
 
     pub fn cancel_request_withdraw<'info>(

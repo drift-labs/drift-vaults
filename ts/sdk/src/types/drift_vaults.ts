@@ -258,7 +258,7 @@ export type DriftVaults = {
 			];
 			args: [
 				{
-					name: 'amount';
+					name: 'withdrawAmount';
 					type: 'u64';
 				},
 				{
@@ -405,7 +405,7 @@ export type DriftVaults = {
 					{
 						name: 'vaultShares';
 						docs: [
-							"share of vault owned by this depoistor. vault_shares / vault.total_shares is depositor's ownership of vault_equity"
+							"share of vault owned by this depositor. vault_shares / vault.total_shares is depositor's ownership of vault_equity"
 						];
 						type: 'u128';
 					},
@@ -997,7 +997,7 @@ export const IDL: DriftVaults = {
 			],
 			args: [
 				{
-					name: 'amount',
+					name: 'withdrawAmount',
 					type: 'u64',
 				},
 				{
@@ -1144,7 +1144,7 @@ export const IDL: DriftVaults = {
 					{
 						name: 'vaultShares',
 						docs: [
-							"share of vault owned by this depoistor. vault_shares / vault.total_shares is depositor's ownership of vault_equity",
+							"share of vault owned by this depositor. vault_shares / vault.total_shares is depositor's ownership of vault_equity",
 						],
 						type: 'u128',
 					},
