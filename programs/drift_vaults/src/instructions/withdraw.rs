@@ -2,16 +2,15 @@ use crate::constraints::{
     is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
 };
 use crate::error::ErrorCode;
-use crate::validate;
+use crate::{validate, AccountMapProvider};
 use crate::{Vault, VaultDepositor};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 use drift::cpi::accounts::Withdraw as DriftWithdraw;
-use drift::instructions::optional_accounts::{load_maps, AccountMaps};
+use drift::instructions::optional_accounts::AccountMaps;
 use drift::math::casting::Cast;
 use drift::math::margin::calculate_user_equity;
 use drift::program::Drift;
-use drift::state::perp_market_map::{get_writable_perp_market_set, MarketSet};
 use drift::state::user::User;
 
 pub fn withdraw<'info>(ctx: Context<'_, '_, '_, 'info, Withdraw<'info>>) -> Result<()> {
@@ -22,18 +21,11 @@ pub fn withdraw<'info>(ctx: Context<'_, '_, '_, 'info, Withdraw<'info>>) -> Resu
     let user = ctx.accounts.drift_user.load()?;
     let spot_market_index = vault.spot_market_index;
 
-    let remaining_accounts_iter = &mut ctx.remaining_accounts.iter().peekable();
     let AccountMaps {
         perp_market_map,
         spot_market_map,
         mut oracle_map,
-    } = load_maps(
-        remaining_accounts_iter,
-        &MarketSet::new(),
-        &get_writable_perp_market_set(spot_market_index),
-        clock.slot,
-        None,
-    )?;
+    } = ctx.load_maps(clock.slot, Some(spot_market_index))?;
 
     let (vault_equity, all_oracles_valid) =
         calculate_user_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;

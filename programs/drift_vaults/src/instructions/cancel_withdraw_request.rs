@@ -1,15 +1,15 @@
+use anchor_lang::prelude::*;
+use drift::instructions::optional_accounts::AccountMaps;
+use drift::math::casting::Cast;
+use drift::math::margin::calculate_user_equity;
+use drift::state::user::User;
+
 use crate::constraints::{
     is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
 };
 use crate::error::ErrorCode;
-use crate::validate;
+use crate::{validate, AccountMapProvider};
 use crate::{Vault, VaultDepositor};
-use anchor_lang::prelude::*;
-use drift::instructions::optional_accounts::{load_maps, AccountMaps};
-use drift::math::casting::Cast;
-use drift::math::margin::calculate_user_equity;
-use drift::state::perp_market_map::MarketSet;
-use drift::state::user::User;
 
 pub fn cancel_withdraw_request<'info>(
     ctx: Context<'_, '_, '_, 'info, CancelWithdrawRequest<'info>>,
@@ -20,18 +20,11 @@ pub fn cancel_withdraw_request<'info>(
 
     let user = ctx.accounts.drift_user.load()?;
 
-    let remaining_accounts_iter = &mut ctx.remaining_accounts.iter().peekable();
     let AccountMaps {
         perp_market_map,
         spot_market_map,
         mut oracle_map,
-    } = load_maps(
-        remaining_accounts_iter,
-        &MarketSet::new(),
-        &MarketSet::new(),
-        clock.slot,
-        None,
-    )?;
+    } = ctx.load_maps(clock.slot, None)?;
 
     let (vault_equity, all_oracles_valid) =
         calculate_user_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
