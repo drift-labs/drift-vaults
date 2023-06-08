@@ -6,7 +6,6 @@ mod error;
 mod instructions;
 pub mod macros;
 mod state;
-mod validation;
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 

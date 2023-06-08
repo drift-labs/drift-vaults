@@ -1,17 +1,12 @@
 use crate::constraints::{
     is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
 };
-use crate::validation::validate_equity;
 use crate::AccountMapProvider;
 use crate::{Vault, VaultDepositor};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 use drift::cpi::accounts::Deposit as DriftDeposit;
 use drift::instructions::optional_accounts::AccountMaps;
-use drift::math::casting::Cast;
-use drift::math::constants::PRICE_PRECISION_I128;
-use drift::math::margin::calculate_user_equity;
-use drift::math::safe_math::SafeMath;
 use drift::program::Drift;
 use drift::state::user::User;
 
@@ -31,27 +26,9 @@ pub fn deposit<'info>(ctx: Context<'_, '_, '_, 'info, Deposit<'info>>, amount: u
     } = ctx.load_maps(clock.slot, Some(spot_market_index))?;
 
     let vault_equity =
-        calculate_user_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)
-            .and_then(validate_equity)?;
+        vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
-    let spot_market = spot_market_map.get_ref(&vault.spot_market_index)?;
-    let spot_price = oracle_map
-        .get_price_data(&spot_market.oracle)?
-        .price
-        .cast::<i128>()?;
-
-    let vault_equity_in_spot: u64 = vault_equity
-        .safe_mul(PRICE_PRECISION_I128)?
-        .safe_div(spot_price)?
-        .cast()?;
-    drop(spot_market);
-
-    vault_depositor.deposit(
-        amount,
-        vault_equity_in_spot,
-        &mut vault,
-        clock.unix_timestamp,
-    )?;
+    vault_depositor.deposit(amount, vault_equity, &mut vault, clock.unix_timestamp)?;
 
     let name = vault.name;
     let bump = vault.bump;

@@ -1,9 +1,16 @@
 use crate::Size;
 
 use anchor_lang::prelude::*;
+use drift::error::{DriftResult, ErrorCode};
 use drift::math::casting::Cast;
 use drift::math::insurance::calculate_rebase_info;
+use drift::math::margin::calculate_user_equity;
 use drift::math::safe_math::SafeMath;
+use drift::state::oracle_map::OracleMap;
+use drift::state::perp_market_map::PerpMarketMap;
+use drift::state::spot_market_map::SpotMarketMap;
+use drift::state::user::User;
+use drift::validate;
 use static_assertions::const_assert_eq;
 
 #[account(zero_copy)]
@@ -71,5 +78,36 @@ impl Vault {
         }
 
         Ok(())
+    }
+
+    /// Returns the equity value of the vault, in the vault's spot market token min precision
+    pub fn calculate_equity(
+        &self,
+        user: &User,
+        perp_market_map: &PerpMarketMap,
+        spot_market_map: &SpotMarketMap,
+        oracle_map: &mut OracleMap,
+    ) -> DriftResult<u64> {
+        let (vault_equity, all_oracles_valid) =
+            calculate_user_equity(user, perp_market_map, spot_market_map, oracle_map)?;
+
+        validate!(all_oracles_valid, ErrorCode::DefaultError, "oracle invalid")?;
+        validate!(
+            vault_equity >= 0,
+            ErrorCode::DefaultError,
+            "vault equity negative"
+        )?;
+
+        let spot_market = spot_market_map.get_ref(&self.spot_market_index)?;
+        let spot_market_precision = spot_market.get_precision().cast::<i128>()?;
+        let oracle_price = oracle_map
+            .get_price_data(&spot_market.oracle)?
+            .price
+            .cast::<i128>()?;
+
+        vault_equity
+            .safe_mul(spot_market_precision)?
+            .safe_div(oracle_price)?
+            .cast()
     }
 }

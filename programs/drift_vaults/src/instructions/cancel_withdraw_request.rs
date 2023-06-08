@@ -1,13 +1,11 @@
 use anchor_lang::prelude::*;
 use drift::instructions::optional_accounts::AccountMaps;
 use drift::math::casting::Cast;
-use drift::math::margin::calculate_user_equity;
 use drift::state::user::User;
 
 use crate::constraints::{
     is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
 };
-use crate::validation::validate_equity;
 use crate::AccountMapProvider;
 use crate::{Vault, VaultDepositor};
 
@@ -27,8 +25,7 @@ pub fn cancel_withdraw_request<'info>(
     } = ctx.load_maps(clock.slot, None)?;
 
     let vault_equity =
-        calculate_user_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)
-            .and_then(validate_equity)?;
+        vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
     vault_depositor.cancel_withdraw_request(vault_equity.cast()?, vault, clock.unix_timestamp)?;
 

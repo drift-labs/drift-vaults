@@ -1,15 +1,12 @@
 use crate::constraints::{
     is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
 };
-use crate::validation::validate_equity;
 use crate::AccountMapProvider;
 use crate::{Vault, VaultDepositor};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 use drift::cpi::accounts::Withdraw as DriftWithdraw;
 use drift::instructions::optional_accounts::AccountMaps;
-use drift::math::casting::Cast;
-use drift::math::margin::calculate_user_equity;
 use drift::program::Drift;
 use drift::state::user::User;
 
@@ -28,11 +25,10 @@ pub fn withdraw<'info>(ctx: Context<'_, '_, '_, 'info, Withdraw<'info>>) -> Resu
     } = ctx.load_maps(clock.slot, Some(spot_market_index))?;
 
     let vault_equity =
-        calculate_user_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)
-            .and_then(validate_equity)?;
+        vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
     let user_withdraw_amount =
-        vault_depositor.withdraw(vault_equity.cast()?, &mut vault, clock.unix_timestamp)?;
+        vault_depositor.withdraw(vault_equity, &mut vault, clock.unix_timestamp)?;
 
     msg!("user_withdraw_amount: {}", user_withdraw_amount,);
 
