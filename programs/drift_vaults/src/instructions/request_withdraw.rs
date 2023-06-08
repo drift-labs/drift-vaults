@@ -7,7 +7,9 @@ use crate::{Vault, VaultDepositor, WithdrawUnit};
 use anchor_lang::prelude::*;
 use drift::instructions::optional_accounts::AccountMaps;
 use drift::math::casting::Cast;
+use drift::math::constants::PRICE_PRECISION_I128;
 use drift::math::margin::calculate_user_equity;
+use drift::math::safe_math::SafeMath;
 use drift::state::user::User;
 
 pub fn request_withdraw<'info>(
@@ -31,10 +33,23 @@ pub fn request_withdraw<'info>(
         calculate_user_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)
             .and_then(validate_equity)?;
 
+    let spot_market = spot_market_map.get_ref(&vault.spot_market_index)?;
+    let spot_price = oracle_map
+        .get_price_data(&spot_market.oracle)?
+        .price
+        .cast::<i128>()?;
+
+    let vault_equity_in_spot: u64 = vault_equity
+        .safe_mul(PRICE_PRECISION_I128)?
+        .safe_div(spot_price)?
+        .cast()?;
+    drop(spot_market);
+
+
     vault_depositor.request_withdraw(
         withdraw_amount.cast()?,
         withdraw_unit,
-        vault_equity.cast()?,
+        vault_equity_in_spot,
         vault,
         clock.unix_timestamp,
     )?;

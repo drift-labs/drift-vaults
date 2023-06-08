@@ -423,19 +423,19 @@ export type DriftVaults = {
 					},
 					{
 						name: 'netDeposits';
-						docs: ['lifetime net deposits for the vault'];
+						docs: ['lifetime net deposits of vault depositor for the vault'];
 						type: 'i64';
 					},
 					{
 						name: 'cumulativeProfitShareAmount';
 						docs: [
-							'token amount of gains depositor has paid performance fees on'
+							'the token amount of gains the vault depositor has paid performance fees on'
 						];
 						type: 'i64';
 					},
 					{
 						name: 'vaultSharesBase';
-						docs: ['exponent for vault_shares decimal places'];
+						docs: ['the exponent for vault_shares decimal places'];
 						type: 'u32';
 					}
 				];
@@ -1152,19 +1152,19 @@ export const IDL: DriftVaults = {
 					},
 					{
 						name: 'netDeposits',
-						docs: ['lifetime net deposits for the vault'],
+						docs: ['lifetime net deposits of vault depositor for the vault'],
 						type: 'i64',
 					},
 					{
 						name: 'cumulativeProfitShareAmount',
 						docs: [
-							'token amount of gains depositor has paid performance fees on',
+							'the token amount of gains the vault depositor has paid performance fees on',
 						],
 						type: 'i64',
 					},
 					{
 						name: 'vaultSharesBase',
-						docs: ['exponent for vault_shares decimal places'],
+						docs: ['the exponent for vault_shares decimal places'],
 						type: 'u32',
 					},
 				],
