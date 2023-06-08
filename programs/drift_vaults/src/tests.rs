@@ -183,4 +183,10 @@ mod vault_depositor {
         assert_eq!(vd.cost_basis, -4_100_000_000);
         assert_eq!(vd.cumulative_profit_share_amount, -vd.cost_basis); // 900?
     }
+
+    #[test]
+    fn test_management_fee() {
+        let vault = &mut Vault::default();
+        vault.get_date();
+    }
 }

@@ -40,10 +40,14 @@ pub struct Vault {
     pub user_shares: u128,
     /// the sum of all shares (including vault authority)
     pub total_shares: u128,
+    /// max token capacity, once hit/passed vault will reject new deposits
+    pub max_tokens: u64,
     /// percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION
     pub profit_share: u32,
     /// vault admin only collect incentive fees during periods when returns are higher than this amount: PERCENTAGE_PRECISION
     pub hurdle_rate: u32, // todo: not implemented yet
+    /// annualized vault admin management fee
+    pub management_fee: u32,
 }
 
 impl Vault {
@@ -53,12 +57,57 @@ impl Vault {
 }
 
 impl Size for Vault {
-    const SIZE: usize = 256 + 8;
+    const SIZE: usize = 272 + 8;
 }
 
 const_assert_eq!(Vault::SIZE, std::mem::size_of::<Vault>() + 8);
 
+use std::time::{SystemTime, UNIX_EPOCH};
+
+fn convert_unix_timestamp(timestamp: u64) -> Option<String> {
+    let unix_epoch = SystemTime::UNIX_EPOCH;
+    let time = unix_epoch + std::time::Duration::from_secs(timestamp);
+
+    match time.duration_since(unix_epoch) {
+        Ok(duration) => {
+            let local_time = SystemTime::now()
+                .duration_since(unix_epoch)
+                .expect("Failed to get current time");
+            if duration > local_time {
+                return None;
+            }
+
+            // let offset = local_time - duration;
+            let converted_time = unix_epoch + duration;
+
+            let formatted_date = converted_time
+                .duration_since(unix_epoch)
+                .expect("Failed to get converted time")
+                .as_secs();
+
+            Some(
+                chrono::NaiveDateTime::from_timestamp_opt(formatted_date as i64, 0)
+                    .unwrap()
+                    .format("%Y-%m-%d %H:%M:%S")
+                    .to_string(),
+            )
+        }
+        Err(_) => None,
+    }
+}
+
 impl Vault {
+    pub fn get_date(self) -> Result<()> {
+        let timestamp = 1622977144; // Replace with your desired Unix timestamp
+
+        match convert_unix_timestamp(timestamp) {
+            Some(date) => msg!("Converted date: {}", date),
+            None => msg!("Invalid Unix timestamp"),
+        }
+
+        Ok(())
+    }
+
     pub fn apply_rebase(&mut self, vault_equity: u64) -> Result<()> {
         if vault_equity != 0 && vault_equity.cast::<u128>()? < self.total_shares {
             let (expo_diff, rebase_divisor) =

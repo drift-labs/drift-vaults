@@ -19,3 +19,4 @@ anchor-spl = { git = "https://github.com/drift-labs/anchor.git", rev = "ed950fe"
 drift = { git = "https://github.com/drift-labs/protocol-v2.git", rev = "28d63e1", features = ["cpi", "mainnet-beta"]}
 bytemuck = { version = "1.4.0" }
 static_assertions = "1.1.0"
+chrono = "0.4"

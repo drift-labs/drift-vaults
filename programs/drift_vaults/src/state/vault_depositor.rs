@@ -220,6 +220,14 @@ impl VaultDepositor {
         now: i64,
     ) -> Result<()> {
         validate!(
+            vault.max_tokens == 0 || vault.max_tokens < vault_equity.safe_add(amount)?,
+            ErrorCode::VaultIsAtCapacity,
+            "after deposit vault equity is {} > {}",
+            vault_equity.safe_add(amount)?,
+            vault.max_tokens
+        )?;
+
+        validate!(
             !(vault_equity == 0 && vault.total_shares != 0),
             ErrorCode::InvalidVaultForNewDepositors,
             "Vault balance should be non-zero for new depositors to enter"
