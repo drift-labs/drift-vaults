@@ -1,27 +1,42 @@
 use crate::constraints::{
     is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
 };
+use crate::AccountMapProvider;
 use crate::{Vault, VaultDepositor};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 use drift::cpi::accounts::Withdraw as DriftWithdraw;
-use drift::instructions::optional_accounts::{load_maps, AccountMaps};
-use drift::math::margin::{
-    calculate_margin_requirement_and_total_collateral, MarginRequirementType,
-};
+use drift::instructions::optional_accounts::AccountMaps;
 use drift::program::Drift;
-use drift::state::perp_market_map::{get_writable_perp_market_set, MarketSet};
 use drift::state::user::User;
 
-pub fn withdraw<'info>(
-    ctx: Context<'_, '_, '_, 'info, Withdraw<'info>>,
-    amount: u64,
-) -> Result<()> {
-    let vault = ctx.accounts.vault.load()?;
+pub fn withdraw<'info>(ctx: Context<'_, '_, '_, 'info, Withdraw<'info>>) -> Result<()> {
+    let clock = &Clock::get()?;
+    let mut vault = ctx.accounts.vault.load_mut()?;
+    let mut vault_depositor = ctx.accounts.vault_depositor.load_mut()?;
+
+    let user = ctx.accounts.drift_user.load()?;
+    let spot_market_index = vault.spot_market_index;
+
+    let AccountMaps {
+        perp_market_map,
+        spot_market_map,
+        mut oracle_map,
+    } = ctx.load_maps(clock.slot, Some(spot_market_index))?;
+
+    let vault_equity =
+        vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
+
+    let user_withdraw_amount =
+        vault_depositor.withdraw(vault_equity, &mut vault, clock.unix_timestamp)?;
+
+    msg!("user_withdraw_amount: {}", user_withdraw_amount,);
+
     let name = vault.name;
     let bump = vault.bump;
     let spot_market_index = vault.spot_market_index;
     drop(vault);
+    drop(user);
 
     let signature_seeds = Vault::get_vault_signer_seeds(&name, &bump);
     let signers = &[&signature_seeds[..]];
@@ -43,7 +58,7 @@ pub fn withdraw<'info>(
     };
     let cpi_context = CpiContext::new_with_signer(cpi_program, cpi_accounts, signers)
         .with_remaining_accounts(ctx.remaining_accounts.into());
-    drift::cpi::withdraw(cpi_context, spot_market_index, amount, false)?;
+    drift::cpi::withdraw(cpi_context, spot_market_index, user_withdraw_amount, false)?;
 
     let cpi_program = ctx.accounts.token_program.to_account_info().clone();
     let cpi_accounts = Transfer {
@@ -52,43 +67,14 @@ pub fn withdraw<'info>(
         authority: ctx.accounts.vault.to_account_info().clone(),
     };
     let cpi_context = CpiContext::new_with_signer(cpi_program, cpi_accounts, signers);
-    token::transfer(cpi_context, amount)?;
-
-    let clock = &Clock::get()?;
-
-    let remaining_accounts_iter = &mut ctx.remaining_accounts.iter().peekable();
-    let AccountMaps {
-        perp_market_map,
-        spot_market_map,
-        mut oracle_map,
-    } = load_maps(
-        remaining_accounts_iter,
-        &MarketSet::new(),
-        &get_writable_perp_market_set(spot_market_index),
-        clock.slot,
-        None,
-    )?;
-
-    let user = ctx.accounts.drift_user.load()?;
-
-    let (margin_requirement, total_collateral, _, _) =
-        calculate_margin_requirement_and_total_collateral(
-            &user,
-            &perp_market_map,
-            MarginRequirementType::Initial,
-            &spot_market_map,
-            &mut oracle_map,
-            None,
-        )?;
-
-    msg!("total collateral: {}", total_collateral);
-    msg!("margin requirement: {}", margin_requirement);
+    token::transfer(cpi_context, user_withdraw_amount)?;
 
     Ok(())
 }
 
 #[derive(Accounts)]
 pub struct Withdraw<'info> {
+    #[account(mut)]
     pub vault: AccountLoader<'info, Vault>,
     #[account(
         mut,

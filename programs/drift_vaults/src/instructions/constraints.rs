@@ -1,4 +1,5 @@
 use crate::{Vault, VaultDepositor};
+
 use anchor_lang::prelude::*;
 
 pub fn is_authority_for_vault_depositor(
@@ -6,6 +7,13 @@ pub fn is_authority_for_vault_depositor(
     signer: &Signer,
 ) -> anchor_lang::Result<bool> {
     Ok(vault_depositor.load()?.authority.eq(signer.key))
+}
+
+pub fn is_authority_for_vault(
+    vault: &AccountLoader<Vault>,
+    signer: &Signer,
+) -> anchor_lang::Result<bool> {
+    Ok(vault.load()?.authority.eq(signer.key))
 }
 
 pub fn is_user_for_vault(

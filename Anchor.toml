@@ -9,7 +9,7 @@ url = "https://api.apr.dev"
 
 [provider]
 cluster = "Localnet"
-wallet = "/Users/crisp/.config/solana/id.json"
+wallet = "~/.config/solana/id.json"
 
 [[test.genesis]]
 address = "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
