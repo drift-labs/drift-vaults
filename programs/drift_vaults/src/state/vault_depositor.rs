@@ -11,7 +11,10 @@ use static_assertions::const_assert_eq;
 
 use crate::events::{VaultDepositorAction, VaultDepositorRecord};
 
-use drift::math::insurance::{if_shares_to_vault_amount, vault_amount_to_if_shares};
+use drift::math::insurance::{
+    if_shares_to_vault_amount as depositor_shares_to_vault_amount,
+    vault_amount_to_if_shares as vault_amount_to_depositor_shares,
+};
 
 use drift::math::casting::Cast;
 use drift::math::safe_math::SafeMath;
@@ -157,10 +160,10 @@ impl VaultDepositor {
     ) -> Result<u128> {
         let n_shares = self.last_withdraw_request_shares;
 
-        let amount = if_shares_to_vault_amount(n_shares, vault.total_shares, vault_balance)?;
+        let amount = depositor_shares_to_vault_amount(n_shares, vault.total_shares, vault_balance)?;
 
         let vault_shares_lost = if amount > self.last_withdraw_request_value {
-            let new_n_shares = vault_amount_to_if_shares(
+            let new_n_shares = vault_amount_to_depositor_shares(
                 self.last_withdraw_request_value,
                 vault.total_shares - n_shares,
                 vault_balance - self.last_withdraw_request_value,
@@ -230,7 +233,7 @@ impl VaultDepositor {
         let total_vault_shares_before = vault.total_shares;
         let user_vault_shares_before = vault.user_shares;
 
-        let n_shares = vault_amount_to_if_shares(amount, vault.total_shares, vault_equity)?;
+        let n_shares = vault_amount_to_depositor_shares(amount, vault.total_shares, vault_equity)?;
 
         // reset cost basis if no shares
         self.cost_basis = if vault_shares_before == 0 {
@@ -277,13 +280,13 @@ impl VaultDepositor {
             WithdrawUnit::Token => {
                 let n_tokens: u64 = withdraw_amount.cast()?;
                 let n_shares: u128 =
-                    vault_amount_to_if_shares(n_tokens, vault.total_shares, vault_equity)?;
+                    vault_amount_to_depositor_shares(n_tokens, vault.total_shares, vault_equity)?;
                 (n_tokens, n_shares)
             }
             WithdrawUnit::Shares => {
                 let n_shares: u128 = withdraw_amount;
                 let n_tokens: u64 =
-                    if_shares_to_vault_amount(n_shares, vault.total_shares, vault_equity)?
+                    depositor_shares_to_vault_amount(n_shares, vault.total_shares, vault_equity)?
                         .min(vault_equity);
                 (n_tokens, n_shares)
             }
@@ -435,9 +438,9 @@ impl VaultDepositor {
         )?;
 
         let total_amount =
-            if_shares_to_vault_amount(self.vault_shares, vault.total_shares, vault_equity)?;
+            depositor_shares_to_vault_amount(self.vault_shares, vault.total_shares, vault_equity)?;
 
-        let amount = if_shares_to_vault_amount(n_shares, vault.total_shares, vault_equity)?;
+        let amount = depositor_shares_to_vault_amount(n_shares, vault.total_shares, vault_equity)?;
 
         let _vault_shares_lost = self.calculate_vault_shares_lost(vault, vault_equity)?;
 
@@ -451,8 +454,11 @@ impl VaultDepositor {
         let profit_share =
             self.calculate_profit_share_and_update(withdraw_amount, total_amount, vault)?;
 
-        let profit_share_shares =
-            vault_amount_to_if_shares(profit_share.cast()?, vault.total_shares, vault_equity)?;
+        let profit_share_shares = vault_amount_to_depositor_shares(
+            profit_share.cast()?,
+            vault.total_shares,
+            vault_equity,
+        )?;
 
         // let profit_share = 0;
 
