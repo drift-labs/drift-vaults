@@ -26,7 +26,7 @@ pub struct VaultDepositor {
     pub pubkey: Pubkey,
     /// The authority is the address w permission to deposit/withdraw
     pub authority: Pubkey,
-    /// share of vault owned by this depoistor. vault_shares / vault.total_shares is depositor's ownership of vault_equity
+    /// share of vault owned by this depositor. vault_shares / vault.total_shares is depositor's ownership of vault_equity
     vault_shares: u128,
     /// requested vault shares for withdraw
     pub last_withdraw_request_shares: u128,
