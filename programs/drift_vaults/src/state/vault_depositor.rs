@@ -383,6 +383,10 @@ impl VaultDepositor {
 
         vault.user_shares = vault.user_shares.safe_sub(vault_shares_lost)?;
 
+        vault.total_withdraw_requested = vault
+            .total_withdraw_requested
+            .safe_sub(self.last_withdraw_request_value)?;
+
         let vault_shares_after = self.checked_vault_shares(vault)?;
 
         emit!(VaultDepositorRecord {
