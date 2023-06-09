@@ -236,18 +236,13 @@ export type DriftVaults = {
 					isSigner: true;
 				},
 				{
-					name: 'vaultTokenAccount';
-					isMut: true;
-					isSigner: false;
-				},
-				{
 					name: 'driftUserStats';
-					isMut: true;
+					isMut: false;
 					isSigner: false;
 				},
 				{
 					name: 'driftUser';
-					isMut: true;
+					isMut: false;
 					isSigner: false;
 				},
 				{
@@ -258,7 +253,7 @@ export type DriftVaults = {
 			];
 			args: [
 				{
-					name: 'amount';
+					name: 'withdrawAmount';
 					type: 'u64';
 				},
 				{
@@ -288,18 +283,13 @@ export type DriftVaults = {
 					isSigner: true;
 				},
 				{
-					name: 'vaultTokenAccount';
-					isMut: true;
-					isSigner: false;
-				},
-				{
 					name: 'driftUserStats';
-					isMut: true;
+					isMut: false;
 					isSigner: false;
 				},
 				{
 					name: 'driftUser';
-					isMut: true;
+					isMut: false;
 					isSigner: false;
 				},
 				{
@@ -405,7 +395,7 @@ export type DriftVaults = {
 					{
 						name: 'vaultShares';
 						docs: [
-							"share of vault owned by this depoistor. vault_shares / vault.total_shares is depositor's ownership of vault_equity"
+							"share of vault owned by this depositor. vault_shares / vault.total_shares is depositor's ownership of vault_equity"
 						];
 						type: 'u128';
 					},
@@ -432,20 +422,20 @@ export type DriftVaults = {
 						type: 'i64';
 					},
 					{
-						name: 'costBasis';
-						docs: ['lifetime net deposits for the vault'];
+						name: 'netDeposits';
+						docs: ['lifetime net deposits of vault depositor for the vault'];
 						type: 'i64';
 					},
 					{
 						name: 'cumulativeProfitShareAmount';
 						docs: [
-							'token amount of gains depositor has paid performance fees on'
+							'the token amount of gains the vault depositor has paid performance fees on'
 						];
 						type: 'i64';
 					},
 					{
 						name: 'vaultSharesBase';
-						docs: ['exponent for vault_shares decimal places'];
+						docs: ['the exponent for vault_shares decimal places'];
 						type: 'u32';
 					}
 				];
@@ -592,6 +582,157 @@ export type DriftVaults = {
 					}
 				];
 			};
+		}
+	];
+	events: [
+		{
+			name: 'VaultRecord';
+			fields: [
+				{
+					name: 'ts';
+					type: 'i64';
+					index: false;
+				},
+				{
+					name: 'spotMarketIndex';
+					type: 'u16';
+					index: false;
+				},
+				{
+					name: 'vaultEquityBefore';
+					type: 'u64';
+					index: false;
+				}
+			];
+		},
+		{
+			name: 'VaultDepositorRecord';
+			fields: [
+				{
+					name: 'ts';
+					type: 'i64';
+					index: false;
+				},
+				{
+					name: 'vault';
+					type: 'publicKey';
+					index: false;
+				},
+				{
+					name: 'depositorAuthority';
+					type: 'publicKey';
+					index: false;
+				},
+				{
+					name: 'action';
+					type: {
+						defined: 'VaultDepositorAction';
+					};
+					index: false;
+				},
+				{
+					name: 'amount';
+					type: 'u64';
+					index: false;
+				},
+				{
+					name: 'spotMarketIndex';
+					type: 'u16';
+					index: false;
+				},
+				{
+					name: 'vaultSharesBefore';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'vaultSharesAfter';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'vaultEquityBefore';
+					type: 'u64';
+					index: false;
+				},
+				{
+					name: 'userVaultSharesBefore';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'totalVaultSharesBefore';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'userVaultSharesAfter';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'totalVaultSharesAfter';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'profitShare';
+					type: 'u64';
+					index: false;
+				},
+				{
+					name: 'managementFee';
+					type: 'u64';
+					index: false;
+				}
+			];
+		}
+	];
+	errors: [
+		{
+			code: 6000;
+			name: 'Default';
+			msg: 'Default';
+		},
+		{
+			code: 6001;
+			name: 'InvalidVaultRebase';
+			msg: 'InvalidVaultRebase';
+		},
+		{
+			code: 6002;
+			name: 'InvalidVaultSharesDetected';
+			msg: 'InvalidVaultSharesDetected';
+		},
+		{
+			code: 6003;
+			name: 'CannotWithdrawBeforeRedeemPeriodEnd';
+			msg: 'CannotWithdrawBeforeRedeemPeriodEnd';
+		},
+		{
+			code: 6004;
+			name: 'InvalidVaultWithdraw';
+			msg: 'InvalidVaultWithdraw';
+		},
+		{
+			code: 6005;
+			name: 'InsufficientVaultShares';
+			msg: 'InsufficientVaultShares';
+		},
+		{
+			code: 6006;
+			name: 'InvalidVaultWithdrawSize';
+			msg: 'InvalidVaultWithdrawSize';
+		},
+		{
+			code: 6007;
+			name: 'InvalidVaultForNewDepositors';
+			msg: 'InvalidVaultForNewDepositors';
+		},
+		{
+			code: 6008;
+			name: 'VaultWithdrawRequestInProgress';
+			msg: 'VaultWithdrawRequestInProgress';
 		}
 	];
 	events: [
@@ -975,18 +1116,13 @@ export const IDL: DriftVaults = {
 					isSigner: true,
 				},
 				{
-					name: 'vaultTokenAccount',
-					isMut: true,
-					isSigner: false,
-				},
-				{
 					name: 'driftUserStats',
-					isMut: true,
+					isMut: false,
 					isSigner: false,
 				},
 				{
 					name: 'driftUser',
-					isMut: true,
+					isMut: false,
 					isSigner: false,
 				},
 				{
@@ -997,7 +1133,7 @@ export const IDL: DriftVaults = {
 			],
 			args: [
 				{
-					name: 'amount',
+					name: 'withdrawAmount',
 					type: 'u64',
 				},
 				{
@@ -1027,18 +1163,13 @@ export const IDL: DriftVaults = {
 					isSigner: true,
 				},
 				{
-					name: 'vaultTokenAccount',
-					isMut: true,
-					isSigner: false,
-				},
-				{
 					name: 'driftUserStats',
-					isMut: true,
+					isMut: false,
 					isSigner: false,
 				},
 				{
 					name: 'driftUser',
-					isMut: true,
+					isMut: false,
 					isSigner: false,
 				},
 				{
@@ -1144,7 +1275,7 @@ export const IDL: DriftVaults = {
 					{
 						name: 'vaultShares',
 						docs: [
-							"share of vault owned by this depoistor. vault_shares / vault.total_shares is depositor's ownership of vault_equity",
+							"share of vault owned by this depositor. vault_shares / vault.total_shares is depositor's ownership of vault_equity",
 						],
 						type: 'u128',
 					},
@@ -1171,20 +1302,20 @@ export const IDL: DriftVaults = {
 						type: 'i64',
 					},
 					{
-						name: 'costBasis',
-						docs: ['lifetime net deposits for the vault'],
+						name: 'netDeposits',
+						docs: ['lifetime net deposits of vault depositor for the vault'],
 						type: 'i64',
 					},
 					{
 						name: 'cumulativeProfitShareAmount',
 						docs: [
-							'token amount of gains depositor has paid performance fees on',
+							'the token amount of gains the vault depositor has paid performance fees on',
 						],
 						type: 'i64',
 					},
 					{
 						name: 'vaultSharesBase',
-						docs: ['exponent for vault_shares decimal places'],
+						docs: ['the exponent for vault_shares decimal places'],
 						type: 'u32',
 					},
 				],
@@ -1422,6 +1553,16 @@ export const IDL: DriftVaults = {
 				{
 					name: 'totalVaultSharesAfter',
 					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'profitShare',
+					type: 'u64',
+					index: false,
+				},
+				{
+					name: 'managementFee',
+					type: 'u64',
 					index: false,
 				},
 			],

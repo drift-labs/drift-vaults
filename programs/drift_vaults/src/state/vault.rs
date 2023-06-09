@@ -1,14 +1,23 @@
-use crate::error::ErrorCode;
+use crate::events::{VaultDepositorAction, VaultDepositorRecord};
 use crate::Size;
 use crate::WithdrawUnit;
+use drift::math::insurance::{
+    if_shares_to_vault_amount as depositor_shares_to_vault_amount,
+    vault_amount_to_if_shares as vault_amount_to_depositor_shares,
+};
 
-use crate::events::{VaultDepositorAction, VaultDepositorRecord};
 use crate::validate;
 use anchor_lang::prelude::*;
+// use drift::error::{DriftResult};
+use crate::error::ErrorCode;
 use drift::math::casting::Cast;
 use drift::math::insurance::calculate_rebase_info;
-use drift::math::insurance::{if_shares_to_vault_amount, vault_amount_to_if_shares};
+use drift::math::margin::calculate_user_equity;
 use drift::math::safe_math::SafeMath;
+use drift::state::oracle_map::OracleMap;
+use drift::state::perp_market_map::PerpMarketMap;
+use drift::state::spot_market_map::SpotMarketMap;
+use drift::state::user::User;
 use static_assertions::const_assert_eq;
 
 #[account(zero_copy)]
@@ -62,7 +71,7 @@ impl Size for Vault {
 
 const_assert_eq!(Vault::SIZE, std::mem::size_of::<Vault>() + 8);
 
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::SystemTime;
 
 fn convert_unix_timestamp(timestamp: u64) -> Option<String> {
     let unix_epoch = SystemTime::UNIX_EPOCH;
@@ -127,12 +136,13 @@ impl Vault {
         Ok(())
     }
 
-    pub fn admin_deposit(&mut self, amount: u64, vault_equity: u64, now: i64) -> Result<()> {
+    pub fn ma_deposit(&mut self, amount: u64, vault_equity: u64, now: i64) -> Result<()> {
         let user_vault_shares_before = self.user_shares;
         let total_vault_shares_before = self.total_shares;
         let vault_shares_before = self.total_shares.safe_sub(self.user_shares)?;
 
-        let n_shares = vault_amount_to_if_shares(amount, total_vault_shares_before, vault_equity)?;
+        let n_shares =
+            vault_amount_to_depositor_shares(amount, total_vault_shares_before, vault_equity)?;
 
         self.total_shares = self.total_shares.safe_add(n_shares)?;
         let vault_shares_after = self.total_shares.safe_sub(self.user_shares)?;
@@ -151,6 +161,8 @@ impl Vault {
             vault_shares_after,
             total_vault_shares_after: self.total_shares,
             user_vault_shares_after: self.user_shares,
+            profit_share: 0,
+            management_fee: 0,
         });
 
         Ok(())
@@ -167,13 +179,13 @@ impl Vault {
             WithdrawUnit::Token => {
                 let n_tokens: u64 = withdraw_amount.cast()?;
                 let n_shares: u128 =
-                    vault_amount_to_if_shares(n_tokens, self.total_shares, vault_equity)?;
+                    vault_amount_to_depositor_shares(n_tokens, self.total_shares, vault_equity)?;
                 (n_tokens, n_shares)
             }
             WithdrawUnit::Shares => {
                 let n_shares: u128 = withdraw_amount;
                 let n_tokens: u64 =
-                    if_shares_to_vault_amount(n_shares, self.total_shares, vault_equity)?
+                    depositor_shares_to_vault_amount(n_shares, self.total_shares, vault_equity)?
                         .min(vault_equity);
                 (n_tokens, n_shares)
             }
@@ -208,8 +220,41 @@ impl Vault {
             vault_shares_after,
             total_vault_shares_after: self.total_shares,
             user_vault_shares_after: self.user_shares,
+            profit_share: 0,
+            management_fee: 0,
         });
 
         Ok(n_tokens)
+    }
+
+    /// Returns the equity value of the vault, in the vault's spot market token min precision
+    pub fn calculate_equity(
+        &self,
+        user: &User,
+        perp_market_map: &PerpMarketMap,
+        spot_market_map: &SpotMarketMap,
+        oracle_map: &mut OracleMap,
+    ) -> Result<u64> {
+        let (vault_equity, all_oracles_valid) =
+            calculate_user_equity(user, perp_market_map, spot_market_map, oracle_map)?;
+
+        validate!(all_oracles_valid, ErrorCode::Default, "oracle invalid")?;
+        validate!(
+            vault_equity >= 0,
+            ErrorCode::Default,
+            "vault equity negative"
+        )?;
+
+        let spot_market = spot_market_map.get_ref(&self.spot_market_index)?;
+        let spot_market_precision = spot_market.get_precision().cast::<i128>()?;
+        let oracle_price = oracle_map
+            .get_price_data(&spot_market.oracle)?
+            .price
+            .cast::<i128>()?;
+
+        Ok(vault_equity
+            .safe_mul(spot_market_precision)?
+            .safe_div(oracle_price)?
+            .cast::<u64>()?)
     }
 }
