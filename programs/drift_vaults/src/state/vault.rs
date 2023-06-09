@@ -42,6 +42,8 @@ pub struct Vault {
     pub user_shares: u128,
     /// the sum of all shares (including vault authority)
     pub total_shares: u128,
+    /// sum of outstanding withdraw request amount (in tokens) of all vault depositors
+    pub total_withdraw_requested: u64,
     /// percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION
     pub profit_share: u32,
     /// vault admin only collect incentive fees during periods when returns are higher than this amount: PERCENTAGE_PRECISION
@@ -55,7 +57,7 @@ impl Vault {
 }
 
 impl Size for Vault {
-    const SIZE: usize = 256 + 8;
+    const SIZE: usize = 264 + 8;
 }
 
 const_assert_eq!(Vault::SIZE, std::mem::size_of::<Vault>() + 8);
