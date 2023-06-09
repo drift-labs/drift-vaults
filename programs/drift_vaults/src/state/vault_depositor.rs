@@ -328,6 +328,8 @@ impl VaultDepositor {
 
         self.last_withdraw_request_value = withdraw_value;
 
+        vault.total_withdraw_requested = vault.total_withdraw_requested.safe_add(withdraw_value)?;
+
         validate!(
             self.last_withdraw_request_value == 0
                 || self.last_withdraw_request_value <= vault_equity,
@@ -492,6 +494,8 @@ impl VaultDepositor {
         });
 
         let user_withdraw_amount = withdraw_amount.safe_sub(profit_share.cast()?)?;
+        vault.total_withdraw_requested =
+            vault.total_withdraw_requested.safe_sub(withdraw_amount)?;
 
         Ok(user_withdraw_amount)
     }
