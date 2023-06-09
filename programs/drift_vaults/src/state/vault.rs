@@ -1,16 +1,21 @@
+use crate::error::ErrorCode;
+use crate::events::{VaultDepositorAction, VaultDepositorRecord};
+use crate::validate;
 use crate::Size;
-
+use crate::WithdrawUnit;
 use anchor_lang::prelude::*;
-use drift::error::{DriftResult, ErrorCode};
 use drift::math::casting::Cast;
 use drift::math::insurance::calculate_rebase_info;
+use drift::math::insurance::{
+    if_shares_to_vault_amount as depositor_shares_to_vault_amount,
+    vault_amount_to_if_shares as vault_amount_to_depositor_shares,
+};
 use drift::math::margin::calculate_user_equity;
 use drift::math::safe_math::SafeMath;
 use drift::state::oracle_map::OracleMap;
 use drift::state::perp_market_map::PerpMarketMap;
 use drift::state::spot_market_map::SpotMarketMap;
 use drift::state::user::User;
-use drift::validate;
 use static_assertions::const_assert_eq;
 
 #[account(zero_copy)]
@@ -42,12 +47,18 @@ pub struct Vault {
     pub user_shares: u128,
     /// the sum of all shares (including vault authority)
     pub total_shares: u128,
+    /// last fee update unix timestamp
+    pub last_fee_update_ts: i64,
     /// sum of outstanding withdraw request amount (in tokens) of all vault depositors
     pub total_withdraw_requested: u64,
+    /// max token capacity, once hit/passed vault will reject new deposits
+    pub max_tokens: u64,
     /// percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION
     pub profit_share: u32,
     /// vault admin only collect incentive fees during periods when returns are higher than this amount: PERCENTAGE_PRECISION
     pub hurdle_rate: u32, // todo: not implemented yet
+    /// annualized vault admin management fee
+    pub management_fee: u32,
 }
 
 impl Vault {
@@ -57,7 +68,7 @@ impl Vault {
 }
 
 impl Size for Vault {
-    const SIZE: usize = 264 + 8;
+    const SIZE: usize = 288 + 8;
 }
 
 const_assert_eq!(Vault::SIZE, std::mem::size_of::<Vault>() + 8);
@@ -89,14 +100,14 @@ impl Vault {
         perp_market_map: &PerpMarketMap,
         spot_market_map: &SpotMarketMap,
         oracle_map: &mut OracleMap,
-    ) -> DriftResult<u64> {
+    ) -> Result<u64> {
         let (vault_equity, all_oracles_valid) =
             calculate_user_equity(user, perp_market_map, spot_market_map, oracle_map)?;
 
-        validate!(all_oracles_valid, ErrorCode::DefaultError, "oracle invalid")?;
+        validate!(all_oracles_valid, ErrorCode::Default, "oracle invalid")?;
         validate!(
             vault_equity >= 0,
-            ErrorCode::DefaultError,
+            ErrorCode::Default,
             "vault equity negative"
         )?;
 
@@ -107,9 +118,100 @@ impl Vault {
             .price
             .cast::<i128>()?;
 
-        vault_equity
+        Ok(vault_equity
             .safe_mul(spot_market_precision)?
             .safe_div(oracle_price)?
-            .cast()
+            .cast::<u64>()?)
+    }
+
+    pub fn manager_deposit(&mut self, amount: u64, vault_equity: u64, now: i64) -> Result<()> {
+        let user_vault_shares_before = self.user_shares;
+        let total_vault_shares_before = self.total_shares;
+        let vault_shares_before = self.total_shares.safe_sub(self.user_shares)?;
+
+        let n_shares =
+            vault_amount_to_depositor_shares(amount, total_vault_shares_before, vault_equity)?;
+
+        self.total_shares = self.total_shares.safe_add(n_shares)?;
+        let vault_shares_after = self.total_shares.safe_sub(self.user_shares)?;
+
+        emit!(VaultDepositorRecord {
+            ts: now,
+            vault: self.pubkey,
+            depositor_authority: self.authority,
+            action: VaultDepositorAction::Deposit,
+            amount: 0,
+            spot_market_index: self.spot_market_index,
+            vault_equity_before: vault_equity,
+            vault_shares_before,
+            user_vault_shares_before,
+            total_vault_shares_before,
+            vault_shares_after,
+            total_vault_shares_after: self.total_shares,
+            user_vault_shares_after: self.user_shares,
+            profit_share: 0,
+            management_fee: 0,
+        });
+
+        Ok(())
+    }
+
+    pub fn manager_withdraw(
+        &mut self,
+        withdraw_amount: u128,
+        withdraw_unit: WithdrawUnit,
+        vault_equity: u64,
+        now: i64,
+    ) -> Result<u64> {
+        let (n_tokens, n_shares) = match withdraw_unit {
+            WithdrawUnit::Token => {
+                let n_tokens: u64 = withdraw_amount.cast()?;
+                let n_shares: u128 =
+                    vault_amount_to_depositor_shares(n_tokens, self.total_shares, vault_equity)?;
+                (n_tokens, n_shares)
+            }
+            WithdrawUnit::Shares => {
+                let n_shares: u128 = withdraw_amount;
+                let n_tokens: u64 =
+                    depositor_shares_to_vault_amount(n_shares, self.total_shares, vault_equity)?
+                        .min(vault_equity);
+                (n_tokens, n_shares)
+            }
+        };
+
+        let user_vault_shares_before = self.user_shares;
+        let total_vault_shares_before = self.total_shares;
+        let vault_shares_before = self.total_shares.safe_sub(self.user_shares)?;
+
+        validate!(
+            vault_shares_before >= n_shares,
+            ErrorCode::InvalidVaultWithdrawSize,
+            "vault_shares_before={} < n_shares={}",
+            vault_shares_before,
+            n_shares
+        )?;
+
+        self.total_shares = self.total_shares.safe_sub(n_shares)?;
+        let vault_shares_after = self.total_shares.safe_sub(self.user_shares)?;
+
+        emit!(VaultDepositorRecord {
+            ts: now,
+            vault: self.pubkey,
+            depositor_authority: self.authority,
+            action: VaultDepositorAction::Withdraw,
+            amount: 0,
+            spot_market_index: self.spot_market_index,
+            vault_equity_before: vault_equity,
+            vault_shares_before,
+            user_vault_shares_before,
+            total_vault_shares_before,
+            vault_shares_after,
+            total_vault_shares_after: self.total_shares,
+            user_vault_shares_after: self.user_shares,
+            profit_share: 0,
+            management_fee: 0,
+        });
+
+        Ok(n_tokens)
     }
 }

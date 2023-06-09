@@ -21,4 +21,6 @@ pub enum ErrorCode {
     InvalidVaultForNewDepositors,
     #[msg("VaultWithdrawRequestInProgress")]
     VaultWithdrawRequestInProgress,
+    #[msg("VaultIsAtCapacity")]
+    VaultIsAtCapacity,
 }

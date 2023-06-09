@@ -538,6 +538,13 @@ export type DriftVaults = {
 						type: 'u64';
 					},
 					{
+						name: 'maxTokens';
+						docs: [
+							'max token capacity, once hit/passed vault will reject new deposits'
+						];
+						type: 'u64';
+					},
+					{
 						name: 'profitShare';
 						docs: [
 							"percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION"
@@ -549,6 +556,11 @@ export type DriftVaults = {
 						docs: [
 							'vault admin only collect incentive fees during periods when returns are higher than this amount: PERCENTAGE_PRECISION'
 						];
+						type: 'u32';
+					},
+					{
+						name: 'managementFee';
+						docs: ['annualized vault admin management fee'];
 						type: 'u32';
 					}
 				];
@@ -740,6 +752,11 @@ export type DriftVaults = {
 			code: 6008;
 			name: 'VaultWithdrawRequestInProgress';
 			msg: 'VaultWithdrawRequestInProgress';
+		},
+		{
+			code: 6009;
+			name: 'VaultIsAtCapacity';
+			msg: 'VaultIsAtCapacity';
 		}
 	];
 };
@@ -1284,6 +1301,13 @@ export const IDL: DriftVaults = {
 						type: 'u64',
 					},
 					{
+						name: 'maxTokens',
+						docs: [
+							'max token capacity, once hit/passed vault will reject new deposits',
+						],
+						type: 'u64',
+					},
+					{
 						name: 'profitShare',
 						docs: [
 							"percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION",
@@ -1295,6 +1319,11 @@ export const IDL: DriftVaults = {
 						docs: [
 							'vault admin only collect incentive fees during periods when returns are higher than this amount: PERCENTAGE_PRECISION',
 						],
+						type: 'u32',
+					},
+					{
+						name: 'managementFee',
+						docs: ['annualized vault admin management fee'],
 						type: 'u32',
 					},
 				],
@@ -1486,6 +1515,11 @@ export const IDL: DriftVaults = {
 			code: 6008,
 			name: 'VaultWithdrawRequestInProgress',
 			msg: 'VaultWithdrawRequestInProgress',
+		},
+		{
+			code: 6009,
+			name: 'VaultIsAtCapacity',
+			msg: 'VaultIsAtCapacity',
 		},
 	],
 };

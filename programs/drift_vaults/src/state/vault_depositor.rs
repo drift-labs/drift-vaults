@@ -237,6 +237,14 @@ impl VaultDepositor {
         now: i64,
     ) -> Result<()> {
         validate!(
+            vault.max_tokens == 0 || vault.max_tokens < vault_equity.safe_add(amount)?,
+            ErrorCode::VaultIsAtCapacity,
+            "after deposit vault equity is {} > {}",
+            vault_equity.safe_add(amount)?,
+            vault.max_tokens
+        )?;
+
+        validate!(
             !(vault_equity == 0 && vault.total_shares != 0),
             ErrorCode::InvalidVaultForNewDepositors,
             "Vault balance should be non-zero for new depositors to enter"
@@ -605,11 +613,11 @@ mod tests {
 
         vault_equity -= withdraw_amount;
 
-        let admin_owned_shares = vault.total_shares.checked_sub(vault.user_shares).unwrap();
-        let admin_owned_amount =
-            if_shares_to_vault_amount(admin_owned_shares, vault.total_shares, vault_equity)
+        let manager_owned_shares = vault.total_shares.checked_sub(vault.user_shares).unwrap();
+        let manager_owned_amount =
+            if_shares_to_vault_amount(manager_owned_shares, vault.total_shares, vault_equity)
                 .unwrap();
-        assert_eq!(admin_owned_amount, 205000000); // $205
+        assert_eq!(manager_owned_amount, 205000000); // $205
     }
 
     #[test]
@@ -656,10 +664,10 @@ mod tests {
 
         vault_equity -= withdraw_amount;
 
-        let admin_owned_shares = vault.total_shares.checked_sub(vault.user_shares).unwrap();
-        let admin_owned_amount =
-            if_shares_to_vault_amount(admin_owned_shares, vault.total_shares, vault_equity)
+        let manager_owned_shares = vault.total_shares.checked_sub(vault.user_shares).unwrap();
+        let manager_owned_amount =
+            if_shares_to_vault_amount(manager_owned_shares, vault.total_shares, vault_equity)
                 .unwrap();
-        assert_eq!(admin_owned_amount, 210000000); // $210
+        assert_eq!(manager_owned_amount, 210000000); // $210
     }
 }
