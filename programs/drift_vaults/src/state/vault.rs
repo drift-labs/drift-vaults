@@ -1,21 +1,21 @@
-use crate::error::ErrorCode;
 use crate::events::{VaultDepositorAction, VaultDepositorRecord};
-use crate::validate;
 use crate::Size;
 use crate::WithdrawUnit;
-use anchor_lang::prelude::*;
-use drift::math::casting::Cast;
-use drift::math::insurance::calculate_rebase_info;
 use drift::math::insurance::{
     if_shares_to_vault_amount as depositor_shares_to_vault_amount,
     vault_amount_to_if_shares as vault_amount_to_depositor_shares,
 };
+use anchor_lang::prelude::*;
+use crate::error::ErrorCode;
+use drift::math::casting::Cast;
+use drift::math::insurance::calculate_rebase_info;
 use drift::math::margin::calculate_user_equity;
 use drift::math::safe_math::SafeMath;
 use drift::state::oracle_map::OracleMap;
 use drift::state::perp_market_map::PerpMarketMap;
 use drift::state::spot_market_map::SpotMarketMap;
 use drift::state::user::User;
+use crate::validate;
 use static_assertions::const_assert_eq;
 
 #[account(zero_copy)]
@@ -74,6 +74,13 @@ impl Size for Vault {
 const_assert_eq!(Vault::SIZE, std::mem::size_of::<Vault>() + 8);
 
 impl Vault {
+    pub fn apply_management_fee(&mut self, now: i64) -> Result<()> {
+        self.management_fee  
+        self.total_shares = 
+
+        self.last_fee_update_ts = now;
+    }
+
     pub fn apply_rebase(&mut self, vault_equity: u64) -> Result<()> {
         if vault_equity != 0 && vault_equity.cast::<u128>()? < self.total_shares {
             let (expo_diff, rebase_divisor) =
