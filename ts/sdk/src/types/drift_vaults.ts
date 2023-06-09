@@ -531,6 +531,13 @@ export type DriftVaults = {
 						type: 'u128';
 					},
 					{
+						name: 'totalWithdrawRequested';
+						docs: [
+							'sum of outstanding withdraw request amount (in tokens) of all vault depositors'
+						];
+						type: 'u64';
+					},
+					{
 						name: 'profitShare';
 						docs: [
 							"percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION"
@@ -1268,6 +1275,13 @@ export const IDL: DriftVaults = {
 						name: 'totalShares',
 						docs: ['the sum of all shares (including vault authority)'],
 						type: 'u128',
+					},
+					{
+						name: 'totalWithdrawRequested',
+						docs: [
+							'sum of outstanding withdraw request amount (in tokens) of all vault depositors',
+						],
+						type: 'u64',
 					},
 					{
 						name: 'profitShare',
