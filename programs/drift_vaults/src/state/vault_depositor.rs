@@ -221,6 +221,14 @@ impl VaultDepositor {
         Ok(0)
     }
 
+    pub fn reset_withdraw_request(self: &mut VaultDepositor, now: i64) -> Result<()> {
+        // reset vault_depositor withdraw request info
+        self.last_withdraw_request_shares = 0;
+        self.last_withdraw_request_value = 0;
+        self.last_withdraw_request_ts = now;
+        Ok(())
+    }
+
     pub fn deposit(
         self: &mut VaultDepositor,
         amount: u64,
@@ -407,6 +415,8 @@ impl VaultDepositor {
             management_fee: 0,
         });
 
+        self.reset_withdraw_request(now)?;
+
         Ok(())
     }
 
@@ -472,10 +482,7 @@ impl VaultDepositor {
 
         vault.user_shares = vault.user_shares.safe_sub(n_shares)?;
 
-        // reset vault_depositor withdraw request info
-        self.last_withdraw_request_shares = 0;
-        self.last_withdraw_request_value = 0;
-        self.last_withdraw_request_ts = now;
+        self.reset_withdraw_request(now)?;
 
         let vault_shares_after = self.checked_vault_shares(vault)?;
 
