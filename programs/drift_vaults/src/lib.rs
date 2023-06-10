@@ -2,6 +2,8 @@ use anchor_lang::prelude::*;
 use instructions::*;
 use state::*;
 
+mod constants;
+mod cpi;
 mod error;
 mod instructions;
 pub mod macros;
@@ -55,5 +57,9 @@ pub mod drift_vaults {
 
     pub fn withdraw<'info>(ctx: Context<'_, '_, '_, 'info, Withdraw<'info>>) -> Result<()> {
         instructions::withdraw(ctx)
+    }
+
+    pub fn liquidate<'info>(ctx: Context<'_, '_, '_, 'info, Liquidate<'info>>) -> Result<()> {
+        instructions::liquidate(ctx)
     }
 }

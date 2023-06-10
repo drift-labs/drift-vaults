@@ -1,7 +1,7 @@
 use crate::constraints::{is_authority_for_vault, is_user_for_vault};
+use crate::cpi;
 use crate::Vault;
 use anchor_lang::prelude::*;
-use drift::cpi::accounts::UpdateUser;
 use drift::program::Drift;
 use drift::state::user::User;
 
@@ -9,21 +9,29 @@ pub fn update_delegate<'info>(
     ctx: Context<'_, '_, '_, 'info, UpdateDelegate<'info>>,
     delegate: Pubkey,
 ) -> Result<()> {
-    let vault = ctx.accounts.vault.load()?;
+    let mut vault = ctx.accounts.vault.load_mut()?;
+
+    if vault.in_liquidation() {
+        let now = Clock::get()?.unix_timestamp;
+        vault.check_can_exit_liquidation(now)?;
+        vault.reset_liquidation_delegate();
+    }
+
     let name = vault.name;
     let bump = vault.bump;
+
+    vault.delegate = delegate;
+
     drop(vault);
 
-    let signature_seeds = Vault::get_vault_signer_seeds(&name, &bump);
-    let signers = &[&signature_seeds[..]];
-
-    let cpi_program = ctx.accounts.drift_program.to_account_info().clone();
-    let cpi_accounts = UpdateUser {
-        user: ctx.accounts.drift_user.to_account_info().clone(),
-        authority: ctx.accounts.vault.to_account_info().clone(),
-    };
-    let cpi_context = CpiContext::new_with_signer(cpi_program, cpi_accounts, signers);
-    drift::cpi::update_user_delegate(cpi_context, 0, delegate)?;
+    cpi::drift::update_user_delegate(
+        delegate,
+        name,
+        bump,
+        ctx.accounts.drift_program.to_account_info().clone(),
+        ctx.accounts.drift_user.to_account_info().clone(),
+        ctx.accounts.vault.to_account_info().clone(),
+    )?;
 
     Ok(())
 }

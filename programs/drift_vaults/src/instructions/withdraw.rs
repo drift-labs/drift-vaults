@@ -1,11 +1,11 @@
 use crate::constraints::{
     is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
 };
+use crate::cpi;
 use crate::AccountMapProvider;
 use crate::{Vault, VaultDepositor};
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Token, TokenAccount, Transfer};
-use drift::cpi::accounts::Withdraw as DriftWithdraw;
+use anchor_spl::token::{Token, TokenAccount};
 use drift::instructions::optional_accounts::AccountMaps;
 use drift::program::Drift;
 use drift::state::user::User;
@@ -27,10 +27,10 @@ pub fn withdraw<'info>(ctx: Context<'_, '_, '_, 'info, Withdraw<'info>>) -> Resu
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
-    let user_withdraw_amount =
+    let (user_withdraw_amount, finishing_liquidation) =
         vault_depositor.withdraw(vault_equity, &mut vault, clock.unix_timestamp)?;
 
-    msg!("user_withdraw_amount: {}", user_withdraw_amount,);
+    msg!("user_withdraw_amount: {}", user_withdraw_amount);
 
     let name = vault.name;
     let bump = vault.bump;
@@ -38,36 +38,51 @@ pub fn withdraw<'info>(ctx: Context<'_, '_, '_, 'info, Withdraw<'info>>) -> Resu
     drop(vault);
     drop(user);
 
-    let signature_seeds = Vault::get_vault_signer_seeds(&name, &bump);
-    let signers = &[&signature_seeds[..]];
-
-    let cpi_program = ctx.accounts.drift_program.to_account_info().clone();
-    let cpi_accounts = DriftWithdraw {
-        state: ctx.accounts.drift_state.clone(),
-        user: ctx.accounts.drift_user.to_account_info().clone(),
-        user_stats: ctx.accounts.drift_user_stats.clone(),
-        authority: ctx.accounts.vault.to_account_info().clone(),
-        spot_market_vault: ctx
-            .accounts
+    cpi::drift::withdraw(
+        spot_market_index,
+        user_withdraw_amount,
+        name,
+        bump,
+        ctx.accounts.drift_program.to_account_info().clone(),
+        ctx.accounts.drift_state.to_account_info().clone(),
+        ctx.accounts.drift_user.to_account_info().clone(),
+        ctx.accounts.drift_user_stats.to_account_info().clone(),
+        ctx.accounts.vault.to_account_info().clone(),
+        ctx.accounts
             .drift_spot_market_vault
             .to_account_info()
             .clone(),
-        drift_signer: ctx.accounts.drift_signer.clone(),
-        user_token_account: ctx.accounts.vault_token_account.to_account_info().clone(),
-        token_program: ctx.accounts.token_program.to_account_info().clone(),
-    };
-    let cpi_context = CpiContext::new_with_signer(cpi_program, cpi_accounts, signers)
-        .with_remaining_accounts(ctx.remaining_accounts.into());
-    drift::cpi::withdraw(cpi_context, spot_market_index, user_withdraw_amount, false)?;
+        ctx.accounts.drift_signer.to_account_info().clone(),
+        ctx.accounts.vault_token_account.to_account_info().clone(),
+        ctx.accounts.token_program.to_account_info().clone(),
+        ctx.remaining_accounts.into(),
+    )?;
 
-    let cpi_program = ctx.accounts.token_program.to_account_info().clone();
-    let cpi_accounts = Transfer {
-        from: ctx.accounts.vault_token_account.to_account_info().clone(),
-        to: ctx.accounts.user_token_account.to_account_info().clone(),
-        authority: ctx.accounts.vault.to_account_info().clone(),
-    };
-    let cpi_context = CpiContext::new_with_signer(cpi_program, cpi_accounts, signers);
-    token::transfer(cpi_context, user_withdraw_amount)?;
+    cpi::token::transfer_with_signer_seeds(
+        user_withdraw_amount,
+        name,
+        bump,
+        ctx.accounts.vault_token_account.to_account_info().clone(),
+        ctx.accounts.user_token_account.to_account_info().clone(),
+        ctx.accounts.vault.to_account_info().clone(),
+        ctx.accounts.token_program.to_account_info().clone(),
+    )?;
+
+    if finishing_liquidation {
+        let mut vault = ctx.accounts.vault.load_mut()?;
+        let vault_delegate = vault.delegate;
+        vault.reset_liquidation_delegate();
+        drop(vault);
+
+        cpi::drift::update_user_delegate(
+            vault_delegate,
+            name,
+            bump,
+            ctx.accounts.drift_program.to_account_info().clone(),
+            ctx.accounts.drift_user.to_account_info().clone(),
+            ctx.accounts.vault.to_account_info().clone(),
+        )?;
+    }
 
     Ok(())
 }
