@@ -197,7 +197,16 @@ mod vault_depositor {
 
         let mut vault_equity: u64 = 100 * QUOTE_PRECISION_U64;
         let amount: u64 = 100 * QUOTE_PRECISION_U64;
-        vd.deposit(amount, vault_equity, vault, now + 20).unwrap();
+        vd.deposit(amount, vault_equity, vault, now).unwrap();
 
+        vault.apply_management_fee(amount, now + ONE_YEAR);
+        assert_eq!(vault.user_shares, 0);
+        assert_eq!(vault.total_shares, 0);
     }
+
+    #[test]
+    fn test_to_fail() {
+        assert_eq(10, 0);
+    }
+
 }
