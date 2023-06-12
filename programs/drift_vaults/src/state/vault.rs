@@ -77,18 +77,35 @@ const_assert_eq!(Vault::SIZE, std::mem::size_of::<Vault>() + 8);
 impl Vault {
     pub fn apply_management_fee(&mut self, vault_equity: u64, now: i64) -> Result<()> {
         let depositor_equity =
-            depositor_shares_to_vault_amount(self.user_shares, self.total_shares, vault_equity)?;
+            depositor_shares_to_vault_amount(self.user_shares, self.total_shares, vault_equity)?
+                .cast::<u128>()?;
 
-        let since_last = now.safe_sub(self.last_fee_update_ts)?;
+        if depositor_equity > 0 {
+            let since_last = now.safe_sub(self.last_fee_update_ts)?;
 
-        let new_total_shares = depositor_equity
-            .cast::<u128>()?
-            .safe_mul(self.management_fee.cast()?)?
-            .safe_div(PERCENTAGE_PRECISION)?
-            .safe_mul(since_last.cast()?)?
-            .safe_div(ONE_YEAR)?;
+            let depositor_charge = depositor_equity
+                .safe_mul(self.management_fee.cast()?)?
+                .safe_div(PERCENTAGE_PRECISION)?
+                .safe_mul(since_last.cast()?)?
+                .safe_div(ONE_YEAR)?
+                .min(depositor_equity.saturating_sub(1));
 
-        self.total_shares = self.total_shares.safe_add(new_total_shares.cast()?)?;
+            let new_total_shares_factor: u128 = depositor_equity
+                .cast::<u128>()?
+                .safe_mul(PERCENTAGE_PRECISION)?
+                .safe_div(
+                    depositor_equity
+                        .cast::<u128>()?
+                        .safe_sub(depositor_charge)?,
+                )?;
+
+            self.total_shares = self
+                .total_shares
+                .safe_mul(new_total_shares_factor.cast()?)?
+                .safe_div(PERCENTAGE_PRECISION)?;
+
+            self.apply_rebase(vault_equity)?;
+        }
 
         self.last_fee_update_ts = now;
         Ok(())

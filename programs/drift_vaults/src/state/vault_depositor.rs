@@ -236,6 +236,8 @@ impl VaultDepositor {
         vault: &mut Vault,
         now: i64,
     ) -> Result<()> {
+        vault.apply_management_fee(vault_equity, now)?;
+
         validate!(
             vault.max_tokens == 0 || vault.max_tokens < vault_equity.safe_add(amount)?,
             ErrorCode::VaultIsAtCapacity,
@@ -296,6 +298,8 @@ impl VaultDepositor {
         vault: &mut Vault,
         now: i64,
     ) -> Result<()> {
+        vault.apply_management_fee(vault_equity, now)?;
+
         self.apply_rebase(vault, vault_equity)?;
 
         let (withdraw_value, n_shares) = match withdraw_unit {
@@ -386,6 +390,8 @@ impl VaultDepositor {
         vault: &mut Vault,
         now: i64,
     ) -> Result<()> {
+        vault.apply_management_fee(vault_equity, now)?;
+
         self.apply_rebase(vault, vault_equity)?;
 
         let vault_shares_before: u128 = self.checked_vault_shares(vault)?;
@@ -434,6 +440,8 @@ impl VaultDepositor {
         vault: &mut Vault,
         now: i64,
     ) -> Result<u64> {
+        vault.apply_management_fee(vault_equity, now)?;
+
         let time_since_withdraw_request = now.safe_sub(self.last_withdraw_request_ts)?;
 
         validate!(
