@@ -365,6 +365,47 @@ export type DriftVaults = {
 				}
 			];
 			args: [];
+		},
+		{
+			name: 'liquidate';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'vaultDepositor';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'authority';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUser';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftState';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [];
 		}
 	];
 	accounts: [
@@ -771,6 +812,11 @@ export type DriftVaults = {
 			code: 6012;
 			name: 'VaultInLiquidation';
 			msg: 'VaultInLiquidation';
+		},
+		{
+			code: 6013;
+			name: 'DriftError';
+			msg: 'DriftError';
 		}
 	];
 };
@@ -1137,6 +1183,47 @@ export const IDL: DriftVaults = {
 				},
 				{
 					name: 'tokenProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [],
+		},
+		{
+			name: 'liquidate',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'vaultDepositor',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'authority',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUser',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftState',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftProgram',
 					isMut: false,
 					isSigner: false,
 				},
@@ -1548,6 +1635,11 @@ export const IDL: DriftVaults = {
 			code: 6012,
 			name: 'VaultInLiquidation',
 			msg: 'VaultInLiquidation',
+		},
+		{
+			code: 6013,
+			name: 'DriftError',
+			msg: 'DriftError',
 		},
 	],
 };

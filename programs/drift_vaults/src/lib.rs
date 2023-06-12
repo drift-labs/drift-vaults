@@ -15,8 +15,8 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 pub mod drift_vaults {
     use super::*;
 
-    pub fn initialize_vault(
-        ctx: Context<InitializeVault>,
+    pub fn initialize_vault<'info>(
+        ctx: Context<'_, '_, '_, 'info, InitializeVault<'info>>,
         name: [u8; 32],
         spot_market_index: u16,
     ) -> Result<()> {

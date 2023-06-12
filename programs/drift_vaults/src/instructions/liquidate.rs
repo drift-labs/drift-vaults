@@ -1,10 +1,12 @@
 use crate::constraints::{
     is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
 };
-use crate::cpi;
+use crate::cpi::UpdateUserCPI;
 use crate::AccountMapProvider;
+use crate::{declare_vault_seeds, implement_update_user_delegate_cpi};
 use crate::{Vault, VaultDepositor};
 use anchor_lang::prelude::*;
+use drift::cpi::accounts::UpdateUser;
 use drift::instructions::optional_accounts::AccountMaps;
 use drift::program::Drift;
 use drift::state::user::User;
@@ -39,18 +41,9 @@ pub fn liquidate<'info>(ctx: Context<'_, '_, '_, 'info, Liquidate<'info>>) -> Re
     vault.liquidation_start_ts = now;
     vault.liquidation_delegate = vault_depositor.authority;
 
-    let name = vault.name;
-    let bump = vault.bump;
     drop(vault);
 
-    cpi::drift::update_user_delegate(
-        vault_depositor.authority,
-        name,
-        bump,
-        ctx.accounts.drift_program.to_account_info().clone(),
-        ctx.accounts.drift_user.to_account_info().clone(),
-        ctx.accounts.vault.to_account_info().clone(),
-    )?;
+    ctx.drift_update_user_delegate(vault_depositor.authority)?;
 
     Ok(())
 }
@@ -82,4 +75,11 @@ pub struct Liquidate<'info> {
     /// CHECK: checked in drift cpi
     pub drift_state: AccountInfo<'info>,
     pub drift_program: Program<'info, Drift>,
+}
+
+impl<'info> UpdateUserCPI for Context<'_, '_, '_, 'info, Liquidate<'info>> {
+    fn drift_update_user_delegate(&self, delegate: Pubkey) -> Result<()> {
+        implement_update_user_delegate_cpi!(self, delegate);
+        Ok(())
+    }
 }
