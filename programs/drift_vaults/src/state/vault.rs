@@ -52,13 +52,13 @@ pub struct Vault {
     pub last_fee_update_ts: i64,
     /// sum of outstanding withdraw request amount (in tokens) of all vault depositors
     pub total_withdraw_requested: u64,
-    /// max token capacity, once hit/passed vault will reject new deposits
+    /// max token capacity, once hit/passed vault will reject new deposits (updateable)
     pub max_tokens: u64,
-    /// percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION
+    /// percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION (frozen)
     pub profit_share: u32,
     /// vault admin only collect incentive fees during periods when returns are higher than this amount: PERCENTAGE_PRECISION
-    pub hurdle_rate: u32, // todo: not implemented yet
-    /// annualized vault admin management fee
+    pub hurdle_rate: u32, // todo: not implemented yet (frozen)
+    /// annualized vault admin management fee (frozen)
     pub management_fee: u32,
 }
 
@@ -80,8 +80,12 @@ impl Vault {
             depositor_shares_to_vault_amount(self.user_shares, self.total_shares, vault_equity)?
                 .cast::<u128>()?;
 
-        if depositor_equity > 0 {
+        if self.management_fee > 0 && depositor_equity > 0 {
             let since_last = now.safe_sub(self.last_fee_update_ts)?;
+            msg!("now {}", now);
+            msg!("last_fee_update_ts {}", self.last_fee_update_ts);
+
+            msg!("since_last {}", since_last);
 
             let depositor_charge = depositor_equity
                 .safe_mul(self.management_fee.cast()?)?
