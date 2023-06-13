@@ -38,8 +38,7 @@ pub fn liquidate<'info>(ctx: Context<'_, '_, '_, 'info, Liquidate<'info>>) -> Re
     // 3. Check that the vault is not already in liquidation for another depositor
     vault.check_delegate_available_for_liquidation(&vault_depositor, now)?;
 
-    vault.liquidation_start_ts = now;
-    vault.liquidation_delegate = vault_depositor.authority;
+    vault.set_liquidation_delegate(vault_depositor.authority, now);
 
     drop(vault);
 
