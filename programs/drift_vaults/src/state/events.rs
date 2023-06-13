@@ -40,6 +40,7 @@ pub enum VaultDepositorAction {
     WithdrawRequest,
     CancelWithdrawRequest,
     Withdraw,
+    FeePayment,
 }
 
 impl Default for VaultDepositorAction {

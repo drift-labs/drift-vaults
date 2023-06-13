@@ -75,10 +75,11 @@ impl Size for Vault {
 const_assert_eq!(Vault::SIZE, std::mem::size_of::<Vault>() + 8);
 
 impl Vault {
-    pub fn apply_management_fee(&mut self, vault_equity: u64, now: i64) -> Result<()> {
+    pub fn apply_management_fee(&mut self, vault_equity: u64, now: i64) -> Result<u64> {
         let depositor_equity =
             depositor_shares_to_vault_amount(self.user_shares, self.total_shares, vault_equity)?
                 .cast::<u128>()?;
+        let mut management_fee_payment: u128 = 0;
 
         if self.management_fee > 0 && depositor_equity > 0 {
             let since_last = now.safe_sub(self.last_fee_update_ts)?;
@@ -87,7 +88,7 @@ impl Vault {
 
             msg!("since_last {}", since_last);
 
-            let depositor_charge = depositor_equity
+            management_fee_payment = depositor_equity
                 .safe_mul(self.management_fee.cast()?)?
                 .safe_div(PERCENTAGE_PRECISION)?
                 .safe_mul(since_last.cast()?)?
@@ -100,7 +101,7 @@ impl Vault {
                 .safe_div(
                     depositor_equity
                         .cast::<u128>()?
-                        .safe_sub(depositor_charge)?,
+                        .safe_sub(management_fee_payment)?,
                 )?;
 
             self.total_shares = self
@@ -112,7 +113,7 @@ impl Vault {
         }
 
         self.last_fee_update_ts = now;
-        Ok(())
+        Ok(management_fee_payment.cast::<u64>()?)
     }
 
     pub fn apply_rebase(&mut self, vault_equity: u64) -> Result<()> {
