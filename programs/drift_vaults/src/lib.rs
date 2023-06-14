@@ -62,4 +62,10 @@ pub mod drift_vaults {
     pub fn liquidate<'info>(ctx: Context<'_, '_, '_, 'info, Liquidate<'info>>) -> Result<()> {
         instructions::liquidate(ctx)
     }
+
+    pub fn reset_delegate<'info>(
+        ctx: Context<'_, '_, '_, 'info, ResetDelegate<'info>>,
+    ) -> Result<()> {
+        instructions::reset_delegate(ctx)
+    }
 }
