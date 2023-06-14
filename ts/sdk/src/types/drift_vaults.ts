@@ -531,6 +531,11 @@ export type DriftVaults = {
 						type: 'u128';
 					},
 					{
+						name: 'lastFeeUpdateTs';
+						docs: ['last fee update unix timestamp'];
+						type: 'i64';
+					},
+					{
 						name: 'totalWithdrawRequested';
 						docs: [
 							'sum of outstanding withdraw request amount (in tokens) of all vault depositors'
@@ -540,14 +545,14 @@ export type DriftVaults = {
 					{
 						name: 'maxTokens';
 						docs: [
-							'max token capacity, once hit/passed vault will reject new deposits'
+							'max token capacity, once hit/passed vault will reject new deposits (updateable)'
 						];
 						type: 'u64';
 					},
 					{
 						name: 'profitShare';
 						docs: [
-							"percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION"
+							"percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION (frozen)"
 						];
 						type: 'u32';
 					},
@@ -560,7 +565,7 @@ export type DriftVaults = {
 					},
 					{
 						name: 'managementFee';
-						docs: ['annualized vault admin management fee'];
+						docs: ['annualized vault admin management fee (frozen)'];
 						type: 'u32';
 					}
 				];
@@ -584,6 +589,9 @@ export type DriftVaults = {
 					},
 					{
 						name: 'Withdraw';
+					},
+					{
+						name: 'FeePayment';
 					}
 				];
 			};
@@ -1294,6 +1302,11 @@ export const IDL: DriftVaults = {
 						type: 'u128',
 					},
 					{
+						name: 'lastFeeUpdateTs',
+						docs: ['last fee update unix timestamp'],
+						type: 'i64',
+					},
+					{
 						name: 'totalWithdrawRequested',
 						docs: [
 							'sum of outstanding withdraw request amount (in tokens) of all vault depositors',
@@ -1303,14 +1316,14 @@ export const IDL: DriftVaults = {
 					{
 						name: 'maxTokens',
 						docs: [
-							'max token capacity, once hit/passed vault will reject new deposits',
+							'max token capacity, once hit/passed vault will reject new deposits (updateable)',
 						],
 						type: 'u64',
 					},
 					{
 						name: 'profitShare',
 						docs: [
-							"percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION",
+							"percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION (frozen)",
 						],
 						type: 'u32',
 					},
@@ -1323,7 +1336,7 @@ export const IDL: DriftVaults = {
 					},
 					{
 						name: 'managementFee',
-						docs: ['annualized vault admin management fee'],
+						docs: ['annualized vault admin management fee (frozen)'],
 						type: 'u32',
 					},
 				],
@@ -1347,6 +1360,9 @@ export const IDL: DriftVaults = {
 					},
 					{
 						name: 'Withdraw',
+					},
+					{
+						name: 'FeePayment',
 					},
 				],
 			},
