@@ -365,6 +365,73 @@ export type DriftVaults = {
 				}
 			];
 			args: [];
+		},
+		{
+			name: 'liquidate';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'vaultDepositor';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'authority';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUser';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftState';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [];
+		},
+		{
+			name: 'resetDelegate';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'authority';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'driftUser';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [];
 		}
 	];
 	accounts: [
@@ -487,6 +554,69 @@ export type DriftVaults = {
 						type: 'publicKey';
 					},
 					{
+						name: 'delegate';
+						docs: [
+							'The vaults designated delegate for drift user account',
+							'Can differ from actual user delegate if vault is in liquidation'
+						];
+						type: 'publicKey';
+					},
+					{
+						name: 'liquidationDelegate';
+						docs: ['The delegate handling liquidation for depositor'];
+						type: 'publicKey';
+					},
+					{
+						name: 'userShares';
+						docs: [
+							'the sum of all shares held by the users (vault depositors)'
+						];
+						type: 'u128';
+					},
+					{
+						name: 'totalShares';
+						docs: ['the sum of all shares (including vault authority)'];
+						type: 'u128';
+					},
+					{
+						name: 'liquidationStartTs';
+						docs: ['When the liquidation start'];
+						type: 'i64';
+					},
+					{
+						name: 'redeemPeriod';
+						docs: [
+							'the period (in seconds) that a vault depositor must wait after requesting a withdraw to complete withdraw'
+						];
+						type: 'i64';
+					},
+					{
+						name: 'totalWithdrawRequested';
+						docs: ['the sum of all outstanding withdraw requests'];
+						type: 'u64';
+					},
+					{
+						name: 'sharesBase';
+						docs: [
+							'the base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)'
+						];
+						type: 'u32';
+					},
+					{
+						name: 'profitShare';
+						docs: [
+							"percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION"
+						];
+						type: 'u32';
+					},
+					{
+						name: 'hurdleRate';
+						docs: [
+							'vault admin only collect incentive fees during periods when returns are higher than this amount: PERCENTAGE_PRECISION'
+						];
+						type: 'u32';
+					},
+					{
 						name: 'spotMarketIndex';
 						docs: [
 							'The spot market index the vault deposits into/withdraws from'
@@ -503,53 +633,6 @@ export type DriftVaults = {
 						type: {
 							array: ['u8', 1];
 						};
-					},
-					{
-						name: 'redeemPeriod';
-						docs: [
-							'the period (in seconds) that a vault depositor must wait after requesting a withdraw to complete withdraw'
-						];
-						type: 'i64';
-					},
-					{
-						name: 'sharesBase';
-						docs: [
-							'the base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)'
-						];
-						type: 'u32';
-					},
-					{
-						name: 'userShares';
-						docs: [
-							'the sum of all shares held by the users (vault depositors)'
-						];
-						type: 'u128';
-					},
-					{
-						name: 'totalShares';
-						docs: ['the sum of all shares (including vault authority)'];
-						type: 'u128';
-					},
-					{
-						name: 'totalWithdrawRequested';
-						docs: [
-							'sum of outstanding withdraw request amount (in tokens) of all vault depositors'
-						];
-						type: 'u64';
-					},
-					{
-						name: 'profitShare';
-						docs: [
-							"percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION"
-						];
-						type: 'u32';
-					},
-					{
-						name: 'hurdleRate';
-						docs: [
-							'vault admin only collect incentive fees during periods when returns are higher than this amount: PERCENTAGE_PRECISION'
-						];
-						type: 'u32';
 					}
 				];
 			};
@@ -740,6 +823,31 @@ export type DriftVaults = {
 			code: 6008;
 			name: 'VaultWithdrawRequestInProgress';
 			msg: 'VaultWithdrawRequestInProgress';
+		},
+		{
+			code: 6009;
+			name: 'InvalidVaultDepositorInitialization';
+			msg: 'InvalidVaultDepositorInitialization';
+		},
+		{
+			code: 6010;
+			name: 'DelegateNotAvailableForLiquidation';
+			msg: 'DelegateNotAvailableForLiquidation';
+		},
+		{
+			code: 6011;
+			name: 'InvalidEquityValue';
+			msg: 'InvalidEquityValue';
+		},
+		{
+			code: 6012;
+			name: 'VaultInLiquidation';
+			msg: 'VaultInLiquidation';
+		},
+		{
+			code: 6013;
+			name: 'DriftError';
+			msg: 'DriftError';
 		}
 	];
 };
@@ -1112,6 +1220,73 @@ export const IDL: DriftVaults = {
 			],
 			args: [],
 		},
+		{
+			name: 'liquidate',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'vaultDepositor',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'authority',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUser',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftState',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [],
+		},
+		{
+			name: 'resetDelegate',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'authority',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'driftUser',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [],
+		},
 	],
 	accounts: [
 		{
@@ -1233,6 +1408,69 @@ export const IDL: DriftVaults = {
 						type: 'publicKey',
 					},
 					{
+						name: 'delegate',
+						docs: [
+							'The vaults designated delegate for drift user account',
+							'Can differ from actual user delegate if vault is in liquidation',
+						],
+						type: 'publicKey',
+					},
+					{
+						name: 'liquidationDelegate',
+						docs: ['The delegate handling liquidation for depositor'],
+						type: 'publicKey',
+					},
+					{
+						name: 'userShares',
+						docs: [
+							'the sum of all shares held by the users (vault depositors)',
+						],
+						type: 'u128',
+					},
+					{
+						name: 'totalShares',
+						docs: ['the sum of all shares (including vault authority)'],
+						type: 'u128',
+					},
+					{
+						name: 'liquidationStartTs',
+						docs: ['When the liquidation start'],
+						type: 'i64',
+					},
+					{
+						name: 'redeemPeriod',
+						docs: [
+							'the period (in seconds) that a vault depositor must wait after requesting a withdraw to complete withdraw',
+						],
+						type: 'i64',
+					},
+					{
+						name: 'totalWithdrawRequested',
+						docs: ['the sum of all outstanding withdraw requests'],
+						type: 'u64',
+					},
+					{
+						name: 'sharesBase',
+						docs: [
+							'the base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)',
+						],
+						type: 'u32',
+					},
+					{
+						name: 'profitShare',
+						docs: [
+							"percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION",
+						],
+						type: 'u32',
+					},
+					{
+						name: 'hurdleRate',
+						docs: [
+							'vault admin only collect incentive fees during periods when returns are higher than this amount: PERCENTAGE_PRECISION',
+						],
+						type: 'u32',
+					},
+					{
 						name: 'spotMarketIndex',
 						docs: [
 							'The spot market index the vault deposits into/withdraws from',
@@ -1249,53 +1487,6 @@ export const IDL: DriftVaults = {
 						type: {
 							array: ['u8', 1],
 						},
-					},
-					{
-						name: 'redeemPeriod',
-						docs: [
-							'the period (in seconds) that a vault depositor must wait after requesting a withdraw to complete withdraw',
-						],
-						type: 'i64',
-					},
-					{
-						name: 'sharesBase',
-						docs: [
-							'the base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)',
-						],
-						type: 'u32',
-					},
-					{
-						name: 'userShares',
-						docs: [
-							'the sum of all shares held by the users (vault depositors)',
-						],
-						type: 'u128',
-					},
-					{
-						name: 'totalShares',
-						docs: ['the sum of all shares (including vault authority)'],
-						type: 'u128',
-					},
-					{
-						name: 'totalWithdrawRequested',
-						docs: [
-							'sum of outstanding withdraw request amount (in tokens) of all vault depositors',
-						],
-						type: 'u64',
-					},
-					{
-						name: 'profitShare',
-						docs: [
-							"percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION",
-						],
-						type: 'u32',
-					},
-					{
-						name: 'hurdleRate',
-						docs: [
-							'vault admin only collect incentive fees during periods when returns are higher than this amount: PERCENTAGE_PRECISION',
-						],
-						type: 'u32',
 					},
 				],
 			},
@@ -1486,6 +1677,31 @@ export const IDL: DriftVaults = {
 			code: 6008,
 			name: 'VaultWithdrawRequestInProgress',
 			msg: 'VaultWithdrawRequestInProgress',
+		},
+		{
+			code: 6009,
+			name: 'InvalidVaultDepositorInitialization',
+			msg: 'InvalidVaultDepositorInitialization',
+		},
+		{
+			code: 6010,
+			name: 'DelegateNotAvailableForLiquidation',
+			msg: 'DelegateNotAvailableForLiquidation',
+		},
+		{
+			code: 6011,
+			name: 'InvalidEquityValue',
+			msg: 'InvalidEquityValue',
+		},
+		{
+			code: 6012,
+			name: 'VaultInLiquidation',
+			msg: 'VaultInLiquidation',
+		},
+		{
+			code: 6013,
+			name: 'DriftError',
+			msg: 'DriftError',
 		},
 	],
 };

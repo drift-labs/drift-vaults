@@ -1,3 +1,4 @@
+use crate::cpi::InitializeUserCPI;
 use crate::{error::ErrorCode, Size, Vault};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
@@ -5,40 +6,12 @@ use drift::cpi::accounts::{InitializeUser, InitializeUserStats};
 use drift::program::Drift;
 use drift::state::spot_market::SpotMarket;
 
-pub fn initialize_vault(
-    ctx: Context<InitializeVault>,
+pub fn initialize_vault<'info>(
+    ctx: Context<'_, '_, '_, 'info, InitializeVault<'info>>,
     name: [u8; 32],
     spot_market_index: u16,
 ) -> Result<()> {
     let bump = ctx.bumps.get("vault").ok_or(ErrorCode::Default)?;
-
-    let signature_seeds = Vault::get_vault_signer_seeds(name.as_ref(), bump);
-    let signers = &[&signature_seeds[..]];
-    let cpi_program = ctx.accounts.drift_program.to_account_info().clone();
-    let cpi_accounts = InitializeUserStats {
-        user_stats: ctx.accounts.drift_user_stats.clone(),
-        state: ctx.accounts.drift_state.clone(),
-        authority: ctx.accounts.vault.to_account_info().clone(),
-        payer: ctx.accounts.payer.to_account_info().clone(),
-        rent: ctx.accounts.rent.to_account_info().clone(),
-        system_program: ctx.accounts.system_program.to_account_info().clone(),
-    };
-    let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signers);
-    drift::cpi::initialize_user_stats(cpi_ctx)?;
-
-    let cpi_program = ctx.accounts.drift_program.to_account_info().clone();
-    let cpi_accounts = InitializeUser {
-        user_stats: ctx.accounts.drift_user_stats.clone(),
-        user: ctx.accounts.drift_user.clone(),
-        state: ctx.accounts.drift_state.clone(),
-        authority: ctx.accounts.vault.to_account_info().clone(),
-        payer: ctx.accounts.payer.to_account_info().clone(),
-        rent: ctx.accounts.rent.to_account_info().clone(),
-        system_program: ctx.accounts.system_program.to_account_info().clone(),
-    };
-    let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signers);
-    let sub_account_id = 0_u16;
-    drift::cpi::initialize_user(cpi_ctx, sub_account_id, name)?;
 
     let mut vault = ctx.accounts.vault.load_init()?;
     vault.name = name;
@@ -49,6 +22,11 @@ pub fn initialize_vault(
     vault.token_account = *ctx.accounts.token_account.to_account_info().key;
     vault.spot_market_index = spot_market_index;
     vault.bump = *bump;
+
+    drop(vault);
+
+    ctx.drift_initialize_user(name, *bump)?;
+    ctx.drift_initialize_user_stats(name, *bump)?;
 
     Ok(())
 }
@@ -100,4 +78,46 @@ pub struct InitializeVault<'info> {
     pub system_program: Program<'info, System>,
     pub drift_program: Program<'info, Drift>,
     pub token_program: Program<'info, Token>,
+}
+
+impl<'info> InitializeUserCPI for Context<'_, '_, '_, 'info, InitializeVault<'info>> {
+    fn drift_initialize_user(&self, name: [u8; 32], bump: u8) -> Result<()> {
+        let signature_seeds = Vault::get_vault_signer_seeds(&name, &bump);
+        let signers = &[&signature_seeds[..]];
+
+        let cpi_program = self.accounts.drift_program.to_account_info().clone();
+        let cpi_accounts = InitializeUserStats {
+            user_stats: self.accounts.drift_user_stats.clone(),
+            state: self.accounts.drift_state.clone(),
+            authority: self.accounts.vault.to_account_info().clone(),
+            payer: self.accounts.payer.to_account_info().clone(),
+            rent: self.accounts.rent.to_account_info().clone(),
+            system_program: self.accounts.system_program.to_account_info().clone(),
+        };
+        let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signers);
+        drift::cpi::initialize_user_stats(cpi_ctx)?;
+
+        Ok(())
+    }
+
+    fn drift_initialize_user_stats(&self, name: [u8; 32], bump: u8) -> Result<()> {
+        let signature_seeds = Vault::get_vault_signer_seeds(&name, &bump);
+        let signers = &[&signature_seeds[..]];
+
+        let cpi_program = self.accounts.drift_program.to_account_info().clone();
+        let cpi_accounts = InitializeUser {
+            user_stats: self.accounts.drift_user_stats.clone(),
+            user: self.accounts.drift_user.clone(),
+            state: self.accounts.drift_state.clone(),
+            authority: self.accounts.vault.to_account_info().clone(),
+            payer: self.accounts.payer.to_account_info().clone(),
+            rent: self.accounts.rent.to_account_info().clone(),
+            system_program: self.accounts.system_program.to_account_info().clone(),
+        };
+        let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signers);
+        let sub_account_id = 0_u16;
+        drift::cpi::initialize_user(cpi_ctx, sub_account_id, name)?;
+
+        Ok(())
+    }
 }

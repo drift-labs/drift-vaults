@@ -2,6 +2,8 @@ use anchor_lang::prelude::*;
 use instructions::*;
 use state::*;
 
+mod constants;
+mod cpi;
 mod error;
 mod instructions;
 pub mod macros;
@@ -13,8 +15,8 @@ declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 pub mod drift_vaults {
     use super::*;
 
-    pub fn initialize_vault(
-        ctx: Context<InitializeVault>,
+    pub fn initialize_vault<'info>(
+        ctx: Context<'_, '_, '_, 'info, InitializeVault<'info>>,
         name: [u8; 32],
         spot_market_index: u16,
     ) -> Result<()> {
@@ -55,5 +57,15 @@ pub mod drift_vaults {
 
     pub fn withdraw<'info>(ctx: Context<'_, '_, '_, 'info, Withdraw<'info>>) -> Result<()> {
         instructions::withdraw(ctx)
+    }
+
+    pub fn liquidate<'info>(ctx: Context<'_, '_, '_, 'info, Liquidate<'info>>) -> Result<()> {
+        instructions::liquidate(ctx)
+    }
+
+    pub fn reset_delegate<'info>(
+        ctx: Context<'_, '_, '_, 'info, ResetDelegate<'info>>,
+    ) -> Result<()> {
+        instructions::reset_delegate(ctx)
     }
 }

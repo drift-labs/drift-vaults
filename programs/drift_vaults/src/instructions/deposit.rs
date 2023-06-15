@@ -1,7 +1,8 @@
 use crate::constraints::{
     is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
 };
-use crate::AccountMapProvider;
+use crate::cpi::{DepositCPI, TokenTransferCPI};
+use crate::{declare_vault_seeds, AccountMapProvider};
 use crate::{Vault, VaultDepositor};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
@@ -30,40 +31,12 @@ pub fn deposit<'info>(ctx: Context<'_, '_, '_, 'info, Deposit<'info>>, amount: u
 
     vault_depositor.deposit(amount, vault_equity, &mut vault, clock.unix_timestamp)?;
 
-    let name = vault.name;
-    let bump = vault.bump;
     drop(vault);
     drop(user);
 
-    let cpi_program = ctx.accounts.token_program.to_account_info().clone();
-    let cpi_accounts = Transfer {
-        from: ctx.accounts.user_token_account.to_account_info().clone(),
-        to: ctx.accounts.vault_token_account.to_account_info().clone(),
-        authority: ctx.accounts.authority.to_account_info().clone(),
-    };
-    let cpi_context = CpiContext::new(cpi_program, cpi_accounts);
-    token::transfer(cpi_context, amount)?;
+    ctx.token_transfer(amount)?;
 
-    let signature_seeds = Vault::get_vault_signer_seeds(&name, &bump);
-    let signers = &[&signature_seeds[..]];
-
-    let cpi_program = ctx.accounts.drift_program.to_account_info().clone();
-    let cpi_accounts = DriftDeposit {
-        state: ctx.accounts.drift_state.clone(),
-        user: ctx.accounts.drift_user.to_account_info().clone(),
-        user_stats: ctx.accounts.drift_user_stats.clone(),
-        authority: ctx.accounts.vault.to_account_info().clone(),
-        spot_market_vault: ctx
-            .accounts
-            .drift_spot_market_vault
-            .to_account_info()
-            .clone(),
-        user_token_account: ctx.accounts.vault_token_account.to_account_info().clone(),
-        token_program: ctx.accounts.token_program.to_account_info().clone(),
-    };
-    let cpi_context = CpiContext::new_with_signer(cpi_program, cpi_accounts, signers)
-        .with_remaining_accounts(ctx.remaining_accounts.into());
-    drift::cpi::deposit(cpi_context, spot_market_index, amount, false)?;
+    ctx.drift_deposit(amount)?;
 
     Ok(())
 }
@@ -113,4 +86,47 @@ pub struct Deposit<'info> {
     pub user_token_account: Box<Account<'info, TokenAccount>>,
     pub drift_program: Program<'info, Drift>,
     pub token_program: Program<'info, Token>,
+}
+
+impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, Deposit<'info>> {
+    fn token_transfer(&self, amount: u64) -> Result<()> {
+        let cpi_accounts = Transfer {
+            from: self.accounts.user_token_account.to_account_info().clone(),
+            to: self.accounts.vault_token_account.to_account_info().clone(),
+            authority: self.accounts.authority.to_account_info().clone(),
+        };
+        let token_program = self.accounts.token_program.to_account_info().clone();
+        let cpi_context = CpiContext::new(token_program, cpi_accounts);
+
+        token::transfer(cpi_context, amount)?;
+
+        Ok(())
+    }
+}
+
+impl<'info> DepositCPI for Context<'_, '_, '_, 'info, Deposit<'info>> {
+    fn drift_deposit(&self, amount: u64) -> Result<()> {
+        declare_vault_seeds!(self.accounts.vault, seeds);
+        let spot_market_index = self.accounts.vault.load()?.spot_market_index;
+
+        let cpi_program = self.accounts.drift_program.to_account_info().clone();
+        let cpi_accounts = DriftDeposit {
+            state: self.accounts.drift_state.clone(),
+            user: self.accounts.drift_user.to_account_info().clone(),
+            user_stats: self.accounts.drift_user_stats.clone(),
+            authority: self.accounts.vault.to_account_info().clone(),
+            spot_market_vault: self
+                .accounts
+                .drift_spot_market_vault
+                .to_account_info()
+                .clone(),
+            user_token_account: self.accounts.vault_token_account.to_account_info().clone(),
+            token_program: self.accounts.token_program.to_account_info().clone(),
+        };
+        let cpi_context = CpiContext::new_with_signer(cpi_program, cpi_accounts, seeds)
+            .with_remaining_accounts(self.remaining_accounts.into());
+        drift::cpi::deposit(cpi_context, spot_market_index, amount, false)?;
+
+        Ok(())
+    }
 }
