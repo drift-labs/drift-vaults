@@ -168,6 +168,7 @@ impl Vault {
     }
 
     pub fn manager_deposit(&mut self, amount: u64, vault_equity: u64, now: i64) -> Result<()> {
+        let management_fee = self.apply_management_fee(vault_equity, now)?;
         let user_vault_shares_before = self.user_shares;
         let total_vault_shares_before = self.total_shares;
         let vault_shares_before = self.total_shares.safe_sub(self.user_shares)?;
@@ -193,7 +194,7 @@ impl Vault {
             total_vault_shares_after: self.total_shares,
             user_vault_shares_after: self.user_shares,
             profit_share: 0,
-            management_fee: 0,
+            management_fee,
         });
 
         Ok(())
@@ -206,6 +207,8 @@ impl Vault {
         vault_equity: u64,
         now: i64,
     ) -> Result<u64> {
+        let management_fee = self.apply_management_fee(vault_equity, now)?;
+
         let (n_tokens, n_shares) = match withdraw_unit {
             WithdrawUnit::Token => {
                 let n_tokens: u64 = withdraw_amount.cast()?;
@@ -252,7 +255,7 @@ impl Vault {
             total_vault_shares_after: self.total_shares,
             user_vault_shares_after: self.user_shares,
             profit_share: 0,
-            management_fee: 0,
+            management_fee,
         });
 
         Ok(n_tokens)
