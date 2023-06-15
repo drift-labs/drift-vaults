@@ -406,6 +406,32 @@ export type DriftVaults = {
 				}
 			];
 			args: [];
+		},
+		{
+			name: 'resetDelegate';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'authority';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'driftUser';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [];
 		}
 	];
 	accounts: [
@@ -563,6 +589,11 @@ export type DriftVaults = {
 							'the period (in seconds) that a vault depositor must wait after requesting a withdraw to complete withdraw'
 						];
 						type: 'i64';
+					},
+					{
+						name: 'totalWithdrawRequested';
+						docs: ['the sum of all outstanding withdraw requests'];
+						type: 'u64';
 					},
 					{
 						name: 'sharesBase';
@@ -1230,6 +1261,32 @@ export const IDL: DriftVaults = {
 			],
 			args: [],
 		},
+		{
+			name: 'resetDelegate',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'authority',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'driftUser',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [],
+		},
 	],
 	accounts: [
 		{
@@ -1386,6 +1443,11 @@ export const IDL: DriftVaults = {
 							'the period (in seconds) that a vault depositor must wait after requesting a withdraw to complete withdraw',
 						],
 						type: 'i64',
+					},
+					{
+						name: 'totalWithdrawRequested',
+						docs: ['the sum of all outstanding withdraw requests'],
+						type: 'u64',
 					},
 					{
 						name: 'sharesBase',

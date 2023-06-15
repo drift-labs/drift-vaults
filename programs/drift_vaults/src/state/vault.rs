@@ -43,6 +43,8 @@ pub struct Vault {
     pub liquidation_start_ts: i64,
     /// the period (in seconds) that a vault depositor must wait after requesting a withdraw to complete withdraw
     pub redeem_period: i64,
+    /// the sum of all outstanding withdraw requests
+    pub total_withdraw_requested: u64,
     /// the base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)  
     pub shares_base: u32,
     /// percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION
@@ -63,7 +65,7 @@ impl Vault {
 }
 
 impl Size for Vault {
-    const SIZE: usize = 320 + 8;
+    const SIZE: usize = 328 + 8;
 }
 
 const_assert_eq!(Vault::SIZE, std::mem::size_of::<Vault>() + 8);

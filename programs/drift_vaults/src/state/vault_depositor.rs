@@ -229,6 +229,14 @@ impl VaultDepositor {
         Ok(0)
     }
 
+    pub fn reset_withdraw_request(self: &mut VaultDepositor, now: i64) -> Result<()> {
+        // reset vault_depositor withdraw request info
+        self.last_withdraw_request_shares = 0;
+        self.last_withdraw_request_value = 0;
+        self.last_withdraw_request_ts = now;
+        Ok(())
+    }
+
     pub fn deposit(
         self: &mut VaultDepositor,
         amount: u64,
@@ -336,6 +344,8 @@ impl VaultDepositor {
 
         self.last_withdraw_request_value = withdraw_value;
 
+        vault.total_withdraw_requested = vault.total_withdraw_requested.safe_add(withdraw_value)?;
+
         validate!(
             self.last_withdraw_request_value == 0
                 || self.last_withdraw_request_value <= vault_equity,
@@ -389,6 +399,10 @@ impl VaultDepositor {
 
         vault.user_shares = vault.user_shares.safe_sub(vault_shares_lost)?;
 
+        vault.total_withdraw_requested = vault
+            .total_withdraw_requested
+            .safe_sub(self.last_withdraw_request_value)?;
+
         let vault_shares_after = self.checked_vault_shares(vault)?;
 
         emit!(VaultDepositorRecord {
@@ -408,6 +422,8 @@ impl VaultDepositor {
             profit_share: 0,
             management_fee: 0,
         });
+
+        self.reset_withdraw_request(now)?;
 
         Ok(())
     }
@@ -469,10 +485,7 @@ impl VaultDepositor {
 
         vault.user_shares = vault.user_shares.safe_sub(n_shares)?;
 
-        // reset vault_depositor withdraw request info
-        self.last_withdraw_request_shares = 0;
-        self.last_withdraw_request_value = 0;
-        self.last_withdraw_request_ts = now;
+        self.reset_withdraw_request(now)?;
 
         let vault_shares_after = self.checked_vault_shares(vault)?;
 
@@ -495,6 +508,8 @@ impl VaultDepositor {
         });
 
         let user_withdraw_amount = withdraw_amount.safe_sub(profit_share.cast()?)?;
+        vault.total_withdraw_requested =
+            vault.total_withdraw_requested.safe_sub(withdraw_amount)?;
 
         let finishing_liquidation = vault.liquidation_delegate == self.authority;
 
