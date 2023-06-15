@@ -300,7 +300,7 @@ impl VaultDepositor {
     ) -> Result<()> {
         self.apply_rebase(vault, vault_equity)?;
         let management_fee = vault.apply_management_fee(vault_equity, now)?;
-        let profit_share: u64 = self._realize_profits(vault_equity, vault)?;
+        let profit_share: u64 = self.apply_profit_share(vault_equity, vault)?;
 
         let (withdraw_value, n_shares) = match withdraw_unit {
             WithdrawUnit::Token => {
@@ -469,7 +469,7 @@ impl VaultDepositor {
         let management_fee: u64 = vault.apply_management_fee(vault_equity, now)?;
         msg!("after management_fee vault_shares={}", self.vault_shares,);
 
-        let profit_share: u64 = self._realize_profits(vault_equity, vault)?;
+        let profit_share: u64 = self.apply_profit_share(vault_equity, vault)?;
         msg!("after profit_share vault_shares={}", self.vault_shares,);
         let amount: u64 =
             depositor_shares_to_vault_amount(n_shares, vault.total_shares, vault_equity)?;
@@ -521,7 +521,7 @@ impl VaultDepositor {
         Ok(withdraw_amount)
     }
 
-    pub fn _realize_profits(
+    pub fn apply_profit_share(
         self: &mut VaultDepositor,
         vault_equity: u64,
         vault: &mut Vault,
@@ -559,7 +559,7 @@ impl VaultDepositor {
         let total_vault_shares_before = vault.total_shares;
         let user_vault_shares_before = vault.user_shares;
 
-        let profit_share = self._realize_profits(vault_equity, vault)?;
+        let profit_share = self.apply_profit_share(vault_equity, vault)?;
 
         emit!(VaultDepositorRecord {
             ts: now,

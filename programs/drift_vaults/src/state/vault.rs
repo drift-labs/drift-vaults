@@ -83,10 +83,6 @@ impl Vault {
 
         if self.management_fee > 0 && depositor_equity > 0 {
             let since_last = now.safe_sub(self.last_fee_update_ts)?;
-            msg!("now {}", now);
-            msg!("last_fee_update_ts {}", self.last_fee_update_ts);
-
-            msg!("since_last {}", since_last);
 
             management_fee_payment = depositor_equity
                 .safe_mul(self.management_fee.cast()?)?
@@ -168,7 +164,9 @@ impl Vault {
     }
 
     pub fn manager_deposit(&mut self, amount: u64, vault_equity: u64, now: i64) -> Result<()> {
+        self.apply_rebase(vault_equity)?;
         let management_fee = self.apply_management_fee(vault_equity, now)?;
+
         let user_vault_shares_before = self.user_shares;
         let total_vault_shares_before = self.total_shares;
         let vault_shares_before = self.total_shares.safe_sub(self.user_shares)?;
@@ -207,6 +205,8 @@ impl Vault {
         vault_equity: u64,
         now: i64,
     ) -> Result<u64> {
+        self.apply_rebase(vault_equity)?;
+
         let management_fee = self.apply_management_fee(vault_equity, now)?;
 
         let (n_tokens, n_shares) = match withdraw_unit {
