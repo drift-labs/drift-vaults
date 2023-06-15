@@ -109,6 +109,7 @@ impl Vault {
                 .safe_mul(new_total_shares_factor.cast()?)?
                 .safe_div(PERCENTAGE_PRECISION)?;
 
+            // in case total_shares is pushed to level that warrants a rebase
             self.apply_rebase(vault_equity)?;
         }
 
