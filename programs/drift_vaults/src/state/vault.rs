@@ -82,11 +82,12 @@ impl Size for Vault {
 const_assert_eq!(Vault::SIZE, std::mem::size_of::<Vault>() + 8);
 
 impl Vault {
-    pub fn apply_management_fee(&mut self, vault_equity: u64, now: i64) -> Result<u64> {
+    pub fn apply_management_fee(&mut self, vault_equity: u64, now: i64) -> Result<(u64, u64)> {
         let depositor_equity =
             depositor_shares_to_vault_amount(self.user_shares, self.total_shares, vault_equity)?
                 .cast::<u128>()?;
         let mut management_fee_payment: u128 = 0;
+        let mut management_fee_shares: u128 = 0;
 
         if self.management_fee > 0 && depositor_equity > 0 {
             let since_last = now.safe_sub(self.last_fee_update_ts)?;
@@ -107,17 +108,23 @@ impl Vault {
                         .safe_sub(management_fee_payment)?,
                 )?;
 
-            self.total_shares = self
+            let new_total_shares = self
                 .total_shares
                 .safe_mul(new_total_shares_factor.cast()?)?
                 .safe_div(PERCENTAGE_PRECISION)?;
+
+            management_fee_shares = new_total_shares.safe_sub(self.total_shares)?;
+            self.total_shares = new_total_shares;
 
             // in case total_shares is pushed to level that warrants a rebase
             self.apply_rebase(vault_equity)?;
         }
 
         self.last_fee_update_ts = now;
-        Ok(management_fee_payment.cast::<u64>()?)
+        Ok((
+            management_fee_payment.cast::<u64>()?,
+            management_fee_shares.cast::<u64>()?,
+        ))
     }
 
     pub fn apply_rebase(&mut self, vault_equity: u64) -> Result<()> {
@@ -176,7 +183,8 @@ impl Vault {
 
     pub fn manager_deposit(&mut self, amount: u64, vault_equity: u64, now: i64) -> Result<()> {
         self.apply_rebase(vault_equity)?;
-        let management_fee = self.apply_management_fee(vault_equity, now)?;
+        let (management_fee, management_fee_shares) =
+            self.apply_management_fee(vault_equity, now)?;
 
         let user_vault_shares_before = self.user_shares;
         let total_vault_shares_before = self.total_shares;
@@ -204,6 +212,7 @@ impl Vault {
             user_vault_shares_after: self.user_shares,
             profit_share: 0,
             management_fee,
+            management_fee_shares,
         });
 
         Ok(())
@@ -238,7 +247,8 @@ impl Vault {
     ) -> Result<u64> {
         self.apply_rebase(vault_equity)?;
 
-        let management_fee = self.apply_management_fee(vault_equity, now)?;
+        let (management_fee, management_fee_shares) =
+            self.apply_management_fee(vault_equity, now)?;
 
         let (n_tokens, n_shares) = match withdraw_unit {
             WithdrawUnit::Token => {
@@ -287,6 +297,7 @@ impl Vault {
             user_vault_shares_after: self.user_shares,
             profit_share: 0,
             management_fee,
+            management_fee_shares,
         });
 
         Ok(n_tokens)

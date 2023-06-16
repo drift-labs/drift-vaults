@@ -264,7 +264,8 @@ impl VaultDepositor {
         let total_vault_shares_before = vault.total_shares;
         let user_vault_shares_before = vault.user_shares;
 
-        let management_fee = vault.apply_management_fee(vault_equity, now)?;
+        let (management_fee, management_fee_shares) =
+            vault.apply_management_fee(vault_equity, now)?;
 
         let n_shares = vault_amount_to_depositor_shares(amount, vault.total_shares, vault_equity)?;
 
@@ -293,6 +294,7 @@ impl VaultDepositor {
             user_vault_shares_after: vault.user_shares,
             profit_share: 0,
             management_fee,
+            management_fee_shares,
         });
 
         Ok(())
@@ -307,7 +309,8 @@ impl VaultDepositor {
         now: i64,
     ) -> Result<()> {
         self.apply_rebase(vault, vault_equity)?;
-        let management_fee = vault.apply_management_fee(vault_equity, now)?;
+        let (management_fee, management_fee_shares) =
+            vault.apply_management_fee(vault_equity, now)?;
         let profit_share: u64 = self.apply_profit_share(vault_equity, vault)?;
 
         let (withdraw_value, n_shares) = match withdraw_unit {
@@ -385,6 +388,7 @@ impl VaultDepositor {
             user_vault_shares_after: vault.user_shares,
             profit_share,
             management_fee,
+            management_fee_shares,
         });
 
         self.last_withdraw_request_ts = now;
@@ -404,7 +408,8 @@ impl VaultDepositor {
         let total_vault_shares_before = vault.total_shares;
         let user_vault_shares_before = vault.user_shares;
 
-        let management_fee = vault.apply_management_fee(vault_equity, now)?;
+        let (management_fee, management_fee_shares) =
+            vault.apply_management_fee(vault_equity, now)?;
         let vault_shares_lost = self.calculate_vault_shares_lost(vault, vault_equity)?;
         self.decrease_vault_shares(vault_shares_lost, vault)?;
 
@@ -434,6 +439,7 @@ impl VaultDepositor {
             user_vault_shares_after: vault.user_shares,
             profit_share: 0,
             management_fee,
+            management_fee_shares,
         });
 
         self.reset_withdraw_request(now)?;
@@ -469,7 +475,8 @@ impl VaultDepositor {
             ErrorCode::InsufficientVaultShares
         )?;
 
-        let management_fee: u64 = vault.apply_management_fee(vault_equity, now)?;
+        let (management_fee, management_fee_shares) =
+            vault.apply_management_fee(vault_equity, now)?;
         msg!("after management_fee vault_shares={}", self.vault_shares,);
 
         let profit_share: u64 = self.apply_profit_share(vault_equity, vault)?;
@@ -516,6 +523,7 @@ impl VaultDepositor {
             user_vault_shares_after: vault.user_shares,
             profit_share,
             management_fee,
+            management_fee_shares,
         });
 
         vault.total_withdraw_requested =
@@ -558,7 +566,8 @@ impl VaultDepositor {
         vault: &mut Vault,
         now: i64,
     ) -> Result<u64> {
-        let management_fee = vault.apply_management_fee(vault_equity, now)?;
+        let (management_fee, management_fee_shares) =
+            vault.apply_management_fee(vault_equity, now)?;
 
         let vault_shares_before = self.checked_vault_shares(vault)?;
         let total_vault_shares_before = vault.total_shares;
@@ -582,6 +591,7 @@ impl VaultDepositor {
             user_vault_shares_after: vault.user_shares,
             profit_share,
             management_fee,
+            management_fee_shares,
         });
 
         Ok(profit_share)
