@@ -141,11 +141,13 @@ impl Vault {
             let (expo_diff, rebase_divisor) =
                 calculate_rebase_info(self.total_shares, vault_equity)?;
 
-            self.total_shares = self.total_shares.safe_div(rebase_divisor)?;
-            self.user_shares = self.user_shares.safe_div(rebase_divisor)?;
-            self.shares_base = self.shares_base.safe_add(expo_diff)?;
+            if expo_diff != 0 {
+                self.total_shares = self.total_shares.safe_div(rebase_divisor)?;
+                self.user_shares = self.user_shares.safe_div(rebase_divisor)?;
+                self.shares_base = self.shares_base.safe_add(expo_diff)?;
 
-            msg!("rebasing vault: expo_diff={}", expo_diff);
+                msg!("rebasing vault: expo_diff={}", expo_diff);
+            }
         }
 
         if vault_equity != 0 && self.total_shares == 0 {
