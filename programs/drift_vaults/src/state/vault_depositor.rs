@@ -201,7 +201,6 @@ impl VaultDepositor {
 
     pub fn calculate_profit_share_and_update(
         self: &mut VaultDepositor,
-        withdraw_amount: u64,
         total_amount: u64,
         vault: &Vault,
     ) -> Result<u128> {
@@ -211,17 +210,14 @@ impl VaultDepositor {
         )?;
         if profit > 0 {
             let profit_u128 = profit.cast::<u128>()?;
-            let frac_profit_withdrawn = profit_u128
-                .safe_mul(withdraw_amount.cast()?)?
-                .safe_div(total_amount.cast()?)?;
 
-            let profit_share_amount = frac_profit_withdrawn
+            let profit_share_amount = profit_u128
                 .safe_mul(vault.profit_share.cast()?)?
                 .safe_div(PERCENTAGE_PRECISION)?;
 
             self.cumulative_profit_share_amount = self
                 .cumulative_profit_share_amount
-                .safe_add(frac_profit_withdrawn.cast()?)?;
+                .safe_add(profit_u128.cast()?)?;
 
             return Ok(profit_share_amount);
         }
@@ -266,6 +262,7 @@ impl VaultDepositor {
 
         let (management_fee, management_fee_shares) =
             vault.apply_management_fee(vault_equity, now)?;
+        let profit_share: u64 = self.apply_profit_share(vault_equity, vault)?;
 
         let n_shares = vault_amount_to_depositor_shares(amount, vault.total_shares, vault_equity)?;
 
@@ -292,7 +289,7 @@ impl VaultDepositor {
             vault_shares_after,
             total_vault_shares_after: vault.total_shares,
             user_vault_shares_after: vault.user_shares,
-            profit_share: 0,
+            profit_share,
             management_fee,
             management_fee_shares,
         });
@@ -539,15 +536,11 @@ impl VaultDepositor {
         vault_equity: u64,
         vault: &mut Vault,
     ) -> Result<u64> {
-        let n_shares = self.vault_shares;
-        let amount: u64 =
-            depositor_shares_to_vault_amount(n_shares, vault.total_shares, vault_equity)?;
-
         let total_amount =
             depositor_shares_to_vault_amount(self.vault_shares, vault.total_shares, vault_equity)?;
 
         let profit_share: u64 = self
-            .calculate_profit_share_and_update(amount, total_amount, vault)?
+            .calculate_profit_share_and_update(total_amount, vault)?
             .cast()?;
 
         let profit_share_shares: u128 =
