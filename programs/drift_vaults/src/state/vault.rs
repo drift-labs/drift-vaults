@@ -88,6 +88,7 @@ impl Vault {
                 .cast::<u128>()?;
         let mut management_fee_payment: u128 = 0;
         let mut management_fee_shares: u128 = 0;
+        let mut skip_ts_update = false;
 
         if self.management_fee > 0 && depositor_equity > 0 {
             let since_last = now.safe_sub(self.last_fee_update_ts)?;
@@ -113,6 +114,11 @@ impl Vault {
                 .safe_mul(new_total_shares_factor.cast()?)?
                 .safe_div(PERCENTAGE_PRECISION)?;
 
+            if management_fee_payment == 0 || self.total_shares == new_total_shares {
+                // time delta wasnt large enough to pay any management fee
+                skip_ts_update = true;
+            }
+
             management_fee_shares = new_total_shares.safe_sub(self.total_shares)?;
             self.total_shares = new_total_shares;
 
@@ -120,7 +126,10 @@ impl Vault {
             self.apply_rebase(vault_equity)?;
         }
 
-        self.last_fee_update_ts = now;
+        if !skip_ts_update {
+            self.last_fee_update_ts = now;
+        }
+
         Ok((
             management_fee_payment.cast::<u64>()?,
             management_fee_shares.cast::<u64>()?,
