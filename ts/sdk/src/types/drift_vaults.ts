@@ -73,14 +73,10 @@ export type DriftVaults = {
 			];
 			args: [
 				{
-					name: 'name';
+					name: 'params';
 					type: {
-						array: ['u8', 32];
+						defined: 'VaultParams';
 					};
-				},
-				{
-					name: 'spotMarketIndex';
-					type: 'u16';
 				}
 			];
 		},
@@ -657,6 +653,44 @@ export type DriftVaults = {
 	];
 	types: [
 		{
+			name: 'VaultParams';
+			type: {
+				kind: 'struct';
+				fields: [
+					{
+						name: 'name';
+						type: {
+							array: ['u8', 32];
+						};
+					},
+					{
+						name: 'redeemPeriod';
+						type: 'i64';
+					},
+					{
+						name: 'maxTokens';
+						type: 'u64';
+					},
+					{
+						name: 'managementFee';
+						type: 'u64';
+					},
+					{
+						name: 'profitShare';
+						type: 'u32';
+					},
+					{
+						name: 'hurdleRate';
+						type: 'u32';
+					},
+					{
+						name: 'spotMarketIndex';
+						type: 'u16';
+					}
+				];
+			};
+		},
+		{
 			name: 'VaultDepositorAction';
 			type: {
 				kind: 'enum';
@@ -878,6 +912,11 @@ export type DriftVaults = {
 			code: 6014;
 			name: 'DriftError';
 			msg: 'DriftError';
+		},
+		{
+			code: 6015;
+			name: 'InvalidVaultInitialization';
+			msg: 'InvalidVaultInitialization';
 		}
 	];
 };
@@ -957,14 +996,10 @@ export const IDL: DriftVaults = {
 			],
 			args: [
 				{
-					name: 'name',
+					name: 'params',
 					type: {
-						array: ['u8', 32],
+						defined: 'VaultParams',
 					},
-				},
-				{
-					name: 'spotMarketIndex',
-					type: 'u16',
 				},
 			],
 		},
@@ -1541,6 +1576,44 @@ export const IDL: DriftVaults = {
 	],
 	types: [
 		{
+			name: 'VaultParams',
+			type: {
+				kind: 'struct',
+				fields: [
+					{
+						name: 'name',
+						type: {
+							array: ['u8', 32],
+						},
+					},
+					{
+						name: 'redeemPeriod',
+						type: 'i64',
+					},
+					{
+						name: 'maxTokens',
+						type: 'u64',
+					},
+					{
+						name: 'managementFee',
+						type: 'u64',
+					},
+					{
+						name: 'profitShare',
+						type: 'u32',
+					},
+					{
+						name: 'hurdleRate',
+						type: 'u32',
+					},
+					{
+						name: 'spotMarketIndex',
+						type: 'u16',
+					},
+				],
+			},
+		},
+		{
 			name: 'VaultDepositorAction',
 			type: {
 				kind: 'enum',
@@ -1762,6 +1835,11 @@ export const IDL: DriftVaults = {
 			code: 6014,
 			name: 'DriftError',
 			msg: 'DriftError',
+		},
+		{
+			code: 6015,
+			name: 'InvalidVaultInitialization',
+			msg: 'InvalidVaultInitialization',
 		},
 	],
 };

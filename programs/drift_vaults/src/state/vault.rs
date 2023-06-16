@@ -302,6 +302,7 @@ impl Vault {
 
         Ok(n_tokens)
     }
+
     pub fn in_liquidation(&self) -> bool {
         self.liquidation_delegate != Pubkey::default()
     }

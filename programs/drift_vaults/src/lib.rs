@@ -18,10 +18,9 @@ pub mod drift_vaults {
 
     pub fn initialize_vault<'info>(
         ctx: Context<'_, '_, '_, 'info, InitializeVault<'info>>,
-        name: [u8; 32],
-        spot_market_index: u16,
+        params: VaultParams,
     ) -> Result<()> {
-        instructions::initialize_vault(ctx, name, spot_market_index)
+        instructions::initialize_vault(ctx, params)
     }
 
     pub fn update_delegate<'info>(
