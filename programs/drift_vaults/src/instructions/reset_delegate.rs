@@ -1,25 +1,27 @@
-use crate::constraints::{is_authority_for_vault, is_user_for_vault};
+use crate::constraints::is_user_for_vault;
 use crate::cpi::UpdateUserCPI;
-use crate::Vault;
+use crate::error::ErrorCode;
 use crate::{declare_vault_seeds, implement_update_user_delegate_cpi};
+use crate::{validate, Vault};
 use anchor_lang::prelude::*;
 use drift::cpi::accounts::UpdateUser;
 use drift::program::Drift;
 use drift::state::user::User;
 
-pub fn update_delegate<'info>(
-    ctx: Context<'_, '_, '_, 'info, UpdateDelegate<'info>>,
-    delegate: Pubkey,
-) -> Result<()> {
+pub fn reset_delegate<'info>(ctx: Context<'_, '_, '_, 'info, ResetDelegate<'info>>) -> Result<()> {
     let mut vault = ctx.accounts.vault.load_mut()?;
 
-    if vault.in_liquidation() {
-        let now = Clock::get()?.unix_timestamp;
-        vault.check_can_exit_liquidation(now)?;
-        vault.reset_liquidation_delegate();
-    }
+    validate!(
+        vault.in_liquidation(),
+        ErrorCode::Default,
+        "vault not in liquidation"
+    )?;
 
-    vault.delegate = delegate;
+    let now = Clock::get()?.unix_timestamp;
+    vault.check_can_exit_liquidation(now)?;
+    vault.reset_liquidation_delegate();
+
+    let delegate = vault.delegate;
 
     drop(vault);
 
@@ -29,11 +31,8 @@ pub fn update_delegate<'info>(
 }
 
 #[derive(Accounts)]
-pub struct UpdateDelegate<'info> {
-    #[account(
-        mut,
-        constraint = is_authority_for_vault(&vault, &authority)?,
-    )]
+pub struct ResetDelegate<'info> {
+    #[account(mut)]
     pub vault: AccountLoader<'info, Vault>,
     pub authority: Signer<'info>,
     #[account(
@@ -45,7 +44,7 @@ pub struct UpdateDelegate<'info> {
     pub drift_program: Program<'info, Drift>,
 }
 
-impl<'info> UpdateUserCPI for Context<'_, '_, '_, 'info, UpdateDelegate<'info>> {
+impl<'info> UpdateUserCPI for Context<'_, '_, '_, 'info, ResetDelegate<'info>> {
     fn drift_update_user_delegate(&self, delegate: Pubkey) -> Result<()> {
         implement_update_user_delegate_cpi!(self, delegate);
         Ok(())

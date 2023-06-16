@@ -1,5 +1,9 @@
 use anchor_lang::prelude::*;
 
+use drift::error::ErrorCode as DriftErrorCode;
+
+pub type VaultResult<T = ()> = std::result::Result<T, ErrorCode>;
+
 #[error_code]
 #[derive(PartialEq, Eq)]
 pub enum ErrorCode {
@@ -23,4 +27,20 @@ pub enum ErrorCode {
     VaultWithdrawRequestInProgress,
     #[msg("VaultIsAtCapacity")]
     VaultIsAtCapacity,
+    #[msg("InvalidVaultDepositorInitialization")]
+    InvalidVaultDepositorInitialization,
+    #[msg("DelegateNotAvailableForLiquidation")]
+    DelegateNotAvailableForLiquidation,
+    #[msg("InvalidEquityValue")]
+    InvalidEquityValue,
+    #[msg("VaultInLiquidation")]
+    VaultInLiquidation,
+    #[msg("DriftError")]
+    DriftError,
+}
+
+impl From<DriftErrorCode> for ErrorCode {
+    fn from(_: DriftErrorCode) -> Self {
+        ErrorCode::DriftError
+    }
 }

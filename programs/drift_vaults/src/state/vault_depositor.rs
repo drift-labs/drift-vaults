@@ -2,6 +2,8 @@ use crate::error::ErrorCode;
 use crate::Size;
 use anchor_lang::prelude::*;
 use borsh::{BorshDeserialize, BorshSerialize};
+use drift::controller::spot_balance::update_spot_balances;
+use drift::error::{DriftResult, ErrorCode as DriftErrorCode};
 
 use drift::math::constants::PERCENTAGE_PRECISION;
 
@@ -17,7 +19,13 @@ use drift::math::insurance::{
 };
 
 use drift::math::casting::Cast;
+use drift::math::margin::meets_initial_margin_requirement;
 use drift::math::safe_math::SafeMath;
+use drift::state::oracle_map::OracleMap;
+use drift::state::perp_market_map::PerpMarketMap;
+use drift::state::spot_market::SpotBalanceType;
+use drift::state::spot_market_map::SpotMarketMap;
+use drift::state::user::User;
 
 #[account(zero_copy)]
 #[derive(Default, Eq, PartialEq, Debug)]
@@ -438,13 +446,8 @@ impl VaultDepositor {
         vault_equity: u64,
         vault: &mut Vault,
         now: i64,
-    ) -> Result<u64> {
-        let time_since_withdraw_request = now.safe_sub(self.last_withdraw_request_ts)?;
-
-        validate!(
-            time_since_withdraw_request >= vault.redeem_period,
-            ErrorCode::CannotWithdrawBeforeRedeemPeriodEnd
-        )?;
+    ) -> Result<(u64, bool)> {
+        self.check_redeem_period_finished(vault, now)?;
 
         self.apply_rebase(vault, vault_equity)?;
 
@@ -518,7 +521,9 @@ impl VaultDepositor {
         vault.total_withdraw_requested =
             vault.total_withdraw_requested.safe_sub(withdraw_amount)?;
 
-        Ok(withdraw_amount)
+        let finishing_liquidation = vault.liquidation_delegate == self.authority;
+
+        Ok((withdraw_amount, finishing_liquidation))
     }
 
     pub fn apply_profit_share(
@@ -581,6 +586,52 @@ impl VaultDepositor {
 
         Ok(profit_share)
     }
+
+    pub fn check_redeem_period_finished(&self, vault: &Vault, now: i64) -> Result<()> {
+        let time_since_withdraw_request = now.safe_sub(self.last_withdraw_request_ts)?;
+
+        validate!(
+            time_since_withdraw_request >= vault.redeem_period,
+            ErrorCode::CannotWithdrawBeforeRedeemPeriodEnd
+        )?;
+
+        Ok(())
+    }
+
+    pub fn check_cant_withdraw(
+        &self,
+        vault: &Vault,
+        drift_user: &mut User,
+        perp_market_map: &PerpMarketMap,
+        spot_market_map: &SpotMarketMap,
+        oracle_map: &mut OracleMap,
+    ) -> DriftResult {
+        let mut spot_market = spot_market_map.get_ref_mut(&vault.spot_market_index)?;
+
+        update_spot_balances(
+            self.last_withdraw_request_value.cast()?,
+            &SpotBalanceType::Borrow,
+            &mut spot_market,
+            drift_user.force_get_spot_position_mut(vault.spot_market_index)?,
+            true,
+        )?;
+
+        drop(spot_market);
+
+        let can_withdraw = meets_initial_margin_requirement(
+            drift_user,
+            perp_market_map,
+            spot_market_map,
+            oracle_map,
+        )?;
+
+        if can_withdraw {
+            msg!("depositor is able to withdraw");
+            return Err(DriftErrorCode::DefaultError);
+        }
+
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone, Copy, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
@@ -628,7 +679,7 @@ mod tests {
         )
         .unwrap();
 
-        let withdraw_amount = vd.withdraw(vault_equity, vault, now + 20).unwrap();
+        let (withdraw_amount, _) = vd.withdraw(vault_equity, vault, now + 20).unwrap();
         assert_eq!(vd.vault_shares_base, 0);
         assert_eq!(withdraw_amount, amount);
     }
@@ -667,7 +718,7 @@ mod tests {
         assert_eq!(vd.last_withdraw_request_value, 100000000);
         assert_eq!(vd.last_withdraw_request_ts, now + 20);
 
-        let withdraw_amount = vd.withdraw(vault_equity, vault, now + 20).unwrap();
+        let (withdraw_amount, _ll) = vd.withdraw(vault_equity, vault, now + 20).unwrap();
         assert_eq!(vd.checked_vault_shares(vault).unwrap(), 45000000);
         assert_eq!(vd.vault_shares_base, 0);
         assert_eq!(vault.user_shares, 45000000);
@@ -722,7 +773,7 @@ mod tests {
         assert_eq!(vd.last_withdraw_request_value, 190000000);
         assert_eq!(vd.last_withdraw_request_ts, now + 20);
 
-        let withdraw_amount = vd.withdraw(vault_equity, vault, now + 20).unwrap();
+        let (withdraw_amount, _) = vd.withdraw(vault_equity, vault, now + 20).unwrap();
         assert_eq!(vd.checked_vault_shares(vault).unwrap(), 0);
         assert_eq!(vd.vault_shares_base, 0);
         assert_eq!(vault.user_shares, 0);
@@ -780,7 +831,7 @@ mod tests {
         assert_eq!(vd.last_withdraw_request_ts, now + 20);
         // assert_eq!(vd.last_withdraw_request_shares, 100000000);
 
-        let withdraw_amount = vd.withdraw(vault_equity, vault, now + 20).unwrap();
+        let (withdraw_amount, _ll) = vd.withdraw(vault_equity, vault, now + 20).unwrap();
         assert_eq!(vd.checked_vault_shares(vault).unwrap(), 0);
         assert_eq!(vd.vault_shares_base, 0);
         assert_eq!(vault.user_shares, 0);

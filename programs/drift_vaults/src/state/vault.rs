@@ -1,8 +1,8 @@
-use crate::error::ErrorCode;
 use crate::events::{VaultDepositorAction, VaultDepositorRecord};
-use crate::validate;
-use crate::Size;
-use crate::WithdrawUnit;
+use crate::{validate, Size, VaultDepositor, WithdrawUnit};
+
+use crate::constants::TIME_FOR_LIQUIDATION;
+use crate::error::{ErrorCode, VaultResult};
 use anchor_lang::prelude::*;
 use drift::math::casting::Cast;
 use drift::math::constants::{ONE_YEAR, PERCENTAGE_PRECISION};
@@ -35,31 +35,38 @@ pub struct Vault {
     pub user_stats: Pubkey,
     /// The drift user account for the vault
     pub user: Pubkey,
-    /// The spot market index the vault deposits into/withdraws from
-    pub spot_market_index: u16,
-    /// The bump for the vault pda
-    pub bump: u8,
-    pub padding: [u8; 1],
-    /// the period (in seconds) that a vault depositor must wait after requesting a withdraw to complete withdraw
-    pub redeem_period: i64,
-    /// the base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)  
-    pub shares_base: u32,
+    /// The vaults designated delegate for drift user account
+    /// Can differ from actual user delegate if vault is in liquidation
+    pub delegate: Pubkey,
+    /// The delegate handling liquidation for depositor
+    pub liquidation_delegate: Pubkey,
     /// the sum of all shares held by the users (vault depositors)
     pub user_shares: u128,
     /// the sum of all shares (including vault authority)
     pub total_shares: u128,
     /// last fee update unix timestamp
     pub last_fee_update_ts: i64,
-    /// sum of outstanding withdraw request amount (in tokens) of all vault depositors
+    /// When the liquidation start
+    pub liquidation_start_ts: i64,
+    /// the period (in seconds) that a vault depositor must wait after requesting a withdraw to complete withdraw
+    pub redeem_period: i64,
+    /// the sum of all outstanding withdraw requests
     pub total_withdraw_requested: u64,
     /// max token capacity, once hit/passed vault will reject new deposits (updateable)
     pub max_tokens: u64,
-    /// percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION (frozen)
+    /// the base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)  
+    pub shares_base: u32,
+    /// manager fee
+    pub management_fee: u64,
+    /// percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION
     pub profit_share: u32,
     /// vault admin only collect incentive fees during periods when returns are higher than this amount: PERCENTAGE_PRECISION
-    pub hurdle_rate: u32, // todo: not implemented yet (frozen)
-    /// annualized vault admin management fee (frozen)
-    pub management_fee: u32,
+    pub hurdle_rate: u32, // todo: not implemented yet
+    /// The spot market index the vault deposits into/withdraws from
+    pub spot_market_index: u16,
+    /// The bump for the vault pda
+    pub bump: u8,
+    pub padding: [u8; 1],
 }
 
 impl Vault {
@@ -69,7 +76,7 @@ impl Vault {
 }
 
 impl Size for Vault {
-    const SIZE: usize = 288 + 8;
+    const SIZE: usize = 360 + 8;
 }
 
 const_assert_eq!(Vault::SIZE, std::mem::size_of::<Vault>() + 8);
@@ -139,14 +146,18 @@ impl Vault {
         perp_market_map: &PerpMarketMap,
         spot_market_map: &SpotMarketMap,
         oracle_map: &mut OracleMap,
-    ) -> Result<u64> {
+    ) -> VaultResult<u64> {
         let (vault_equity, all_oracles_valid) =
             calculate_user_equity(user, perp_market_map, spot_market_map, oracle_map)?;
 
-        validate!(all_oracles_valid, ErrorCode::Default, "oracle invalid")?;
+        validate!(
+            all_oracles_valid,
+            ErrorCode::InvalidEquityValue,
+            "oracle invalid"
+        )?;
         validate!(
             vault_equity >= 0,
-            ErrorCode::Default,
+            ErrorCode::InvalidEquityValue,
             "vault equity negative"
         )?;
 
@@ -194,6 +205,26 @@ impl Vault {
             profit_share: 0,
             management_fee,
         });
+
+        Ok(())
+    }
+
+    pub fn check_delegate_available_for_liquidation(
+        &self,
+        vault_depositor: &VaultDepositor,
+        now: i64,
+    ) -> VaultResult {
+        validate!(
+            self.liquidation_delegate != vault_depositor.authority,
+            ErrorCode::DelegateNotAvailableForLiquidation,
+            "liquidation delegate is already vault depositor"
+        )?;
+
+        validate!(
+            now.saturating_sub(self.liquidation_start_ts) > TIME_FOR_LIQUIDATION,
+            ErrorCode::DelegateNotAvailableForLiquidation,
+            "vault is already in liquidation"
+        )?;
 
         Ok(())
     }
@@ -259,5 +290,28 @@ impl Vault {
         });
 
         Ok(n_tokens)
+    }
+    pub fn in_liquidation(&self) -> bool {
+        self.liquidation_delegate != Pubkey::default()
+    }
+
+    pub fn check_can_exit_liquidation(&self, now: i64) -> VaultResult {
+        validate!(
+            now.saturating_sub(self.liquidation_start_ts) > TIME_FOR_LIQUIDATION,
+            ErrorCode::VaultInLiquidation,
+            "vault is in liquidation"
+        )?;
+
+        Ok(())
+    }
+
+    pub fn set_liquidation_delegate(&mut self, liquidation_delegate: Pubkey, now: i64) {
+        self.liquidation_delegate = liquidation_delegate;
+        self.liquidation_start_ts = now;
+    }
+
+    pub fn reset_liquidation_delegate(&mut self) {
+        self.liquidation_delegate = Pubkey::default();
+        self.liquidation_start_ts = 0;
     }
 }
