@@ -32,6 +32,7 @@ pub struct VaultDepositorRecord {
 
     pub profit_share: u64,
     pub management_fee: u64,
+    pub management_fee_shares: u64,
 }
 
 #[derive(Clone, Copy, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
@@ -40,6 +41,7 @@ pub enum VaultDepositorAction {
     WithdrawRequest,
     CancelWithdrawRequest,
     Withdraw,
+    FeePayment,
 }
 
 impl Default for VaultDepositorAction {

@@ -8,6 +8,7 @@ mod error;
 mod instructions;
 pub mod macros;
 mod state;
+mod tests;
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 

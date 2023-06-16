@@ -1,17 +1,22 @@
-use crate::{Size, VaultDepositor};
+use crate::events::{VaultDepositorAction, VaultDepositorRecord};
+use crate::{validate, Size, VaultDepositor, WithdrawUnit};
 
 use crate::constants::TIME_FOR_LIQUIDATION;
 use crate::error::{ErrorCode, VaultResult};
 use anchor_lang::prelude::*;
 use drift::math::casting::Cast;
+use drift::math::constants::{ONE_YEAR, PERCENTAGE_PRECISION};
 use drift::math::insurance::calculate_rebase_info;
+use drift::math::insurance::{
+    if_shares_to_vault_amount as depositor_shares_to_vault_amount,
+    vault_amount_to_if_shares as vault_amount_to_depositor_shares,
+};
 use drift::math::margin::calculate_user_equity;
 use drift::math::safe_math::SafeMath;
 use drift::state::oracle_map::OracleMap;
 use drift::state::perp_market_map::PerpMarketMap;
 use drift::state::spot_market_map::SpotMarketMap;
 use drift::state::user::User;
-use drift::validate;
 use static_assertions::const_assert_eq;
 
 #[account(zero_copy)]
@@ -39,14 +44,20 @@ pub struct Vault {
     pub user_shares: u128,
     /// the sum of all shares (including vault authority)
     pub total_shares: u128,
+    /// last fee update unix timestamp
+    pub last_fee_update_ts: i64,
     /// When the liquidation start
     pub liquidation_start_ts: i64,
     /// the period (in seconds) that a vault depositor must wait after requesting a withdraw to complete withdraw
     pub redeem_period: i64,
     /// the sum of all outstanding withdraw requests
     pub total_withdraw_requested: u64,
+    /// max token capacity, once hit/passed vault will reject new deposits (updateable)
+    pub max_tokens: u64,
     /// the base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)  
     pub shares_base: u32,
+    /// manager fee
+    pub management_fee: u64,
     /// percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION
     pub profit_share: u32,
     /// vault admin only collect incentive fees during periods when returns are higher than this amount: PERCENTAGE_PRECISION
@@ -65,12 +76,57 @@ impl Vault {
 }
 
 impl Size for Vault {
-    const SIZE: usize = 328 + 8;
+    const SIZE: usize = 360 + 8;
 }
 
 const_assert_eq!(Vault::SIZE, std::mem::size_of::<Vault>() + 8);
 
 impl Vault {
+    pub fn apply_management_fee(&mut self, vault_equity: u64, now: i64) -> Result<(u64, u64)> {
+        let depositor_equity =
+            depositor_shares_to_vault_amount(self.user_shares, self.total_shares, vault_equity)?
+                .cast::<u128>()?;
+        let mut management_fee_payment: u128 = 0;
+        let mut management_fee_shares: u128 = 0;
+
+        if self.management_fee > 0 && depositor_equity > 0 {
+            let since_last = now.safe_sub(self.last_fee_update_ts)?;
+
+            management_fee_payment = depositor_equity
+                .safe_mul(self.management_fee.cast()?)?
+                .safe_div(PERCENTAGE_PRECISION)?
+                .safe_mul(since_last.cast()?)?
+                .safe_div(ONE_YEAR)?
+                .min(depositor_equity.saturating_sub(1));
+
+            let new_total_shares_factor: u128 = depositor_equity
+                .cast::<u128>()?
+                .safe_mul(PERCENTAGE_PRECISION)?
+                .safe_div(
+                    depositor_equity
+                        .cast::<u128>()?
+                        .safe_sub(management_fee_payment)?,
+                )?;
+
+            let new_total_shares = self
+                .total_shares
+                .safe_mul(new_total_shares_factor.cast()?)?
+                .safe_div(PERCENTAGE_PRECISION)?;
+
+            management_fee_shares = new_total_shares.safe_sub(self.total_shares)?;
+            self.total_shares = new_total_shares;
+
+            // in case total_shares is pushed to level that warrants a rebase
+            self.apply_rebase(vault_equity)?;
+        }
+
+        self.last_fee_update_ts = now;
+        Ok((
+            management_fee_payment.cast::<u64>()?,
+            management_fee_shares.cast::<u64>()?,
+        ))
+    }
+
     pub fn apply_rebase(&mut self, vault_equity: u64) -> Result<()> {
         if vault_equity != 0 && vault_equity.cast::<u128>()? < self.total_shares {
             let (expo_diff, rebase_divisor) =
@@ -119,11 +175,47 @@ impl Vault {
             .price
             .cast::<i128>()?;
 
-        vault_equity
+        Ok(vault_equity
             .safe_mul(spot_market_precision)?
             .safe_div(oracle_price)?
-            .cast()
-            .map_err(|e| e.into())
+            .cast::<u64>()?)
+    }
+
+    pub fn manager_deposit(&mut self, amount: u64, vault_equity: u64, now: i64) -> Result<()> {
+        self.apply_rebase(vault_equity)?;
+        let (management_fee, management_fee_shares) =
+            self.apply_management_fee(vault_equity, now)?;
+
+        let user_vault_shares_before = self.user_shares;
+        let total_vault_shares_before = self.total_shares;
+        let vault_shares_before = self.total_shares.safe_sub(self.user_shares)?;
+
+        let n_shares =
+            vault_amount_to_depositor_shares(amount, total_vault_shares_before, vault_equity)?;
+
+        self.total_shares = self.total_shares.safe_add(n_shares)?;
+        let vault_shares_after = self.total_shares.safe_sub(self.user_shares)?;
+
+        emit!(VaultDepositorRecord {
+            ts: now,
+            vault: self.pubkey,
+            depositor_authority: self.authority,
+            action: VaultDepositorAction::Deposit,
+            amount: 0,
+            spot_market_index: self.spot_market_index,
+            vault_equity_before: vault_equity,
+            vault_shares_before,
+            user_vault_shares_before,
+            total_vault_shares_before,
+            vault_shares_after,
+            total_vault_shares_after: self.total_shares,
+            user_vault_shares_after: self.user_shares,
+            profit_share: 0,
+            management_fee,
+            management_fee_shares,
+        });
+
+        Ok(())
     }
 
     pub fn check_delegate_available_for_liquidation(
@@ -146,6 +238,70 @@ impl Vault {
         Ok(())
     }
 
+    pub fn manager_withdraw(
+        &mut self,
+        withdraw_amount: u128,
+        withdraw_unit: WithdrawUnit,
+        vault_equity: u64,
+        now: i64,
+    ) -> Result<u64> {
+        self.apply_rebase(vault_equity)?;
+
+        let (management_fee, management_fee_shares) =
+            self.apply_management_fee(vault_equity, now)?;
+
+        let (n_tokens, n_shares) = match withdraw_unit {
+            WithdrawUnit::Token => {
+                let n_tokens: u64 = withdraw_amount.cast()?;
+                let n_shares: u128 =
+                    vault_amount_to_depositor_shares(n_tokens, self.total_shares, vault_equity)?;
+                (n_tokens, n_shares)
+            }
+            WithdrawUnit::Shares => {
+                let n_shares: u128 = withdraw_amount;
+                let n_tokens: u64 =
+                    depositor_shares_to_vault_amount(n_shares, self.total_shares, vault_equity)?
+                        .min(vault_equity);
+                (n_tokens, n_shares)
+            }
+        };
+
+        let user_vault_shares_before = self.user_shares;
+        let total_vault_shares_before = self.total_shares;
+        let vault_shares_before = self.total_shares.safe_sub(self.user_shares)?;
+
+        validate!(
+            vault_shares_before >= n_shares,
+            ErrorCode::InvalidVaultWithdrawSize,
+            "vault_shares_before={} < n_shares={}",
+            vault_shares_before,
+            n_shares
+        )?;
+
+        self.total_shares = self.total_shares.safe_sub(n_shares)?;
+        let vault_shares_after = self.total_shares.safe_sub(self.user_shares)?;
+
+        emit!(VaultDepositorRecord {
+            ts: now,
+            vault: self.pubkey,
+            depositor_authority: self.authority,
+            action: VaultDepositorAction::Withdraw,
+            amount: 0,
+            spot_market_index: self.spot_market_index,
+            vault_equity_before: vault_equity,
+            vault_shares_before,
+            user_vault_shares_before,
+            total_vault_shares_before,
+            vault_shares_after,
+            total_vault_shares_after: self.total_shares,
+            user_vault_shares_after: self.user_shares,
+            profit_share: 0,
+            management_fee,
+            management_fee_shares,
+        });
+
+        Ok(n_tokens)
+    }
     pub fn in_liquidation(&self) -> bool {
         self.liquidation_delegate != Pubkey::default()
     }

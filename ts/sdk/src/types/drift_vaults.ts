@@ -579,6 +579,11 @@ export type DriftVaults = {
 						type: 'u128';
 					},
 					{
+						name: 'lastFeeUpdateTs';
+						docs: ['last fee update unix timestamp'];
+						type: 'i64';
+					},
+					{
 						name: 'liquidationStartTs';
 						docs: ['When the liquidation start'];
 						type: 'i64';
@@ -596,11 +601,23 @@ export type DriftVaults = {
 						type: 'u64';
 					},
 					{
+						name: 'maxTokens';
+						docs: [
+							'max token capacity, once hit/passed vault will reject new deposits (updateable)'
+						];
+						type: 'u64';
+					},
+					{
 						name: 'sharesBase';
 						docs: [
 							'the base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)'
 						];
 						type: 'u32';
+					},
+					{
+						name: 'managementFee';
+						docs: ['manager fee'];
+						type: 'u64';
 					},
 					{
 						name: 'profitShare';
@@ -655,6 +672,9 @@ export type DriftVaults = {
 					},
 					{
 						name: 'Withdraw';
+					},
+					{
+						name: 'FeePayment';
 					}
 				];
 			};
@@ -774,6 +794,11 @@ export type DriftVaults = {
 					name: 'managementFee';
 					type: 'u64';
 					index: false;
+				},
+				{
+					name: 'managementFeeShares';
+					type: 'u64';
+					index: false;
 				}
 			];
 		}
@@ -826,26 +851,31 @@ export type DriftVaults = {
 		},
 		{
 			code: 6009;
+			name: 'VaultIsAtCapacity';
+			msg: 'VaultIsAtCapacity';
+		},
+		{
+			code: 6010;
 			name: 'InvalidVaultDepositorInitialization';
 			msg: 'InvalidVaultDepositorInitialization';
 		},
 		{
-			code: 6010;
+			code: 6011;
 			name: 'DelegateNotAvailableForLiquidation';
 			msg: 'DelegateNotAvailableForLiquidation';
 		},
 		{
-			code: 6011;
+			code: 6012;
 			name: 'InvalidEquityValue';
 			msg: 'InvalidEquityValue';
 		},
 		{
-			code: 6012;
+			code: 6013;
 			name: 'VaultInLiquidation';
 			msg: 'VaultInLiquidation';
 		},
 		{
-			code: 6013;
+			code: 6014;
 			name: 'DriftError';
 			msg: 'DriftError';
 		}
@@ -1433,6 +1463,11 @@ export const IDL: DriftVaults = {
 						type: 'u128',
 					},
 					{
+						name: 'lastFeeUpdateTs',
+						docs: ['last fee update unix timestamp'],
+						type: 'i64',
+					},
+					{
 						name: 'liquidationStartTs',
 						docs: ['When the liquidation start'],
 						type: 'i64',
@@ -1450,11 +1485,23 @@ export const IDL: DriftVaults = {
 						type: 'u64',
 					},
 					{
+						name: 'maxTokens',
+						docs: [
+							'max token capacity, once hit/passed vault will reject new deposits (updateable)',
+						],
+						type: 'u64',
+					},
+					{
 						name: 'sharesBase',
 						docs: [
 							'the base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)',
 						],
 						type: 'u32',
+					},
+					{
+						name: 'managementFee',
+						docs: ['manager fee'],
+						type: 'u64',
 					},
 					{
 						name: 'profitShare',
@@ -1509,6 +1556,9 @@ export const IDL: DriftVaults = {
 					},
 					{
 						name: 'Withdraw',
+					},
+					{
+						name: 'FeePayment',
 					},
 				],
 			},
@@ -1629,6 +1679,11 @@ export const IDL: DriftVaults = {
 					type: 'u64',
 					index: false,
 				},
+				{
+					name: 'managementFeeShares',
+					type: 'u64',
+					index: false,
+				},
 			],
 		},
 	],
@@ -1680,26 +1735,31 @@ export const IDL: DriftVaults = {
 		},
 		{
 			code: 6009,
+			name: 'VaultIsAtCapacity',
+			msg: 'VaultIsAtCapacity',
+		},
+		{
+			code: 6010,
 			name: 'InvalidVaultDepositorInitialization',
 			msg: 'InvalidVaultDepositorInitialization',
 		},
 		{
-			code: 6010,
+			code: 6011,
 			name: 'DelegateNotAvailableForLiquidation',
 			msg: 'DelegateNotAvailableForLiquidation',
 		},
 		{
-			code: 6011,
+			code: 6012,
 			name: 'InvalidEquityValue',
 			msg: 'InvalidEquityValue',
 		},
 		{
-			code: 6012,
+			code: 6013,
 			name: 'VaultInLiquidation',
 			msg: 'VaultInLiquidation',
 		},
 		{
-			code: 6013,
+			code: 6014,
 			name: 'DriftError',
 			msg: 'DriftError',
 		},
