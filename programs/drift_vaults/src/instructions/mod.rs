@@ -6,6 +6,7 @@ pub use liquidate::*;
 pub use request_withdraw::*;
 pub use reset_delegate::*;
 pub use update_delegate::*;
+pub use update_vault::*;
 pub use withdraw::*;
 
 mod cancel_withdraw_request;
@@ -17,4 +18,5 @@ mod liquidate;
 mod request_withdraw;
 mod reset_delegate;
 mod update_delegate;
+mod update_vault;
 mod withdraw;

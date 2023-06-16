@@ -30,6 +30,13 @@ pub mod drift_vaults {
         instructions::update_delegate(ctx, delegate)
     }
 
+    pub fn update_vault<'info>(
+        ctx: Context<'_, '_, '_, 'info, UpdateVault<'info>>,
+        params: UpdateVaultParams,
+    ) -> Result<()> {
+        instructions::update_vault(ctx, params)
+    }
+
     pub fn initialize_vault_depositor(ctx: Context<InitializeVaultDepositor>) -> Result<()> {
         instructions::initialize_vault_depositor(ctx)
     }

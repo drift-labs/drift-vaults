@@ -112,6 +112,29 @@ export type DriftVaults = {
 			];
 		},
 		{
+			name: 'updateVault';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'authority';
+					isMut: false;
+					isSigner: true;
+				}
+			];
+			args: [
+				{
+					name: 'params';
+					type: {
+						defined: 'UpdateVaultParams';
+					};
+				}
+			];
+		},
+		{
 			name: 'initializeVaultDepositor';
 			accounts: [
 				{
@@ -691,6 +714,44 @@ export type DriftVaults = {
 			};
 		},
 		{
+			name: 'UpdateVaultParams';
+			type: {
+				kind: 'struct';
+				fields: [
+					{
+						name: 'redeemPeriod';
+						type: {
+							option: 'i64';
+						};
+					},
+					{
+						name: 'maxTokens';
+						type: {
+							option: 'u64';
+						};
+					},
+					{
+						name: 'managementFee';
+						type: {
+							option: 'u64';
+						};
+					},
+					{
+						name: 'profitShare';
+						type: {
+							option: 'u32';
+						};
+					},
+					{
+						name: 'hurdleRate';
+						type: {
+							option: 'u32';
+						};
+					}
+				];
+			};
+		},
+		{
 			name: 'VaultDepositorAction';
 			type: {
 				kind: 'enum';
@@ -917,6 +978,11 @@ export type DriftVaults = {
 			code: 6015;
 			name: 'InvalidVaultInitialization';
 			msg: 'InvalidVaultInitialization';
+		},
+		{
+			code: 6016;
+			name: 'InvalidVaultUpdate';
+			msg: 'InvalidVaultUpdate';
 		}
 	];
 };
@@ -1031,6 +1097,29 @@ export const IDL: DriftVaults = {
 				{
 					name: 'delegate',
 					type: 'publicKey',
+				},
+			],
+		},
+		{
+			name: 'updateVault',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'authority',
+					isMut: false,
+					isSigner: true,
+				},
+			],
+			args: [
+				{
+					name: 'params',
+					type: {
+						defined: 'UpdateVaultParams',
+					},
 				},
 			],
 		},
@@ -1614,6 +1703,44 @@ export const IDL: DriftVaults = {
 			},
 		},
 		{
+			name: 'UpdateVaultParams',
+			type: {
+				kind: 'struct',
+				fields: [
+					{
+						name: 'redeemPeriod',
+						type: {
+							option: 'i64',
+						},
+					},
+					{
+						name: 'maxTokens',
+						type: {
+							option: 'u64',
+						},
+					},
+					{
+						name: 'managementFee',
+						type: {
+							option: 'u64',
+						},
+					},
+					{
+						name: 'profitShare',
+						type: {
+							option: 'u32',
+						},
+					},
+					{
+						name: 'hurdleRate',
+						type: {
+							option: 'u32',
+						},
+					},
+				],
+			},
+		},
+		{
 			name: 'VaultDepositorAction',
 			type: {
 				kind: 'enum',
@@ -1840,6 +1967,11 @@ export const IDL: DriftVaults = {
 			code: 6015,
 			name: 'InvalidVaultInitialization',
 			msg: 'InvalidVaultInitialization',
+		},
+		{
+			code: 6016,
+			name: 'InvalidVaultUpdate',
+			msg: 'InvalidVaultUpdate',
 		},
 	],
 };
