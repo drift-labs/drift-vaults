@@ -66,7 +66,8 @@ pub struct Vault {
     pub spot_market_index: u16,
     /// The bump for the vault pda
     pub bump: u8,
-    pub padding: [u8; 1],
+    /// Whether or not anybody can be a depositor
+    pub permissioned: bool,
 }
 
 impl Vault {

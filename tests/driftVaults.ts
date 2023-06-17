@@ -68,6 +68,7 @@ describe('driftVaults', () => {
 			managementFee: ZERO,
 			profitShare: ZERO,
 			hurdleRate: ZERO,
+			permissioned: false,
 		});
 
 		await adminClient.fetchAccounts();

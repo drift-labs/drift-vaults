@@ -36,6 +36,7 @@ export class VaultClient {
 		managementFee: BN;
 		profitShare: number;
 		hurdleRate: number;
+		permissioned: boolean;
 	}): Promise<TransactionSignature> {
 		const vault = getVaultAddressSync(this.program.programId, params.name);
 		const tokenAccount = getTokenVaultAddressSync(

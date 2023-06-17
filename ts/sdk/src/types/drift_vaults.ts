@@ -665,10 +665,9 @@ export type DriftVaults = {
 						type: 'u8';
 					},
 					{
-						name: 'padding';
-						type: {
-							array: ['u8', 1];
-						};
+						name: 'permissioned';
+						docs: ['Whether or not anybody can be a depositor'];
+						type: 'bool';
 					}
 				];
 			};
@@ -709,6 +708,10 @@ export type DriftVaults = {
 					{
 						name: 'spotMarketIndex';
 						type: 'u16';
+					},
+					{
+						name: 'permissioned';
+						type: 'bool';
 					}
 				];
 			};
@@ -746,6 +749,12 @@ export type DriftVaults = {
 						name: 'hurdleRate';
 						type: {
 							option: 'u32';
+						};
+					},
+					{
+						name: 'permissioned';
+						type: {
+							option: 'bool';
 						};
 					}
 				];
@@ -983,6 +992,11 @@ export type DriftVaults = {
 			code: 6016;
 			name: 'InvalidVaultUpdate';
 			msg: 'InvalidVaultUpdate';
+		},
+		{
+			code: 6017;
+			name: 'PermissionedVault';
+			msg: 'PermissionedVault';
 		}
 	];
 };
@@ -1654,10 +1668,9 @@ export const IDL: DriftVaults = {
 						type: 'u8',
 					},
 					{
-						name: 'padding',
-						type: {
-							array: ['u8', 1],
-						},
+						name: 'permissioned',
+						docs: ['Whether or not anybody can be a depositor'],
+						type: 'bool',
 					},
 				],
 			},
@@ -1699,6 +1712,10 @@ export const IDL: DriftVaults = {
 						name: 'spotMarketIndex',
 						type: 'u16',
 					},
+					{
+						name: 'permissioned',
+						type: 'bool',
+					},
 				],
 			},
 		},
@@ -1735,6 +1752,12 @@ export const IDL: DriftVaults = {
 						name: 'hurdleRate',
 						type: {
 							option: 'u32',
+						},
+					},
+					{
+						name: 'permissioned',
+						type: {
+							option: 'bool',
 						},
 					},
 				],
@@ -1972,6 +1995,11 @@ export const IDL: DriftVaults = {
 			code: 6016,
 			name: 'InvalidVaultUpdate',
 			msg: 'InvalidVaultUpdate',
+		},
+		{
+			code: 6017,
+			name: 'PermissionedVault',
+			msg: 'PermissionedVault',
 		},
 	],
 };

@@ -48,6 +48,10 @@ pub fn update_vault<'info>(
         vault.hurdle_rate = hurdle_rate;
     }
 
+    if let Some(permissioned) = params.permissioned {
+        vault.permissioned = permissioned;
+    }
+
     drop(vault);
 
     Ok(())
@@ -60,6 +64,7 @@ pub struct UpdateVaultParams {
     pub management_fee: Option<u64>,
     pub profit_share: Option<u32>,
     pub hurdle_rate: Option<u32>,
+    pub permissioned: Option<bool>,
 }
 
 #[derive(Accounts)]

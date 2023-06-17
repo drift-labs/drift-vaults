@@ -41,6 +41,8 @@ pub enum ErrorCode {
     InvalidVaultInitialization,
     #[msg("InvalidVaultUpdate")]
     InvalidVaultUpdate,
+    #[msg("PermissionedVault")]
+    PermissionedVault,
 }
 
 impl From<DriftErrorCode> for ErrorCode {

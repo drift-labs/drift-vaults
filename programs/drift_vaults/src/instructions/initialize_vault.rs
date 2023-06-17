@@ -54,6 +54,7 @@ pub fn initialize_vault<'info>(
     )?;
     vault.hurdle_rate = params.hurdle_rate;
     vault.bump = *bump;
+    vault.permissioned = params.permissioned;
 
     drop(vault);
 
@@ -72,6 +73,7 @@ pub struct VaultParams {
     pub profit_share: u32,
     pub hurdle_rate: u32,
     pub spot_market_index: u16,
+    pub permissioned: bool,
 }
 
 #[derive(Accounts)]
