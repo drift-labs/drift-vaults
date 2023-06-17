@@ -75,4 +75,19 @@ pub mod drift_vaults {
     ) -> Result<()> {
         instructions::reset_delegate(ctx)
     }
+
+    pub fn manager_deposit<'info>(
+        ctx: Context<'_, '_, '_, 'info, ManagerDeposit<'info>>,
+        amount: u64,
+    ) -> Result<()> {
+        instructions::manager_deposit(ctx, amount)
+    }
+
+    pub fn manager_withdraw<'info>(
+        ctx: Context<'_, '_, '_, 'info, ManagerWithdraw<'info>>,
+        withdraw_amount: u64,
+        withdraw_unit: WithdrawUnit,
+    ) -> Result<()> {
+        instructions::manager_withdraw(ctx, withdraw_amount, withdraw_unit)
+    }
 }
