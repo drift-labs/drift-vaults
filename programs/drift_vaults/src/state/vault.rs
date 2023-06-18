@@ -89,7 +89,7 @@ impl Vault {
         let mut management_fee_payment: i128 = 0;
         let mut management_fee_shares: i128 = 0;
 
-        if self.management_fee > 0 && depositor_equity > 0 {
+        if self.management_fee != 0 && depositor_equity > 0 {
             let since_last = now.safe_sub(self.last_fee_update_ts)?;
 
             management_fee_payment = depositor_equity
@@ -107,7 +107,8 @@ impl Vault {
             let new_total_shares = self
                 .total_shares
                 .safe_mul(new_total_shares_factor.cast()?)?
-                .safe_div(PERCENTAGE_PRECISION)?;
+                .safe_div(PERCENTAGE_PRECISION)?
+                .max(self.user_shares);
 
             management_fee_shares = new_total_shares
                 .cast::<i128>()?
