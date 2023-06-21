@@ -88,6 +88,7 @@ impl Vault {
                 .cast::<i128>()?;
         let mut management_fee_payment: i128 = 0;
         let mut management_fee_shares: i128 = 0;
+        let mut skip_ts_update = false;
 
         if self.management_fee != 0 && depositor_equity > 0 {
             let since_last = now.safe_sub(self.last_fee_update_ts)?;
@@ -110,6 +111,11 @@ impl Vault {
                 .safe_div(PERCENTAGE_PRECISION)?
                 .max(self.user_shares);
 
+            if management_fee_payment == 0 || self.total_shares == new_total_shares {
+                // time delta wasnt large enough to pay any management fee
+                skip_ts_update = true;
+            }
+
             management_fee_shares = new_total_shares
                 .cast::<i128>()?
                 .safe_sub(self.total_shares.cast()?)?;
@@ -119,7 +125,10 @@ impl Vault {
             self.apply_rebase(vault_equity)?;
         }
 
-        self.last_fee_update_ts = now;
+        if !skip_ts_update {
+            self.last_fee_update_ts = now;
+        }
+
         Ok((
             management_fee_payment.cast::<i64>()?,
             management_fee_shares.cast::<i64>()?,
@@ -131,11 +140,13 @@ impl Vault {
             let (expo_diff, rebase_divisor) =
                 calculate_rebase_info(self.total_shares, vault_equity)?;
 
-            self.total_shares = self.total_shares.safe_div(rebase_divisor)?;
-            self.user_shares = self.user_shares.safe_div(rebase_divisor)?;
-            self.shares_base = self.shares_base.safe_add(expo_diff)?;
+            if expo_diff != 0 {
+                self.total_shares = self.total_shares.safe_div(rebase_divisor)?;
+                self.user_shares = self.user_shares.safe_div(rebase_divisor)?;
+                self.shares_base = self.shares_base.safe_add(expo_diff)?;
 
-            msg!("rebasing vault: expo_diff={}", expo_diff);
+                msg!("rebasing vault: expo_diff={}", expo_diff);
+            }
         }
 
         if vault_equity != 0 && self.total_shares == 0 {
