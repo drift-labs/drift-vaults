@@ -18,10 +18,9 @@ pub mod drift_vaults {
 
     pub fn initialize_vault<'info>(
         ctx: Context<'_, '_, '_, 'info, InitializeVault<'info>>,
-        name: [u8; 32],
-        spot_market_index: u16,
+        params: VaultParams,
     ) -> Result<()> {
-        instructions::initialize_vault(ctx, name, spot_market_index)
+        instructions::initialize_vault(ctx, params)
     }
 
     pub fn update_delegate<'info>(
@@ -29,6 +28,13 @@ pub mod drift_vaults {
         delegate: Pubkey,
     ) -> Result<()> {
         instructions::update_delegate(ctx, delegate)
+    }
+
+    pub fn update_vault<'info>(
+        ctx: Context<'_, '_, '_, 'info, UpdateVault<'info>>,
+        params: UpdateVaultParams,
+    ) -> Result<()> {
+        instructions::update_vault(ctx, params)
     }
 
     pub fn initialize_vault_depositor(ctx: Context<InitializeVaultDepositor>) -> Result<()> {
@@ -68,5 +74,20 @@ pub mod drift_vaults {
         ctx: Context<'_, '_, '_, 'info, ResetDelegate<'info>>,
     ) -> Result<()> {
         instructions::reset_delegate(ctx)
+    }
+
+    pub fn manager_deposit<'info>(
+        ctx: Context<'_, '_, '_, 'info, ManagerDeposit<'info>>,
+        amount: u64,
+    ) -> Result<()> {
+        instructions::manager_deposit(ctx, amount)
+    }
+
+    pub fn manager_withdraw<'info>(
+        ctx: Context<'_, '_, '_, 'info, ManagerWithdraw<'info>>,
+        withdraw_amount: u64,
+        withdraw_unit: WithdrawUnit,
+    ) -> Result<()> {
+        instructions::manager_withdraw(ctx, withdraw_amount, withdraw_unit)
     }
 }

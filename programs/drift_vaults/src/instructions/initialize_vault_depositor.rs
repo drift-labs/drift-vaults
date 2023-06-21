@@ -1,4 +1,5 @@
-use crate::{Size, Vault, VaultDepositor};
+use crate::error::ErrorCode;
+use crate::{validate, Size, Vault, VaultDepositor};
 use anchor_lang::prelude::*;
 
 pub fn initialize_vault_depositor(ctx: Context<InitializeVaultDepositor>) -> Result<()> {
@@ -7,12 +8,14 @@ pub fn initialize_vault_depositor(ctx: Context<InitializeVaultDepositor>) -> Res
     vault_depositor.pubkey = ctx.accounts.vault_depositor.key();
     vault_depositor.authority = *ctx.accounts.authority.key;
 
-    // let vault = ctx.accounts.vault.load()?;
-    // validate!(
-    //     vault.authority != *ctx.accounts.authority.key,
-    //     ErrorCode::InvalidVaultDepositorInitialization,
-    //     "Vault depositor must match authority"
-    // )?;
+    let vault = ctx.accounts.vault.load()?;
+    if vault.permissioned {
+        validate!(
+            vault.authority == *ctx.accounts.payer.key,
+            ErrorCode::PermissionedVault,
+            "Vault depositor can only be created by vault authority"
+        )?;
+    }
 
     Ok(())
 }

@@ -37,6 +37,12 @@ pub enum ErrorCode {
     VaultInLiquidation,
     #[msg("DriftError")]
     DriftError,
+    #[msg("InvalidVaultInitialization")]
+    InvalidVaultInitialization,
+    #[msg("InvalidVaultUpdate")]
+    InvalidVaultUpdate,
+    #[msg("PermissionedVault")]
+    PermissionedVault,
 }
 
 impl From<DriftErrorCode> for ErrorCode {

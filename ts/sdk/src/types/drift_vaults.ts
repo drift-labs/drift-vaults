@@ -73,14 +73,10 @@ export type DriftVaults = {
 			];
 			args: [
 				{
-					name: 'name';
+					name: 'params';
 					type: {
-						array: ['u8', 32];
+						defined: 'VaultParams';
 					};
-				},
-				{
-					name: 'spotMarketIndex';
-					type: 'u16';
 				}
 			];
 		},
@@ -112,6 +108,29 @@ export type DriftVaults = {
 				{
 					name: 'delegate';
 					type: 'publicKey';
+				}
+			];
+		},
+		{
+			name: 'updateVault';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'authority';
+					isMut: false;
+					isSigner: true;
+				}
+			];
+			args: [
+				{
+					name: 'params';
+					type: {
+						defined: 'UpdateVaultParams';
+					};
 				}
 			];
 		},
@@ -432,6 +451,139 @@ export type DriftVaults = {
 				}
 			];
 			args: [];
+		},
+		{
+			name: 'managerDeposit';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'authority';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'vaultTokenAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUser';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftState';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftSpotMarketVault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'userTokenAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftProgram';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'tokenProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [
+				{
+					name: 'amount';
+					type: 'u64';
+				}
+			];
+		},
+		{
+			name: 'managerWithdraw';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'authority';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'vaultTokenAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUser';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftState';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftSpotMarketVault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftSigner';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'userTokenAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftProgram';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'tokenProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [
+				{
+					name: 'withdrawAmount';
+					type: 'u64';
+				},
+				{
+					name: 'withdrawUnit';
+					type: {
+						defined: 'WithdrawUnit';
+					};
+				}
+			];
 		}
 	];
 	accounts: [
@@ -646,16 +798,101 @@ export type DriftVaults = {
 						type: 'u8';
 					},
 					{
-						name: 'padding';
-						type: {
-							array: ['u8', 1];
-						};
+						name: 'permissioned';
+						docs: ['Whether or not anybody can be a depositor'];
+						type: 'bool';
 					}
 				];
 			};
 		}
 	];
 	types: [
+		{
+			name: 'VaultParams';
+			type: {
+				kind: 'struct';
+				fields: [
+					{
+						name: 'name';
+						type: {
+							array: ['u8', 32];
+						};
+					},
+					{
+						name: 'redeemPeriod';
+						type: 'i64';
+					},
+					{
+						name: 'maxTokens';
+						type: 'u64';
+					},
+					{
+						name: 'managementFee';
+						type: 'u64';
+					},
+					{
+						name: 'profitShare';
+						type: 'u32';
+					},
+					{
+						name: 'hurdleRate';
+						type: 'u32';
+					},
+					{
+						name: 'spotMarketIndex';
+						type: 'u16';
+					},
+					{
+						name: 'permissioned';
+						type: 'bool';
+					}
+				];
+			};
+		},
+		{
+			name: 'UpdateVaultParams';
+			type: {
+				kind: 'struct';
+				fields: [
+					{
+						name: 'redeemPeriod';
+						type: {
+							option: 'i64';
+						};
+					},
+					{
+						name: 'maxTokens';
+						type: {
+							option: 'u64';
+						};
+					},
+					{
+						name: 'managementFee';
+						type: {
+							option: 'u64';
+						};
+					},
+					{
+						name: 'profitShare';
+						type: {
+							option: 'u32';
+						};
+					},
+					{
+						name: 'hurdleRate';
+						type: {
+							option: 'u32';
+						};
+					},
+					{
+						name: 'permissioned';
+						type: {
+							option: 'bool';
+						};
+					}
+				];
+			};
+		},
 		{
 			name: 'VaultDepositorAction';
 			type: {
@@ -878,6 +1115,21 @@ export type DriftVaults = {
 			code: 6014;
 			name: 'DriftError';
 			msg: 'DriftError';
+		},
+		{
+			code: 6015;
+			name: 'InvalidVaultInitialization';
+			msg: 'InvalidVaultInitialization';
+		},
+		{
+			code: 6016;
+			name: 'InvalidVaultUpdate';
+			msg: 'InvalidVaultUpdate';
+		},
+		{
+			code: 6017;
+			name: 'PermissionedVault';
+			msg: 'PermissionedVault';
 		}
 	];
 };
@@ -957,14 +1209,10 @@ export const IDL: DriftVaults = {
 			],
 			args: [
 				{
-					name: 'name',
+					name: 'params',
 					type: {
-						array: ['u8', 32],
+						defined: 'VaultParams',
 					},
-				},
-				{
-					name: 'spotMarketIndex',
-					type: 'u16',
 				},
 			],
 		},
@@ -996,6 +1244,29 @@ export const IDL: DriftVaults = {
 				{
 					name: 'delegate',
 					type: 'publicKey',
+				},
+			],
+		},
+		{
+			name: 'updateVault',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'authority',
+					isMut: false,
+					isSigner: true,
+				},
+			],
+			args: [
+				{
+					name: 'params',
+					type: {
+						defined: 'UpdateVaultParams',
+					},
 				},
 			],
 		},
@@ -1317,6 +1588,139 @@ export const IDL: DriftVaults = {
 			],
 			args: [],
 		},
+		{
+			name: 'managerDeposit',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'authority',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'vaultTokenAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUser',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftState',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftSpotMarketVault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'userTokenAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftProgram',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'tokenProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [
+				{
+					name: 'amount',
+					type: 'u64',
+				},
+			],
+		},
+		{
+			name: 'managerWithdraw',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'authority',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'vaultTokenAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUser',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftState',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftSpotMarketVault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftSigner',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'userTokenAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftProgram',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'tokenProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [
+				{
+					name: 'withdrawAmount',
+					type: 'u64',
+				},
+				{
+					name: 'withdrawUnit',
+					type: {
+						defined: 'WithdrawUnit',
+					},
+				},
+			],
+		},
 	],
 	accounts: [
 		{
@@ -1530,16 +1934,101 @@ export const IDL: DriftVaults = {
 						type: 'u8',
 					},
 					{
-						name: 'padding',
-						type: {
-							array: ['u8', 1],
-						},
+						name: 'permissioned',
+						docs: ['Whether or not anybody can be a depositor'],
+						type: 'bool',
 					},
 				],
 			},
 		},
 	],
 	types: [
+		{
+			name: 'VaultParams',
+			type: {
+				kind: 'struct',
+				fields: [
+					{
+						name: 'name',
+						type: {
+							array: ['u8', 32],
+						},
+					},
+					{
+						name: 'redeemPeriod',
+						type: 'i64',
+					},
+					{
+						name: 'maxTokens',
+						type: 'u64',
+					},
+					{
+						name: 'managementFee',
+						type: 'u64',
+					},
+					{
+						name: 'profitShare',
+						type: 'u32',
+					},
+					{
+						name: 'hurdleRate',
+						type: 'u32',
+					},
+					{
+						name: 'spotMarketIndex',
+						type: 'u16',
+					},
+					{
+						name: 'permissioned',
+						type: 'bool',
+					},
+				],
+			},
+		},
+		{
+			name: 'UpdateVaultParams',
+			type: {
+				kind: 'struct',
+				fields: [
+					{
+						name: 'redeemPeriod',
+						type: {
+							option: 'i64',
+						},
+					},
+					{
+						name: 'maxTokens',
+						type: {
+							option: 'u64',
+						},
+					},
+					{
+						name: 'managementFee',
+						type: {
+							option: 'u64',
+						},
+					},
+					{
+						name: 'profitShare',
+						type: {
+							option: 'u32',
+						},
+					},
+					{
+						name: 'hurdleRate',
+						type: {
+							option: 'u32',
+						},
+					},
+					{
+						name: 'permissioned',
+						type: {
+							option: 'bool',
+						},
+					},
+				],
+			},
+		},
 		{
 			name: 'VaultDepositorAction',
 			type: {
@@ -1762,6 +2251,21 @@ export const IDL: DriftVaults = {
 			code: 6014,
 			name: 'DriftError',
 			msg: 'DriftError',
+		},
+		{
+			code: 6015,
+			name: 'InvalidVaultInitialization',
+			msg: 'InvalidVaultInitialization',
+		},
+		{
+			code: 6016,
+			name: 'InvalidVaultUpdate',
+			msg: 'InvalidVaultUpdate',
+		},
+		{
+			code: 6017,
+			name: 'PermissionedVault',
+			msg: 'PermissionedVault',
 		},
 	],
 };
