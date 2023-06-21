@@ -61,7 +61,7 @@ pub fn update_vault<'info>(
 pub struct UpdateVaultParams {
     pub redeem_period: Option<i64>,
     pub max_tokens: Option<u64>,
-    pub management_fee: Option<u64>,
+    pub management_fee: Option<i64>,
     pub profit_share: Option<u32>,
     pub hurdle_rate: Option<u32>,
     pub permissioned: Option<bool>,
