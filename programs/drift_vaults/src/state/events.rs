@@ -31,8 +31,8 @@ pub struct VaultDepositorRecord {
     pub total_vault_shares_after: u128,
 
     pub profit_share: u64,
-    pub management_fee: u64,
-    pub management_fee_shares: u64,
+    pub management_fee: i64,
+    pub management_fee_shares: i64,
 }
 
 #[derive(Clone, Copy, BorshSerialize, BorshDeserialize, PartialEq, Eq)]

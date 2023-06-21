@@ -5,7 +5,7 @@ use crate::constants::TIME_FOR_LIQUIDATION;
 use crate::error::{ErrorCode, VaultResult};
 use anchor_lang::prelude::*;
 use drift::math::casting::Cast;
-use drift::math::constants::{ONE_YEAR, PERCENTAGE_PRECISION};
+use drift::math::constants::{ONE_YEAR, PERCENTAGE_PRECISION, PERCENTAGE_PRECISION_I128};
 use drift::math::insurance::calculate_rebase_info;
 use drift::math::insurance::{
     if_shares_to_vault_amount as depositor_shares_to_vault_amount,
@@ -57,7 +57,7 @@ pub struct Vault {
     /// the base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)  
     pub shares_base: u32,
     /// manager fee
-    pub management_fee: u64,
+    pub management_fee: i64,
     /// percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION
     pub profit_share: u32,
     /// vault admin only collect incentive fees during periods when returns are higher than this amount: PERCENTAGE_PRECISION
@@ -83,44 +83,43 @@ impl Size for Vault {
 const_assert_eq!(Vault::SIZE, std::mem::size_of::<Vault>() + 8);
 
 impl Vault {
-    pub fn apply_management_fee(&mut self, vault_equity: u64, now: i64) -> Result<(u64, u64)> {
+    pub fn apply_management_fee(&mut self, vault_equity: u64, now: i64) -> Result<(i64, i64)> {
         let depositor_equity =
             depositor_shares_to_vault_amount(self.user_shares, self.total_shares, vault_equity)?
-                .cast::<u128>()?;
-        let mut management_fee_payment: u128 = 0;
-        let mut management_fee_shares: u128 = 0;
+                .cast::<i128>()?;
+        let mut management_fee_payment: i128 = 0;
+        let mut management_fee_shares: i128 = 0;
         let mut skip_ts_update = false;
 
-        if self.management_fee > 0 && depositor_equity > 0 {
+        if self.management_fee != 0 && depositor_equity > 0 {
             let since_last = now.safe_sub(self.last_fee_update_ts)?;
 
             management_fee_payment = depositor_equity
                 .safe_mul(self.management_fee.cast()?)?
-                .safe_div(PERCENTAGE_PRECISION)?
+                .safe_div(PERCENTAGE_PRECISION_I128)?
                 .safe_mul(since_last.cast()?)?
-                .safe_div(ONE_YEAR)?
+                .safe_div(ONE_YEAR.cast()?)?
                 .min(depositor_equity.saturating_sub(1));
 
             let new_total_shares_factor: u128 = depositor_equity
-                .cast::<u128>()?
-                .safe_mul(PERCENTAGE_PRECISION)?
-                .safe_div(
-                    depositor_equity
-                        .cast::<u128>()?
-                        .safe_sub(management_fee_payment)?,
-                )?;
+                .safe_mul(PERCENTAGE_PRECISION_I128)?
+                .safe_div(depositor_equity.safe_sub(management_fee_payment)?)?
+                .cast()?;
 
             let new_total_shares = self
                 .total_shares
                 .safe_mul(new_total_shares_factor.cast()?)?
-                .safe_div(PERCENTAGE_PRECISION)?;
+                .safe_div(PERCENTAGE_PRECISION)?
+                .max(self.user_shares);
 
             if management_fee_payment == 0 || self.total_shares == new_total_shares {
                 // time delta wasnt large enough to pay any management fee
                 skip_ts_update = true;
             }
 
-            management_fee_shares = new_total_shares.safe_sub(self.total_shares)?;
+            management_fee_shares = new_total_shares
+                .cast::<i128>()?
+                .safe_sub(self.total_shares.cast()?)?;
             self.total_shares = new_total_shares;
 
             // in case total_shares is pushed to level that warrants a rebase
@@ -132,8 +131,8 @@ impl Vault {
         }
 
         Ok((
-            management_fee_payment.cast::<u64>()?,
-            management_fee_shares.cast::<u64>()?,
+            management_fee_payment.cast::<i64>()?,
+            management_fee_shares.cast::<i64>()?,
         ))
     }
 
