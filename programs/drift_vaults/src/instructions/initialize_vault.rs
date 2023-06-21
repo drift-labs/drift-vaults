@@ -1,45 +1,87 @@
+use crate::constants::ONE_DAY;
 use crate::cpi::InitializeUserCPI;
-use crate::{error::ErrorCode, Size, Vault};
+use crate::{error::ErrorCode, validate, Size, Vault};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
 use drift::cpi::accounts::{InitializeUser, InitializeUserStats};
+use drift::math::casting::Cast;
+use drift::math::constants::PRICE_PRECISION_U64;
 use drift::program::Drift;
 use drift::state::spot_market::SpotMarket;
 
 pub fn initialize_vault<'info>(
     ctx: Context<'_, '_, '_, 'info, InitializeVault<'info>>,
-    name: [u8; 32],
-    spot_market_index: u16,
+    params: VaultParams,
 ) -> Result<()> {
     let bump = ctx.bumps.get("vault").ok_or(ErrorCode::Default)?;
 
     let mut vault = ctx.accounts.vault.load_init()?;
-    vault.name = name;
+    vault.name = params.name;
     vault.pubkey = *ctx.accounts.vault.to_account_info().key;
     vault.authority = *ctx.accounts.authority.key;
     vault.user_stats = *ctx.accounts.drift_user_stats.key;
     vault.user = *ctx.accounts.drift_user.key;
     vault.token_account = *ctx.accounts.token_account.to_account_info().key;
-    vault.spot_market_index = spot_market_index;
+    vault.spot_market_index = params.spot_market_index;
+
+    validate!(
+        params.redeem_period < ONE_DAY * 90,
+        ErrorCode::InvalidVaultInitialization,
+        "redeem period too long"
+    )?;
+    vault.redeem_period = params.redeem_period;
+
+    vault.max_tokens = params.max_tokens;
+
+    validate!(
+        params.management_fee < PRICE_PRECISION_U64,
+        ErrorCode::InvalidVaultInitialization,
+        "management fee must be < 100%"
+    )?;
+    vault.management_fee = params.management_fee;
+
+    validate!(
+        params.profit_share < PRICE_PRECISION_U64.cast()?,
+        ErrorCode::InvalidVaultInitialization,
+        "profit share must be < 100%"
+    )?;
+    vault.profit_share = params.profit_share;
+
+    validate!(
+        params.hurdle_rate == 0,
+        ErrorCode::InvalidVaultInitialization,
+        "hurdle rate not implemented"
+    )?;
+    vault.hurdle_rate = params.hurdle_rate;
     vault.bump = *bump;
+    vault.permissioned = params.permissioned;
 
     drop(vault);
 
-    ctx.drift_initialize_user(name, *bump)?;
-    ctx.drift_initialize_user_stats(name, *bump)?;
+    ctx.drift_initialize_user(params.name, *bump)?;
+    ctx.drift_initialize_user_stats(params.name, *bump)?;
 
     Ok(())
 }
 
+#[derive(Debug, Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
+pub struct VaultParams {
+    pub name: [u8; 32],
+    pub redeem_period: i64,
+    pub max_tokens: u64,
+    pub management_fee: u64,
+    pub profit_share: u32,
+    pub hurdle_rate: u32,
+    pub spot_market_index: u16,
+    pub permissioned: bool,
+}
+
 #[derive(Accounts)]
-#[instruction(
-    name: [u8; 32],
-    spot_market_index: u16,
-)]
+#[instruction(params: VaultParams)]
 pub struct InitializeVault<'info> {
     #[account(
         init,
-        seeds = [b"vault", name.as_ref()],
+        seeds = [b"vault", params.name.as_ref()],
         space = Vault::SIZE,
         bump,
         payer = payer
@@ -64,7 +106,7 @@ pub struct InitializeVault<'info> {
     #[account(mut)]
     pub drift_state: AccountInfo<'info>,
     #[account(
-        constraint = drift_spot_market.load()?.market_index == spot_market_index
+        constraint = drift_spot_market.load()?.market_index == params.spot_market_index
     )]
     pub drift_spot_market: AccountLoader<'info, SpotMarket>,
     #[account(

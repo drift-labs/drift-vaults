@@ -1,7 +1,7 @@
 import * as anchor from '@coral-xyz/anchor';
 import { DriftVaults } from '../target/types/drift_vaults';
 import { Program } from '@coral-xyz/anchor';
-import { AdminClient, BN, UserAccount } from '@drift-labs/sdk';
+import { AdminClient, BN, UserAccount, ZERO } from '@drift-labs/sdk';
 import {
 	initializeQuoteSpotMarket,
 	mockUSDCMint,
@@ -60,7 +60,16 @@ describe('driftVaults', () => {
 	});
 
 	it('Initialize Vault', async () => {
-		await vaultClient.initializeVault(vaultName, 0);
+		await vaultClient.initializeVault({
+			name: encodeName(vaultName),
+			spotMarketIndex: 0,
+			redeemPeriod: ZERO,
+			maxTokens: ZERO,
+			managementFee: ZERO,
+			profitShare: ZERO,
+			hurdleRate: ZERO,
+			permissioned: false,
+		});
 
 		await adminClient.fetchAccounts();
 		assert(adminClient.getStateAccount().numberOfAuthorities.eq(new BN(1)));

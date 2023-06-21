@@ -1,11 +1,11 @@
 import {
+	BN,
 	DriftClient,
 	getUserAccountPublicKeySync,
 	getUserStatsAccountPublicKey,
 } from '@drift-labs/sdk';
 import { Program } from '@coral-xyz/anchor';
 import { DriftVaults } from './types/drift_vaults';
-import { encodeName } from './name';
 import {
 	getTokenVaultAddressSync,
 	getVaultAddressSync,
@@ -28,20 +28,26 @@ export class VaultClient {
 		this.program = program;
 	}
 
-	public async initializeVault(
-		name: string,
-		spotMarketIndex: number
-	): Promise<TransactionSignature> {
-		const encodedName = encodeName(name);
-		const vault = getVaultAddressSync(this.program.programId, encodedName);
+	public async initializeVault(params: {
+		name: number[];
+		spotMarketIndex: number;
+		redeemPeriod: BN;
+		maxTokens: BN;
+		managementFee: BN;
+		profitShare: number;
+		hurdleRate: number;
+		permissioned: boolean;
+	}): Promise<TransactionSignature> {
+		const vault = getVaultAddressSync(this.program.programId, params.name);
 		const tokenAccount = getTokenVaultAddressSync(
 			this.program.programId,
 			vault
 		);
 
 		const driftState = await this.driftClient.getStatePublicKey();
-		const driftSpotMarket =
-			this.driftClient.getSpotMarketAccount(spotMarketIndex);
+		const driftSpotMarket = this.driftClient.getSpotMarketAccount(
+			params.spotMarketIndex
+		);
 
 		const userStatsKey = await getUserStatsAccountPublicKey(
 			this.driftClient.program.programId,
@@ -53,7 +59,7 @@ export class VaultClient {
 		);
 
 		return await this.program.methods
-			.initializeVault(encodedName, spotMarketIndex)
+			.initializeVault(params)
 			.accounts({
 				driftSpotMarket: driftSpotMarket.pubkey,
 				driftSpotMarketMint: driftSpotMarket.mint,

@@ -66,7 +66,8 @@ pub struct Vault {
     pub spot_market_index: u16,
     /// The bump for the vault pda
     pub bump: u8,
-    pub padding: [u8; 1],
+    /// Whether or not anybody can be a depositor
+    pub permissioned: bool,
 }
 
 impl Vault {
@@ -251,7 +252,7 @@ impl Vault {
 
     pub fn manager_withdraw(
         &mut self,
-        withdraw_amount: u128,
+        withdraw_amount: u64,
         withdraw_unit: WithdrawUnit,
         vault_equity: u64,
         now: i64,
@@ -263,13 +264,13 @@ impl Vault {
 
         let (n_tokens, n_shares) = match withdraw_unit {
             WithdrawUnit::Token => {
-                let n_tokens: u64 = withdraw_amount.cast()?;
+                let n_tokens: u64 = withdraw_amount;
                 let n_shares: u128 =
                     vault_amount_to_depositor_shares(n_tokens, self.total_shares, vault_equity)?;
                 (n_tokens, n_shares)
             }
             WithdrawUnit::Shares => {
-                let n_shares: u128 = withdraw_amount;
+                let n_shares: u128 = withdraw_amount.cast()?;
                 let n_tokens: u64 =
                     depositor_shares_to_vault_amount(n_shares, self.total_shares, vault_equity)?
                         .min(vault_equity);
@@ -313,6 +314,7 @@ impl Vault {
 
         Ok(n_tokens)
     }
+
     pub fn in_liquidation(&self) -> bool {
         self.liquidation_delegate != Pubkey::default()
     }
