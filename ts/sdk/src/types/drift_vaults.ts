@@ -828,7 +828,7 @@ export type DriftVaults = {
 					},
 					{
 						name: 'managementFee';
-						type: 'u64';
+						type: 'i64';
 					},
 					{
 						name: 'profitShare';
@@ -869,7 +869,7 @@ export type DriftVaults = {
 					{
 						name: 'managementFee';
 						type: {
-							option: 'u64';
+							option: 'i64';
 						};
 					},
 					{
@@ -1964,7 +1964,7 @@ export const IDL: DriftVaults = {
 					},
 					{
 						name: 'managementFee',
-						type: 'u64',
+						type: 'i64',
 					},
 					{
 						name: 'profitShare',
@@ -2005,7 +2005,7 @@ export const IDL: DriftVaults = {
 					{
 						name: 'managementFee',
 						type: {
-							option: 'u64',
+							option: 'i64',
 						},
 					},
 					{
