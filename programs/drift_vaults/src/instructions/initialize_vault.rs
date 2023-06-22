@@ -5,7 +5,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
 use drift::cpi::accounts::{InitializeUser, InitializeUserStats};
 use drift::math::casting::Cast;
-use drift::math::constants::PRICE_PRECISION_U64;
+use drift::math::constants::PERCENTAGE_PRECISION_U64;
 use drift::program::Drift;
 use drift::state::spot_market::SpotMarket;
 
@@ -34,14 +34,14 @@ pub fn initialize_vault<'info>(
     vault.max_tokens = params.max_tokens;
 
     validate!(
-        params.management_fee < PRICE_PRECISION_U64,
+        params.management_fee < PERCENTAGE_PRECISION_U64.cast()?,
         ErrorCode::InvalidVaultInitialization,
         "management fee must be < 100%"
     )?;
     vault.management_fee = params.management_fee;
 
     validate!(
-        params.profit_share < PRICE_PRECISION_U64.cast()?,
+        params.profit_share < PERCENTAGE_PRECISION_U64.cast()?,
         ErrorCode::InvalidVaultInitialization,
         "profit share must be < 100%"
     )?;
@@ -69,7 +69,7 @@ pub struct VaultParams {
     pub name: [u8; 32],
     pub redeem_period: i64,
     pub max_tokens: u64,
-    pub management_fee: u64,
+    pub management_fee: i64,
     pub profit_share: u32,
     pub hurdle_rate: u32,
     pub spot_market_index: u16,
