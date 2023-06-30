@@ -49,6 +49,10 @@ pub struct VaultDepositor {
     pub last_valid_ts: i64,
     /// lifetime net deposits of vault depositor for the vault
     pub net_deposits: i64,
+    /// lifetime total deposits
+    pub total_deposits: u64,
+    /// lifetime total withdraws
+    pub total_withdraws: u64,
     /// the token amount of gains the vault depositor has paid performance fees on
     pub cumulative_profit_share_amount: i64,
     /// the exponent for vault_shares decimal places
@@ -56,7 +60,7 @@ pub struct VaultDepositor {
 }
 
 impl Size for VaultDepositor {
-    const SIZE: usize = 176 + 8;
+    const SIZE: usize = 192 + 8;
 }
 
 const_assert_eq!(
@@ -77,6 +81,8 @@ impl VaultDepositor {
             last_withdraw_request_ts: 0,
             last_valid_ts: now,
             net_deposits: 0,
+            total_deposits: 0,
+            total_withdraws: 0,
             cumulative_profit_share_amount: 0,
         }
     }
@@ -266,9 +272,11 @@ impl VaultDepositor {
 
         let n_shares = vault_amount_to_depositor_shares(amount, vault.total_shares, vault_equity)?;
 
-        // reset cost basis if no shares
+        self.total_deposits = self.total_deposits.saturating_add(amount);
+        vault.total_deposits = vault.total_deposits.saturating_add(amount);
         self.net_deposits = self.net_deposits.safe_add(amount.cast()?)?;
         vault.net_deposits = vault.net_deposits.safe_add(amount.cast()?)?;
+
         self.increase_vault_shares(n_shares, vault)?;
 
         vault.total_shares = vault.total_shares.safe_add(n_shares)?;
@@ -497,6 +505,8 @@ impl VaultDepositor {
         );
         self.decrease_vault_shares(n_shares, vault)?;
 
+        self.total_withdraws = self.total_withdraws.saturating_add(withdraw_amount);
+        vault.total_withdraws = vault.total_withdraws.saturating_add(withdraw_amount);
         self.net_deposits = self.net_deposits.safe_sub(withdraw_amount.cast()?)?;
         vault.net_deposits = vault.net_deposits.safe_sub(withdraw_amount.cast()?)?;
 

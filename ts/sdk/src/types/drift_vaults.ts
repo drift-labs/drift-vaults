@@ -646,6 +646,16 @@ export type DriftVaults = {
 						type: 'i64';
 					},
 					{
+						name: 'totalDeposits';
+						docs: ['lifetime total deposits'];
+						type: 'u64';
+					},
+					{
+						name: 'totalWithdraws';
+						docs: ['lifetime total withdraws'];
+						type: 'u64';
+					},
+					{
 						name: 'cumulativeProfitShareAmount';
 						docs: [
 							'the token amount of gains the vault depositor has paid performance fees on'
@@ -770,6 +780,41 @@ export type DriftVaults = {
 						name: 'managementFee';
 						docs: ['manager fee'];
 						type: 'i64';
+					},
+					{
+						name: 'initTs';
+						docs: ['timestamp vault initialized'];
+						type: 'i64';
+					},
+					{
+						name: 'netDeposits';
+						docs: ['the net deposits for the vault'];
+						type: 'i64';
+					},
+					{
+						name: 'managerNetDeposits';
+						docs: ['the net deposits for the vault manager'];
+						type: 'i64';
+					},
+					{
+						name: 'totalDeposits';
+						docs: ['total deposits'];
+						type: 'u64';
+					},
+					{
+						name: 'totalWithdraws';
+						docs: ['total withdraws'];
+						type: 'u64';
+					},
+					{
+						name: 'managerTotalDeposits';
+						docs: ['total deposits for the vault manager'];
+						type: 'u64';
+					},
+					{
+						name: 'managerTotalWithdraws';
+						docs: ['total withdraws for the vault manager'];
+						type: 'u64';
 					},
 					{
 						name: 'profitShare';
@@ -1782,6 +1827,16 @@ export const IDL: DriftVaults = {
 						type: 'i64',
 					},
 					{
+						name: 'totalDeposits',
+						docs: ['lifetime total deposits'],
+						type: 'u64',
+					},
+					{
+						name: 'totalWithdraws',
+						docs: ['lifetime total withdraws'],
+						type: 'u64',
+					},
+					{
 						name: 'cumulativeProfitShareAmount',
 						docs: [
 							'the token amount of gains the vault depositor has paid performance fees on',
@@ -1906,6 +1961,41 @@ export const IDL: DriftVaults = {
 						name: 'managementFee',
 						docs: ['manager fee'],
 						type: 'i64',
+					},
+					{
+						name: 'initTs',
+						docs: ['timestamp vault initialized'],
+						type: 'i64',
+					},
+					{
+						name: 'netDeposits',
+						docs: ['the net deposits for the vault'],
+						type: 'i64',
+					},
+					{
+						name: 'managerNetDeposits',
+						docs: ['the net deposits for the vault manager'],
+						type: 'i64',
+					},
+					{
+						name: 'totalDeposits',
+						docs: ['total deposits'],
+						type: 'u64',
+					},
+					{
+						name: 'totalWithdraws',
+						docs: ['total withdraws'],
+						type: 'u64',
+					},
+					{
+						name: 'managerTotalDeposits',
+						docs: ['total deposits for the vault manager'],
+						type: 'u64',
+					},
+					{
+						name: 'managerTotalWithdraws',
+						docs: ['total withdraws for the vault manager'],
+						type: 'u64',
 					},
 					{
 						name: 'profitShare',
