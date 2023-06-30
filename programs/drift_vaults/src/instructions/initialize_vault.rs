@@ -23,6 +23,7 @@ pub fn initialize_vault<'info>(
     vault.user = *ctx.accounts.drift_user.key;
     vault.token_account = *ctx.accounts.token_account.to_account_info().key;
     vault.spot_market_index = params.spot_market_index;
+    vault.init_ts = Clock::get()?.unix_timestamp;
 
     validate!(
         params.redeem_period < ONE_DAY * 90,

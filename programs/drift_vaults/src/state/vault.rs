@@ -58,6 +58,8 @@ pub struct Vault {
     pub shares_base: u32,
     /// manager fee
     pub management_fee: i64,
+    /// timestamp vault initialized
+    pub init_ts: i64,
     /// percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION
     pub profit_share: u32,
     /// vault admin only collect incentive fees during periods when returns are higher than this amount: PERCENTAGE_PRECISION
