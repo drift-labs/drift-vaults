@@ -268,6 +268,7 @@ impl VaultDepositor {
 
         // reset cost basis if no shares
         self.net_deposits = self.net_deposits.safe_add(amount.cast()?)?;
+        vault.net_deposits = vault.net_deposits.safe_add(amount.cast()?)?;
         self.increase_vault_shares(n_shares, vault)?;
 
         vault.total_shares = vault.total_shares.safe_add(n_shares)?;
@@ -497,6 +498,7 @@ impl VaultDepositor {
         self.decrease_vault_shares(n_shares, vault)?;
 
         self.net_deposits = self.net_deposits.safe_sub(withdraw_amount.cast()?)?;
+        vault.net_deposits = vault.net_deposits.safe_sub(withdraw_amount.cast()?)?;
 
         vault.total_shares = vault.total_shares.safe_sub(n_shares)?;
 
