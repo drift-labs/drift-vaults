@@ -82,6 +82,7 @@ pub struct Vault {
     pub bump: u8,
     /// Whether or not anybody can be a depositor
     pub permissioned: bool,
+    pub padding: [u8; 32],
 }
 
 impl Vault {
@@ -91,7 +92,7 @@ impl Vault {
 }
 
 impl Size for Vault {
-    const SIZE: usize = 416 + 8;
+    const SIZE: usize = 448 + 8;
 }
 
 const_assert_eq!(Vault::SIZE, std::mem::size_of::<Vault>() + 8);
@@ -219,7 +220,7 @@ impl Vault {
             vault_amount_to_depositor_shares(amount, total_vault_shares_before, vault_equity)?;
 
         self.total_deposits = self.total_deposits.saturating_add(amount);
-        self.manager_total_deposits= self.manager_total_deposits.saturating_add(amount);
+        self.manager_total_deposits = self.manager_total_deposits.saturating_add(amount);
         self.net_deposits = self.net_deposits.safe_add(amount.cast()?)?;
         self.manager_net_deposits = self.net_deposits.safe_add(amount.cast()?)?;
 

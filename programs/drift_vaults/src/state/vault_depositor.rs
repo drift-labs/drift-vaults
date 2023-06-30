@@ -57,10 +57,11 @@ pub struct VaultDepositor {
     pub cumulative_profit_share_amount: i64,
     /// the exponent for vault_shares decimal places
     pub vault_shares_base: u32,
+    pub padding: [u8; 32],
 }
 
 impl Size for VaultDepositor {
-    const SIZE: usize = 192 + 8;
+    const SIZE: usize = 224 + 8;
 }
 
 const_assert_eq!(
@@ -84,6 +85,7 @@ impl VaultDepositor {
             total_deposits: 0,
             total_withdraws: 0,
             cumulative_profit_share_amount: 0,
+            padding: [0u8; 32],
         }
     }
 
