@@ -27,8 +27,8 @@ pub struct Vault {
     pub name: [u8; 32],
     /// The vault's pubkey. It is a pda of name and also used as the authority for drift user
     pub pubkey: Pubkey,
-    /// The authority of the vault who has ability to update vault params
-    pub authority: Pubkey,
+    /// The manager of the vault who has ability to update vault params
+    pub manager: Pubkey,
     /// The vaults token account. Used to receive tokens between deposits and withdrawals
     pub token_account: Pubkey,
     /// The drift user stats account for the vault
@@ -42,7 +42,7 @@ pub struct Vault {
     pub liquidation_delegate: Pubkey,
     /// the sum of all shares held by the users (vault depositors)
     pub user_shares: u128,
-    /// the sum of all shares (including vault authority)
+    /// the sum of all shares (including vault manager)
     pub total_shares: u128,
     /// last fee update unix timestamp
     pub last_fee_update_ts: i64,
@@ -210,7 +210,7 @@ impl Vault {
         emit!(VaultDepositorRecord {
             ts: now,
             vault: self.pubkey,
-            depositor_authority: self.authority,
+            depositor_authority: self.manager,
             action: VaultDepositorAction::Deposit,
             amount: 0,
             spot_market_index: self.spot_market_index,
@@ -295,7 +295,7 @@ impl Vault {
         emit!(VaultDepositorRecord {
             ts: now,
             vault: self.pubkey,
-            depositor_authority: self.authority,
+            depositor_authority: self.manager,
             action: VaultDepositorAction::Withdraw,
             amount: 0,
             spot_market_index: self.spot_market_index,

@@ -9,11 +9,11 @@ pub fn is_authority_for_vault_depositor(
     Ok(vault_depositor.load()?.authority.eq(signer.key))
 }
 
-pub fn is_authority_for_vault(
+pub fn is_manager_for_vault(
     vault: &AccountLoader<Vault>,
     signer: &Signer,
 ) -> anchor_lang::Result<bool> {
-    Ok(vault.load()?.authority.eq(signer.key))
+    Ok(vault.load()?.manager.eq(signer.key))
 }
 
 pub fn is_user_for_vault(

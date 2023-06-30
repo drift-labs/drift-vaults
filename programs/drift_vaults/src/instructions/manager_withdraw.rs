@@ -1,4 +1,4 @@
-use crate::constraints::{is_authority_for_vault, is_user_for_vault, is_user_stats_for_vault};
+use crate::constraints::{is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault};
 use crate::cpi::{TokenTransferCPI, WithdrawCPI};
 use crate::Vault;
 use crate::{declare_vault_seeds, AccountMapProvider, WithdrawUnit};
@@ -51,10 +51,10 @@ pub fn manager_withdraw<'info>(
 pub struct ManagerWithdraw<'info> {
     #[account(
         mut,
-        constraint = is_authority_for_vault(&vault, &authority)?
+        constraint = is_manager_for_vault(&vault, &manager)?
     )]
     pub vault: AccountLoader<'info, Vault>,
-    pub authority: Signer<'info>,
+    pub manager: Signer<'info>,
     #[account(
         mut,
         seeds = [b"vault_token_account".as_ref(), vault.key().as_ref()],
@@ -84,7 +84,7 @@ pub struct ManagerWithdraw<'info> {
     pub drift_signer: AccountInfo<'info>,
     #[account(
         mut,
-        token::authority = authority,
+        token::authority = manager,
         token::mint = vault_token_account.mint
     )]
     pub user_token_account: Box<Account<'info, TokenAccount>>,

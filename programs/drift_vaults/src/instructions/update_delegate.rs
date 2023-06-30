@@ -1,4 +1,4 @@
-use crate::constraints::{is_authority_for_vault, is_user_for_vault};
+use crate::constraints::{is_manager_for_vault, is_user_for_vault};
 use crate::cpi::UpdateUserCPI;
 use crate::Vault;
 use crate::{declare_vault_seeds, implement_update_user_delegate_cpi};
@@ -32,10 +32,10 @@ pub fn update_delegate<'info>(
 pub struct UpdateDelegate<'info> {
     #[account(
         mut,
-        constraint = is_authority_for_vault(&vault, &authority)?,
+        constraint = is_manager_for_vault(&vault, &manager)?,
     )]
     pub vault: AccountLoader<'info, Vault>,
-    pub authority: Signer<'info>,
+    pub manager: Signer<'info>,
     #[account(
         mut,
         constraint = is_user_for_vault(&vault, &drift_user.key())?

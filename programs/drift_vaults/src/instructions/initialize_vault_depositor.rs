@@ -11,9 +11,9 @@ pub fn initialize_vault_depositor(ctx: Context<InitializeVaultDepositor>) -> Res
     let vault = ctx.accounts.vault.load()?;
     if vault.permissioned {
         validate!(
-            vault.authority == *ctx.accounts.payer.key,
+            vault.manager == *ctx.accounts.payer.key,
             ErrorCode::PermissionedVault,
-            "Vault depositor can only be created by vault authority"
+            "Vault depositor can only be created by vault manager"
         )?;
     }
 

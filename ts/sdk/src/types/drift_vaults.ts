@@ -41,7 +41,7 @@ export type DriftVaults = {
 					isSigner: false;
 				},
 				{
-					name: 'authority';
+					name: 'manager';
 					isMut: false;
 					isSigner: true;
 				},
@@ -89,7 +89,7 @@ export type DriftVaults = {
 					isSigner: false;
 				},
 				{
-					name: 'authority';
+					name: 'manager';
 					isMut: false;
 					isSigner: true;
 				},
@@ -120,7 +120,7 @@ export type DriftVaults = {
 					isSigner: false;
 				},
 				{
-					name: 'authority';
+					name: 'manager';
 					isMut: false;
 					isSigner: true;
 				}
@@ -461,7 +461,7 @@ export type DriftVaults = {
 					isSigner: false;
 				},
 				{
-					name: 'authority';
+					name: 'manager';
 					isMut: false;
 					isSigner: true;
 				},
@@ -522,7 +522,7 @@ export type DriftVaults = {
 					isSigner: false;
 				},
 				{
-					name: 'authority';
+					name: 'manager';
 					isMut: false;
 					isSigner: true;
 				},
@@ -682,9 +682,9 @@ export type DriftVaults = {
 						type: 'publicKey';
 					},
 					{
-						name: 'authority';
+						name: 'manager';
 						docs: [
-							'The authority of the vault who has ability to update vault params'
+							'The manager of the vault who has ability to update vault params'
 						];
 						type: 'publicKey';
 					},
@@ -727,7 +727,7 @@ export type DriftVaults = {
 					},
 					{
 						name: 'totalShares';
-						docs: ['the sum of all shares (including vault authority)'];
+						docs: ['the sum of all shares (including vault manager)'];
 						type: 'u128';
 					},
 					{
@@ -1177,7 +1177,7 @@ export const IDL: DriftVaults = {
 					isSigner: false,
 				},
 				{
-					name: 'authority',
+					name: 'manager',
 					isMut: false,
 					isSigner: true,
 				},
@@ -1225,7 +1225,7 @@ export const IDL: DriftVaults = {
 					isSigner: false,
 				},
 				{
-					name: 'authority',
+					name: 'manager',
 					isMut: false,
 					isSigner: true,
 				},
@@ -1256,7 +1256,7 @@ export const IDL: DriftVaults = {
 					isSigner: false,
 				},
 				{
-					name: 'authority',
+					name: 'manager',
 					isMut: false,
 					isSigner: true,
 				},
@@ -1597,7 +1597,7 @@ export const IDL: DriftVaults = {
 					isSigner: false,
 				},
 				{
-					name: 'authority',
+					name: 'manager',
 					isMut: false,
 					isSigner: true,
 				},
@@ -1658,7 +1658,7 @@ export const IDL: DriftVaults = {
 					isSigner: false,
 				},
 				{
-					name: 'authority',
+					name: 'manager',
 					isMut: false,
 					isSigner: true,
 				},
@@ -1818,9 +1818,9 @@ export const IDL: DriftVaults = {
 						type: 'publicKey',
 					},
 					{
-						name: 'authority',
+						name: 'manager',
 						docs: [
-							'The authority of the vault who has ability to update vault params',
+							'The manager of the vault who has ability to update vault params',
 						],
 						type: 'publicKey',
 					},
@@ -1863,7 +1863,7 @@ export const IDL: DriftVaults = {
 					},
 					{
 						name: 'totalShares',
-						docs: ['the sum of all shares (including vault authority)'],
+						docs: ['the sum of all shares (including vault manager)'],
 						type: 'u128',
 					},
 					{

@@ -1,4 +1,4 @@
-use crate::constraints::is_authority_for_vault;
+use crate::constraints::is_manager_for_vault;
 use crate::{error::ErrorCode, validate, Vault};
 use anchor_lang::prelude::*;
 
@@ -71,8 +71,8 @@ pub struct UpdateVaultParams {
 pub struct UpdateVault<'info> {
     #[account(
         mut,
-        constraint = is_authority_for_vault(&vault, &authority)?,
+        constraint = is_manager_for_vault(&vault, &manager)?,
     )]
     pub vault: AccountLoader<'info, Vault>,
-    pub authority: Signer<'info>,
+    pub manager: Signer<'info>,
 }

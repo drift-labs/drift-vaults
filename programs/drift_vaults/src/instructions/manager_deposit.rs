@@ -1,4 +1,4 @@
-use crate::constraints::{is_authority_for_vault, is_user_for_vault, is_user_stats_for_vault};
+use crate::constraints::{is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault};
 use crate::cpi::{DepositCPI, TokenTransferCPI};
 use crate::Vault;
 use crate::{declare_vault_seeds, AccountMapProvider};
@@ -45,10 +45,10 @@ pub fn manager_deposit<'info>(
 pub struct ManagerDeposit<'info> {
     #[account(
         mut,
-        constraint = is_authority_for_vault(&vault, &authority)?
+        constraint = is_manager_for_vault(&vault, &manager)?
     )]
     pub vault: AccountLoader<'info, Vault>,
-    pub authority: Signer<'info>,
+    pub manager: Signer<'info>,
     #[account(
         mut,
         seeds = [b"vault_token_account".as_ref(), vault.key().as_ref()],
@@ -76,7 +76,7 @@ pub struct ManagerDeposit<'info> {
     pub drift_spot_market_vault: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
-        token::authority = authority,
+        token::authority = manager,
         token::mint = vault_token_account.mint
     )]
     pub user_token_account: Box<Account<'info, TokenAccount>>,
@@ -89,7 +89,7 @@ impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, ManagerDeposit<'info
         let cpi_accounts = Transfer {
             from: self.accounts.user_token_account.to_account_info().clone(),
             to: self.accounts.vault_token_account.to_account_info().clone(),
-            authority: self.accounts.authority.to_account_info().clone(),
+            authority: self.accounts.manager.to_account_info().clone(),
         };
         let token_program = self.accounts.token_program.to_account_info().clone();
         let cpi_context = CpiContext::new(token_program, cpi_accounts);

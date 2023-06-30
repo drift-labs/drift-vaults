@@ -18,7 +18,7 @@ pub fn initialize_vault<'info>(
     let mut vault = ctx.accounts.vault.load_init()?;
     vault.name = params.name;
     vault.pubkey = *ctx.accounts.vault.to_account_info().key;
-    vault.authority = *ctx.accounts.authority.key;
+    vault.manager = *ctx.accounts.manager.key;
     vault.user_stats = *ctx.accounts.drift_user_stats.key;
     vault.user = *ctx.accounts.drift_user.key;
     vault.token_account = *ctx.accounts.token_account.to_account_info().key;
@@ -113,7 +113,7 @@ pub struct InitializeVault<'info> {
         constraint = drift_spot_market.load()?.mint.eq(&drift_spot_market_mint.key())
     )]
     pub drift_spot_market_mint: Box<Account<'info, Mint>>,
-    pub authority: Signer<'info>,
+    pub manager: Signer<'info>,
     #[account(mut)]
     pub payer: Signer<'info>,
     pub rent: Sysvar<'info, Rent>,
