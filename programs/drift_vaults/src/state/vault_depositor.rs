@@ -233,11 +233,62 @@ impl VaultDepositor {
         Ok(0)
     }
 
-    pub fn reset_withdraw_request(self: &mut VaultDepositor, now: i64) -> Result<()> {
+    pub fn set_withdraw_request(
+        self: &mut VaultDepositor,
+        vault: &mut Vault,
+        withdraw_shares: u128,
+        withdraw_value: u64,
+        vault_equity: u64,
+        now: i64,
+    ) -> Result<()> {
+        validate!(
+            self.last_withdraw_request_shares == 0,
+            ErrorCode::VaultWithdrawRequestInProgress,
+            "Vault withdraw request is already in progress"
+        )?;
+
+        validate!(
+            withdraw_shares <= self.checked_vault_shares(vault)?,
+            ErrorCode::InvalidVaultWithdrawSize,
+            "shares requested exceeds vault_shares {} > {}",
+            withdraw_shares,
+            self.checked_vault_shares(vault)?
+        )?;
+
+        self.last_withdraw_request_shares = withdraw_shares;
+
+        validate!(
+            withdraw_value == 0 || withdraw_value <= vault_equity,
+            ErrorCode::InvalidVaultWithdrawSize,
+            "Requested withdraw value {} is not equal or below vault_equity {}",
+            withdraw_value,
+            vault_equity
+        )?;
+
+        self.last_withdraw_request_value = withdraw_value;
+
+        self.last_withdraw_request_ts = now;
+
+        vault.total_withdraw_requested = vault.total_withdraw_requested.safe_add(withdraw_value)?;
+
+        Ok(())
+    }
+
+    pub fn reset_withdraw_request(
+        self: &mut VaultDepositor,
+        vault: &mut Vault,
+        now: i64,
+    ) -> Result<()> {
+        // reset vault withdraw request info
+        vault.total_withdraw_requested = vault
+            .total_withdraw_requested
+            .safe_sub(self.last_withdraw_request_value)?;
+
         // reset vault_depositor withdraw request info
         self.last_withdraw_request_shares = 0;
         self.last_withdraw_request_value = 0;
         self.last_withdraw_request_ts = now;
+
         Ok(())
     }
 
@@ -345,38 +396,12 @@ impl VaultDepositor {
             ErrorCode::InvalidVaultWithdrawSize,
             "Requested n_shares = 0"
         )?;
-        validate!(
-            self.last_withdraw_request_shares == 0,
-            ErrorCode::VaultWithdrawRequestInProgress,
-            "Vault withdraw request is already in progress"
-        )?;
-
-        self.last_withdraw_request_shares = n_shares;
 
         let vault_shares_before: u128 = self.checked_vault_shares(vault)?;
         let total_vault_shares_before = vault.total_shares;
         let user_vault_shares_before = vault.user_shares;
 
-        validate!(
-            self.last_withdraw_request_shares <= self.checked_vault_shares(vault)?,
-            ErrorCode::InvalidVaultWithdrawSize,
-            "last_withdraw_request_shares exceeds vault_shares {} > {}",
-            self.last_withdraw_request_shares,
-            self.checked_vault_shares(vault)?
-        )?;
-
-        self.last_withdraw_request_value = withdraw_value;
-
-        vault.total_withdraw_requested = vault.total_withdraw_requested.safe_add(withdraw_value)?;
-
-        validate!(
-            self.last_withdraw_request_value == 0
-                || self.last_withdraw_request_value <= vault_equity,
-            ErrorCode::InvalidVaultWithdrawSize,
-            "Requested withdraw value {} is not equal or below vault_equity {}",
-            self.last_withdraw_request_value,
-            vault_equity
-        )?;
+        self.set_withdraw_request(vault, n_shares, withdraw_value, vault_equity, now)?;
 
         let vault_shares_after = self.checked_vault_shares(vault)?;
 
@@ -398,8 +423,6 @@ impl VaultDepositor {
             management_fee,
             management_fee_shares,
         });
-
-        self.last_withdraw_request_ts = now;
 
         Ok(())
     }
@@ -427,10 +450,6 @@ impl VaultDepositor {
 
         vault.user_shares = vault.user_shares.safe_sub(vault_shares_lost)?;
 
-        vault.total_withdraw_requested = vault
-            .total_withdraw_requested
-            .safe_sub(self.last_withdraw_request_value)?;
-
         let vault_shares_after = self.checked_vault_shares(vault)?;
 
         emit!(VaultDepositorRecord {
@@ -452,7 +471,7 @@ impl VaultDepositor {
             management_fee_shares,
         });
 
-        self.reset_withdraw_request(now)?;
+        self.reset_withdraw_request(vault, now)?;
 
         Ok(())
     }
@@ -516,11 +535,7 @@ impl VaultDepositor {
 
         vault.user_shares = vault.user_shares.safe_sub(n_shares)?;
 
-        vault.total_withdraw_requested = vault
-            .total_withdraw_requested
-            .safe_sub(self.last_withdraw_request_value)?;
-
-        self.reset_withdraw_request(now)?;
+        self.reset_withdraw_request(vault, now)?;
 
         let vault_shares_after = self.checked_vault_shares(vault)?;
 
