@@ -666,6 +666,12 @@ export type DriftVaults = {
 						name: 'vaultSharesBase';
 						docs: ['the exponent for vault_shares decimal places'];
 						type: 'u32';
+					},
+					{
+						name: 'padding';
+						type: {
+							array: ['u8', 32];
+						};
 					}
 				];
 			};
@@ -846,6 +852,12 @@ export type DriftVaults = {
 						name: 'permissioned';
 						docs: ['Whether or not anybody can be a depositor'];
 						type: 'bool';
+					},
+					{
+						name: 'padding';
+						type: {
+							array: ['u8', 32];
+						};
 					}
 				];
 			};
@@ -1848,6 +1860,12 @@ export const IDL: DriftVaults = {
 						docs: ['the exponent for vault_shares decimal places'],
 						type: 'u32',
 					},
+					{
+						name: 'padding',
+						type: {
+							array: ['u8', 32],
+						},
+					},
 				],
 			},
 		},
@@ -2027,6 +2045,12 @@ export const IDL: DriftVaults = {
 						name: 'permissioned',
 						docs: ['Whether or not anybody can be a depositor'],
 						type: 'bool',
+					},
+					{
+						name: 'padding',
+						type: {
+							array: ['u8', 32],
+						},
 					},
 				],
 			},
