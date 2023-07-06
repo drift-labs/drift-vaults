@@ -502,6 +502,10 @@ impl VaultDepositor {
 
         vault.user_shares = vault.user_shares.safe_sub(n_shares)?;
 
+        vault.total_withdraw_requested = vault
+            .total_withdraw_requested
+            .safe_sub(self.last_withdraw_request_value)?;
+
         self.reset_withdraw_request(now)?;
 
         let vault_shares_after = self.checked_vault_shares(vault)?;
@@ -524,10 +528,6 @@ impl VaultDepositor {
             management_fee,
             management_fee_shares,
         });
-
-        vault.total_withdraw_requested = vault
-            .total_withdraw_requested
-            .safe_sub(self.last_withdraw_request_value)?;
 
         let finishing_liquidation = vault.liquidation_delegate == self.authority;
 
