@@ -59,7 +59,7 @@ pub struct Withdraw<'info> {
     pub vault: AccountLoader<'info, Vault>,
     #[account(
         mut,
-        seeds = [b"vault_depositor", vault.key().as_ref()],
+        seeds = [b"vault_depositor", vault.key().as_ref(), authority.key().as_ref()],
         bump,
         constraint = is_authority_for_vault_depositor(&vault_depositor, &authority)?,
     )]

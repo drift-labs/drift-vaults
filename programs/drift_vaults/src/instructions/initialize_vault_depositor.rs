@@ -25,8 +25,8 @@ pub struct InitializeVaultDepositor<'info> {
     pub vault: AccountLoader<'info, Vault>,
     #[account(
         init,
-        seeds = [b"vault_depositor", vault.key().as_ref()],
-        space = Vault::SIZE,
+        seeds = [b"vault_depositor", vault.key().as_ref(), authority.key().as_ref()],
+        space = VaultDepositor::SIZE,
         bump,
         payer = payer
     )]

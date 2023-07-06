@@ -78,7 +78,8 @@ export class VaultClient {
 	): Promise<TransactionSignature> {
 		const vaultDepositor = getVaultDepositorAddressSync(
 			this.program.programId,
-			vault
+			vault,
+			this.driftClient.wallet.publicKey
 		);
 
 		return await this.program.methods

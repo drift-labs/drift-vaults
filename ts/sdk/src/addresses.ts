@@ -16,12 +16,14 @@ export function getVaultAddressSync(
 
 export function getVaultDepositorAddressSync(
 	programId: PublicKey,
-	vault: PublicKey
+	vault: PublicKey,
+	authority: PublicKey
 ) {
 	return PublicKey.findProgramAddressSync(
 		[
 			Buffer.from(anchor.utils.bytes.utf8.encode('vault_depositor')),
 			vault.toBuffer(),
+			authority.toBuffer(),
 		],
 		programId
 	)[0];

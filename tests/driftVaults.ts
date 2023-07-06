@@ -84,7 +84,8 @@ describe('driftVaults', () => {
 		const vaultAccount = await program.account.vault.fetch(vault);
 		const vaultDepositor = getVaultDepositorAddressSync(
 			program.programId,
-			vault
+			vault,
+			provider.wallet.publicKey
 		);
 		const remainingAccounts = adminClient.getRemainingAccounts({
 			userAccounts: [],
@@ -114,7 +115,8 @@ describe('driftVaults', () => {
 		const vaultAccount = await program.account.vault.fetch(vault);
 		const vaultDepositor = getVaultDepositorAddressSync(
 			program.programId,
-			vault
+			vault,
+			provider.wallet.publicKey
 		);
 		const remainingAccounts = adminClient.getRemainingAccounts({
 			userAccounts: [],
