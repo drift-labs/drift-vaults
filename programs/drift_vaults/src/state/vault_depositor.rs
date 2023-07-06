@@ -582,7 +582,9 @@ impl VaultDepositor {
 
         vault.user_shares = vault.user_shares.safe_sub(profit_share_shares)?;
 
-        vault.manager_total_fee = vault.manager_total_fee.saturating_add(profit_share.cast()?);
+        vault.manager_total_profit_share = vault
+            .manager_total_profit_share
+            .saturating_add(profit_share);
 
         Ok(profit_share)
     }
