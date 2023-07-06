@@ -525,8 +525,9 @@ impl VaultDepositor {
             management_fee_shares,
         });
 
-        vault.total_withdraw_requested =
-            vault.total_withdraw_requested.safe_sub(withdraw_amount)?;
+        vault.total_withdraw_requested = vault
+            .total_withdraw_requested
+            .safe_sub(self.last_withdraw_request_value)?;
 
         let finishing_liquidation = vault.liquidation_delegate == self.authority;
 
