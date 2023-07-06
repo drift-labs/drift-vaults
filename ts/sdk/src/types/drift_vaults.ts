@@ -823,6 +823,21 @@ export type DriftVaults = {
 						type: 'u64';
 					},
 					{
+						name: 'managerTotalFee';
+						docs: ['total mgmt fee charged by vault manager'];
+						type: 'i64';
+					},
+					{
+						name: 'managerTotalProfitShare';
+						docs: ['total profit share charged by vault manager'];
+						type: 'u64';
+					},
+					{
+						name: 'minimumDeposit';
+						docs: ['the minimum deposit amount'];
+						type: 'u64';
+					},
+					{
 						name: 'profitShare';
 						docs: [
 							"percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION"
@@ -2013,6 +2028,21 @@ export const IDL: DriftVaults = {
 					{
 						name: 'managerTotalWithdraws',
 						docs: ['total withdraws for the vault manager'],
+						type: 'u64',
+					},
+					{
+						name: 'managerTotalFee',
+						docs: ['total mgmt fee charged by vault manager'],
+						type: 'i64',
+					},
+					{
+						name: 'managerTotalProfitShare',
+						docs: ['total profit share charged by vault manager'],
+						type: 'u64',
+					},
+					{
+						name: 'minimumDeposit',
+						docs: ['the minimum deposit amount'],
 						type: 'u64',
 					},
 					{
