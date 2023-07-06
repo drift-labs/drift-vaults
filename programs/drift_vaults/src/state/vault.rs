@@ -74,6 +74,8 @@ pub struct Vault {
     pub manager_total_withdraws: u64,
     /// total fee charged by vault manager
     pub manager_total_fee: i64,
+    /// the minimum deposit amount
+    pub minimum_deposit: u64,
     /// percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION
     pub profit_share: u32,
     /// vault admin only collect incentive fees during periods when returns are higher than this amount: PERCENTAGE_PRECISION
@@ -94,7 +96,7 @@ impl Vault {
 }
 
 impl Size for Vault {
-    const SIZE: usize = 456 + 8;
+    const SIZE: usize = 464 + 8;
 }
 
 const_assert_eq!(Vault::SIZE, std::mem::size_of::<Vault>() + 8);
