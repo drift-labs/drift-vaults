@@ -60,6 +60,18 @@ pub struct Vault {
     pub management_fee: i64,
     /// timestamp vault initialized
     pub init_ts: i64,
+    /// the net deposits for the vault
+    pub net_deposits: i64,
+    /// the net deposits for the vault manager
+    pub manager_net_deposits: i64,
+    /// total deposits
+    pub total_deposits: u64,
+    /// total withdraws
+    pub total_withdraws: u64,
+    /// total deposits for the vault manager
+    pub manager_total_deposits: u64,
+    /// total withdraws for the vault manager
+    pub manager_total_withdraws: u64,
     /// percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION
     pub profit_share: u32,
     /// vault admin only collect incentive fees during periods when returns are higher than this amount: PERCENTAGE_PRECISION
@@ -70,6 +82,7 @@ pub struct Vault {
     pub bump: u8,
     /// Whether or not anybody can be a depositor
     pub permissioned: bool,
+    pub padding: [u8; 32],
 }
 
 impl Vault {
@@ -79,7 +92,7 @@ impl Vault {
 }
 
 impl Size for Vault {
-    const SIZE: usize = 360 + 8;
+    const SIZE: usize = 448 + 8;
 }
 
 const_assert_eq!(Vault::SIZE, std::mem::size_of::<Vault>() + 8);
@@ -206,6 +219,11 @@ impl Vault {
         let n_shares =
             vault_amount_to_depositor_shares(amount, total_vault_shares_before, vault_equity)?;
 
+        self.total_deposits = self.total_deposits.saturating_add(amount);
+        self.manager_total_deposits = self.manager_total_deposits.saturating_add(amount);
+        self.net_deposits = self.net_deposits.safe_add(amount.cast()?)?;
+        self.manager_net_deposits = self.net_deposits.safe_add(amount.cast()?)?;
+
         self.total_shares = self.total_shares.safe_add(n_shares)?;
         let vault_shares_after = self.total_shares.safe_sub(self.user_shares)?;
 
@@ -278,6 +296,11 @@ impl Vault {
                 (n_tokens, n_shares)
             }
         };
+
+        self.total_withdraws = self.total_withdraws.saturating_add(n_tokens);
+        self.manager_total_withdraws = self.manager_total_withdraws.saturating_add(n_tokens);
+        self.net_deposits = self.net_deposits.safe_sub(n_tokens.cast()?)?;
+        self.manager_net_deposits = self.net_deposits.safe_sub(n_tokens.cast()?)?;
 
         let user_vault_shares_before = self.user_shares;
         let total_vault_shares_before = self.total_shares;
