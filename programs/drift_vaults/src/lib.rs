@@ -10,7 +10,7 @@ pub mod macros;
 mod state;
 mod tests;
 
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("VAULtLeTwwUxpwAw98E6XmgaDeQucKgV5UaiAuQ655D");
 
 #[program]
 pub mod drift_vaults {
