@@ -72,6 +72,8 @@ pub struct Vault {
     pub manager_total_deposits: u64,
     /// total withdraws for the vault manager
     pub manager_total_withdraws: u64,
+    /// total fee charged by vault manager
+    pub manager_total_fee: i64,
     /// percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION
     pub profit_share: u32,
     /// vault admin only collect incentive fees during periods when returns are higher than this amount: PERCENTAGE_PRECISION
@@ -92,7 +94,7 @@ impl Vault {
 }
 
 impl Size for Vault {
-    const SIZE: usize = 448 + 8;
+    const SIZE: usize = 456 + 8;
 }
 
 const_assert_eq!(Vault::SIZE, std::mem::size_of::<Vault>() + 8);
@@ -136,6 +138,9 @@ impl Vault {
                 .cast::<i128>()?
                 .safe_sub(self.total_shares.cast()?)?;
             self.total_shares = new_total_shares;
+            self.manager_total_fee = self
+                .manager_total_fee
+                .saturating_add(management_fee_payment.cast()?);
 
             // in case total_shares is pushed to level that warrants a rebase
             self.apply_rebase(vault_equity)?;
