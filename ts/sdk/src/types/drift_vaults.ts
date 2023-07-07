@@ -783,6 +783,12 @@ export type DriftVaults = {
 						type: 'u32';
 					},
 					{
+						name: 'padding';
+						type: {
+							array: ['u8', 4];
+						};
+					},
+					{
 						name: 'managementFee';
 						docs: ['manager fee'];
 						type: 'i64';
@@ -869,7 +875,7 @@ export type DriftVaults = {
 						type: 'bool';
 					},
 					{
-						name: 'padding';
+						name: 'padding1';
 						type: {
 							array: ['u8', 32];
 						};
@@ -1991,6 +1997,12 @@ export const IDL: DriftVaults = {
 						type: 'u32',
 					},
 					{
+						name: 'padding',
+						type: {
+							array: ['u8', 4],
+						},
+					},
+					{
 						name: 'managementFee',
 						docs: ['manager fee'],
 						type: 'i64',
@@ -2077,7 +2089,7 @@ export const IDL: DriftVaults = {
 						type: 'bool',
 					},
 					{
-						name: 'padding',
+						name: 'padding1',
 						type: {
 							array: ['u8', 32],
 						},

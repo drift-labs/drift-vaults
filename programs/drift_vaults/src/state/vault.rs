@@ -56,6 +56,7 @@ pub struct Vault {
     pub max_tokens: u64,
     /// the base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)  
     pub shares_base: u32,
+    pub padding: [u8; 4],
     /// manager fee
     pub management_fee: i64,
     /// timestamp vault initialized
@@ -88,7 +89,7 @@ pub struct Vault {
     pub bump: u8,
     /// Whether or not anybody can be a depositor
     pub permissioned: bool,
-    pub padding: [u8; 32],
+    pub padding1: [u8; 32],
 }
 
 impl Vault {
