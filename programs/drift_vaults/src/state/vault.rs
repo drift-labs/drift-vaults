@@ -232,7 +232,7 @@ impl Vault {
         self.total_deposits = self.total_deposits.saturating_add(amount);
         self.manager_total_deposits = self.manager_total_deposits.saturating_add(amount);
         self.net_deposits = self.net_deposits.safe_add(amount.cast()?)?;
-        self.manager_net_deposits = self.net_deposits.safe_add(amount.cast()?)?;
+        self.manager_net_deposits = self.manager_net_deposits.safe_add(amount.cast()?)?;
 
         self.total_shares = self.total_shares.safe_add(n_shares)?;
         let vault_shares_after = self.total_shares.safe_sub(self.user_shares)?;
@@ -310,7 +310,7 @@ impl Vault {
         self.total_withdraws = self.total_withdraws.saturating_add(n_tokens);
         self.manager_total_withdraws = self.manager_total_withdraws.saturating_add(n_tokens);
         self.net_deposits = self.net_deposits.safe_sub(n_tokens.cast()?)?;
-        self.manager_net_deposits = self.net_deposits.safe_sub(n_tokens.cast()?)?;
+        self.manager_net_deposits = self.manager_net_deposits.safe_sub(n_tokens.cast()?)?;
 
         let user_vault_shares_before = self.user_shares;
         let total_vault_shares_before = self.total_shares;
