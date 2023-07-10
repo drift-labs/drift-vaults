@@ -1,0 +1,25 @@
+yarn run v1.22.19
+$ ts-node cli/cli.ts help
+Usage: cli [options] [command]
+
+Options:
+  -r, --rpc <url>                 RPC URL to use (env: RPC_URL)
+  -k, --keypair <fiilepath>       Path to keypair file (env: KEYPAIR_PATH)
+  --commitment <commitment>       State commitment to use (default:
+                                  "confirmed")
+  -h, --help                      display help for command
+
+Commands:
+  init [options]                  Initialize a new vault
+  view [options]                  View vault details
+  manager-deposit [options]       Make a deposit to your vault
+  manager-withdraw [options]      Make a deposit to your vault
+  init-vault-depositor [options]  Initialize a VaultDepositor for someone to
+                                  deposit into your vault
+  deposit [options]               Deposit into a vault via VaultDepositor
+  requestWithdraw [options]       Make a request to withdraw shares from the
+                                  vaultm, redeem period starts now
+  withdraw [options]              Initiate the withdraw, after the redeem
+                                  period has passed
+  help [command]                  display help for command
+Done in 1.34s.
