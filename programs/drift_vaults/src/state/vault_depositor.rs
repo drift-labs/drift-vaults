@@ -300,7 +300,7 @@ impl VaultDepositor {
         now: i64,
     ) -> Result<()> {
         validate!(
-            vault.max_tokens == 0 || vault.max_tokens < vault_equity.safe_add(amount)?,
+            vault.max_tokens == 0 || vault.max_tokens > vault_equity.safe_add(amount)?,
             ErrorCode::VaultIsAtCapacity,
             "after deposit vault equity is {} > {}",
             vault_equity.safe_add(amount)?,
