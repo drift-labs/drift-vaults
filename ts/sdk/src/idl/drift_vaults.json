@@ -150,7 +150,7 @@
         {
           "name": "authority",
           "isMut": false,
-          "isSigner": true
+          "isSigner": false
         },
         {
           "name": "payer",
@@ -1280,5 +1280,8 @@
       "name": "PermissionedVault",
       "msg": "PermissionedVault"
     }
-  ]
+  ],
+  "metadata": {
+    "address": "VAULtLeTwwUxpwAw98E6XmgaDeQucKgV5UaiAuQ655D"
+  }
 }

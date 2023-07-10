@@ -31,7 +31,8 @@ pub struct InitializeVaultDepositor<'info> {
         payer = payer
     )]
     pub vault_depositor: AccountLoader<'info, VaultDepositor>,
-    pub authority: Signer<'info>,
+    /// CHECK: dont need to sign if vault is permissioned
+    pub authority: AccountInfo<'info>,
     #[account(mut)]
     pub payer: Signer<'info>,
     pub rent: Sysvar<'info, Rent>,

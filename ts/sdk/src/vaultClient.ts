@@ -74,7 +74,8 @@ export class VaultClient {
 	}
 
 	public async initializeVaultDepositor(
-		vault: PublicKey
+		vault: PublicKey,
+		authority?: PublicKey
 	): Promise<TransactionSignature> {
 		const vaultDepositor = getVaultDepositorAddressSync(
 			this.program.programId,
@@ -87,6 +88,7 @@ export class VaultClient {
 			.accounts({
 				vaultDepositor,
 				vault,
+				authority: authority || this.driftClient.wallet.publicKey,
 			})
 			.rpc();
 	}

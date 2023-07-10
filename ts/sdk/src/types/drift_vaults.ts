@@ -150,7 +150,7 @@ export type DriftVaults = {
 				{
 					name: 'authority';
 					isMut: false;
-					isSigner: true;
+					isSigner: false;
 				},
 				{
 					name: 'payer';
@@ -1364,7 +1364,7 @@ export const IDL: DriftVaults = {
 				{
 					name: 'authority',
 					isMut: false,
-					isSigner: true,
+					isSigner: false,
 				},
 				{
 					name: 'payer',
