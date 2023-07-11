@@ -16,6 +16,7 @@ import {
 	getVaultDepositorAddressSync,
 } from '../ts/sdk/src';
 import { encodeName } from '../ts/sdk/src/name';
+import { WithdrawUnit } from '../ts/sdk/src/types/types';
 
 describe('driftVaults', () => {
 	// Configure the client to use the local cluster.
@@ -135,10 +136,6 @@ describe('driftVaults', () => {
 
 		// request withdraw
 		console.log('request withdraw');
-		class WithdrawUnit {
-			static readonly SHARES = { shares: {} };
-			static readonly TOKEN = { token: {} };
-		}
 		const requestTxSig = await program.methods
 			.requestWithdraw(usdcAmount, WithdrawUnit.TOKEN)
 			.accounts({
