@@ -58,7 +58,7 @@ program
     .addOption(new Option("--amount <amount>", "Amount to deposit (human format, 5 for 5 USDC)").makeOptionMandatory(true))
     .action((opts) => deposit(program, opts));
 program
-    .command("requestWithdraw")
+    .command("request-withdraw")
     .description("Make a request to withdraw shares from the vaultm, redeem period starts now")
     .addOption(new Option("--vault-depositor-address <vaultDepositorAddress>", "VaultDepositor address").makeOptionMandatory(true))
     .addOption(new Option("--amount <amount>", "Amount of shares to withdraw (raw format, as expected in the program)").makeOptionMandatory(true))

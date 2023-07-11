@@ -22,12 +22,7 @@ export const requestWithdraw = async (program: Command, cmdOpts: OptionValues) =
         driftVault
     } = await getCommandContext(program, true);
 
-    const spotMarket = driftClient.getSpotMarketAccount(0); // takes USDC deposits
-    if (!spotMarket) {
-        throw new Error("No spot market found");
-    }
-    const spotPrecision = TEN.pow(new BN(spotMarket.decimals));
-    const withdrawAmountBN = new BN(cmdOpts.amount * spotPrecision.toNumber());
+    const withdrawAmountBN = new BN(cmdOpts.amount);
 
     const tx = await driftVault.requestWithdraw(vaultDepositorAddress, withdrawAmountBN, WithdrawUnit.SHARES);
     console.log(`Requsted to withdraw ${cmdOpts.amount} shares from the vault: ${tx}`);
