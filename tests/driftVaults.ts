@@ -78,7 +78,10 @@ describe('driftVaults', () => {
 	});
 
 	it('Initialize Vault Depositor', async () => {
-		await vaultClient.initializeVaultDepositor(vault);
+		await vaultClient.initializeVaultDepositor(
+			vault,
+			provider.wallet.publicKey
+		);
 	});
 
 	it('Deposit', async () => {
@@ -149,6 +152,7 @@ describe('driftVaults', () => {
 				// driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
 				// driftSigner: adminClient.getStateAccount().signer,
 				// driftProgram: adminClient.program.programId,
+				// tokenProgram: TOKEN_PROGRAM_ID,
 			})
 			.remainingAccounts(remainingAccounts)
 			.rpc();

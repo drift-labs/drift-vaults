@@ -1,4 +1,4 @@
-import { BN, TEN } from "@drift-labs/sdk";
+import { BN } from "@drift-labs/sdk";
 import { PublicKey } from "@solana/web3.js";
 import {
     OptionValues,
@@ -18,7 +18,6 @@ export const requestWithdraw = async (program: Command, cmdOpts: OptionValues) =
     }
 
     const {
-        driftClient,
         driftVault
     } = await getCommandContext(program, true);
 
