@@ -348,6 +348,7 @@ export class VaultClient {
 		await user.subscribe();
 		const remainingAccounts = this.driftClient.getRemainingAccounts({
 			userAccounts: [user.getUserAccount()],
+			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
 		});
 
 		const userStatsKey = getUserStatsAccountPublicKey(
