@@ -44,3 +44,20 @@ export type Vault = {
 	bump: number;
 	permissioned: boolean;
 };
+
+export type VaultDepositor = {
+	vault: PublicKey;
+	pubkey: PublicKey;
+	authority: PublicKey;
+	vaultShares: BN;
+	lastWithdrawRequestShares: BN;
+	lastWithdrawRequestValue: BN;
+	lastWithdrawRequestTs: BN;
+	lastValidTs: BN;
+	netDeposits: BN;
+	totalDeposits: BN;
+	totalWithdraws: BN;
+	cumulativeProfitShareAmount: BN;
+	vaultSharesBase: number;
+	padding: number[];
+};
