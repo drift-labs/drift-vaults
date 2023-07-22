@@ -13,7 +13,12 @@ import {
 	getVaultAddressSync,
 	getVaultDepositorAddressSync,
 } from './addresses';
-import { PublicKey, TransactionSignature } from '@solana/web3.js';
+import {
+	PublicKey,
+	Transaction,
+	TransactionInstruction,
+	TransactionSignature,
+} from '@solana/web3.js';
 import {
 	getAssociatedTokenAddressSync,
 	TOKEN_PROGRAM_ID,
@@ -23,16 +28,20 @@ import { WithdrawUnit } from './types/types';
 export class VaultClient {
 	driftClient: DriftClient;
 	program: Program<DriftVaults>;
+	cliMode: boolean;
 
 	constructor({
 		driftClient,
 		program,
+		cliMode,
 	}: {
 		driftClient: DriftClient;
 		program: Program<DriftVaults>;
+		cliMode?: boolean;
 	}) {
 		this.driftClient = driftClient;
 		this.program = program;
+		this.cliMode = !!cliMode;
 	}
 
 	public async getVault(vault: PublicKey): Promise<any> {
@@ -73,18 +82,20 @@ export class VaultClient {
 			vault
 		);
 
+		const accounts = {
+			driftSpotMarket: spotMarket.pubkey,
+			driftSpotMarketMint: spotMarket.mint,
+			driftUserStats: userStatsKey,
+			driftUser: userKey,
+			driftState,
+			vault,
+			tokenAccount,
+			driftProgram: this.driftClient.program.programId,
+		};
+
 		return await this.program.methods
 			.initializeVault(params)
-			.accounts({
-				driftSpotMarket: spotMarket.pubkey,
-				driftSpotMarketMint: spotMarket.mint,
-				driftUserStats: userStatsKey,
-				driftUser: userKey,
-				driftState,
-				vault,
-				tokenAccount,
-				driftProgram: this.driftClient.program.programId,
-			})
+			.accounts(accounts)
 			.rpc();
 	}
 
@@ -271,25 +282,40 @@ export class VaultClient {
 			vaultAccount.spotMarketIndex
 		);
 
-		return await this.program.methods
-			.deposit(amount)
-			.accounts({
-				vault: vaultDepositorAccount.vault,
-				vaultDepositor,
-				vaultTokenAccount: vaultAccount.tokenAccount,
-				driftUserStats: userStatsKey,
-				driftUser: vaultAccount.user,
-				driftState: driftStateKey,
-				driftSpotMarketVault: spotMarket.vault,
-				userTokenAccount: getAssociatedTokenAddressSync(
-					spotMarket.mint,
-					this.driftClient.wallet.publicKey
-				),
-				driftProgram: this.driftClient.program.programId,
-				tokenProgram: TOKEN_PROGRAM_ID,
-			})
-			.remainingAccounts(remainingAccounts)
-			.rpc();
+		const accounts = {
+			vault: vaultDepositorAccount.vault,
+			vaultDepositor,
+			vaultTokenAccount: vaultAccount.tokenAccount,
+			driftUserStats: userStatsKey,
+			driftUser: vaultAccount.user,
+			driftState: driftStateKey,
+			driftSpotMarketVault: spotMarket.vault,
+			userTokenAccount: getAssociatedTokenAddressSync(
+				spotMarket.mint,
+				this.driftClient.wallet.publicKey,
+				true
+			),
+			driftProgram: this.driftClient.program.programId,
+			tokenProgram: TOKEN_PROGRAM_ID,
+		};
+
+		if (this.cliMode) {
+			return await this.program.methods
+				.deposit(amount)
+				.accounts(accounts)
+				.remainingAccounts(remainingAccounts)
+				.rpc();
+		} else {
+			const depositIx = this.program.instruction.deposit(amount, {
+				accounts: {
+					authority: this.driftClient.wallet.publicKey,
+					...accounts,
+				},
+				remainingAccounts,
+			});
+
+			return await this.createAndSendTxn(depositIx);
+		}
 	}
 
 	public async requestWithdraw(
@@ -319,17 +345,35 @@ export class VaultClient {
 
 		const driftStateKey = await this.driftClient.getStatePublicKey();
 
-		return await this.program.methods
-			.requestWithdraw(amount, withdrawUnit)
-			.accounts({
-				vault: vaultDepositorAccount.vault,
-				vaultDepositor,
-				driftUserStats: userStatsKey,
-				driftUser: vaultAccount.user,
-				driftState: driftStateKey,
-			})
-			.remainingAccounts(remainingAccounts)
-			.rpc();
+		const accounts = {
+			vault: vaultDepositorAccount.vault,
+			vaultDepositor,
+			driftUserStats: userStatsKey,
+			driftUser: vaultAccount.user,
+			driftState: driftStateKey,
+		};
+
+		if (this.cliMode) {
+			return await this.program.methods
+				.requestWithdraw(amount, withdrawUnit)
+				.accounts(accounts)
+				.remainingAccounts(remainingAccounts)
+				.rpc();
+		} else {
+			const requestWithdrawIx = this.program.instruction.requestWithdraw(
+				amount,
+				withdrawUnit,
+				{
+					accounts: {
+						authority: this.driftClient.wallet.publicKey,
+						...accounts,
+					},
+					remainingAccounts,
+				}
+			);
+
+			return await this.createAndSendTxn(requestWithdrawIx);
+		}
 	}
 
 	public async withdraw(
@@ -362,25 +406,51 @@ export class VaultClient {
 			vaultAccount.spotMarketIndex
 		);
 
-		return await this.program.methods
-			.withdraw()
-			.accounts({
-				vault: vaultDepositorAccount.vault,
-				vaultDepositor,
-				vaultTokenAccount: vaultAccount.tokenAccount,
-				driftUserStats: userStatsKey,
-				driftUser: vaultAccount.user,
-				driftState: driftStateKey,
-				driftSpotMarketVault: spotMarket.vault,
-				driftSigner: this.driftClient.getStateAccount().signer,
-				userTokenAccount: getAssociatedTokenAddressSync(
-					spotMarket.mint,
-					this.driftClient.wallet.publicKey
-				),
-				driftProgram: this.driftClient.program.programId,
-				tokenProgram: TOKEN_PROGRAM_ID,
-			})
-			.remainingAccounts(remainingAccounts)
-			.rpc();
+		const accounts = {
+			vault: vaultDepositorAccount.vault,
+			vaultDepositor,
+			vaultTokenAccount: vaultAccount.tokenAccount,
+			driftUserStats: userStatsKey,
+			driftUser: vaultAccount.user,
+			driftState: driftStateKey,
+			driftSpotMarketVault: spotMarket.vault,
+			driftSigner: this.driftClient.getStateAccount().signer,
+			userTokenAccount: getAssociatedTokenAddressSync(
+				spotMarket.mint,
+				this.driftClient.wallet.publicKey,
+				true
+			),
+			driftProgram: this.driftClient.program.programId,
+			tokenProgram: TOKEN_PROGRAM_ID,
+		};
+
+		if (this.cliMode) {
+			return await this.program.methods
+				.withdraw()
+				.accounts(accounts)
+				.remainingAccounts(remainingAccounts)
+				.rpc();
+		} else {
+			const withdrawIx = this.program.instruction.withdraw({
+				accounts: {
+					authority: this.driftClient.wallet.publicKey,
+					...accounts,
+				},
+				remainingAccounts,
+			});
+
+			return await this.createAndSendTxn(withdrawIx);
+		}
+	}
+
+	/**
+	 * Used for UI wallet adapters compatibility
+	 */
+	private async createAndSendTxn(ix: TransactionInstruction) {
+		const tx = new Transaction();
+		tx.add(ix);
+		const { txSig } = await this.driftClient.sendTransaction(tx);
+
+		return txSig;
 	}
 }
