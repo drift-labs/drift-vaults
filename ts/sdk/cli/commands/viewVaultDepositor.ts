@@ -17,7 +17,7 @@ export const viewVaultDepositor = async (program: Command, cmdOpts: OptionValues
 
     const {
         driftVault
-    } = await getCommandContext(program, true);
+    } = await getCommandContext(program, false);
 
     const vaultDepositor = await driftVault.getVaultDepositor(address);
     printVaultDepositor(vaultDepositor);

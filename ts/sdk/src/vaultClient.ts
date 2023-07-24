@@ -443,6 +443,58 @@ export class VaultClient {
 		}
 	}
 
+	public async cancelRequestWithdraw(
+		vaultDepositor: PublicKey
+	) {
+		const vaultDepositorAccount =
+			await this.program.account.vaultDepositor.fetch(vaultDepositor);
+		const vaultAccount = await this.program.account.vault.fetch(
+			vaultDepositorAccount.vault
+		);
+		
+		const userStatsKey = getUserStatsAccountPublicKey(
+			this.driftClient.program.programId,
+			vaultDepositorAccount.vault
+		);
+
+		const driftStateKey = await this.driftClient.getStatePublicKey();
+
+		const accounts = {
+			vault: vaultDepositorAccount.vault,
+			vaultDepositor,
+			driftUserStats: userStatsKey,
+			driftUser: vaultAccount.user,
+			driftState: driftStateKey,
+		};
+
+		const user = new User({
+			driftClient: this.driftClient,
+			userAccountPublicKey: vaultAccount.user,
+		});
+		await user.subscribe();
+		const remainingAccounts = this.driftClient.getRemainingAccounts({
+			userAccounts: [user.getUserAccount()],
+		});
+
+		if (this.cliMode) {
+			return await this.program.methods
+				.cancelRequestWithdraw()
+				.accounts(accounts)
+				.remainingAccounts(remainingAccounts)
+				.rpc();
+		} else {
+			const cancelRequestWithdrawIx = this.program.instruction.cancelRequestWithdraw({
+				accounts: {
+					authority: this.driftClient.wallet.publicKey,
+					...accounts,
+				},
+				remainingAccounts,
+			});
+
+			return await this.createAndSendTxn(cancelRequestWithdrawIx);
+		}
+	}
+
 	/**
 	 * Used for UI wallet adapters compatibility
 	 */

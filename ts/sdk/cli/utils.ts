@@ -101,6 +101,7 @@ export async function getCommandContext(program: Command, needToSign: boolean): 
     const driftVault = new VaultClient({
         driftClient,
         program: vaultProgram,
+        cliMode: true
     });
 
     return {
