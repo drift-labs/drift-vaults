@@ -61,3 +61,9 @@ export type VaultDepositor = {
 	vaultSharesBase: number;
 	padding: number[];
 };
+
+export type VaultDepositorAccountEvents = {
+	vaultDepositorUpdate: (payload: VaultDepositor) => void;
+	update: void;
+	error: (e: Error) => void;
+};

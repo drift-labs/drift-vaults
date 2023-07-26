@@ -8,7 +8,7 @@ import { getVaultDepositorAddressSync } from './addresses';
 import { Program } from '@coral-xyz/anchor';
 import StrictEventEmitter from 'strict-event-emitter-types';
 import { EventEmitter } from 'events';
-import { VaultDepositor } from './types/types';
+import { VaultDepositor, VaultDepositorAccountEvents } from './types/types';
 import { DriftVaults } from './types/drift_vaults';
 
 export class VaultDepositorSubscriber {
@@ -17,7 +17,10 @@ export class VaultDepositorSubscriber {
 	private pubkey: PublicKey;
 	private depositor?: DataAndSlot<VaultDepositor>;
 
-	private _eventEmitter: StrictEventEmitter<EventEmitter, any>; // TODO: fix event type
+	private _eventEmitter: StrictEventEmitter<
+		EventEmitter,
+		VaultDepositorAccountEvents
+	>;
 	private accountLoader: BulkAccountLoader;
 	private callbackId: string | null = null;
 	private errorCallbackId: string | null = null;
@@ -117,7 +120,7 @@ export class VaultDepositorSubscriber {
 		const currentSlot = this.depositor?.slot ?? 0;
 		if (buffer && slot > currentSlot) {
 			const account = this.program.account.vaultDepositor.coder.accounts.decode(
-				'User',
+				'vaultDepositor',
 				buffer
 			);
 			this.depositor = { data: account, slot };
