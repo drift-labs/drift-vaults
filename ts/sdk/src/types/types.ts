@@ -67,3 +67,9 @@ export type VaultDepositorAccountEvents = {
 	update: void;
 	error: (e: Error) => void;
 };
+
+export type VaultAccountEvents = {
+	vaultUpdate: (payload: Vault) => void;
+	update: void;
+	error: (e: Error) => void;
+};

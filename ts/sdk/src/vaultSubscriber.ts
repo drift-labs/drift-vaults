@@ -4,45 +4,39 @@ import {
 	NotSubscribedError,
 	PublicKey,
 } from '@drift-labs/sdk';
-import { getVaultDepositorAddressSync } from './addresses';
+import { getVaultAddressSync } from './addresses';
 import { Program } from '@coral-xyz/anchor';
 import StrictEventEmitter from 'strict-event-emitter-types';
 import { EventEmitter } from 'events';
-import { VaultDepositor, VaultDepositorAccountEvents } from './types/types';
+import { Vault, VaultAccountEvents } from './types/types';
 import { DriftVaults } from './types/drift_vaults';
+import { encodeName } from './name';
 
-export class VaultDepositorSubscriber {
+export class VaultSubscriber {
 	private program: Program<DriftVaults>;
 	private _isSubscribed: boolean;
 	private pubkey: PublicKey;
-	private depositor?: DataAndSlot<VaultDepositor>;
+	private account?: DataAndSlot<Vault>;
 
-	private _eventEmitter: StrictEventEmitter<
-		EventEmitter,
-		VaultDepositorAccountEvents
-	>;
+	private _eventEmitter: StrictEventEmitter<EventEmitter, VaultAccountEvents>;
 	private accountLoader: BulkAccountLoader;
 	private callbackId: string | null = null;
 	private errorCallbackId: string | null = null;
 
 	constructor(
 		program: Program<DriftVaults>,
-		vaultDepositorPubKey: PublicKey,
+		vaultPubKey: PublicKey,
 		accountLoader: BulkAccountLoader
 	) {
 		this.accountLoader = accountLoader;
 		this._isSubscribed = false;
-		this.pubkey = vaultDepositorPubKey;
+		this.pubkey = vaultPubKey;
 		this.program = program;
 		this._eventEmitter = new EventEmitter();
 	}
 
-	static getAddressSync(
-		programId: PublicKey,
-		vault: PublicKey,
-		authority: PublicKey
-	): PublicKey {
-		return getVaultDepositorAddressSync(programId, vault, authority);
+	static getAddressSync(programId: PublicKey, vaultName: string): PublicKey {
+		return getVaultAddressSync(programId, encodeName(vaultName));
 	}
 
 	get isSubscribed(): boolean {
@@ -62,7 +56,7 @@ export class VaultDepositorSubscriber {
 			await this.addToAccountLoader();
 
 			await this.fetchIfUnloaded();
-			if (this.depositor) {
+			if (this.account) {
 				this._eventEmitter.emit('update');
 			}
 
@@ -77,9 +71,7 @@ export class VaultDepositorSubscriber {
 
 	async addToAccountLoader(): Promise<void> {
 		if (this.callbackId) {
-			console.log(
-				'Account for vault depositor already added to account loader'
-			);
+			console.log('Account for vault already added to account loader');
 			return;
 		}
 
@@ -88,17 +80,16 @@ export class VaultDepositorSubscriber {
 			(buffer, slot) => {
 				if (!buffer) return;
 
-				if (this.depositor && this.depositor.slot > slot) {
+				if (this.account && this.account.slot > slot) {
 					return;
 				}
 
-				const account =
-					this.program.account.vaultDepositor.coder.accounts.decode(
-						'vaultDepositor',
-						buffer
-					);
-				this.depositor = { data: account, slot };
-				this._eventEmitter.emit('vaultDepositorUpdate', account);
+				const account = this.program.account.vault.coder.accounts.decode(
+					'vault',
+					buffer
+				);
+				this.account = { data: account, slot };
+				this._eventEmitter.emit('vaultUpdate', account);
 				this._eventEmitter.emit('update');
 			}
 		);
@@ -109,7 +100,7 @@ export class VaultDepositorSubscriber {
 	}
 
 	async fetchIfUnloaded(): Promise<void> {
-		if (this.depositor === undefined) {
+		if (this.account === undefined) {
 			await this.fetch();
 		}
 	}
@@ -117,13 +108,13 @@ export class VaultDepositorSubscriber {
 	async fetch(): Promise<void> {
 		await this.accountLoader.load();
 		const { buffer, slot } = this.accountLoader.getBufferAndSlot(this.pubkey);
-		const currentSlot = this.depositor?.slot ?? 0;
+		const currentSlot = this.account?.slot ?? 0;
 		if (buffer && slot > currentSlot) {
-			const account = this.program.account.vaultDepositor.coder.accounts.decode(
-				'vaultDepositor',
+			const account = this.program.account.vault.coder.accounts.decode(
+				'vault',
 				buffer
 			);
-			this.depositor = { data: account, slot };
+			this.account = { data: account, slot };
 		}
 	}
 
@@ -149,15 +140,15 @@ export class VaultDepositorSubscriber {
 		}
 	}
 
-	getUserAccountAndSlot(): DataAndSlot<VaultDepositor> {
+	getUserAccountAndSlot(): DataAndSlot<Vault> {
 		this.assertIsSubscribed();
-		return this.depositor;
+		return this.account;
 	}
 
-	updateData(vaultDepositorAcc: VaultDepositor, slot: number): void {
-		if (!this.depositor || this.depositor.slot < slot) {
-			this.depositor = { data: vaultDepositorAcc, slot };
-			this._eventEmitter.emit('vaultDepositorUpdate', vaultDepositorAcc);
+	updateData(vaultAcc: Vault, slot: number): void {
+		if (!this.account || this.account.slot < slot) {
+			this.account = { data: vaultAcc, slot };
+			this._eventEmitter.emit('vaultUpdate', vaultAcc);
 			this._eventEmitter.emit('update');
 		}
 	}
