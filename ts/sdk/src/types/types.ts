@@ -62,14 +62,15 @@ export type VaultDepositor = {
 	padding: number[];
 };
 
-export type VaultDepositorAccountEvents = {
-	vaultDepositorUpdate: (payload: VaultDepositor) => void;
+export type VaultProgramAccountBaseEvents = {
 	update: void;
 	error: (e: Error) => void;
 };
 
+export type VaultDepositorAccountEvents = {
+	vaultDepositorUpdate: (payload: VaultDepositor) => void;
+} & VaultProgramAccountBaseEvents;
+
 export type VaultAccountEvents = {
 	vaultUpdate: (payload: Vault) => void;
-	update: void;
-	error: (e: Error) => void;
-};
+} & VaultProgramAccountBaseEvents;
