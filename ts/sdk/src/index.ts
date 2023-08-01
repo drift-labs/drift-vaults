@@ -5,3 +5,4 @@ export * from './vaultSubscriber';
 export * from './vaultDepositorSubscriber';
 export * from './utils';
 export * from './types/types';
+export * from './constants';
