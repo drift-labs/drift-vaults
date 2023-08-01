@@ -940,11 +940,18 @@
             "type": "bool"
           },
           {
+            "name": "minDepositAmount",
+            "docs": [
+              "Min deposit amount"
+            ],
+            "type": "u64"
+          },
+          {
             "name": "padding1",
             "type": {
               "array": [
                 "u8",
-                32
+                24
               ]
             }
           }
@@ -978,6 +985,10 @@
           {
             "name": "managementFee",
             "type": "i64"
+          },
+          {
+            "name": "minDepositAmount",
+            "type": "u64"
           },
           {
             "name": "profitShare",
@@ -1019,6 +1030,12 @@
             "name": "managementFee",
             "type": {
               "option": "i64"
+            }
+          },
+          {
+            "name": "minDepositAmount",
+            "type": {
+              "option": "u64"
             }
           },
           {
@@ -1279,6 +1296,11 @@
       "code": 6017,
       "name": "PermissionedVault",
       "msg": "PermissionedVault"
+    },
+    {
+      "code": 6018,
+      "name": "InvalidVaultDeposit",
+      "msg": "InvalidVaultDeposit"
     }
   ],
   "metadata": {

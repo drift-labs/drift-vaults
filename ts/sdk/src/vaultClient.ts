@@ -57,6 +57,7 @@ export class VaultClient {
 		spotMarketIndex: number;
 		redeemPeriod: BN;
 		maxTokens: BN;
+		minDepositAmount: BN;
 		managementFee: BN;
 		profitShare: number;
 		hurdleRate: number;
@@ -443,15 +444,13 @@ export class VaultClient {
 		}
 	}
 
-	public async cancelRequestWithdraw(
-		vaultDepositor: PublicKey
-	) {
+	public async cancelRequestWithdraw(vaultDepositor: PublicKey) {
 		const vaultDepositorAccount =
 			await this.program.account.vaultDepositor.fetch(vaultDepositor);
 		const vaultAccount = await this.program.account.vault.fetch(
 			vaultDepositorAccount.vault
 		);
-		
+
 		const userStatsKey = getUserStatsAccountPublicKey(
 			this.driftClient.program.programId,
 			vaultDepositorAccount.vault
@@ -483,13 +482,14 @@ export class VaultClient {
 				.remainingAccounts(remainingAccounts)
 				.rpc();
 		} else {
-			const cancelRequestWithdrawIx = this.program.instruction.cancelRequestWithdraw({
-				accounts: {
-					authority: this.driftClient.wallet.publicKey,
-					...accounts,
-				},
-				remainingAccounts,
-			});
+			const cancelRequestWithdrawIx =
+				this.program.instruction.cancelRequestWithdraw({
+					accounts: {
+						authority: this.driftClient.wallet.publicKey,
+						...accounts,
+					},
+					remainingAccounts,
+				});
 
 			return await this.createAndSendTxn(cancelRequestWithdrawIx);
 		}

@@ -89,7 +89,9 @@ pub struct Vault {
     pub bump: u8,
     /// Whether or not anybody can be a depositor
     pub permissioned: bool,
-    pub padding1: [u8; 32],
+    /// Min deposit amount
+    pub min_deposit_amount: u64,
+    pub padding1: [u8; 24],
 }
 
 impl Vault {

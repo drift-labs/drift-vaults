@@ -33,6 +33,7 @@ pub fn initialize_vault<'info>(
     vault.redeem_period = params.redeem_period;
 
     vault.max_tokens = params.max_tokens;
+    vault.min_deposit_amount = params.min_deposit_amount;
 
     validate!(
         params.management_fee < PERCENTAGE_PRECISION_U64.cast()?,
@@ -71,6 +72,7 @@ pub struct VaultParams {
     pub redeem_period: i64,
     pub max_tokens: u64,
     pub management_fee: i64,
+    pub min_deposit_amount: u64,
     pub profit_share: u32,
     pub hurdle_rate: u32,
     pub spot_market_index: u16,
