@@ -8,12 +8,16 @@ import { Program } from '@coral-xyz/anchor';
 import StrictEventEmitter from 'strict-event-emitter-types';
 import { EventEmitter } from 'events';
 import { DriftVaults } from '../types/drift_vaults';
-import { VaultProgramAccountBaseEvents } from '../types/types';
+import {
+	VaultsProgramAccountBaseEvents,
+	VaultsProgramAccountSubscriber,
+} from '../types/types';
 
-export abstract class VaultProgramAccountSubscriber<
+export abstract class PollingVaultsProgramAccountSubscriber<
 	Account,
-	AccountEvents extends VaultProgramAccountBaseEvents
-> {
+	AccountEvents extends VaultsProgramAccountBaseEvents
+> implements VaultsProgramAccountSubscriber<Account, AccountEvents>
+{
 	protected program: Program<DriftVaults>;
 	protected _isSubscribed: boolean;
 	protected pubkey: PublicKey;

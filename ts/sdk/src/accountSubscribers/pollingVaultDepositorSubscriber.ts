@@ -1,20 +1,17 @@
-import { PublicKey } from '@drift-labs/sdk';
-import { getVaultDepositorAddressSync } from '../addresses';
-import { VaultDepositor, VaultDepositorAccountEvents } from '../types/types';
-import { VaultProgramAccountSubscriber } from './vaultProgramAccountSubscriber';
-
-export class VaultDepositorSubscriber extends VaultProgramAccountSubscriber<
+import {
 	VaultDepositor,
-	VaultDepositorAccountEvents
-> {
-	static getAddressSync(
-		programId: PublicKey,
-		vault: PublicKey,
-		authority: PublicKey
-	): PublicKey {
-		return getVaultDepositorAddressSync(programId, vault, authority);
-	}
+	VaultDepositorAccountEvents,
+	VaultDepositorAccountSubscriber,
+} from '../types/types';
+import { PollingVaultsProgramAccountSubscriber } from './pollingVaultsProgramAccountSubscriber';
 
+export class PollingVaultDepositorSubscriber
+	extends PollingVaultsProgramAccountSubscriber<
+		VaultDepositor,
+		VaultDepositorAccountEvents
+	>
+	implements VaultDepositorAccountSubscriber
+{
 	async addToAccountLoader(): Promise<void> {
 		if (this.callbackId) {
 			console.log(

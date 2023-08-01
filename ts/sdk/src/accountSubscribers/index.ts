@@ -1,2 +1,2 @@
-export * from './vaultDepositorSubscriber';
-export * from './vaultSubscriber';
+export * from './pollingVaultDepositorSubscriber';
+export * from './pollingVaultSubscriber';
