@@ -14,6 +14,7 @@ import {
 	getVaultDepositorAddressSync,
 } from './addresses';
 import {
+	ComputeBudgetProgram,
 	PublicKey,
 	SystemProgram,
 	SYSVAR_RENT_PUBKEY,
@@ -565,6 +566,11 @@ export class VaultClient {
 	 */
 	private async createAndSendTxn(...ix: TransactionInstruction[]) {
 		const tx = new Transaction();
+		tx.add(
+			ComputeBudgetProgram.setComputeUnitLimit({
+				units: 400_000,
+			})
+		);
 		tx.add(...ix);
 		const { txSig } = await this.driftClient.sendTransaction(tx);
 
