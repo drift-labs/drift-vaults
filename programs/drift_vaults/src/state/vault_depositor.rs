@@ -129,6 +129,10 @@ impl VaultDepositor {
         Ok(())
     }
 
+    pub fn has_pending_withdraw_request(&self) -> bool {
+        self.last_withdraw_request_value != 0 || self.last_withdraw_request_shares != 0
+    }
+
     pub fn apply_rebase(
         self: &mut VaultDepositor,
         vault: &mut Vault,
@@ -311,6 +315,12 @@ impl VaultDepositor {
             !(vault_equity == 0 && vault.total_shares != 0),
             ErrorCode::InvalidVaultForNewDepositors,
             "Vault balance should be non-zero for new depositors to enter"
+        )?;
+
+        validate!(
+            !self.has_pending_withdraw_request(),
+            ErrorCode::WithdrawInProgress,
+            "withdraw request is in progress"
         )?;
 
         self.apply_rebase(vault, vault_equity)?;

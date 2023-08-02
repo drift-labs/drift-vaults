@@ -43,6 +43,8 @@ pub enum ErrorCode {
     InvalidVaultUpdate,
     #[msg("PermissionedVault")]
     PermissionedVault,
+    #[msg("WithdrawInProgress")]
+    WithdrawInProgress,
 }
 
 impl From<DriftErrorCode> for ErrorCode {
