@@ -28,7 +28,7 @@ export abstract class VaultsProgramAccount<
 	}
 
 	getData(): Account {
-		return this.accountSubscriber.getAccountAndSlot().data;
+		return this.accountSubscriber.getAccountAndSlot()?.data;
 	}
 
 	async updateData(newData: Account, slot: number): Promise<void> {
