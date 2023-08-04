@@ -14,7 +14,10 @@ import {
 	getVaultDepositorAddressSync,
 } from './addresses';
 import {
+	ComputeBudgetProgram,
 	PublicKey,
+	SystemProgram,
+	SYSVAR_RENT_PUBKEY,
 	Transaction,
 	TransactionInstruction,
 	TransactionSignature,
@@ -225,6 +228,31 @@ export class VaultClient {
 			.rpc();
 	}
 
+	private createInitVaultDepositorIx(vault: PublicKey, authority?: PublicKey) {
+		const vaultDepositor = getVaultDepositorAddressSync(
+			this.program.programId,
+			vault,
+			authority
+		);
+
+		const accounts = {
+			vaultDepositor,
+			vault,
+			authority: authority || this.driftClient.wallet.publicKey,
+		};
+
+		const initIx = this.program.instruction.initializeVaultDepositor({
+			accounts: {
+				...accounts,
+				payer: authority || this.driftClient.wallet.publicKey,
+				rent: SYSVAR_RENT_PUBKEY,
+				systemProgram: SystemProgram.programId,
+			},
+		});
+
+		return initIx;
+	}
+
 	/**
 	 * Initializes the vault depositor account. This account is used to deposit funds into a vault.
 	 * @param vault the vault address to deposit into
@@ -241,25 +269,48 @@ export class VaultClient {
 			authority
 		);
 
-		return await this.program.methods
-			.initializeVaultDepositor()
-			.accounts({
-				vaultDepositor,
-				vault,
-				authority: authority || this.driftClient.wallet.publicKey,
-			})
-			.rpc();
+		const accounts = {
+			vaultDepositor,
+			vault,
+			authority: authority || this.driftClient.wallet.publicKey,
+		};
+
+		if (this.cliMode) {
+			return await this.program.methods
+				.initializeVaultDepositor()
+				.accounts(accounts)
+				.rpc();
+		} else {
+			const initIx = this.createInitVaultDepositorIx(vault, authority);
+			return await this.createAndSendTxn(initIx);
+		}
 	}
 
+	/**
+	 * Depositor funds into the specified vault.
+	 * @param vaultDepositor
+	 * @param amount
+	 * @param initVaultDepositor If true, will initialize the vault depositor account
+	 * @returns
+	 */
 	public async deposit(
 		vaultDepositor: PublicKey,
-		amount: BN
+		amount: BN,
+		initVaultDepositor?: {
+			authority: PublicKey;
+			vault: PublicKey;
+		}
 	): Promise<TransactionSignature> {
-		const vaultDepositorAccount =
-			await this.program.account.vaultDepositor.fetch(vaultDepositor);
-		const vaultAccount = await this.program.account.vault.fetch(
-			vaultDepositorAccount.vault
-		);
+		let vaultPubKey: PublicKey;
+		if (initVaultDepositor) {
+			vaultPubKey = initVaultDepositor.vault;
+		} else {
+			const vaultDepositorAccount =
+				await this.program.account.vaultDepositor.fetch(vaultDepositor);
+			vaultPubKey = vaultDepositorAccount.vault;
+		}
+
+		const vaultAccount = await this.program.account.vault.fetch(vaultPubKey);
 
 		const user = new User({
 			driftClient: this.driftClient,
@@ -273,7 +324,7 @@ export class VaultClient {
 
 		const userStatsKey = getUserStatsAccountPublicKey(
 			this.driftClient.program.programId,
-			vaultDepositorAccount.vault
+			vaultPubKey
 		);
 
 		const driftStateKey = await this.driftClient.getStatePublicKey();
@@ -283,7 +334,7 @@ export class VaultClient {
 		);
 
 		const accounts = {
-			vault: vaultDepositorAccount.vault,
+			vault: vaultPubKey,
 			vaultDepositor,
 			vaultTokenAccount: vaultAccount.tokenAccount,
 			driftUserStats: userStatsKey,
@@ -300,6 +351,12 @@ export class VaultClient {
 		};
 
 		if (this.cliMode) {
+			if (initVaultDepositor) {
+				await this.initializeVaultDepositor(
+					vaultAccount.pubkey,
+					initVaultDepositor.authority
+				);
+			}
 			return await this.program.methods
 				.deposit(amount)
 				.accounts(accounts)
@@ -314,7 +371,15 @@ export class VaultClient {
 				remainingAccounts,
 			});
 
-			return await this.createAndSendTxn(depositIx);
+			if (initVaultDepositor) {
+				const initIx = this.createInitVaultDepositorIx(
+					vaultAccount.pubkey,
+					initVaultDepositor.authority
+				);
+				return await this.createAndSendTxn(initIx, depositIx);
+			} else {
+				return await this.createAndSendTxn(depositIx);
+			}
 		}
 	}
 
@@ -445,13 +510,13 @@ export class VaultClient {
 
 	public async cancelRequestWithdraw(
 		vaultDepositor: PublicKey
-	) {
+	): Promise<TransactionSignature> {
 		const vaultDepositorAccount =
 			await this.program.account.vaultDepositor.fetch(vaultDepositor);
 		const vaultAccount = await this.program.account.vault.fetch(
 			vaultDepositorAccount.vault
 		);
-		
+
 		const userStatsKey = getUserStatsAccountPublicKey(
 			this.driftClient.program.programId,
 			vaultDepositorAccount.vault
@@ -483,13 +548,14 @@ export class VaultClient {
 				.remainingAccounts(remainingAccounts)
 				.rpc();
 		} else {
-			const cancelRequestWithdrawIx = this.program.instruction.cancelRequestWithdraw({
-				accounts: {
-					authority: this.driftClient.wallet.publicKey,
-					...accounts,
-				},
-				remainingAccounts,
-			});
+			const cancelRequestWithdrawIx =
+				this.program.instruction.cancelRequestWithdraw({
+					accounts: {
+						authority: this.driftClient.wallet.publicKey,
+						...accounts,
+					},
+					remainingAccounts,
+				});
 
 			return await this.createAndSendTxn(cancelRequestWithdrawIx);
 		}
@@ -498,9 +564,14 @@ export class VaultClient {
 	/**
 	 * Used for UI wallet adapters compatibility
 	 */
-	private async createAndSendTxn(ix: TransactionInstruction) {
+	private async createAndSendTxn(...ix: TransactionInstruction[]) {
 		const tx = new Transaction();
-		tx.add(ix);
+		tx.add(
+			ComputeBudgetProgram.setComputeUnitLimit({
+				units: 400_000,
+			})
+		);
+		tx.add(...ix);
 		const { txSig } = await this.driftClient.sendTransaction(tx);
 
 		return txSig;
