@@ -10,6 +10,7 @@ export const VAULT_PROGRAM_ID = new PublicKey(
 export class WithdrawUnit {
 	static readonly SHARES = { shares: {} };
 	static readonly TOKEN = { token: {} };
+	static readonly SHARES_PERCENT = { sharesPercent: {} };
 }
 
 export type Vault = {

@@ -1004,6 +1004,9 @@ export type DriftVaults = {
 					},
 					{
 						name: 'Token';
+					},
+					{
+						name: 'SharesPercent';
 					}
 				];
 			};
@@ -1208,6 +1211,16 @@ export type DriftVaults = {
 			code: 6017;
 			name: 'PermissionedVault';
 			msg: 'PermissionedVault';
+		},
+		{
+			code: 6018;
+			name: 'WithdrawInProgress';
+			msg: 'WithdrawInProgress';
+		},
+		{
+			code: 6019;
+			name: 'SharesPercentTooLarge';
+			msg: 'SharesPercentTooLarge';
 		}
 	];
 };
@@ -2219,6 +2232,9 @@ export const IDL: DriftVaults = {
 					{
 						name: 'Token',
 					},
+					{
+						name: 'SharesPercent',
+					},
 				],
 			},
 		},
@@ -2422,6 +2438,16 @@ export const IDL: DriftVaults = {
 			code: 6017,
 			name: 'PermissionedVault',
 			msg: 'PermissionedVault',
+		},
+		{
+			code: 6018,
+			name: 'WithdrawInProgress',
+			msg: 'WithdrawInProgress',
+		},
+		{
+			code: 6019,
+			name: 'SharesPercentTooLarge',
+			msg: 'SharesPercentTooLarge',
 		},
 	],
 };
