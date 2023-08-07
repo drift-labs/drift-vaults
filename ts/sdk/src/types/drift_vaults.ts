@@ -2590,6 +2590,6 @@ export const IDL: DriftVaults = {
 			code: 6019,
 			name: 'SharesPercentTooLarge',
 			msg: 'SharesPercentTooLarge',
-		}
+		},
 	],
 };
