@@ -161,6 +161,11 @@ impl Vault {
         ))
     }
 
+    pub fn get_manager_shares(&self) -> VaultResult<u128> {
+        let manager_shares = self.total_shares.safe_sub(self.user_shares)?;
+        Ok(manager_shares)
+    }
+
     pub fn apply_rebase(&mut self, vault_equity: u64) -> Result<()> {
         if vault_equity != 0 && vault_equity.cast::<u128>()? < self.total_shares {
             let (expo_diff, rebase_divisor) =
@@ -300,6 +305,16 @@ impl Vault {
             }
             WithdrawUnit::Shares => {
                 let n_shares: u128 = withdraw_amount.cast()?;
+                let n_tokens: u64 =
+                    depositor_shares_to_vault_amount(n_shares, self.total_shares, vault_equity)?
+                        .min(vault_equity);
+                (n_tokens, n_shares)
+            }
+            WithdrawUnit::SharesPercent => {
+                let n_shares: u128 = WithdrawUnit::get_shares_from_percent(
+                    withdraw_amount.cast()?,
+                    self.get_manager_shares()?,
+                )?;
                 let n_tokens: u64 =
                     depositor_shares_to_vault_amount(n_shares, self.total_shares, vault_equity)?
                         .min(vault_equity);

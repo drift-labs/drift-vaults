@@ -1,5 +1,5 @@
-import { Program } from '@coral-xyz/anchor';
-import { BulkAccountLoader } from '@drift-labs/sdk';
+import { BN, Program } from '@coral-xyz/anchor';
+import { BulkAccountLoader, PERCENTAGE_PRECISION, ZERO } from '@drift-labs/sdk';
 import { PublicKey } from '@solana/web3.js';
 import { DriftVaults } from '../types/drift_vaults';
 import { VaultDepositor, VaultDepositorAccountEvents } from '../types/types';
@@ -36,5 +36,32 @@ export class VaultDepositorAccount extends VaultsProgramAccount<
 		authority: PublicKey
 	): PublicKey {
 		return getVaultDepositorAddressSync(programId, vault, authority);
+	}
+
+	/**
+	 * Calculates the percentage of a depositor's funds that will be paid as profit share fees.
+	 *
+	 * @param vaultProfitShare Vault's profit share fee
+	 * @param depositorEquity Vault depositor's net deposit value
+	 */
+	calcProfitShareFeesProportion(vaultProfitShare: BN, depositorEquity: BN): BN {
+		const accountData = this.accountSubscriber.getAccountAndSlot().data;
+
+		const profit = depositorEquity
+			.sub(accountData.netDeposits)
+			.sub(accountData.cumulativeProfitShareAmount);
+
+		if (profit.lte(new BN(0))) {
+			return ZERO;
+		}
+
+		const profitShareAmount = profit
+			.mul(vaultProfitShare)
+			.div(PERCENTAGE_PRECISION);
+		const profitShareProportion = profitShareAmount
+			.mul(PERCENTAGE_PRECISION)
+			.div(depositorEquity);
+
+		return profitShareProportion;
 	}
 }
