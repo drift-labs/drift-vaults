@@ -46,7 +46,7 @@ pub fn force_withdraw<'info>(ctx: Context<'_, '_, '_, 'info, ForceWithdraw<'info
 pub struct ForceWithdraw<'info> {
     #[account(
         mut,
-        constraint = is_manager_for_vault(&vault, &manager)?
+        constraint = is_manager_for_vault(&vault, &manager)? || is_delegate_for_vault(&vault, &manager)?
     )]
     pub vault: AccountLoader<'info, Vault>,
     pub manager: Signer<'info>,

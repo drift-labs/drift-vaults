@@ -23,6 +23,13 @@ pub fn is_manager_for_vault(
     Ok(vault.load()?.manager.eq(signer.key))
 }
 
+pub fn is_delegate_for_vault(
+    vault: &AccountLoader<Vault>,
+    signer: &Signer,
+) -> anchor_lang::Result<bool> {
+    Ok(vault.load()?.delegate.eq(signer.key))
+}
+
 pub fn is_user_for_vault(
     vault_depositor: &AccountLoader<Vault>,
     user_key: &Pubkey,
