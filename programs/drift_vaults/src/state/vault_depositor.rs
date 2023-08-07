@@ -1,4 +1,4 @@
-use crate::error::ErrorCode;
+use crate::error::{ErrorCode, VaultResult};
 use crate::Size;
 use anchor_lang::prelude::*;
 use borsh::{BorshDeserialize, BorshSerialize};
@@ -399,6 +399,14 @@ impl VaultDepositor {
                         .min(vault_equity);
                 (withdraw_value, n_shares)
             }
+            WithdrawUnit::SharesPercent => {
+                let n_shares =
+                    WithdrawUnit::get_shares_from_percent(withdraw_amount, self.vault_shares)?;
+                let withdraw_value: u64 =
+                    depositor_shares_to_vault_amount(n_shares, vault.total_shares, vault_equity)?
+                        .min(vault_equity);
+                (withdraw_value, n_shares)
+            }
         };
 
         validate!(
@@ -687,6 +695,19 @@ impl VaultDepositor {
 pub enum WithdrawUnit {
     Shares,
     Token,
+    SharesPercent,
+}
+
+const MAX_WITHDRAW_PERCENT: u128 = 100_000;
+impl WithdrawUnit {
+    pub fn get_shares_from_percent(percent: u128, shares: u128) -> VaultResult<u128> {
+        validate!(
+            percent <= MAX_WITHDRAW_PERCENT,
+            ErrorCode::SharesPercentTooLarge
+        )?;
+        let shares = shares.safe_mul(percent)?.safe_div(MAX_WITHDRAW_PERCENT)?;
+        Ok(shares)
+    }
 }
 
 #[cfg(test)]

@@ -45,6 +45,8 @@ pub enum ErrorCode {
     PermissionedVault,
     #[msg("WithdrawInProgress")]
     WithdrawInProgress,
+    #[msg("SharesPercentTooLarge")]
+    SharesPercentTooLarge,
 }
 
 impl From<DriftErrorCode> for ErrorCode {
