@@ -47,3 +47,19 @@ macro_rules! implement_update_user_delegate_cpi {
         drift::cpi::update_user_delegate(cpi_context, 0, $delegate)?;
     };
 }
+
+#[macro_export]
+macro_rules! implement_update_user_reduce_only_cpi {
+    ( $self:expr, $reduce_only:expr ) => {
+        declare_vault_seeds!($self.accounts.vault, seeds);
+
+        let cpi_accounts = UpdateUser {
+            user: $self.accounts.drift_user.to_account_info().clone(),
+            authority: $self.accounts.vault.to_account_info().clone(),
+        };
+
+        let drift_program = $self.accounts.drift_program.to_account_info().clone();
+        let cpi_context = CpiContext::new_with_signer(drift_program, cpi_accounts, seeds);
+        drift::cpi::update_user_reduce_only(cpi_context, 0, $reduce_only)?;
+    };
+}
