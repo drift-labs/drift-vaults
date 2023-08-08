@@ -89,7 +89,10 @@ pub struct Vault {
     pub bump: u8,
     /// Whether or not anybody can be a depositor
     pub permissioned: bool,
-    pub padding1: [u8; 32],
+    pub last_withdraw_request_shares: u64,
+    pub last_withdraw_request_value: u64,
+    pub last_withdraw_request_ts: i64,
+    pub padding1: [u8; 32 - 24],
 }
 
 impl Vault {
@@ -284,7 +287,62 @@ impl Vault {
         Ok(())
     }
 
-    pub fn manager_withdraw(
+    pub fn set_withdraw_request(
+        self: &mut Vault,
+        withdraw_shares: u128,
+        withdraw_value: u64,
+        vault_equity: u64,
+        now: i64,
+    ) -> Result<()> {
+        let manager_shares = self.get_manager_shares()?;
+        validate!(
+            self.last_withdraw_request_shares == 0,
+            ErrorCode::VaultWithdrawRequestInProgress,
+            "Vault withdraw request is already in progress"
+        )?;
+
+        validate!(
+            withdraw_shares <= manager_shares,
+            ErrorCode::InvalidVaultWithdrawSize,
+            "shares requested exceeds vault_shares {} > {}",
+            withdraw_shares,
+            manager_shares
+        )?;
+
+        self.last_withdraw_request_shares = withdraw_shares.cast()?;
+
+        validate!(
+            withdraw_value == 0 || withdraw_value <= vault_equity,
+            ErrorCode::InvalidVaultWithdrawSize,
+            "Requested withdraw value {} is not equal or below vault_equity {}",
+            withdraw_value,
+            vault_equity
+        )?;
+
+        self.last_withdraw_request_value = withdraw_value;
+
+        self.last_withdraw_request_ts = now;
+
+        self.total_withdraw_requested = self.total_withdraw_requested.safe_add(withdraw_value)?;
+
+        Ok(())
+    }
+
+    pub fn reset_withdraw_request(self: &mut Vault, now: i64) -> Result<()> {
+        // reset vault withdraw request info
+        self.total_withdraw_requested = self
+            .total_withdraw_requested
+            .safe_sub(self.last_withdraw_request_value)?;
+
+        // reset vault_depositor withdraw request info
+        self.last_withdraw_request_shares = 0;
+        self.last_withdraw_request_value = 0;
+        self.last_withdraw_request_ts = now;
+
+        Ok(())
+    }
+
+    pub fn manager_request_withdraw(
         &mut self,
         withdraw_amount: u64,
         withdraw_unit: WithdrawUnit,
@@ -292,11 +350,12 @@ impl Vault {
         now: i64,
     ) -> Result<u64> {
         self.apply_rebase(vault_equity)?;
-
         let (management_fee, management_fee_shares) =
             self.apply_management_fee(vault_equity, now)?;
 
-        let (n_tokens, n_shares) = match withdraw_unit {
+        let vault_shares_before: u128 = self.get_manager_shares()?;
+
+        let (withdraw_value, n_shares) = match withdraw_unit {
             WithdrawUnit::Token => {
                 let n_tokens: u64 = withdraw_amount;
                 let n_shares: u128 =
@@ -322,13 +381,146 @@ impl Vault {
             }
         };
 
+        validate!(
+            n_shares > 0,
+            ErrorCode::InvalidVaultWithdrawSize,
+            "Requested n_shares = 0"
+        )?;
+
+        // let vault_shares_before: u128 = self.checked_vault_shares(vault)?;
+        let total_vault_shares_before = self.total_shares;
+        let user_vault_shares_before = self.user_shares;
+
+        self.set_withdraw_request(n_shares, withdraw_value, vault_equity, now)?;
+
+        let vault_shares_after: u128 = self.get_manager_shares()?;
+
+        emit!(VaultDepositorRecord {
+            ts: now,
+            vault: self.pubkey,
+            depositor_authority: self.manager,
+            action: VaultDepositorAction::WithdrawRequest,
+            amount: self.last_withdraw_request_value,
+            spot_market_index: self.spot_market_index,
+            vault_equity_before: vault_equity,
+            vault_shares_before,
+            user_vault_shares_before,
+            total_vault_shares_before,
+            vault_shares_after,
+            total_vault_shares_after: self.total_shares,
+            user_vault_shares_after: self.user_shares,
+            profit_share: 0,
+            management_fee,
+            management_fee_shares,
+        });
+
+        Ok(0)
+    }
+
+    pub fn calculate_vault_shares_lost(self: &Vault, vault_equity: u64) -> Result<u128> {
+        let n_shares: u128 = self.last_withdraw_request_shares.cast()?;
+
+        let amount = depositor_shares_to_vault_amount(n_shares, self.total_shares, vault_equity)?;
+
+        let vault_shares_lost = if amount > self.last_withdraw_request_value {
+            let new_n_shares = vault_amount_to_depositor_shares(
+                self.last_withdraw_request_value,
+                self.total_shares.safe_sub(n_shares)?,
+                vault_equity.safe_sub(self.last_withdraw_request_value)?,
+            )?;
+
+            validate!(
+                new_n_shares <= n_shares,
+                ErrorCode::InvalidVaultSharesDetected,
+                "Issue calculating delta if_shares after canceling request {} < {}",
+                new_n_shares,
+                n_shares
+            )?;
+
+            n_shares.safe_sub(new_n_shares)?
+        } else {
+            0
+        };
+
+        Ok(vault_shares_lost)
+    }
+
+    pub fn cancel_withdraw_request(self: &mut Vault, vault_equity: u64, now: i64) -> Result<()> {
+        self.apply_rebase(vault_equity)?;
+
+        let vault_shares_before: u128 = self.get_manager_shares()?;
+        let total_vault_shares_before = self.total_shares;
+        let user_vault_shares_before = self.user_shares;
+
+        let (management_fee, management_fee_shares) =
+            self.apply_management_fee(vault_equity, now)?;
+
+        let vault_shares_lost = self.calculate_vault_shares_lost(vault_equity)?;
+
+        self.total_shares = self.total_shares.safe_sub(vault_shares_lost)?;
+
+        self.user_shares = self.user_shares.safe_sub(vault_shares_lost)?;
+
+        let vault_shares_after = self.get_manager_shares()?;
+
+        emit!(VaultDepositorRecord {
+            ts: now,
+            vault: self.pubkey,
+            depositor_authority: self.manager,
+            action: VaultDepositorAction::CancelWithdrawRequest,
+            amount: 0,
+            spot_market_index: self.spot_market_index,
+            vault_equity_before: vault_equity,
+            vault_shares_before,
+            user_vault_shares_before,
+            total_vault_shares_before,
+            vault_shares_after,
+            total_vault_shares_after: self.total_shares,
+            user_vault_shares_after: self.user_shares,
+            profit_share: 0,
+            management_fee,
+            management_fee_shares,
+        });
+
+        self.reset_withdraw_request(now)?;
+
+        Ok(())
+    }
+
+    pub fn manager_withdraw(&mut self, vault_equity: u64, now: i64) -> Result<u64> {
+        self.apply_rebase(vault_equity)?;
+
+        let (management_fee, management_fee_shares) =
+            self.apply_management_fee(vault_equity, now)?;
+
+        let vault_shares_before: u128 = self.get_manager_shares()?;
+        let total_vault_shares_before = self.total_shares;
+        let user_vault_shares_before = self.user_shares;
+
+        let n_shares: u128 = self.last_withdraw_request_shares.cast()?;
+
+        validate!(
+            n_shares > 0,
+            ErrorCode::InvalidVaultWithdraw,
+            "Must submit withdraw request and wait the redeem_period ({} seconds)",
+            self.redeem_period
+        )?;
+
+        let amount: u64 =
+            depositor_shares_to_vault_amount(n_shares, self.total_shares, vault_equity)?;
+
+        let n_tokens = amount.min(self.last_withdraw_request_value);
+
+        validate!(
+            vault_shares_before >= n_shares,
+            ErrorCode::InsufficientVaultShares
+        )?;
+
         self.total_withdraws = self.total_withdraws.saturating_add(n_tokens);
         self.manager_total_withdraws = self.manager_total_withdraws.saturating_add(n_tokens);
         self.net_deposits = self.net_deposits.safe_sub(n_tokens.cast()?)?;
         self.manager_net_deposits = self.manager_net_deposits.safe_sub(n_tokens.cast()?)?;
 
-        let user_vault_shares_before = self.user_shares;
-        let total_vault_shares_before = self.total_shares;
         let vault_shares_before = self.total_shares.safe_sub(self.user_shares)?;
 
         validate!(
