@@ -37,8 +37,13 @@ pub struct ManagerCrankProfitShare<'info> {
         constraint = is_manager_for_vault(&vault, &manager)?
     )]
     pub vault: AccountLoader<'info, Vault>,
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [b"vault_depositor", vault.key().as_ref(), vault_depositor_authority.key().as_ref()],
+        bump,
+    )]
     pub vault_depositor: AccountLoader<'info, VaultDepositor>,
+    pub vault_depositor_authority: AccountInfo<'info>,
     pub manager: Signer<'info>,
     #[account(
         mut,
