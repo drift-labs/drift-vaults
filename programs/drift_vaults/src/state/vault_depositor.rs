@@ -698,7 +698,7 @@ pub enum WithdrawUnit {
     SharesPercent,
 }
 
-const MAX_WITHDRAW_PERCENT: u128 = 100_000;
+const MAX_WITHDRAW_PERCENT: u128 = 1_000_000;
 impl WithdrawUnit {
     pub fn get_shares_from_percent(percent: u128, shares: u128) -> VaultResult<u128> {
         validate!(
