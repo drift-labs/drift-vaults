@@ -83,13 +83,19 @@ pub mod drift_vaults {
         instructions::manager_deposit(ctx, amount)
     }
 
-    // pub fn manager_request_withdraw<'info>(
-    //     ctx: Context<'_, '_, '_, 'info, ManagerWithdraw<'info>>,
-    //     withdraw_amount: u64,
-    //     withdraw_unit: WithdrawUnit,
-    // ) -> Result<()> {
-    //     instructions::manager_request_withdraw(ctx, withdraw_amount, withdraw_unit)
-    // }
+    pub fn manager_request_withdraw<'info>(
+        ctx: Context<'_, '_, '_, 'info, ManagerRequestWithdraw<'info>>,
+        withdraw_amount: u64,
+        withdraw_unit: WithdrawUnit,
+    ) -> Result<()> {
+        instructions::manager_request_withdraw(ctx, withdraw_amount, withdraw_unit)
+    }
+
+    pub fn manger_cancel_withdraw_request<'info>(
+        ctx: Context<'_, '_, '_, 'info, ManagerCancelWithdrawRequest<'info>>,
+    ) -> Result<()> {
+        instructions::manager_cancel_withdraw_request(ctx)
+    }
 
     pub fn manager_withdraw<'info>(
         ctx: Context<'_, '_, '_, 'info, ManagerWithdraw<'info>>,
