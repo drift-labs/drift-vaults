@@ -404,11 +404,6 @@ export type DriftVaults = {
 					isSigner: false;
 				},
 				{
-					name: 'authority';
-					isMut: false;
-					isSigner: true;
-				},
-				{
 					name: 'vaultTokenAccount';
 					isMut: true;
 					isSigner: false;
@@ -655,6 +650,52 @@ export type DriftVaults = {
 					};
 				}
 			];
+		},
+		{
+			name: 'managerCrankProfitShare';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'vaultDepositor';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUser';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftState';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftSigner';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [];
 		}
 	];
 	accounts: [
@@ -1702,11 +1743,6 @@ export const IDL: DriftVaults = {
 					isSigner: false,
 				},
 				{
-					name: 'authority',
-					isMut: false,
-					isSigner: true,
-				},
-				{
 					name: 'vaultTokenAccount',
 					isMut: true,
 					isSigner: false,
@@ -1953,6 +1989,52 @@ export const IDL: DriftVaults = {
 					},
 				},
 			],
+		},
+		{
+			name: 'managerCrankProfitShare',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'vaultDepositor',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUser',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftState',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftSigner',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [],
 		},
 	],
 	accounts: [

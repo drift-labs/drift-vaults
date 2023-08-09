@@ -10,7 +10,7 @@ use drift::instructions::optional_accounts::AccountMaps;
 use drift::program::Drift;
 use drift::state::user::User;
 
-pub fn manager_crank_profit_share(ctx: Context<ManagerCrankProfitShare>) -> Result<()> {
+pub fn apply_profit_share(ctx: Context<ApplyProfitShare>) -> Result<()> {
     let clock = &Clock::get()?;
 
     let mut vault = ctx.accounts.vault.load_mut()?;
@@ -34,7 +34,7 @@ pub fn manager_crank_profit_share(ctx: Context<ManagerCrankProfitShare>) -> Resu
 }
 
 #[derive(Accounts)]
-pub struct ManagerCrankProfitShare<'info> {
+pub struct ApplyProfitShare<'info> {
     #[account(
         mut,
         constraint = is_manager_for_vault(&vault, &manager)? || is_delegate_for_vault(&vault, &manager)?

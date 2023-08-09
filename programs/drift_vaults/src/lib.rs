@@ -97,9 +97,9 @@ pub mod drift_vaults {
         instructions::manager_withdraw(ctx, withdraw_amount, withdraw_unit)
     }
 
-    pub fn manager_crank_profit_share<'info>(
-        ctx: Context<'_, '_, '_, 'info, ManagerCrankProfitShare<'info>>,
+    pub fn apply_profit_share<'info>(
+        ctx: Context<'_, '_, '_, 'info, ApplyProfitShare<'info>>,
     ) -> Result<()> {
-        instructions::manager_crank_profit_share(ctx)
+        instructions::apply_profit_share(ctx)
     }
 }
