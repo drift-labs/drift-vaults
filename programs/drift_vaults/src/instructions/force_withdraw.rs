@@ -55,7 +55,6 @@ pub struct ForceWithdraw<'info> {
         constraint = is_vault_for_vault_depositor(&vault_depositor, &vault)?,
     )]
     pub vault_depositor: AccountLoader<'info, VaultDepositor>,
-    pub authority: Signer<'info>,
     #[account(
         mut,
         seeds = [b"vault_token_account".as_ref(), vault.key().as_ref()],
