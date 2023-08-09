@@ -57,7 +57,8 @@ pub struct VaultDepositor {
     pub cumulative_profit_share_amount: i64,
     /// the exponent for vault_shares decimal places
     pub vault_shares_base: u32,
-    pub padding: [u8; 32],
+    pub profit_share_fee_paid: u64,
+    pub padding: [u8; 24],
 }
 
 impl Size for VaultDepositor {
@@ -85,7 +86,8 @@ impl VaultDepositor {
             total_deposits: 0,
             total_withdraws: 0,
             cumulative_profit_share_amount: 0,
-            padding: [0u8; 32],
+            profit_share_fee_paid: 0,
+            padding: [0u8; 24],
         }
     }
 
@@ -230,6 +232,10 @@ impl VaultDepositor {
             self.cumulative_profit_share_amount = self
                 .cumulative_profit_share_amount
                 .safe_add(profit_u128.cast()?)?;
+
+            self.profit_share_fee_paid = self
+                .profit_share_fee_paid
+                .safe_add(profit_share_amount.cast()?)?;
 
             return Ok(profit_share_amount);
         }
