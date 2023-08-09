@@ -436,7 +436,7 @@ mod vault_fcn {
         let _withdrew_req = vault
             .manager_request_withdraw(amount as u64, WithdrawUnit::Token, vault_equity, now)
             .unwrap();
-        assert_eq!(amount, vault.last_withdraw_request_value);
+        assert_eq!(amount, vault.last_manager_withdraw_request_value);
 
         let withdrew = vault.manager_withdraw(vault_equity, now).unwrap();
         assert_eq!(amount - 1, withdrew); // todo: slight round out of favor

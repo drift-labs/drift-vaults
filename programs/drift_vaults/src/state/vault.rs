@@ -89,10 +89,10 @@ pub struct Vault {
     pub bump: u8,
     /// Whether or not anybody can be a depositor
     pub permissioned: bool,
-    pub last_withdraw_request_shares: u64,
-    pub last_withdraw_request_value: u64,
-    pub last_withdraw_request_ts: i64,
-    pub padding1: [u8; 32 - 24],
+    pub last_manager_withdraw_request_shares: u64,
+    pub last_manager_withdraw_request_value: u64,
+    pub last_manager_withdraw_request_ts: i64,
+    pub padding1: [u8; 8],
 }
 
 impl Vault {
@@ -296,7 +296,7 @@ impl Vault {
     ) -> Result<()> {
         let manager_shares = self.get_manager_shares()?;
         validate!(
-            self.last_withdraw_request_shares == 0,
+            self.last_manager_withdraw_request_shares == 0,
             ErrorCode::VaultWithdrawRequestInProgress,
             "Vault withdraw request is already in progress"
         )?;
@@ -309,7 +309,7 @@ impl Vault {
             manager_shares
         )?;
 
-        self.last_withdraw_request_shares = withdraw_shares.cast()?;
+        self.last_manager_withdraw_request_shares = withdraw_shares.cast()?;
 
         validate!(
             withdraw_value == 0 || withdraw_value <= vault_equity,
@@ -319,9 +319,9 @@ impl Vault {
             vault_equity
         )?;
 
-        self.last_withdraw_request_value = withdraw_value;
+        self.last_manager_withdraw_request_value = withdraw_value;
 
-        self.last_withdraw_request_ts = now;
+        self.last_manager_withdraw_request_ts = now;
 
         self.total_withdraw_requested = self.total_withdraw_requested.safe_add(withdraw_value)?;
 
@@ -332,12 +332,12 @@ impl Vault {
         // reset vault withdraw request info
         self.total_withdraw_requested = self
             .total_withdraw_requested
-            .safe_sub(self.last_withdraw_request_value)?;
+            .safe_sub(self.last_manager_withdraw_request_value)?;
 
-        // reset vault_depositor withdraw request info
-        self.last_withdraw_request_shares = 0;
-        self.last_withdraw_request_value = 0;
-        self.last_withdraw_request_ts = now;
+        // reset vault manager withdraw request info
+        self.last_manager_withdraw_request_shares = 0;
+        self.last_manager_withdraw_request_value = 0;
+        self.last_manager_withdraw_request_ts = now;
 
         Ok(())
     }
@@ -400,7 +400,7 @@ impl Vault {
             vault: self.pubkey,
             depositor_authority: self.manager,
             action: VaultDepositorAction::WithdrawRequest,
-            amount: self.last_withdraw_request_value,
+            amount: self.last_manager_withdraw_request_value,
             spot_market_index: self.spot_market_index,
             vault_equity_before: vault_equity,
             vault_shares_before,
@@ -418,15 +418,15 @@ impl Vault {
     }
 
     pub fn calculate_vault_shares_lost(self: &Vault, vault_equity: u64) -> Result<u128> {
-        let n_shares: u128 = self.last_withdraw_request_shares.cast()?;
+        let n_shares: u128 = self.last_manager_withdraw_request_shares.cast()?;
 
         let amount = depositor_shares_to_vault_amount(n_shares, self.total_shares, vault_equity)?;
 
-        let vault_shares_lost = if amount > self.last_withdraw_request_value {
+        let vault_shares_lost = if amount > self.last_manager_withdraw_request_value {
             let new_n_shares = vault_amount_to_depositor_shares(
-                self.last_withdraw_request_value,
+                self.last_manager_withdraw_request_value,
                 self.total_shares.safe_sub(n_shares)?,
-                vault_equity.safe_sub(self.last_withdraw_request_value)?,
+                vault_equity.safe_sub(self.last_manager_withdraw_request_value)?,
             )?;
 
             validate!(
@@ -497,7 +497,7 @@ impl Vault {
         let total_vault_shares_before = self.total_shares;
         let user_vault_shares_before = self.user_shares;
 
-        let n_shares: u128 = self.last_withdraw_request_shares.cast()?;
+        let n_shares: u128 = self.last_manager_withdraw_request_shares.cast()?;
 
         validate!(
             n_shares > 0,
@@ -509,7 +509,7 @@ impl Vault {
         let amount: u64 =
             depositor_shares_to_vault_amount(n_shares, self.total_shares, vault_equity)?;
 
-        let n_tokens = amount.min(self.last_withdraw_request_value);
+        let n_tokens = amount.min(self.last_manager_withdraw_request_value);
 
         validate!(
             vault_shares_before >= n_shares,

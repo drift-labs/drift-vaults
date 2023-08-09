@@ -12,8 +12,6 @@ use drift::state::user::User;
 
 pub fn manager_withdraw<'info>(
     ctx: Context<'_, '_, '_, 'info, ManagerWithdraw<'info>>,
-    // withdraw_amount: u64,
-    // withdraw_unit: WithdrawUnit,
 ) -> Result<()> {
     let clock = &Clock::get()?;
     let mut vault = ctx.accounts.vault.load_mut()?;
@@ -31,11 +29,7 @@ pub fn manager_withdraw<'info>(
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
-    // let withdrew_req = vault
-    //     .manager_request_withdraw(withdraw_amount, WithdrawUnit::Token, vault_equity, now)
-    //     .unwrap();
-
-    let manager_withdraw_amount = vault.manager_withdraw(vault_equity, now)?; //.unwrap();
+    let manager_withdraw_amount = vault.manager_withdraw(vault_equity, now)?;
 
     drop(vault);
     drop(user);
