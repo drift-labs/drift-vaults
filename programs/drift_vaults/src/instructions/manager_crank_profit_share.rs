@@ -1,4 +1,7 @@
-use crate::constraints::{is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault};
+use crate::constraints::{
+    is_delegate_for_vault, is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault,
+    is_vault_for_vault_depositor,
+};
 use crate::{Vault, VaultDepositor};
 
 use crate::AccountMapProvider;
@@ -34,16 +37,14 @@ pub fn manager_crank_profit_share(ctx: Context<ManagerCrankProfitShare>) -> Resu
 pub struct ManagerCrankProfitShare<'info> {
     #[account(
         mut,
-        constraint = is_manager_for_vault(&vault, &manager)?
+        constraint = is_manager_for_vault(&vault, &manager)? || is_delegate_for_vault(&vault, &manager)?
     )]
     pub vault: AccountLoader<'info, Vault>,
     #[account(
         mut,
-        seeds = [b"vault_depositor", vault.key().as_ref(), vault_depositor_authority.key().as_ref()],
-        bump,
+        constraint = is_vault_for_vault_depositor(&vault_depositor, &vault)?
     )]
     pub vault_depositor: AccountLoader<'info, VaultDepositor>,
-    pub vault_depositor_authority: AccountInfo<'info>,
     pub manager: Signer<'info>,
     #[account(
         mut,
