@@ -47,15 +47,19 @@ export class VaultDepositorAccount extends VaultsProgramAccount<
 	calcProfitShareFeesProportion(vaultProfitShare: BN, depositorEquity: BN): BN {
 		const accountData = this.accountSubscriber.getAccountAndSlot().data;
 
+		// highest level in value the depositor's equity has reached that a profit share fee has been paid on
+		const highWaterMark = accountData.cumulativeProfitShareAmount;
+
 		const profit = depositorEquity
 			.sub(accountData.netDeposits)
 			.sub(accountData.cumulativeProfitShareAmount);
 
-		if (profit.lte(new BN(0))) {
+		if (profit.lte(highWaterMark)) {
 			return ZERO;
 		}
 
 		const profitShareAmount = profit
+			.sub(highWaterMark)
 			.mul(vaultProfitShare)
 			.div(PERCENTAGE_PRECISION);
 		const profitShareProportion = profitShareAmount
