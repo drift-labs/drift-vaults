@@ -66,6 +66,12 @@ pub mod drift_vaults {
         instructions::withdraw(ctx)
     }
 
+    pub fn force_withdraw<'info>(
+        ctx: Context<'_, '_, '_, 'info, ForceWithdraw<'info>>,
+    ) -> Result<()> {
+        instructions::force_withdraw(ctx)
+    }
+
     pub fn liquidate<'info>(ctx: Context<'_, '_, '_, 'info, Liquidate<'info>>) -> Result<()> {
         instructions::liquidate(ctx)
     }

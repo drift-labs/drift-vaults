@@ -386,6 +386,77 @@ export type DriftVaults = {
 			args: [];
 		},
 		{
+			name: 'forceWithdraw';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'vaultDepositor';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'authority';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'vaultTokenAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUser';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftState';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftSpotMarketVault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftSigner';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'userTokenAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftProgram';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'tokenProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [];
+		},
+		{
 			name: 'liquidate';
 			accounts: [
 				{
@@ -1553,6 +1624,77 @@ export const IDL: DriftVaults = {
 					name: 'vault',
 					isMut: true,
 					isSigner: false,
+				},
+				{
+					name: 'vaultDepositor',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'authority',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'vaultTokenAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUser',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftState',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftSpotMarketVault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftSigner',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'userTokenAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftProgram',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'tokenProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [],
+		},
+		{
+			name: 'forceWithdraw',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: false,
+					isSigner: true,
 				},
 				{
 					name: 'vaultDepositor',
