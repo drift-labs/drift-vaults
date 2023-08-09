@@ -584,6 +584,118 @@ export type DriftVaults = {
 					};
 				}
 			];
+		},
+		{
+			name: 'applyProfitShare';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'vaultDepositor';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUser';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftState';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftSigner';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [];
+		},
+		{
+			name: 'forceWithdraw';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'vaultDepositor';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'vaultTokenAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUser';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftState';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftSpotMarketVault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftSigner';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'userTokenAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftProgram';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'tokenProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [];
 		}
 	];
 	accounts: [
@@ -875,9 +987,14 @@ export type DriftVaults = {
 						type: 'bool';
 					},
 					{
+						name: 'minDepositAmount';
+						docs: ['Min deposit amount'];
+						type: 'u64';
+					},
+					{
 						name: 'padding1';
 						type: {
-							array: ['u8', 32];
+							array: ['u8', 24];
 						};
 					}
 				];
@@ -907,6 +1024,10 @@ export type DriftVaults = {
 					{
 						name: 'managementFee';
 						type: 'i64';
+					},
+					{
+						name: 'minDepositAmount';
+						type: 'u64';
 					},
 					{
 						name: 'profitShare';
@@ -948,6 +1069,12 @@ export type DriftVaults = {
 						name: 'managementFee';
 						type: {
 							option: 'i64';
+						};
+					},
+					{
+						name: 'minDepositAmount';
+						type: {
+							option: 'u64';
 						};
 					},
 					{
@@ -1221,6 +1348,11 @@ export type DriftVaults = {
 			code: 6019;
 			name: 'SharesPercentTooLarge';
 			msg: 'SharesPercentTooLarge';
+		},
+		{
+			code: 6020;
+			name: 'InvalidVaultDeposit';
+			msg: 'InvalidVaultDeposit';
 		}
 	];
 };
@@ -1812,6 +1944,118 @@ export const IDL: DriftVaults = {
 				},
 			],
 		},
+		{
+			name: 'applyProfitShare',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'vaultDepositor',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUser',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftState',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftSigner',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [],
+		},
+		{
+			name: 'forceWithdraw',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'vaultDepositor',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'vaultTokenAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUser',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftState',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftSpotMarketVault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftSigner',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'userTokenAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftProgram',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'tokenProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [],
+		},
 	],
 	accounts: [
 		{
@@ -2102,9 +2346,14 @@ export const IDL: DriftVaults = {
 						type: 'bool',
 					},
 					{
+						name: 'minDepositAmount',
+						docs: ['Min deposit amount'],
+						type: 'u64',
+					},
+					{
 						name: 'padding1',
 						type: {
-							array: ['u8', 32],
+							array: ['u8', 24],
 						},
 					},
 				],
@@ -2134,6 +2383,10 @@ export const IDL: DriftVaults = {
 					{
 						name: 'managementFee',
 						type: 'i64',
+					},
+					{
+						name: 'minDepositAmount',
+						type: 'u64',
 					},
 					{
 						name: 'profitShare',
@@ -2175,6 +2428,12 @@ export const IDL: DriftVaults = {
 						name: 'managementFee',
 						type: {
 							option: 'i64',
+						},
+					},
+					{
+						name: 'minDepositAmount',
+						type: {
+							option: 'u64',
 						},
 					},
 					{
@@ -2448,6 +2707,11 @@ export const IDL: DriftVaults = {
 			code: 6019,
 			name: 'SharesPercentTooLarge',
 			msg: 'SharesPercentTooLarge',
+		},
+		{
+			code: 6020,
+			name: 'InvalidVaultDeposit',
+			msg: 'InvalidVaultDeposit',
 		},
 	],
 };

@@ -15,6 +15,12 @@ pub fn initialize_vault_depositor(ctx: Context<InitializeVaultDepositor>) -> Res
             ErrorCode::PermissionedVault,
             "Vault depositor can only be created by vault manager"
         )?;
+    } else {
+        validate!(
+            vault_depositor.authority == *ctx.accounts.payer.key,
+            ErrorCode::Default,
+            "Vault depositor authority must pay to create account"
+        )?;
     }
 
     Ok(())

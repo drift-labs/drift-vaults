@@ -21,6 +21,10 @@ pub fn update_vault<'info>(
         vault.max_tokens = max_tokens;
     }
 
+    if let Some(min_deposit_amount) = params.min_deposit_amount {
+        vault.min_deposit_amount = min_deposit_amount;
+    }
+
     if let Some(management_fee) = params.management_fee {
         validate!(
             management_fee < vault.management_fee,
@@ -62,6 +66,7 @@ pub struct UpdateVaultParams {
     pub redeem_period: Option<i64>,
     pub max_tokens: Option<u64>,
     pub management_fee: Option<i64>,
+    pub min_deposit_amount: Option<u64>,
     pub profit_share: Option<u32>,
     pub hurdle_rate: Option<u32>,
     pub permissioned: Option<bool>,

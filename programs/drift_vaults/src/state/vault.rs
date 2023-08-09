@@ -92,7 +92,8 @@ pub struct Vault {
     pub last_manager_withdraw_request_shares: u64,
     pub last_manager_withdraw_request_value: u64,
     pub last_manager_withdraw_request_ts: i64,
-    pub padding1: [u8; 8],
+    /// Min deposit amount
+    pub min_deposit_amount: u64,
 }
 
 impl Vault {

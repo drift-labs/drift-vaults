@@ -60,6 +60,7 @@ export class VaultClient {
 		spotMarketIndex: number;
 		redeemPeriod: BN;
 		maxTokens: BN;
+		minDepositAmount: BN;
 		managementFee: BN;
 		profitShare: number;
 		hurdleRate: number;

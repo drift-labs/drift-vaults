@@ -102,4 +102,16 @@ pub mod drift_vaults {
     ) -> Result<()> {
         instructions::manager_withdraw(ctx)
     }
+
+    pub fn apply_profit_share<'info>(
+        ctx: Context<'_, '_, '_, 'info, ApplyProfitShare<'info>>,
+    ) -> Result<()> {
+        instructions::apply_profit_share(ctx)
+    }
+
+    pub fn force_withdraw<'info>(
+        ctx: Context<'_, '_, '_, 'info, ForceWithdraw<'info>>,
+    ) -> Result<()> {
+        instructions::force_withdraw(ctx)
+    }
 }
