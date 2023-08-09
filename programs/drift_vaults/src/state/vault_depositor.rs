@@ -312,6 +312,14 @@ impl VaultDepositor {
         )?;
 
         validate!(
+            vault.min_deposit_amount == 0 || amount >= vault.min_deposit_amount,
+            ErrorCode::InvalidVaultDeposit,
+            "deposit amount {} is below vault min_deposit_amount {}",
+            amount,
+            vault.min_deposit_amount
+        )?;
+
+        validate!(
             !(vault_equity == 0 && vault.total_shares != 0),
             ErrorCode::InvalidVaultForNewDepositors,
             "Vault balance should be non-zero for new depositors to enter"

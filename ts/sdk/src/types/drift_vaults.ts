@@ -987,9 +987,14 @@ export type DriftVaults = {
 						type: 'bool';
 					},
 					{
+						name: 'minDepositAmount';
+						docs: ['Min deposit amount'];
+						type: 'u64';
+					},
+					{
 						name: 'padding1';
 						type: {
-							array: ['u8', 32];
+							array: ['u8', 24];
 						};
 					}
 				];
@@ -1019,6 +1024,10 @@ export type DriftVaults = {
 					{
 						name: 'managementFee';
 						type: 'i64';
+					},
+					{
+						name: 'minDepositAmount';
+						type: 'u64';
 					},
 					{
 						name: 'profitShare';
@@ -1060,6 +1069,12 @@ export type DriftVaults = {
 						name: 'managementFee';
 						type: {
 							option: 'i64';
+						};
+					},
+					{
+						name: 'minDepositAmount';
+						type: {
+							option: 'u64';
 						};
 					},
 					{
@@ -1333,6 +1348,11 @@ export type DriftVaults = {
 			code: 6019;
 			name: 'SharesPercentTooLarge';
 			msg: 'SharesPercentTooLarge';
+		},
+		{
+			code: 6020;
+			name: 'InvalidVaultDeposit';
+			msg: 'InvalidVaultDeposit';
 		}
 	];
 };
@@ -2326,9 +2346,14 @@ export const IDL: DriftVaults = {
 						type: 'bool',
 					},
 					{
+						name: 'minDepositAmount',
+						docs: ['Min deposit amount'],
+						type: 'u64',
+					},
+					{
 						name: 'padding1',
 						type: {
-							array: ['u8', 32],
+							array: ['u8', 24],
 						},
 					},
 				],
@@ -2358,6 +2383,10 @@ export const IDL: DriftVaults = {
 					{
 						name: 'managementFee',
 						type: 'i64',
+					},
+					{
+						name: 'minDepositAmount',
+						type: 'u64',
 					},
 					{
 						name: 'profitShare',
@@ -2399,6 +2428,12 @@ export const IDL: DriftVaults = {
 						name: 'managementFee',
 						type: {
 							option: 'i64',
+						},
+					},
+					{
+						name: 'minDepositAmount',
+						type: {
+							option: 'u64',
 						},
 					},
 					{
@@ -2672,6 +2707,11 @@ export const IDL: DriftVaults = {
 			code: 6019,
 			name: 'SharesPercentTooLarge',
 			msg: 'SharesPercentTooLarge',
+		},
+		{
+			code: 6020,
+			name: 'InvalidVaultDeposit',
+			msg: 'InvalidVaultDeposit',
 		},
 	],
 };
