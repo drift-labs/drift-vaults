@@ -43,6 +43,10 @@ pub enum ErrorCode {
     InvalidVaultUpdate,
     #[msg("PermissionedVault")]
     PermissionedVault,
+    #[msg("WithdrawInProgress")]
+    WithdrawInProgress,
+    #[msg("SharesPercentTooLarge")]
+    SharesPercentTooLarge,
     #[msg("InvalidVaultDeposit")]
     InvalidVaultDeposit,
 }

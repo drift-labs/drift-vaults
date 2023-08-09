@@ -1,4 +1,4 @@
-use crate::error::ErrorCode;
+use crate::error::{ErrorCode, VaultResult};
 use crate::Size;
 use anchor_lang::prelude::*;
 use borsh::{BorshDeserialize, BorshSerialize};
@@ -127,6 +127,10 @@ impl VaultDepositor {
         self.vault_shares = new_shares;
 
         Ok(())
+    }
+
+    pub fn has_pending_withdraw_request(&self) -> bool {
+        self.last_withdraw_request_value != 0 || self.last_withdraw_request_shares != 0
     }
 
     pub fn apply_rebase(
@@ -321,6 +325,12 @@ impl VaultDepositor {
             "Vault balance should be non-zero for new depositors to enter"
         )?;
 
+        validate!(
+            !self.has_pending_withdraw_request(),
+            ErrorCode::WithdrawInProgress,
+            "withdraw request is in progress"
+        )?;
+
         self.apply_rebase(vault, vault_equity)?;
 
         let vault_shares_before = self.checked_vault_shares(vault)?;
@@ -392,6 +402,14 @@ impl VaultDepositor {
             }
             WithdrawUnit::Shares => {
                 let n_shares: u128 = withdraw_amount;
+                let withdraw_value: u64 =
+                    depositor_shares_to_vault_amount(n_shares, vault.total_shares, vault_equity)?
+                        .min(vault_equity);
+                (withdraw_value, n_shares)
+            }
+            WithdrawUnit::SharesPercent => {
+                let n_shares =
+                    WithdrawUnit::get_shares_from_percent(withdraw_amount, self.vault_shares)?;
                 let withdraw_value: u64 =
                     depositor_shares_to_vault_amount(n_shares, vault.total_shares, vault_equity)?
                         .min(vault_equity);
@@ -685,6 +703,19 @@ impl VaultDepositor {
 pub enum WithdrawUnit {
     Shares,
     Token,
+    SharesPercent,
+}
+
+const MAX_WITHDRAW_PERCENT: u128 = 1_000_000;
+impl WithdrawUnit {
+    pub fn get_shares_from_percent(percent: u128, shares: u128) -> VaultResult<u128> {
+        validate!(
+            percent <= MAX_WITHDRAW_PERCENT,
+            ErrorCode::SharesPercentTooLarge
+        )?;
+        let shares = shares.safe_mul(percent)?.safe_div(MAX_WITHDRAW_PERCENT)?;
+        Ok(shares)
+    }
 }
 
 #[cfg(test)]
