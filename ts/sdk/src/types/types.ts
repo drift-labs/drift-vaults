@@ -107,7 +107,7 @@ export type VaultDepositorAccountSubscriber = VaultsProgramAccountSubscriber<
 
 // Logs/Records
 
-class VaultDepositorAction {
+export class VaultDepositorAction {
 	static readonly DEPOSIT = { deposit: {} };
 	static readonly WITHDRAW = { withdraw: {} };
 	static readonly WITHDRAW_REQUEST = { withdrawRequest: {} };
