@@ -116,6 +116,8 @@ export class VaultDepositorAction {
 }
 
 export type VaultDepositorRecord = {
+	ts: BN;
+
 	vault: PublicKey;
 	depositorAuthority: PublicKey;
 	action: VaultDepositorAction;
