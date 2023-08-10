@@ -78,7 +78,7 @@ pub struct Vault {
     /// total profit share charged by vault manager
     pub manager_total_profit_share: u64,
     /// the minimum deposit amount
-    pub minimum_deposit: u64,
+    pub min_deposit_amount: u64,
     /// percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION
     pub profit_share: u32,
     /// vault admin only collect incentive fees during periods when returns are higher than this amount: PERCENTAGE_PRECISION
@@ -92,8 +92,7 @@ pub struct Vault {
     pub last_manager_withdraw_request_shares: u64,
     pub last_manager_withdraw_request_value: u64,
     pub last_manager_withdraw_request_ts: i64,
-    /// Min deposit amount
-    pub min_deposit_amount: u64,
+    pub padding1: [u8; 8],
 }
 
 impl Vault {
