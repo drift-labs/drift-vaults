@@ -115,7 +115,7 @@ class VaultDepositorAction {
 	static readonly FEE_PAYMENT = { feePayment: {} };
 }
 
-type VaultDepositorRecord = {
+export type VaultDepositorRecord = {
 	vault: PublicKey;
 	depositorAuthority: PublicKey;
 	action: VaultDepositorAction;
