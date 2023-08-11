@@ -573,7 +573,11 @@ export class VaultClient {
 			})
 		);
 		tx.add(...ix);
-		const { txSig } = await this.driftClient.sendTransaction(tx);
+		const { txSig } = await this.driftClient.sendTransaction(
+			tx,
+			[],
+			this.driftClient.opts
+		);
 
 		return txSig;
 	}
