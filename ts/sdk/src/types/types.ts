@@ -13,6 +13,12 @@ export class WithdrawUnit {
 	static readonly SHARES_PERCENT = { sharesPercent: {} };
 }
 
+export type lastWithdrawRequest = {
+	shares: BN;
+	value: BN;
+	ts: BN;
+};
+
 // Vault program accounts
 
 export type Vault = {
@@ -48,6 +54,7 @@ export type Vault = {
 	spotMarketIndex: number;
 	bump: number;
 	permissioned: boolean;
+	lastWithdrawRequest: lastWithdrawRequest;
 };
 
 export type VaultDepositor = {
@@ -55,9 +62,10 @@ export type VaultDepositor = {
 	pubkey: PublicKey;
 	authority: PublicKey;
 	vaultShares: BN;
-	lastWithdrawRequestShares: BN;
-	lastWithdrawRequestValue: BN;
-	lastWithdrawRequestTs: BN;
+	// lastWithdrawRequestShares: BN;
+	// lastWithdrawRequestValue: BN;
+	// lastWithdrawRequestTs: BN;
+	lastWithdrawRequest: lastWithdrawRequest;
 	lastValidTs: BN;
 	netDeposits: BN;
 	totalDeposits: BN;
