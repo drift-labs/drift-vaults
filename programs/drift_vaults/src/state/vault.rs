@@ -367,7 +367,11 @@ impl Vault {
         Ok(0)
     }
 
-    pub fn manager_cancel_withdraw_request(self: &mut Vault, vault_equity: u64, now: i64) -> Result<()> {
+    pub fn manager_cancel_withdraw_request(
+        self: &mut Vault,
+        vault_equity: u64,
+        now: i64,
+    ) -> Result<()> {
         self.apply_rebase(vault_equity)?;
 
         let vault_shares_before: u128 = self.get_manager_shares()?;

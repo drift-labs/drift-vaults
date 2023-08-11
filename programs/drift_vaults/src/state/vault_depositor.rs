@@ -514,7 +514,7 @@ impl VaultDepositor {
         vault: &mut Vault,
     ) -> Result<u64> {
         validate!(
-            !self.has_pending_withdraw_request(),
+            !self.last_withdraw_request.pending(),
             ErrorCode::InvalidVaultDeposit,
             "Cannot apply profit share to depositor with pending withdraw request"
         )?;
@@ -876,8 +876,8 @@ mod tests {
         .unwrap();
         assert_eq!(vd.checked_vault_shares(vault).unwrap(), 100000000);
 
-        assert_eq!(vd.last_withdraw_request_value, 50000000);
-        assert_eq!(vd.last_withdraw_request_ts, now + 20);
+        assert_eq!(vd.last_withdraw_request.value, 50000000);
+        assert_eq!(vd.last_withdraw_request.ts, now + 20);
 
         vault_equity *= 5; // up 400%
 
