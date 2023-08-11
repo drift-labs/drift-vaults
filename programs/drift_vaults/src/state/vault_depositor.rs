@@ -126,10 +126,6 @@ impl VaultDepositor {
         Ok(())
     }
 
-    pub fn has_pending_withdraw_request(&self) -> bool {
-        self.last_withdraw_request.pending()
-    }
-
     pub fn apply_rebase(
         self: &mut VaultDepositor,
         vault: &mut Vault,
@@ -235,7 +231,7 @@ impl VaultDepositor {
         )?;
 
         validate!(
-            !self.has_pending_withdraw_request(),
+            !self.last_withdraw_request.pending(),
             ErrorCode::WithdrawInProgress,
             "withdraw request is in progress"
         )?;
