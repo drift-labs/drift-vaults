@@ -1216,6 +1216,35 @@
       }
     },
     {
+      "name": "WithdrawRequest",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "shares",
+            "docs": [
+              "request shares of vault withdraw"
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "value",
+            "docs": [
+              "requested value (in vault spot_market_index) of shares for withdraw"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "ts",
+            "docs": [
+              "request ts of vault withdraw"
+            ],
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
       "name": "VaultDepositorAction",
       "type": {
         "kind": "enum",
@@ -1471,5 +1500,8 @@
       "name": "InvalidVaultDeposit",
       "msg": "InvalidVaultDeposit"
     }
-  ]
+  ],
+  "metadata": {
+    "address": "VAULtLeTwwUxpwAw98E6XmgaDeQucKgV5UaiAuQ655D"
+  }
 }

@@ -9,4 +9,4 @@ pub mod events;
 mod traits;
 mod vault;
 mod vault_depositor;
-mod withdraw_request;
+pub mod withdraw_request;

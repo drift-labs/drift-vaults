@@ -1,6 +1,7 @@
 use crate::error::ErrorCode;
 use crate::error::VaultResult;
 use crate::{validate, Vault};
+use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
 use drift::math::insurance::{
     if_shares_to_vault_amount as depositor_shares_to_vault_amount,
@@ -9,7 +10,7 @@ use drift::math::insurance::{
 use drift::math::safe_math::SafeMath;
 use solana_program::msg;
 
-#[derive(Default, Copy, Clone, Eq, PartialEq, Debug)]
+#[derive(Default, AnchorSerialize, AnchorDeserialize, Copy, Clone, Eq, PartialEq, Debug)]
 pub struct WithdrawRequest {
     /// request shares of vault withdraw
     pub shares: u128,
