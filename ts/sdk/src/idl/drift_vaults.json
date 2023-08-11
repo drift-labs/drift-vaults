@@ -514,6 +514,79 @@
       ]
     },
     {
+      "name": "managerRequestWithdraw",
+      "accounts": [
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "manager",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "driftUserStats",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "driftUser",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "driftState",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "withdrawAmount",
+          "type": "u64"
+        },
+        {
+          "name": "withdrawUnit",
+          "type": {
+            "defined": "WithdrawUnit"
+          }
+        }
+      ]
+    },
+    {
+      "name": "mangerCancelWithdrawRequest",
+      "accounts": [
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "manager",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "driftUserStats",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "driftUser",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "driftState",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "managerWithdraw",
       "accounts": [
         {
@@ -572,18 +645,119 @@
           "isSigner": false
         }
       ],
-      "args": [
+      "args": []
+    },
+    {
+      "name": "applyProfitShare",
+      "accounts": [
         {
-          "name": "withdrawAmount",
-          "type": "u64"
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
         },
         {
-          "name": "withdrawUnit",
-          "type": {
-            "defined": "WithdrawUnit"
-          }
+          "name": "vaultDepositor",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "manager",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "driftUserStats",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "driftUser",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "driftState",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "driftSigner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "driftProgram",
+          "isMut": false,
+          "isSigner": false
         }
-      ]
+      ],
+      "args": []
+    },
+    {
+      "name": "forceWithdraw",
+      "accounts": [
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "manager",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "vaultDepositor",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vaultTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "driftUserStats",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "driftUser",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "driftState",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "driftSpotMarketVault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "driftSigner",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "userTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "driftProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
     }
   ],
   "accounts": [
@@ -621,25 +795,13 @@
             "type": "u128"
           },
           {
-            "name": "lastWithdrawRequestShares",
+            "name": "lastWithdrawRequest",
             "docs": [
-              "requested vault shares for withdraw"
+              "last withdraw request"
             ],
-            "type": "u128"
-          },
-          {
-            "name": "lastWithdrawRequestValue",
-            "docs": [
-              "requested value (in vault spot_market_index) of shares for withdraw"
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "lastWithdrawRequestTs",
-            "docs": [
-              "request ts of vault withdraw"
-            ],
-            "type": "i64"
+            "type": {
+              "defined": "WithdrawRequest"
+            }
           },
           {
             "name": "lastValidTs",
@@ -684,11 +846,15 @@
             "type": "u32"
           },
           {
+            "name": "profitShareFeePaid",
+            "type": "u64"
+          },
+          {
             "name": "padding",
             "type": {
               "array": [
                 "u8",
-                32
+                24
               ]
             }
           }
@@ -898,7 +1064,7 @@
             "type": "u64"
           },
           {
-            "name": "minimumDeposit",
+            "name": "minDepositAmount",
             "docs": [
               "the minimum deposit amount"
             ],
@@ -940,19 +1106,9 @@
             "type": "bool"
           },
           {
-            "name": "minDepositAmount",
-            "docs": [
-              "Min deposit amount"
-            ],
-            "type": "u64"
-          },
-          {
-            "name": "padding1",
+            "name": "lastManagerWithdrawRequest",
             "type": {
-              "array": [
-                "u8",
-                24
-              ]
+              "defined": "WithdrawRequest"
             }
           }
         ]
@@ -1092,6 +1248,9 @@
           },
           {
             "name": "Token"
+          },
+          {
+            "name": "SharesPercent"
           }
         ]
       }
@@ -1299,11 +1458,18 @@
     },
     {
       "code": 6018,
+      "name": "WithdrawInProgress",
+      "msg": "WithdrawInProgress"
+    },
+    {
+      "code": 6019,
+      "name": "SharesPercentTooLarge",
+      "msg": "SharesPercentTooLarge"
+    },
+    {
+      "code": 6020,
       "name": "InvalidVaultDeposit",
       "msg": "InvalidVaultDeposit"
     }
-  ],
-  "metadata": {
-    "address": "VAULtLeTwwUxpwAw98E6XmgaDeQucKgV5UaiAuQ655D"
-  }
+  ]
 }
