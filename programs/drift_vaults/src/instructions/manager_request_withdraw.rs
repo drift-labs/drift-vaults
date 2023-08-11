@@ -26,8 +26,7 @@ pub fn manager_request_withdraw<'info>(
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
-    let _withdrew_req =
-        vault.manager_request_withdraw(withdraw_amount, withdraw_unit, vault_equity, now)?;
+    vault.manager_request_withdraw(withdraw_amount, withdraw_unit, vault_equity, now)?;
 
     Ok(())
 }

@@ -291,7 +291,7 @@ impl Vault {
         withdraw_unit: WithdrawUnit,
         vault_equity: u64,
         now: i64,
-    ) -> Result<u64> {
+    ) -> Result<()> {
         self.apply_rebase(vault_equity)?;
         let (management_fee, management_fee_shares) =
             self.apply_management_fee(vault_equity, now)?;
@@ -364,7 +364,7 @@ impl Vault {
             management_fee_shares,
         });
 
-        Ok(0)
+        Ok(())
     }
 
     pub fn manager_cancel_withdraw_request(
