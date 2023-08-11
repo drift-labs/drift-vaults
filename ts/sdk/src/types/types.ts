@@ -13,7 +13,7 @@ export class WithdrawUnit {
 	static readonly SHARES_PERCENT = { sharesPercent: {} };
 }
 
-export type lastWithdrawRequest = {
+export type WithdrawRequest = {
 	shares: BN;
 	value: BN;
 	ts: BN;
@@ -54,7 +54,7 @@ export type Vault = {
 	spotMarketIndex: number;
 	bump: number;
 	permissioned: boolean;
-	lastWithdrawRequest: lastWithdrawRequest;
+	lastWithdrawRequest: WithdrawRequest;
 };
 
 export type VaultDepositor = {
@@ -65,7 +65,7 @@ export type VaultDepositor = {
 	// lastWithdrawRequestShares: BN;
 	// lastWithdrawRequestValue: BN;
 	// lastWithdrawRequestTs: BN;
-	lastWithdrawRequest: lastWithdrawRequest;
+	lastWithdrawRequest: WithdrawRequest;
 	lastValidTs: BN;
 	netDeposits: BN;
 	totalDeposits: BN;
