@@ -1,4 +1,4 @@
-import { BN, DataAndSlot } from '@drift-labs/sdk';
+import { BN, DataAndSlot, Event } from '@drift-labs/sdk';
 import { PublicKey } from '@solana/web3.js';
 import { EventEmitter } from 'events';
 import StrictEventEmitter from 'strict-event-emitter-types';
@@ -12,6 +12,8 @@ export class WithdrawUnit {
 	static readonly TOKEN = { token: {} };
 	static readonly SHARES_PERCENT = { sharesPercent: {} };
 }
+
+// Vault program accounts
 
 export type Vault = {
 	name: number[];
@@ -102,3 +104,47 @@ export type VaultDepositorAccountSubscriber = VaultsProgramAccountSubscriber<
 	VaultDepositor,
 	VaultDepositorAccountEvents
 >;
+
+// Logs/Records
+
+export class VaultDepositorAction {
+	static readonly DEPOSIT = { deposit: {} };
+	static readonly WITHDRAW = { withdraw: {} };
+	static readonly WITHDRAW_REQUEST = { withdrawRequest: {} };
+	static readonly CANCEL_WITHDRAW_REQUEST = { cancelWithdrawRequest: {} };
+	static readonly FEE_PAYMENT = { feePayment: {} };
+}
+
+export type VaultDepositorRecord = {
+	ts: BN;
+
+	vault: PublicKey;
+	depositorAuthority: PublicKey;
+	action: VaultDepositorAction;
+	amount: BN;
+
+	spotMarketIndex: number;
+	vaultSharesBefore: BN;
+	vaultSharesAfter: BN;
+	vaultEquityBefore: BN;
+
+	userVaultSharesBefore: BN;
+	totalVaultSharesBefore: BN;
+
+	userVaultSharesAfter: BN;
+	totalVaultSharesAfter: BN;
+
+	profitShare: BN;
+	managementFee: BN;
+	managementFeeShares: BN;
+};
+
+export type VaultsEventMap = {
+	VaultDepositorRecord: Event<VaultDepositorRecord>;
+};
+
+export type EventType = keyof VaultsEventMap;
+export type WrappedEvent<Type extends EventType> = VaultsEventMap[Type] & {
+	eventType: Type;
+};
+export type WrappedEvents = WrappedEvent<EventType>[];
