@@ -26,7 +26,9 @@ pub fn liquidate<'info>(ctx: Context<'_, '_, '_, 'info, Liquidate<'info>>) -> Re
     } = ctx.load_maps(clock.slot, Some(vault.spot_market_index))?;
 
     // 1. Check the vault depositor has waited the redeem period
-    vault_depositor.check_redeem_period_finished(&vault, now)?;
+    vault_depositor
+        .last_withdraw_request
+        .check_redeem_period_finished(&vault, now)?;
     // 2. Check that the depositor is unable to withdraw
     vault_depositor.check_cant_withdraw(
         &vault,

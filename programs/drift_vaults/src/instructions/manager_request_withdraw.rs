@@ -1,4 +1,4 @@
-use crate::constraints::{is_user_for_vault, is_user_stats_for_vault, is_manager_for_vault};
+use crate::constraints::{is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault};
 use crate::AccountMapProvider;
 use crate::{Vault, WithdrawUnit};
 use anchor_lang::prelude::*;
