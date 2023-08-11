@@ -6,6 +6,47 @@ mod vault_fcn {
     use drift::math::insurance::if_shares_to_vault_amount as depositor_shares_to_vault_amount;
 
     #[test]
+    fn test_manager_withdraw() {
+        let now = 0;
+        let vault = &mut Vault::default();
+        vault.management_fee = 1000; // 10 bps
+        vault.redeem_period = 60;
+
+        let mut vault_equity = 0;
+        let amount = 100_000_000; // $100
+        vault.manager_deposit(amount, vault_equity, now).unwrap();
+        vault_equity += amount;
+        vault_equity -= 1;
+
+        assert_eq!(vault.user_shares, 0);
+        assert_eq!(vault.total_shares, 100000000);
+        assert_eq!(vault.total_deposits, 100000000);
+        assert_eq!(vault.manager_total_deposits, 100000000);
+        assert_eq!(vault.manager_total_withdraws, 0);
+
+        let _withdrew_req = vault
+            .manager_request_withdraw((amount - 1) as u64, WithdrawUnit::Token, vault_equity, now)
+            .unwrap();
+
+        assert_eq!(vault.user_shares, 0);
+        assert_eq!(vault.total_shares, 100000000);
+        assert_eq!(vault.total_deposits, 100000000);
+        assert_eq!(vault.manager_total_deposits, 100000000);
+        assert_eq!(vault.manager_total_withdraws, 0);
+
+        let err = vault.manager_withdraw(vault_equity, now + 50).is_err();
+        assert!(err);
+
+        let withdraw = vault.manager_withdraw(vault_equity, now + 60).unwrap();
+        assert_eq!(vault.user_shares, 0);
+        assert_eq!(vault.total_shares, 0);
+        assert_eq!(vault.total_deposits, 100000000);
+        assert_eq!(vault.manager_total_deposits, 100000000);
+        assert_eq!(vault.manager_total_withdraws, 99999999);
+        assert_eq!(withdraw, 99999999);
+    }
+
+    #[test]
     fn test_smol_management_fee() {
         let now = 0;
         let vault = &mut Vault::default();

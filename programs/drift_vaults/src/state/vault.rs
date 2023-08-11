@@ -419,6 +419,9 @@ impl Vault {
     }
 
     pub fn manager_withdraw(&mut self, vault_equity: u64, now: i64) -> Result<u64> {
+        self.last_manager_withdraw_request
+            .check_redeem_period_finished(self, now)?;
+
         self.apply_rebase(vault_equity)?;
 
         let (management_fee, management_fee_shares) =
