@@ -431,7 +431,7 @@ impl Vault {
         let total_vault_shares_before = self.total_shares;
         let user_vault_shares_before = self.user_shares;
 
-        let n_shares: u128 = self.last_manager_withdraw_request.shares.cast()?;
+        let n_shares = self.last_manager_withdraw_request.shares;
 
         validate!(
             n_shares > 0,
