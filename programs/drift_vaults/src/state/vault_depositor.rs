@@ -473,7 +473,6 @@ impl VaultDepositor {
 
         let (management_fee, management_fee_shares) =
             vault.apply_management_fee(vault_equity, now)?;
-        let profit_share: u64 = self.apply_profit_share(vault_equity, vault)?;
 
         let vault_shares_lost = self.calculate_vault_shares_lost(vault, vault_equity)?;
         self.decrease_vault_shares(vault_shares_lost, vault)?;
@@ -498,7 +497,7 @@ impl VaultDepositor {
             vault_shares_after,
             total_vault_shares_after: vault.total_shares,
             user_vault_shares_after: vault.user_shares,
-            profit_share,
+            profit_share: 0,
             management_fee,
             management_fee_shares,
         });
