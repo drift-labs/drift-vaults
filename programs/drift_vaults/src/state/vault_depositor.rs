@@ -19,7 +19,7 @@ use drift::math::insurance::{
 };
 
 use drift::math::casting::Cast;
-use drift::math::margin::meets_initial_margin_requirement;
+use drift::math::margin::{meets_initial_margin_requirement, validate_spot_margin_trading};
 use drift::math::safe_math::SafeMath;
 use drift::state::oracle_map::OracleMap;
 use drift::state::perp_market_map::PerpMarketMap;
@@ -702,6 +702,14 @@ impl VaultDepositor {
         )?;
 
         if can_withdraw {
+            msg!("depositor is able to withdraw");
+            return Err(DriftErrorCode::DefaultError);
+        }
+
+        let validate_margin_trading_result =
+            validate_spot_margin_trading(drift_user, spot_market_map, oracle_map);
+
+        if validate_margin_trading_result.is_ok() {
             msg!("depositor is able to withdraw");
             return Err(DriftErrorCode::DefaultError);
         }
