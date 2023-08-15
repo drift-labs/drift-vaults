@@ -561,6 +561,67 @@ export class VaultClient {
 	}
 
 	/**
+	 * Liquidates (become delegate for) a vault.
+	 * @param
+	 * @param
+	 * @returns
+	 */
+	public async liquidate(
+		vaultDepositor: PublicKey
+	): Promise<TransactionSignature> {
+		const vaultDepositorAccount =
+			await this.program.account.vaultDepositor.fetch(vaultDepositor);
+		const vaultPubKey = vaultDepositorAccount.vault;
+
+		const vaultAccount = await this.program.account.vault.fetch(vaultPubKey);
+
+		const user = new User({
+			driftClient: this.driftClient,
+			userAccountPublicKey: vaultAccount.user,
+		});
+		await user.subscribe();
+		const remainingAccounts = this.driftClient.getRemainingAccounts({
+			userAccounts: [user.getUserAccount()],
+			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
+		});
+
+		const userStatsKey = getUserStatsAccountPublicKey(
+			this.driftClient.program.programId,
+			vaultPubKey
+		);
+
+		const driftStateKey = await this.driftClient.getStatePublicKey();
+
+		const accounts = {
+			vault: vaultPubKey,
+			vaultDepositor,
+			vaultTokenAccount: vaultAccount.tokenAccount,
+			driftUserStats: userStatsKey,
+			driftUser: vaultAccount.user,
+			driftState: driftStateKey,
+			driftProgram: this.driftClient.program.programId,
+		};
+
+		if (this.cliMode) {
+			return await this.program.methods
+				.liquidate()
+				.accounts(accounts)
+				.remainingAccounts(remainingAccounts)
+				.rpc();
+		} else {
+			const liquidateIx = this.program.instruction.liquidate({
+				accounts: {
+					authority: this.driftClient.wallet.publicKey,
+					...accounts,
+				},
+				remainingAccounts,
+			});
+
+			return await this.createAndSendTxn(liquidateIx);
+		}
+	}
+
+	/**
 	 * Used for UI wallet adapters compatibility
 	 */
 	private async createAndSendTxn(...ix: TransactionInstruction[]) {

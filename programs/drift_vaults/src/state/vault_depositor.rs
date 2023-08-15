@@ -378,7 +378,6 @@ impl VaultDepositor {
 
         let (management_fee, management_fee_shares) =
             vault.apply_management_fee(vault_equity, now)?;
-        let profit_share: u64 = self.apply_profit_share(vault_equity, vault)?;
 
         let vault_shares_lost = self
             .last_withdraw_request
@@ -405,7 +404,7 @@ impl VaultDepositor {
             vault_shares_after,
             total_vault_shares_after: vault.total_shares,
             user_vault_shares_after: vault.user_shares,
-            profit_share,
+            profit_share: 0,
             management_fee,
             management_fee_shares,
         });
@@ -887,6 +886,64 @@ mod tests {
         assert_eq!(vault.user_shares, 0);
         assert_eq!(vault.total_shares, 100000000);
         assert_eq!(withdraw_amount, 50000000);
+        assert_eq!(vd.cumulative_profit_share_amount, 0); // $0
+    }
+
+    #[test]
+    fn test_vault_depositor_request_in_profit_withdraw_in_loss() {
+        // test for vault depositor who requests withdraw when in pofit
+        // then waits redeem period for withdraw
+        // upon withdraw, vault depositor is in loss even though they withdrew in profit
+        // should get withdraw vaulation and not break invariants
+
+        let now = 1000;
+        let vault = &mut Vault::default();
+
+        let vd =
+            &mut VaultDepositor::new(Pubkey::default(), Pubkey::default(), Pubkey::default(), now);
+
+        let mut vault_equity: u64 = 100 * QUOTE_PRECISION_U64;
+        let amount: u64 = 100 * QUOTE_PRECISION_U64;
+        vd.deposit(amount, vault_equity, vault, now).unwrap();
+        assert_eq!(vd.vault_shares_base, 0);
+        assert_eq!(vd.checked_vault_shares(vault).unwrap(), 100000000);
+        assert_eq!(vault.user_shares, 100000000);
+        assert_eq!(vault.total_shares, 200000000);
+
+        vault.profit_share = 100000; // 10% profit share
+        vault.redeem_period = 3600; // 1 hour
+        vault_equity = 200 * QUOTE_PRECISION_U64;
+
+        assert_eq!(vd.checked_vault_shares(vault).unwrap(), 100000000);
+        assert_eq!(vd.cumulative_profit_share_amount, 0); // $0
+        assert_eq!(vault.user_shares, 100000000);
+        assert_eq!(vault.total_shares, 200000000);
+
+        // let vault_before = vault;
+        vd.realize_profits(vault_equity, vault, now).unwrap(); // should be noop
+
+        // request withdraw all
+        vd.request_withdraw(
+            PERCENTAGE_PRECISION,
+            WithdrawUnit::SharesPercent,
+            vault_equity,
+            vault,
+            now + 20,
+        )
+        .unwrap();
+        assert_eq!(vd.checked_vault_shares(vault).unwrap(), 100000000);
+
+        assert_eq!(vd.last_withdraw_request.value, 100000000);
+        assert_eq!(vd.last_withdraw_request.ts, now + 20);
+
+        vault_equity /= 5; // down 80%
+
+        let (withdraw_amount, _ll) = vd.withdraw(vault_equity, vault, now + 20 + 3600).unwrap();
+        assert_eq!(vd.checked_vault_shares(vault).unwrap(), 0);
+        assert_eq!(vd.vault_shares_base, 0);
+        assert_eq!(vault.user_shares, 0);
+        assert_eq!(vault.total_shares, 100000000);
+        assert_eq!(withdraw_amount, 20000000); // getting back 20% of deposit
         assert_eq!(vd.cumulative_profit_share_amount, 0); // $0
     }
 }
