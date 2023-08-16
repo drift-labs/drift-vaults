@@ -1,7 +1,7 @@
 use crate::constraints::{is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault};
 use crate::cpi::{TokenTransferCPI, WithdrawCPI};
 use crate::Vault;
-use crate::{declare_vault_seeds, AccountMapProvider, WithdrawUnit};
+use crate::{declare_vault_seeds, AccountMapProvider};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Transfer};
 use anchor_spl::token::{Token, TokenAccount};
@@ -12,11 +12,10 @@ use drift::state::user::User;
 
 pub fn manager_withdraw<'info>(
     ctx: Context<'_, '_, '_, 'info, ManagerWithdraw<'info>>,
-    withdraw_amount: u64,
-    withdraw_unit: WithdrawUnit,
 ) -> Result<()> {
     let clock = &Clock::get()?;
     let mut vault = ctx.accounts.vault.load_mut()?;
+    let now = clock.unix_timestamp;
 
     let user = ctx.accounts.drift_user.load()?;
     let spot_market_index = vault.spot_market_index;
@@ -30,12 +29,7 @@ pub fn manager_withdraw<'info>(
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
-    let manager_withdraw_amount = vault.manager_withdraw(
-        withdraw_amount,
-        withdraw_unit,
-        vault_equity,
-        clock.unix_timestamp,
-    )?;
+    let manager_withdraw_amount = vault.manager_withdraw(vault_equity, now)?;
 
     drop(vault);
     drop(user);

@@ -514,6 +514,79 @@ export type DriftVaults = {
 			];
 		},
 		{
+			name: 'managerRequestWithdraw';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftUser';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftState';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [
+				{
+					name: 'withdrawAmount';
+					type: 'u64';
+				},
+				{
+					name: 'withdrawUnit';
+					type: {
+						defined: 'WithdrawUnit';
+					};
+				}
+			];
+		},
+		{
+			name: 'mangerCancelWithdrawRequest';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftUser';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftState';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [];
+		},
+		{
 			name: 'managerWithdraw';
 			accounts: [
 				{
@@ -572,18 +645,7 @@ export type DriftVaults = {
 					isSigner: false;
 				}
 			];
-			args: [
-				{
-					name: 'withdrawAmount';
-					type: 'u64';
-				},
-				{
-					name: 'withdrawUnit';
-					type: {
-						defined: 'WithdrawUnit';
-					};
-				}
-			];
+			args: [];
 		},
 		{
 			name: 'applyProfitShare';
@@ -731,21 +793,11 @@ export type DriftVaults = {
 						type: 'u128';
 					},
 					{
-						name: 'lastWithdrawRequestShares';
-						docs: ['requested vault shares for withdraw'];
-						type: 'u128';
-					},
-					{
-						name: 'lastWithdrawRequestValue';
-						docs: [
-							'requested value (in vault spot_market_index) of shares for withdraw'
-						];
-						type: 'u64';
-					},
-					{
-						name: 'lastWithdrawRequestTs';
-						docs: ['request ts of vault withdraw'];
-						type: 'i64';
+						name: 'lastWithdrawRequest';
+						docs: ['last withdraw request'];
+						type: {
+							defined: 'WithdrawRequest';
+						};
 					},
 					{
 						name: 'lastValidTs';
@@ -780,9 +832,13 @@ export type DriftVaults = {
 						type: 'u32';
 					},
 					{
+						name: 'profitShareFeePaid';
+						type: 'u64';
+					},
+					{
 						name: 'padding';
 						type: {
-							array: ['u8', 32];
+							array: ['u8', 24];
 						};
 					}
 				];
@@ -951,7 +1007,7 @@ export type DriftVaults = {
 						type: 'u64';
 					},
 					{
-						name: 'minimumDeposit';
+						name: 'minDepositAmount';
 						docs: ['the minimum deposit amount'];
 						type: 'u64';
 					},
@@ -987,14 +1043,9 @@ export type DriftVaults = {
 						type: 'bool';
 					},
 					{
-						name: 'minDepositAmount';
-						docs: ['Min deposit amount'];
-						type: 'u64';
-					},
-					{
-						name: 'padding1';
+						name: 'lastManagerWithdrawRequest';
 						type: {
-							array: ['u8', 24];
+							defined: 'WithdrawRequest';
 						};
 					}
 				];
@@ -1094,6 +1145,31 @@ export type DriftVaults = {
 						type: {
 							option: 'bool';
 						};
+					}
+				];
+			};
+		},
+		{
+			name: 'WithdrawRequest';
+			type: {
+				kind: 'struct';
+				fields: [
+					{
+						name: 'shares';
+						docs: ['request shares of vault withdraw'];
+						type: 'u128';
+					},
+					{
+						name: 'value';
+						docs: [
+							'requested value (in vault spot_market_index) of shares for withdraw'
+						];
+						type: 'u64';
+					},
+					{
+						name: 'ts';
+						docs: ['request ts of vault withdraw'];
+						type: 'i64';
 					}
 				];
 			};
@@ -1873,6 +1949,79 @@ export const IDL: DriftVaults = {
 			],
 		},
 		{
+			name: 'managerRequestWithdraw',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftUser',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftState',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [
+				{
+					name: 'withdrawAmount',
+					type: 'u64',
+				},
+				{
+					name: 'withdrawUnit',
+					type: {
+						defined: 'WithdrawUnit',
+					},
+				},
+			],
+		},
+		{
+			name: 'mangerCancelWithdrawRequest',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftUser',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftState',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [],
+		},
+		{
 			name: 'managerWithdraw',
 			accounts: [
 				{
@@ -1931,18 +2080,7 @@ export const IDL: DriftVaults = {
 					isSigner: false,
 				},
 			],
-			args: [
-				{
-					name: 'withdrawAmount',
-					type: 'u64',
-				},
-				{
-					name: 'withdrawUnit',
-					type: {
-						defined: 'WithdrawUnit',
-					},
-				},
-			],
+			args: [],
 		},
 		{
 			name: 'applyProfitShare',
@@ -2090,21 +2228,11 @@ export const IDL: DriftVaults = {
 						type: 'u128',
 					},
 					{
-						name: 'lastWithdrawRequestShares',
-						docs: ['requested vault shares for withdraw'],
-						type: 'u128',
-					},
-					{
-						name: 'lastWithdrawRequestValue',
-						docs: [
-							'requested value (in vault spot_market_index) of shares for withdraw',
-						],
-						type: 'u64',
-					},
-					{
-						name: 'lastWithdrawRequestTs',
-						docs: ['request ts of vault withdraw'],
-						type: 'i64',
+						name: 'lastWithdrawRequest',
+						docs: ['last withdraw request'],
+						type: {
+							defined: 'WithdrawRequest',
+						},
 					},
 					{
 						name: 'lastValidTs',
@@ -2139,9 +2267,13 @@ export const IDL: DriftVaults = {
 						type: 'u32',
 					},
 					{
+						name: 'profitShareFeePaid',
+						type: 'u64',
+					},
+					{
 						name: 'padding',
 						type: {
-							array: ['u8', 32],
+							array: ['u8', 24],
 						},
 					},
 				],
@@ -2310,7 +2442,7 @@ export const IDL: DriftVaults = {
 						type: 'u64',
 					},
 					{
-						name: 'minimumDeposit',
+						name: 'minDepositAmount',
 						docs: ['the minimum deposit amount'],
 						type: 'u64',
 					},
@@ -2346,14 +2478,9 @@ export const IDL: DriftVaults = {
 						type: 'bool',
 					},
 					{
-						name: 'minDepositAmount',
-						docs: ['Min deposit amount'],
-						type: 'u64',
-					},
-					{
-						name: 'padding1',
+						name: 'lastManagerWithdrawRequest',
 						type: {
-							array: ['u8', 24],
+							defined: 'WithdrawRequest',
 						},
 					},
 				],
@@ -2453,6 +2580,31 @@ export const IDL: DriftVaults = {
 						type: {
 							option: 'bool',
 						},
+					},
+				],
+			},
+		},
+		{
+			name: 'WithdrawRequest',
+			type: {
+				kind: 'struct',
+				fields: [
+					{
+						name: 'shares',
+						docs: ['request shares of vault withdraw'],
+						type: 'u128',
+					},
+					{
+						name: 'value',
+						docs: [
+							'requested value (in vault spot_market_index) of shares for withdraw',
+						],
+						type: 'u64',
+					},
+					{
+						name: 'ts',
+						docs: ['request ts of vault withdraw'],
+						type: 'i64',
 					},
 				],
 			},

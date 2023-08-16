@@ -178,9 +178,7 @@ export class VaultClient {
 	}
 
 	public async managerWithdraw(
-		vault: PublicKey,
-		amount: BN,
-		withdrawUnit: WithdrawUnit
+		vault: PublicKey
 	): Promise<TransactionSignature> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
 
@@ -204,7 +202,7 @@ export class VaultClient {
 		}
 
 		return await this.program.methods
-			.managerWithdraw(amount, withdrawUnit)
+			.managerWithdraw()
 			.accounts({
 				vault,
 				vaultTokenAccount: vaultAccount.tokenAccount,

@@ -130,7 +130,7 @@ describe('driftVaults', () => {
 		const vaultDepositorAccount = await program.account.vaultDepositor.fetch(
 			vaultDepositor
 		);
-		assert(vaultDepositorAccount.lastWithdrawRequestValue.eq(new BN(0)));
+		assert(vaultDepositorAccount.lastWithdrawRequest.value.eq(new BN(0)));
 		console.log(
 			'vaultDepositorAccount.vaultShares:',
 			vaultDepositorAccount.vaultShares.toString()
@@ -164,10 +164,12 @@ describe('driftVaults', () => {
 		assert(vaultDepositorAccountAfter.vaultShares.eq(new BN(1_000_000_000)));
 		console.log(
 			'vaultDepositorAccountAfter.lastWithdrawRequestShares:',
-			vaultDepositorAccountAfter.lastWithdrawRequestShares.toString()
+			vaultDepositorAccountAfter.lastWithdrawRequest.shares.toString()
 		);
-		assert(!vaultDepositorAccountAfter.lastWithdrawRequestShares.eq(new BN(0)));
-		assert(!vaultDepositorAccountAfter.lastWithdrawRequestValue.eq(new BN(0)));
+		assert(
+			!vaultDepositorAccountAfter.lastWithdrawRequest.shares.eq(new BN(0))
+		);
+		assert(!vaultDepositorAccountAfter.lastWithdrawRequest.value.eq(new BN(0)));
 
 		// do withdraw
 		console.log('do withdraw');
