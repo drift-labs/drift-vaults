@@ -1,7 +1,7 @@
-use crate::error::{ErrorCode, VaultResult};
+use crate::error::ErrorCode;
+use crate::state::withdraw_unit::WithdrawUnit;
 use crate::Size;
 use anchor_lang::prelude::*;
-use borsh::{BorshDeserialize, BorshSerialize};
 use drift::controller::spot_balance::update_spot_balances;
 use drift::error::{DriftResult, ErrorCode as DriftErrorCode};
 
@@ -284,7 +284,7 @@ impl VaultDepositor {
 
     pub fn request_withdraw(
         self: &mut VaultDepositor,
-        withdraw_amount: u128,
+        withdraw_amount: u64,
         withdraw_unit: WithdrawUnit,
         vault_equity: u64,
         vault: &mut Vault,
@@ -295,32 +295,12 @@ impl VaultDepositor {
             vault.apply_management_fee(vault_equity, now)?;
         let profit_share: u64 = self.apply_profit_share(vault_equity, vault)?;
 
-        let (withdraw_value, n_shares) = match withdraw_unit {
-            WithdrawUnit::Token => {
-                let withdraw_value: u64 = withdraw_amount.cast()?;
-                let n_shares: u128 = vault_amount_to_depositor_shares(
-                    withdraw_value,
-                    vault.total_shares,
-                    vault_equity,
-                )?;
-                (withdraw_value, n_shares)
-            }
-            WithdrawUnit::Shares => {
-                let n_shares: u128 = withdraw_amount;
-                let withdraw_value: u64 =
-                    depositor_shares_to_vault_amount(n_shares, vault.total_shares, vault_equity)?
-                        .min(vault_equity);
-                (withdraw_value, n_shares)
-            }
-            WithdrawUnit::SharesPercent => {
-                let n_shares =
-                    WithdrawUnit::get_shares_from_percent(withdraw_amount, self.vault_shares)?;
-                let withdraw_value: u64 =
-                    depositor_shares_to_vault_amount(n_shares, vault.total_shares, vault_equity)?
-                        .min(vault_equity);
-                (withdraw_value, n_shares)
-            }
-        };
+        let (withdraw_value, n_shares) = withdraw_unit.get_withdraw_value_and_shares(
+            withdraw_amount,
+            vault_equity,
+            self.vault_shares,
+            vault.total_shares,
+        )?;
 
         validate!(
             n_shares > 0,
@@ -620,31 +600,12 @@ impl VaultDepositor {
     }
 }
 
-#[derive(Debug, Clone, Copy, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
-pub enum WithdrawUnit {
-    Shares,
-    Token,
-    SharesPercent,
-}
-
-const MAX_WITHDRAW_PERCENT: u128 = 1_000_000;
-impl WithdrawUnit {
-    pub fn get_shares_from_percent(percent: u128, shares: u128) -> VaultResult<u128> {
-        validate!(
-            percent <= MAX_WITHDRAW_PERCENT,
-            ErrorCode::SharesPercentTooLarge
-        )?;
-        let shares = shares.safe_mul(percent)?.safe_div(MAX_WITHDRAW_PERCENT)?;
-        Ok(shares)
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use crate::{Vault, VaultDepositor, WithdrawUnit};
     use anchor_lang::prelude::Pubkey;
     use drift::math::casting::Cast;
-    use drift::math::constants::{PERCENTAGE_PRECISION, QUOTE_PRECISION, QUOTE_PRECISION_U64};
+    use drift::math::constants::{PERCENTAGE_PRECISION_U64, QUOTE_PRECISION_U64};
     use drift::math::insurance::if_shares_to_vault_amount;
 
     #[test]
@@ -759,7 +720,7 @@ mod tests {
 
         // withdraw all
         vd.request_withdraw(
-            190 * QUOTE_PRECISION, // 200 - 10% share
+            190 * QUOTE_PRECISION_U64, // 200 - 10% share
             WithdrawUnit::Token,
             vault_equity,
             vault,
@@ -817,7 +778,7 @@ mod tests {
 
         // withdraw all
         vd.request_withdraw(
-            190 * QUOTE_PRECISION,
+            190 * QUOTE_PRECISION_U64,
             WithdrawUnit::Token,
             vault_equity,
             vault,
@@ -874,7 +835,7 @@ mod tests {
 
         // request withdraw all
         vd.request_withdraw(
-            PERCENTAGE_PRECISION,
+            PERCENTAGE_PRECISION_U64,
             WithdrawUnit::SharesPercent,
             vault_equity,
             vault,
@@ -932,7 +893,7 @@ mod tests {
 
         // request withdraw all
         vd.request_withdraw(
-            PERCENTAGE_PRECISION,
+            PERCENTAGE_PRECISION_U64,
             WithdrawUnit::SharesPercent,
             vault_equity,
             vault,
