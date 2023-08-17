@@ -606,23 +606,22 @@ impl VaultDepositor {
 
         drop(spot_market);
 
-        let can_withdraw = meets_initial_margin_requirement(
+        let sufficient_collateral = meets_initial_margin_requirement(
             drift_user,
             perp_market_map,
             spot_market_map,
             oracle_map,
         )?;
 
-        if can_withdraw {
-            msg!("depositor is able to withdraw");
-            return Err(DriftErrorCode::DefaultError);
-        }
+        let margin_trading_ok =
+            validate_spot_margin_trading(drift_user, spot_market_map, oracle_map).is_ok();
 
-        let validate_margin_trading_result =
-            validate_spot_margin_trading(drift_user, spot_market_map, oracle_map);
-
-        if validate_margin_trading_result.is_ok() {
-            msg!("depositor margin trading is valid");
+        if sufficient_collateral && margin_trading_ok {
+            msg!(
+                "depositor is able to withdraw. sufficient collateral = {} margin trading ok = {}",
+                sufficient_collateral,
+                margin_trading_ok
+            );
             return Err(DriftErrorCode::DefaultError);
         }
 
