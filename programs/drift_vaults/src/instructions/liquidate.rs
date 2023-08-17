@@ -30,8 +30,11 @@ pub fn liquidate<'info>(ctx: Context<'_, '_, '_, 'info, Liquidate<'info>>) -> Re
         .last_withdraw_request
         .check_redeem_period_finished(&vault, now)?;
     // 2. Check that the depositor is unable to withdraw
+    let vault_equity =
+        vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
     vault_depositor.check_cant_withdraw(
         &vault,
+        vault_equity,
         &mut user,
         &perp_market_map,
         &spot_market_map,

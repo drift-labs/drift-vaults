@@ -579,15 +579,23 @@ impl VaultDepositor {
     pub fn check_cant_withdraw(
         &self,
         vault: &Vault,
+        vault_equity: u64,
         drift_user: &mut User,
         perp_market_map: &PerpMarketMap,
         spot_market_map: &SpotMarketMap,
         oracle_map: &mut OracleMap,
     ) -> DriftResult {
+        let shares_value = depositor_shares_to_vault_amount(
+            self.last_withdraw_request.shares,
+            vault.total_shares,
+            vault_equity,
+        )?;
+        let withdraw_amount = self.last_withdraw_request.value.min(shares_value);
+
         let mut spot_market = spot_market_map.get_ref_mut(&vault.spot_market_index)?;
 
         update_spot_balances(
-            self.last_withdraw_request.value.cast()?,
+            withdraw_amount.cast()?,
             &SpotBalanceType::Borrow,
             &mut spot_market,
             drift_user.force_get_spot_position_mut(vault.spot_market_index)?,
