@@ -592,6 +592,8 @@ impl VaultDepositor {
         )?;
         let withdraw_amount = self.last_withdraw_request.value.min(shares_value);
 
+        msg!("withdraw amount: {}", withdraw_amount);
+
         let mut spot_market = spot_market_map.get_ref_mut(&vault.spot_market_index)?;
 
         update_spot_balances(
@@ -620,7 +622,7 @@ impl VaultDepositor {
             validate_spot_margin_trading(drift_user, spot_market_map, oracle_map);
 
         if validate_margin_trading_result.is_ok() {
-            msg!("depositor is able to withdraw");
+            msg!("depositor margin trading is valid");
             return Err(DriftErrorCode::DefaultError);
         }
 
