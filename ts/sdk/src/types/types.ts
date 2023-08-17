@@ -48,7 +48,7 @@ export type Vault = {
 	managerTotalWithdraws: BN;
 	managerTotalFee: BN;
 	managerTotalProfitShare: BN;
-	minimumDeposit: BN;
+	minDepositAmount: BN;
 	profitShare: number;
 	hurdleRate: number;
 	spotMarketIndex: number;
