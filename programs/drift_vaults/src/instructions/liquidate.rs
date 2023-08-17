@@ -45,6 +45,7 @@ pub fn liquidate<'info>(ctx: Context<'_, '_, '_, 'info, Liquidate<'info>>) -> Re
 
     vault.set_liquidation_delegate(vault_depositor.authority, now);
 
+    drop(user);
     drop(vault);
 
     ctx.drift_update_user_delegate(vault_depositor.authority)?;
