@@ -26,6 +26,11 @@ Make a deposit into a vault (as a manager, `DEPOSIT_AMOUNT` in human precision):
 yarn cli manager-deposit --vault-address=<VAULT_ADDRESS> --amount=<DEPOSIT_AMOUNT>
 ```
 
+Make a withdraw request from a vault (as a manager, `SHARES` in raw precision):
+```
+yarn cli manager-request-withdraw --vault-address=<VAULT_ADDRESS> --amount=<SHARES>
+```
+
 Manager can trigger a profit share calculation (this looks up all `VaultDepositors` for a vault eligible for profit share and batch processes them):
 ```
 ```

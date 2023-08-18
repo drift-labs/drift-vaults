@@ -1109,7 +1109,7 @@
 						"name": "Deposit"
 					},
 					{
-						"name": "WithdrawRequest"
+						"name": "ithdrawRequest"
 					},
 					{
 						"name": "CancelWithdrawRequest"

@@ -1,12 +1,12 @@
 import { DriftClient, PublicKey, Wallet, loadKeypair } from "@drift-labs/sdk";
-import { VaultClient, decodeName } from "../src";
+import { Vault, VaultClient, decodeName } from "../src";
 import { Command } from "commander";
 import { Connection, Keypair } from "@solana/web3.js";
 import { AnchorProvider } from "@coral-xyz/anchor";
 import * as anchor from '@coral-xyz/anchor';
 import { IDL } from "../src/types/drift_vaults";
 
-export function printVault(vault) {
+export function printVault(vault: Vault) {
     console.log(`vault: ${decodeName(vault.name)}`);
     console.log(`pubkey:         ${vault.pubkey.toBase58()}`);
     console.log(`manager:         ${vault.manager.toBase58()}`);
@@ -16,6 +16,8 @@ export function printVault(vault) {
     console.log(`delegate:        ${vault.delegate.toBase58()}`);
     console.log(`liqDelegate:     ${vault.liquidationDelegate.toBase58()}`);
     console.log(`userShares:      ${vault.userShares.toString()}`);
+    console.log(`totalShares:     ${vault.totalShares.toString()}`);
+    console.log(`[managerShares]: ${(vault.totalShares.sub(vault.userShares)).toString()}`);
     console.log(`totalShares:     ${vault.totalShares.toString()}`);
     console.log(`lastFeeUpdateTs:    ${vault.lastFeeUpdateTs.toString()}`);
     console.log(`liquidationStartTs: ${vault.liquidationStartTs.toString()}`);
@@ -33,11 +35,16 @@ export function printVault(vault) {
     console.log(`managerTotalWithdraws:   ${vault.managerTotalWithdraws.toString()}`);
     console.log(`managerTotalFee:         ${vault.managerTotalFee.toString()}`);
     console.log(`managerTotalProfitShare: ${vault.managerTotalProfitShare.toString()}`);
-    console.log(`minimumDeposit:  ${vault.minimumDeposit.toString()}`);
-    console.log(`profitShare:     ${vault.profitShare}`);
-    console.log(`hurdleRate:      ${vault.hurdleRate}`);
-    console.log(`spotMarketIndex: ${vault.spotMarketIndex}`);
-    console.log(`permissioned:    ${vault.permissioned}`);
+    console.log(`lastManagerWithdrawRequest:`);
+    console.log(`  shares: ${vault.lastManagerWithdrawRequest.shares.toString()}`);
+    console.log(`  values: ${vault.lastManagerWithdrawRequest.value.toString()}`);
+    console.log(`  ts:     ${vault.lastManagerWithdrawRequest.ts.toString()}`);
+
+    console.log(`minDepositAmount:  ${vault.minDepositAmount.toString()}`);
+    console.log(`profitShare:       ${vault.profitShare}`);
+    console.log(`hurdleRate:        ${vault.hurdleRate}`);
+    console.log(`spotMarketIndex:   ${vault.spotMarketIndex}`);
+    console.log(`permissioned:      ${vault.permissioned}`);
 }
 
 export function printVaultDepositor(vaultDepositor) {
@@ -67,7 +74,7 @@ export async function getCommandContext(program: Command, needToSign: boolean): 
     if (needToSign) {
         try {
             keypair = loadKeypair(opts.keypair as string);
-        } catch(e) {
+        } catch (e) {
             console.error(`Need to provide a valid keypair: ${e}`);
             process.exit(1);
         }
@@ -76,7 +83,7 @@ export async function getCommandContext(program: Command, needToSign: boolean): 
     }
 
     const wallet = new Wallet(keypair);
-    console.log("Signing wallet address: ", wallet.publicKey.toBase58());
+    console.log(`Signing wallet address (need to sign: ${needToSign}): `, wallet.publicKey.toBase58());
 
     const connection = new Connection(opts.rpc, {
         commitment: opts.commitment,

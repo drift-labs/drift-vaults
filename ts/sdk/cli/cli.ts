@@ -2,6 +2,8 @@ import {
     initVault,
     viewVault,
     managerDeposit,
+    managerRequestWithdraw,
+    managerCancelWithdraw,
     managerWithdraw,
     applyProfitShare,
     initVaultDepositor,
@@ -32,7 +34,9 @@ program
 program
     .command("view-vault-depositor")
     .description("View VaultDepositor account details")
-    .addOption(new Option("--vault-depositor-address <address>", "Address of the VaultDepositor to view").makeOptionMandatory(true))
+    .addOption(new Option("--vault-depositor-address <address>", "Address of the VaultDepositor to view").makeOptionMandatory(false))
+    .addOption(new Option("--vault-address <address>", "Address of the Vault to view").makeOptionMandatory(false))
+    .addOption(new Option("--authority <vaultDepositorAuthority>", "VaultDepositor authority address").makeOptionMandatory(false))
     .action((opts) => viewVaultDepositor(program, opts));
 program
     .command("manager-deposit")
@@ -41,11 +45,21 @@ program
     .addOption(new Option("--amount <amount>", "Amount to deposit (human format, 5 for 5 USDC)").makeOptionMandatory(true))
     .action((opts) => managerDeposit(program, opts));
 program
-    .command("manager-withdraw")
-    .description("Make a deposit to your vault")
+    .command("manager-request-withdraw")
+    .description("Make a withdraw request from your vault")
     .addOption(new Option("--vault-address <address>", "Address of the vault to view").makeOptionMandatory(true))
     .addOption(new Option("--shares <shares>", "Amount of shares to withdraw (raw precision, as expected by contract)").makeOptionMandatory(true))
+    .action((opts) => managerRequestWithdraw(program, opts));
+program
+    .command("manager-withdraw")
+    .description("Make a withdraw from your vault")
+    .addOption(new Option("--vault-address <address>", "Address of the vault to view").makeOptionMandatory(true))
     .action((opts) => managerWithdraw(program, opts));
+program
+    .command("manager-cancel-withdraw")
+    .description("Cancel a pending manager withdraw withdraw from your vault")
+    .addOption(new Option("--vault-address <address>", "Address of the vault to view").makeOptionMandatory(true))
+    .action((opts) => managerCancelWithdraw(program, opts));
 program
     .command("apply-profit-share-all")
     .description("Turn the profit share crank for all depositors")
@@ -72,7 +86,8 @@ program
 program
     .command("withdraw")
     .description("Initiate the withdraw, after the redeem period has passed")
-    .addOption(new Option("--vault-depositor-address <vaultDepositorAddress>", "VaultDepositor address").makeOptionMandatory(true))
+    .addOption(new Option("--vault-depositor-address <vaultDepositorAddress>", "VaultDepositor address").makeOptionMandatory(false))
+    .addOption(new Option("--authority <vaultDepositorAuthority>", "VaultDepositor authority address").makeOptionMandatory(false))
     .action((opts) => withdraw(program, opts));
 
 program.parseAsync().then(() => {});

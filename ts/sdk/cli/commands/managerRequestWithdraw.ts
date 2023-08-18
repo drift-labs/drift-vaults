@@ -1,11 +1,13 @@
+import { BN } from "@drift-labs/sdk";
 import { PublicKey } from "@solana/web3.js";
 import {
     OptionValues,
     Command
 } from "commander";
 import { getCommandContext } from "../utils";
+import { WithdrawUnit } from "../../src/types/types";
 
-export const managerWithdraw = async (program: Command, cmdOpts: OptionValues) => {
+export const managerRequestWithdraw = async (program: Command, cmdOpts: OptionValues) => {
 
     let vaultAddress: PublicKey;
     try {
@@ -19,7 +21,7 @@ export const managerWithdraw = async (program: Command, cmdOpts: OptionValues) =
         driftVault
     } = await getCommandContext(program, true);
 
-    const tx = await driftVault.managerWithdraw(vaultAddress);
-    console.log(`Withrew as vault manager: https://solscan.io/tx/${tx}`);
+    const tx = await driftVault.managerRequestWithdraw(vaultAddress, new BN(cmdOpts.shares), WithdrawUnit.SHARES);
+    console.log(`Requested to withraw ${cmdOpts.shares} shares as vault manager: ${tx}`);
     console.log("Done!");
 };

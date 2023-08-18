@@ -5,7 +5,7 @@ import {
 } from "commander";
 import { getCommandContext } from "../utils";
 
-export const managerWithdraw = async (program: Command, cmdOpts: OptionValues) => {
+export const managerCancelWithdraw = async (program: Command, cmdOpts: OptionValues) => {
 
     let vaultAddress: PublicKey;
     try {
@@ -19,7 +19,7 @@ export const managerWithdraw = async (program: Command, cmdOpts: OptionValues) =
         driftVault
     } = await getCommandContext(program, true);
 
-    const tx = await driftVault.managerWithdraw(vaultAddress);
-    console.log(`Withrew as vault manager: https://solscan.io/tx/${tx}`);
+    const tx = await driftVault.managerCancelWithdrawRequest(vaultAddress);
+    console.log(`Canceled withdraw as vault manager: https://solscan.io/tx/${tx}`);
     console.log("Done!");
 };

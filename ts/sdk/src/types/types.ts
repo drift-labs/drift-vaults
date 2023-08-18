@@ -54,7 +54,7 @@ export type Vault = {
 	spotMarketIndex: number;
 	bump: number;
 	permissioned: boolean;
-	lastWithdrawRequest: WithdrawRequest;
+	lastManagerWithdrawRequest: WithdrawRequest;
 };
 
 export type VaultDepositor = {

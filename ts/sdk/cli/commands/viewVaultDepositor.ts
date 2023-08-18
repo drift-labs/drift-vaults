@@ -4,22 +4,34 @@ import {
     Command
 } from "commander";
 import { getCommandContext, printVaultDepositor } from "../utils";
+import { getVaultDepositorAddressSync } from "../../src";
 
 export const viewVaultDepositor = async (program: Command, cmdOpts: OptionValues) => {
 
-    let address: PublicKey;
-    try {
-        address = new PublicKey(cmdOpts.vaultDepositorAddress as string);
-    } catch (err) {
-        console.error("Invalid vault address");
-        process.exit(1);
-    }
+    let vaultDepositorAddress: PublicKey;
 
     const {
         driftVault
     } = await getCommandContext(program, false);
 
-    const vaultDepositor = await driftVault.getVaultDepositor(address);
+    try {
+        if (cmdOpts.vaultDepositorAddress !== undefined) {
+            vaultDepositorAddress = new PublicKey(cmdOpts.vaultDepositorAddress as string);
+        } else if (cmdOpts.authority !== undefined && cmdOpts.vaultAddress !== undefined) {
+            vaultDepositorAddress = getVaultDepositorAddressSync(
+                driftVault.program.programId,
+                new PublicKey(cmdOpts.vaultAddress as string),
+                new PublicKey(cmdOpts.authority as string));
+        } else {
+            console.error("Must supply --vault-depositor-address or --authority and --vault-address");
+            process.exit(1);
+        }
+    } catch (err) {
+        console.error("Failed to load VaultDepositor address");
+        process.exit(1);
+    }
+
+    const vaultDepositor = await driftVault.getVaultDepositor(vaultDepositorAddress);
     printVaultDepositor(vaultDepositor);
     console.log("Done!");
 };

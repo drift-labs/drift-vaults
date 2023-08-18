@@ -4,6 +4,7 @@ import {
     Command
 } from "commander";
 import { getCommandContext, printVault } from "../utils";
+import { QUOTE_PRECISION, convertToNumber } from "@drift-labs/sdk";
 
 export const viewVault = async (program: Command, cmdOpts: OptionValues) => {
 
@@ -21,6 +22,9 @@ export const viewVault = async (program: Command, cmdOpts: OptionValues) => {
 
     const vault = await driftVault.getVault(address);
     printVault(vault);
-
+    const vaultEquity = await driftVault.calculateVaultEquity({
+        vault,
+    });
+    console.log(`vaultEquity: ${convertToNumber(vaultEquity, QUOTE_PRECISION)}`);
     console.log("Done!");
 };

@@ -26,7 +26,7 @@ import {
 	getAssociatedTokenAddressSync,
 	TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
-import { VaultDepositor, WithdrawUnit } from './types/types';
+import { Vault, VaultDepositor, WithdrawUnit } from './types/types';
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
 
 export class VaultClient {
@@ -48,7 +48,7 @@ export class VaultClient {
 		this.cliMode = !!cliMode;
 	}
 
-	public async getVault(vault: PublicKey): Promise<any> {
+	public async getVault(vault: PublicKey): Promise<Vault> {
 		return await this.program.account.vault.fetch(vault);
 	}
 
@@ -88,6 +88,36 @@ export class VaultClient {
 		return (await this.program.account.vaultDepositor.all(
 			filters
 		)) as ProgramAccount<VaultDepositor>[];
+	}
+
+	/**
+	 *
+	 * @param vault pubkey
+	 * @returns vault equity, in QUOTE_PRECISION
+	 */
+	public async calculateVaultEquity(params: {
+		address?: PublicKey;
+		vault?: Vault;
+	}): Promise<BN> {
+		let vaultAccount: Vault;
+		if (params.address !== undefined) {
+			vaultAccount = await this.program.account.vault.fetch(params.address);
+		} else if (params.vault !== undefined) {
+			vaultAccount = params.vault;
+		} else {
+			throw new Error('Must supply address or vault');
+		}
+
+		const user = new User({
+			driftClient: this.driftClient,
+			userAccountPublicKey: vaultAccount.user,
+		});
+		await user.subscribe();
+
+		const netSpotValue = user.getNetSpotMarketValue();
+		const unrealizedPnl = user.getUnrealizedPNL(true, undefined, undefined);
+
+		return netSpotValue.add(unrealizedPnl);
 	}
 
 	public async initializeVault(params: {
@@ -212,10 +242,123 @@ export class VaultClient {
 			.rpc();
 	}
 
+	public async managerRequestWithdraw(
+		vault: PublicKey,
+		amount: BN,
+		withdrawUnit: WithdrawUnit
+	): Promise<TransactionSignature> {
+		const vaultAccount = (await this.program.account.vault.fetch(
+			vault
+		)) as Vault;
+
+		if (!this.driftClient.wallet.publicKey.equals(vaultAccount.manager)) {
+			throw new Error(`Only the manager of the vault can request a withdraw.`);
+		}
+
+		const user = new User({
+			driftClient: this.driftClient,
+			userAccountPublicKey: vaultAccount.user,
+		});
+		await user.subscribe();
+		const remainingAccounts = this.driftClient.getRemainingAccounts({
+			userAccounts: [user.getUserAccount()],
+			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
+		});
+
+		const userStatsKey = getUserStatsAccountPublicKey(
+			this.driftClient.program.programId,
+			vault
+		);
+
+		const driftStateKey = await this.driftClient.getStatePublicKey();
+
+		const accounts = {
+			vault,
+			driftUserStats: userStatsKey,
+			driftUser: vaultAccount.user,
+			driftState: driftStateKey,
+		};
+
+		if (this.cliMode) {
+			return await this.program.methods
+				.managerRequestWithdraw(amount, withdrawUnit)
+				.accounts(accounts)
+				.remainingAccounts(remainingAccounts)
+				.rpc();
+		} else {
+			const requestWithdrawIx = this.program.instruction.managerRequestWithdraw(
+				amount,
+				withdrawUnit,
+				{
+					accounts: {
+						manager: this.driftClient.wallet.publicKey,
+						...accounts,
+					},
+					remainingAccounts,
+				}
+			);
+
+			return await this.createAndSendTxn(requestWithdrawIx);
+		}
+	}
+
+	public async managerCancelWithdrawRequest(
+		vault: PublicKey
+	): Promise<TransactionSignature> {
+		const vaultAccount = await this.program.account.vault.fetch(vault);
+
+		const userStatsKey = getUserStatsAccountPublicKey(
+			this.driftClient.program.programId,
+			vault
+		);
+
+		const driftStateKey = await this.driftClient.getStatePublicKey();
+
+		const accounts = {
+			manager: this.driftClient.wallet.publicKey,
+			vault,
+			driftUserStats: userStatsKey,
+			driftUser: vaultAccount.user,
+			driftState: driftStateKey,
+		};
+
+		const user = new User({
+			driftClient: this.driftClient,
+			userAccountPublicKey: vaultAccount.user,
+		});
+		await user.subscribe();
+		const remainingAccounts = this.driftClient.getRemainingAccounts({
+			userAccounts: [user.getUserAccount()],
+		});
+
+		if (this.cliMode) {
+			return await this.program.methods
+				.mangerCancelWithdrawRequest()
+				.accounts(accounts)
+				.remainingAccounts(remainingAccounts)
+				.rpc();
+		} else {
+			const cancelRequestWithdrawIx =
+				this.program.instruction.mangerCancelWithdrawRequest({
+					accounts: {
+						manager: this.driftClient.wallet.publicKey,
+						...accounts,
+					},
+					remainingAccounts,
+				});
+
+			return await this.createAndSendTxn(cancelRequestWithdrawIx);
+		}
+	}
+
 	public async managerWithdraw(
 		vault: PublicKey
 	): Promise<TransactionSignature> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
+
+		if (!this.driftClient.wallet.publicKey.equals(vaultAccount.manager)) {
+			throw new Error(`Only the manager of the vault can request a withdraw.`);
+		}
 
 		const user = new User({
 			driftClient: this.driftClient,
@@ -225,6 +368,7 @@ export class VaultClient {
 
 		const remainingAccounts = this.driftClient.getRemainingAccounts({
 			userAccounts: [user.getUserAccount()],
+			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
 		});
 
 		const spotMarket = this.driftClient.getSpotMarketAccount(
@@ -240,6 +384,7 @@ export class VaultClient {
 			.managerWithdraw()
 			.accounts({
 				vault,
+				manager: this.driftClient.wallet.publicKey,
 				vaultTokenAccount: vaultAccount.tokenAccount,
 				driftUser: await getUserAccountPublicKey(
 					this.driftClient.program.programId,
@@ -257,6 +402,7 @@ export class VaultClient {
 					this.driftClient.wallet.publicKey
 				),
 				driftSigner: this.driftClient.getStateAccount().signer,
+				tokenProgram: TOKEN_PROGRAM_ID,
 			})
 			.remainingAccounts(remainingAccounts)
 			.rpc();
