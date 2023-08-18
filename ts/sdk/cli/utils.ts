@@ -74,9 +74,9 @@ export async function getCommandContext(program: Command, needToSign: boolean): 
     } else {
         keypair = Keypair.generate();
     }
-    
+
     const wallet = new Wallet(keypair);
-    console.log("Wallet address: ", wallet.publicKey.toBase58());
+    console.log("Signing wallet address: ", wallet.publicKey.toBase58());
 
     const connection = new Connection(opts.rpc, {
         commitment: opts.commitment,

@@ -6,7 +6,7 @@ import {
 	getUserStatsAccountPublicKey,
 	User,
 } from '@drift-labs/sdk';
-import { Program } from '@coral-xyz/anchor';
+import { BorshAccountsCoder, Program, ProgramAccount } from '@coral-xyz/anchor';
 import { DriftVaults } from './types/drift_vaults';
 import {
 	getTokenVaultAddressSync,
@@ -26,7 +26,8 @@ import {
 	getAssociatedTokenAddressSync,
 	TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
-import { WithdrawUnit } from './types/types';
+import { VaultDepositor, WithdrawUnit } from './types/types';
+import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
 
 export class VaultClient {
 	driftClient: DriftClient;
@@ -53,6 +54,40 @@ export class VaultClient {
 
 	public async getVaultDepositor(vaultDepositor: PublicKey): Promise<any> {
 		return await this.program.account.vaultDepositor.fetch(vaultDepositor);
+	}
+
+	public async getAllVaultDepositors(
+		vault: PublicKey
+	): Promise<ProgramAccount<VaultDepositor>[]> {
+		const filters = [
+			{
+				// discriminator = VaultDepositor
+				memcmp: {
+					offset: 0,
+					bytes: bs58.encode(
+						BorshAccountsCoder.accountDiscriminator('VaultDepositor')
+					),
+				},
+			},
+			{
+				// vault = vault
+				memcmp: {
+					offset: 8,
+					bytes: vault.toBase58(),
+				},
+			},
+			{
+				// last_withdraw_request_ts = 0
+				memcmp: {
+					offset: 144,
+					bytes: bs58.encode(Uint8Array.from([0])),
+				},
+			},
+		];
+		// @ts-ignore
+		return (await this.program.account.vaultDepositor.all(
+			filters
+		)) as ProgramAccount<VaultDepositor>[];
 	}
 
 	public async initializeVault(params: {
@@ -225,6 +260,57 @@ export class VaultClient {
 			})
 			.remainingAccounts(remainingAccounts)
 			.rpc();
+	}
+
+	public async getApplyProfitShareIx(
+		vault: PublicKey,
+		vaultDepositor: PublicKey
+	): Promise<TransactionInstruction> {
+		const vaultAccount = await this.program.account.vault.fetch(vault);
+
+		const user = new User({
+			driftClient: this.driftClient,
+			userAccountPublicKey: vaultAccount.user,
+		});
+		await user.subscribe();
+
+		const spotMarket = this.driftClient.getSpotMarketAccount(
+			vaultAccount.spotMarketIndex
+		);
+		if (!spotMarket) {
+			throw new Error(
+				`Spot market ${vaultAccount.spotMarketIndex} not found on driftClient`
+			);
+		}
+
+		const remainingAccounts = this.driftClient.getRemainingAccounts({
+			userAccounts: [user.getUserAccount()],
+			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
+		});
+
+		const accounts = {
+			vault,
+			vaultDepositor,
+			manager: this.driftClient.wallet.publicKey,
+			driftUserStats: getUserStatsAccountPublicKey(
+				this.driftClient.program.programId,
+				vault
+			),
+			driftUser: await getUserAccountPublicKey(
+				this.driftClient.program.programId,
+				vault
+			),
+			driftState: await this.driftClient.getStatePublicKey(),
+			driftSigner: this.driftClient.getStateAccount().signer,
+			driftProgram: this.driftClient.program.programId,
+		};
+
+		return this.program.instruction.applyProfitShare({
+			accounts: {
+				...accounts,
+			},
+			remainingAccounts,
+		});
 	}
 
 	private createInitVaultDepositorIx(vault: PublicKey, authority?: PublicKey) {
@@ -624,7 +710,7 @@ export class VaultClient {
 	/**
 	 * Used for UI wallet adapters compatibility
 	 */
-	private async createAndSendTxn(...ix: TransactionInstruction[]) {
+	public async createAndSendTxn(...ix: TransactionInstruction[]) {
 		const tx = new Transaction();
 		tx.add(
 			ComputeBudgetProgram.setComputeUnitLimit({

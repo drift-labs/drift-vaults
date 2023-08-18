@@ -3,6 +3,7 @@ import {
     viewVault,
     managerDeposit,
     managerWithdraw,
+    applyProfitShare,
     initVaultDepositor,
     deposit,
     requestWithdraw,
@@ -45,6 +46,11 @@ program
     .addOption(new Option("--vault-address <address>", "Address of the vault to view").makeOptionMandatory(true))
     .addOption(new Option("--shares <shares>", "Amount of shares to withdraw (raw precision, as expected by contract)").makeOptionMandatory(true))
     .action((opts) => managerWithdraw(program, opts));
+program
+    .command("apply-profit-share-all")
+    .description("Turn the profit share crank for all depositors")
+    .addOption(new Option("--vault-address <address>", "Address of the vault to view").makeOptionMandatory(true))
+    .action((opts) => applyProfitShare(program, opts));
 program
     .command("init-vault-depositor")
     .description("Initialize a VaultDepositor for someone to deposit into your vault")

@@ -26,6 +26,12 @@ Make a deposit into a vault (as a manager, `DEPOSIT_AMOUNT` in human precision):
 yarn cli manager-deposit --vault-address=<VAULT_ADDRESS> --amount=<DEPOSIT_AMOUNT>
 ```
 
+Manager can trigger a profit share calculation (this looks up all `VaultDepositors` for a vault eligible for profit share and batch processes them):
+```
+```
+yarn cli apply-profit-share-all --vault-address=<VAULT_ADDRESS>
+```
+
 
 For permissioned vaults, initialize a `VaultDepositor` for someone to deposit.
 ```
