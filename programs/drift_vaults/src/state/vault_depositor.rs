@@ -596,6 +596,11 @@ impl VaultDepositor {
 
         let mut spot_market = spot_market_map.get_ref_mut(&vault.spot_market_index)?;
 
+        // Save relevant data before updating balances
+        let spot_market_deposit_balance_before = spot_market.deposit_balance;
+        let spot_market_borrow_balance_before = spot_market.borrow_balance;
+        let user_spot_position_before = drift_user.spot_positions;
+
         update_spot_balances(
             withdraw_amount.cast()?,
             &SpotBalanceType::Borrow,
@@ -624,6 +629,13 @@ impl VaultDepositor {
             );
             return Err(DriftErrorCode::DefaultError);
         }
+
+        // Must reset drift accounts afterwards else ix will fail
+        let mut spot_market = spot_market_map.get_ref_mut(&vault.spot_market_index)?;
+        spot_market.deposit_balance = spot_market_deposit_balance_before;
+        spot_market.borrow_balance = spot_market_borrow_balance_before;
+
+        drift_user.spot_positions = user_spot_position_before;
 
         Ok(())
     }
