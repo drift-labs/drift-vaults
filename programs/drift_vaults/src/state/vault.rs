@@ -90,6 +90,7 @@ pub struct Vault {
     pub bump: u8,
     /// Whether or not anybody can be a depositor
     pub permissioned: bool,
+    pub padding1: [u8; 4],
     pub last_manager_withdraw_request: WithdrawRequest,
 }
 

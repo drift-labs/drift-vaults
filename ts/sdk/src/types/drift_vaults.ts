@@ -1043,6 +1043,12 @@ export type DriftVaults = {
 						type: 'bool';
 					},
 					{
+						name: 'padding1';
+						type: {
+							array: ['u8', 4];
+						};
+					},
+					{
 						name: 'lastManagerWithdrawRequest';
 						type: {
 							defined: 'WithdrawRequest';
@@ -2476,6 +2482,12 @@ export const IDL: DriftVaults = {
 						name: 'permissioned',
 						docs: ['Whether or not anybody can be a depositor'],
 						type: 'bool',
+					},
+					{
+						name: 'padding1',
+						type: {
+							array: ['u8', 4],
+						},
 					},
 					{
 						name: 'lastManagerWithdrawRequest',
