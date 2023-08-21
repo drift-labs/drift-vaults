@@ -17,7 +17,8 @@ export function printVault(vault: Vault) {
     console.log(`liqDelegate:     ${vault.liquidationDelegate.toBase58()}`);
     console.log(`userShares:      ${vault.userShares.toString()}`);
     console.log(`totalShares:     ${vault.totalShares.toString()}`);
-    console.log(`[managerShares]: ${(vault.totalShares.sub(vault.userShares)).toString()}`);
+    const managerShares = vault.totalShares.sub(vault.userShares);
+    console.log(`  [managerShares]: ${managerShares.toString()} (${(managerShares.toNumber() / vault.totalShares.toNumber() * 100.0).toFixed(4)}%)`);
     console.log(`totalShares:     ${vault.totalShares.toString()}`);
     console.log(`lastFeeUpdateTs:    ${vault.lastFeeUpdateTs.toString()}`);
     console.log(`liquidationStartTs: ${vault.liquidationStartTs.toString()}`);

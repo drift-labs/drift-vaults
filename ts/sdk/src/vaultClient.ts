@@ -16,6 +16,7 @@ import {
 import {
 	ComputeBudgetProgram,
 	PublicKey,
+	SetComputeUnitLimitParams,
 	SystemProgram,
 	SYSVAR_RENT_PUBKEY,
 	Transaction,
@@ -298,7 +299,7 @@ export class VaultClient {
 				}
 			);
 
-			return await this.createAndSendTxn(requestWithdrawIx);
+			return await this.createAndSendTxn([requestWithdrawIx]);
 		}
 	}
 
@@ -347,7 +348,7 @@ export class VaultClient {
 					remainingAccounts,
 				});
 
-			return await this.createAndSendTxn(cancelRequestWithdrawIx);
+			return await this.createAndSendTxn([cancelRequestWithdrawIx]);
 		}
 	}
 
@@ -380,9 +381,8 @@ export class VaultClient {
 			);
 		}
 
-		return await this.program.methods
-			.managerWithdraw()
-			.accounts({
+		const ix = this.program.instruction.managerWithdraw({
+			accounts: {
 				vault,
 				manager: this.driftClient.wallet.publicKey,
 				vaultTokenAccount: vaultAccount.tokenAccount,
@@ -403,8 +403,32 @@ export class VaultClient {
 				),
 				driftSigner: this.driftClient.getStateAccount().signer,
 				tokenProgram: TOKEN_PROGRAM_ID,
+			},
+			remainingAccounts,
+		});
+		return this.createAndSendTxn([ix], {
+			units: 1_000_000,
+		});
+	}
+
+	public async managerUpdateVault(
+		vault: PublicKey,
+		params: {
+			redeemPeriod: BN | null;
+			maxTokens: BN | null;
+			managementFee: BN | null;
+			minDepositAmount: BN | null;
+			profitShare: number | null;
+			hurdleRate: number | null;
+			permissioned: boolean | null;
+		}
+	): Promise<TransactionSignature> {
+		return await this.program.methods
+			.updateVault(params)
+			.accounts({
+				vault,
+				manager: this.driftClient.wallet.publicKey,
 			})
-			.remainingAccounts(remainingAccounts)
 			.rpc();
 	}
 
@@ -513,7 +537,7 @@ export class VaultClient {
 				.rpc();
 		} else {
 			const initIx = this.createInitVaultDepositorIx(vault, authority);
-			return await this.createAndSendTxn(initIx);
+			return await this.createAndSendTxn([initIx]);
 		}
 	}
 
@@ -607,9 +631,9 @@ export class VaultClient {
 					vaultAccount.pubkey,
 					initVaultDepositor.authority
 				);
-				return await this.createAndSendTxn(initIx, depositIx);
+				return await this.createAndSendTxn([initIx, depositIx]);
 			} else {
-				return await this.createAndSendTxn(depositIx);
+				return await this.createAndSendTxn([depositIx]);
 			}
 		}
 	}
@@ -668,7 +692,7 @@ export class VaultClient {
 				}
 			);
 
-			return await this.createAndSendTxn(requestWithdrawIx);
+			return await this.createAndSendTxn([requestWithdrawIx]);
 		}
 	}
 
@@ -735,7 +759,7 @@ export class VaultClient {
 				remainingAccounts,
 			});
 
-			return await this.createAndSendTxn(withdrawIx);
+			return await this.createAndSendTxn([withdrawIx]);
 		}
 	}
 
@@ -788,7 +812,7 @@ export class VaultClient {
 					remainingAccounts,
 				});
 
-			return await this.createAndSendTxn(cancelRequestWithdrawIx);
+			return await this.createAndSendTxn([cancelRequestWithdrawIx]);
 		}
 	}
 
@@ -849,21 +873,26 @@ export class VaultClient {
 				remainingAccounts,
 			});
 
-			return await this.createAndSendTxn(liquidateIx);
+			return await this.createAndSendTxn([liquidateIx]);
 		}
 	}
 
 	/**
 	 * Used for UI wallet adapters compatibility
 	 */
-	public async createAndSendTxn(...ix: TransactionInstruction[]) {
+	public async createAndSendTxn(
+		ixs: TransactionInstruction[],
+		computeUnitParams?: SetComputeUnitLimitParams
+	): Promise<TransactionSignature> {
 		const tx = new Transaction();
 		tx.add(
-			ComputeBudgetProgram.setComputeUnitLimit({
-				units: 400_000,
-			})
+			ComputeBudgetProgram.setComputeUnitLimit(
+				computeUnitParams || {
+					units: 400_000,
+				}
+			)
 		);
-		tx.add(...ix);
+		tx.add(...ixs);
 		const { txSig } = await this.driftClient.sendTransaction(
 			tx,
 			[],

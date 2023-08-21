@@ -4,6 +4,7 @@ export * from './managerDeposit';
 export * from './managerRequestWithdraw';
 export * from './managerCancelWithdraw';
 export * from './managerWithdraw';
+export * from './managerUpdateVault';
 export * from './applyProfitShare';
 export * from './initVaultDepositor';
 export * from './deposit';

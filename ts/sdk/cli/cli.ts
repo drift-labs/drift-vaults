@@ -5,6 +5,7 @@ import {
     managerRequestWithdraw,
     managerCancelWithdraw,
     managerWithdraw,
+    managerUpdateVault,
     applyProfitShare,
     initVaultDepositor,
     deposit,
@@ -50,6 +51,11 @@ program
     .addOption(new Option("--vault-address <address>", "Address of the vault to view").makeOptionMandatory(true))
     .addOption(new Option("--shares <shares>", "Amount of shares to withdraw (raw precision, as expected by contract)").makeOptionMandatory(true))
     .action((opts) => managerRequestWithdraw(program, opts));
+program
+    .command("manager-update-vault")
+    .description("Update vault params for a manager")
+    .addOption(new Option("--vault-address <address>", "Address of the vault to view").makeOptionMandatory(true))
+    .action((opts) => managerUpdateVault(program, opts));
 program
     .command("manager-withdraw")
     .description("Make a withdraw from your vault")
