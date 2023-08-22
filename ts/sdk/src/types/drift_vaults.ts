@@ -832,6 +832,10 @@ export type DriftVaults = {
 						type: 'u32';
 					},
 					{
+						name: 'padding1';
+						type: 'u32';
+					},
+					{
 						name: 'profitShareFeePaid';
 						type: 'u64';
 					},
@@ -2270,6 +2274,10 @@ export const IDL: DriftVaults = {
 					{
 						name: 'vaultSharesBase',
 						docs: ['the exponent for vault_shares decimal places'],
+						type: 'u32',
+					},
+					{
+						name: 'padding1',
 						type: 'u32',
 					},
 					{
