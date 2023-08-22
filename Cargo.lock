@@ -671,7 +671,16 @@ dependencies = [
  "anchor-spl",
  "bytemuck",
  "drift",
+ "drift-vaults-macros",
  "static_assertions",
+]
+
+[[package]]
+name = "drift-vaults-macros"
+version = "1.0.0"
+dependencies = [
+ "quote",
+ "syn 1.0.92",
 ]
 
 [[package]]

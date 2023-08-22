@@ -18,8 +18,10 @@ use drift::state::oracle_map::OracleMap;
 use drift::state::perp_market_map::PerpMarketMap;
 use drift::state::spot_market_map::SpotMarketMap;
 use drift::state::user::User;
+use drift_vaults_macros::assert_no_hidden_padding;
 use static_assertions::const_assert_eq;
 
+#[assert_no_hidden_padding]
 #[account(zero_copy)]
 #[derive(Default, Eq, PartialEq, Debug)]
 #[repr(C)]
@@ -55,9 +57,6 @@ pub struct Vault {
     pub total_withdraw_requested: u64,
     /// max token capacity, once hit/passed vault will reject new deposits (updateable)
     pub max_tokens: u64,
-    /// the base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)  
-    pub shares_base: u32,
-    pub padding: [u8; 4],
     /// manager fee
     pub management_fee: i64,
     /// timestamp vault initialized
@@ -80,6 +79,9 @@ pub struct Vault {
     pub manager_total_profit_share: u64,
     /// the minimum deposit amount
     pub min_deposit_amount: u64,
+    pub last_manager_withdraw_request: WithdrawRequest,
+    /// the base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)
+    pub shares_base: u32,
     /// percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION
     pub profit_share: u32,
     /// vault admin only collect incentive fees during periods when returns are higher than this amount: PERCENTAGE_PRECISION
@@ -90,8 +92,7 @@ pub struct Vault {
     pub bump: u8,
     /// Whether or not anybody can be a depositor
     pub permissioned: bool,
-    pub padding1: [u8; 4],
-    pub last_manager_withdraw_request: WithdrawRequest,
+    pub padding: [u64; 8],
 }
 
 impl Vault {
@@ -101,9 +102,8 @@ impl Vault {
 }
 
 impl Size for Vault {
-    const SIZE: usize = 472 + 8;
+    const SIZE: usize = 528 + 8;
 }
-
 const_assert_eq!(Vault::SIZE, std::mem::size_of::<Vault>() + 8);
 
 impl Vault {
