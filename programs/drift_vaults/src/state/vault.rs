@@ -18,9 +18,10 @@ use drift::state::oracle_map::OracleMap;
 use drift::state::perp_market_map::PerpMarketMap;
 use drift::state::spot_market_map::SpotMarketMap;
 use drift::state::user::User;
+use drift_vaults_macros::assert_no_hidden_padding;
 use static_assertions::const_assert_eq;
 
-
+#[assert_no_hidden_padding]
 #[account(zero_copy)]
 #[derive(Default, Eq, PartialEq, Debug)]
 #[repr(C)]
