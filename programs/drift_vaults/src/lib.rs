@@ -1,3 +1,5 @@
+extern crate core;
+
 use anchor_lang::prelude::*;
 use instructions::*;
 use state::*;
