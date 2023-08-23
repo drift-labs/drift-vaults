@@ -1,5 +1,11 @@
-import { Program } from '@coral-xyz/anchor';
-import { BulkAccountLoader } from '@drift-labs/sdk';
+import { BN, Program } from '@coral-xyz/anchor';
+import {
+	BulkAccountLoader,
+	ONE,
+	ONE_YEAR,
+	PERCENTAGE_PRECISION,
+	ZERO,
+} from '@drift-labs/sdk';
 import { PublicKey } from '@solana/web3.js';
 import { DriftVaults } from '../types/drift_vaults';
 import { Vault, VaultAccountEvents } from '../types/types';
@@ -33,5 +39,45 @@ export class VaultAccount extends VaultsProgramAccount<
 
 	static getAddressSync(programId: PublicKey, vaultName: string): PublicKey {
 		return getVaultAddressSync(programId, encodeName(vaultName));
+	}
+
+	calcSharesAfterManagementFee(vaultEquity: BN): {
+		totalShares: BN;
+		managementFeeShares: BN;
+	} {
+		const accountData = this.accountSubscriber.getAccountAndSlot().data;
+
+		const depositorsEquity = accountData.userShares
+			.mul(vaultEquity)
+			.div(accountData.totalShares);
+
+		if (accountData.managementFee.eq(ZERO) || depositorsEquity.lte(ZERO)) {
+			return ZERO;
+		}
+
+		const now = new BN(Date.now() / 1000);
+		const sinceLast = now.sub(accountData.lastFeeUpdateTs);
+
+		let managementFeeAmount = depositorsEquity
+			.mul(accountData.managementFee)
+			.div(PERCENTAGE_PRECISION)
+			.mul(sinceLast)
+			.div(ONE_YEAR);
+		managementFeeAmount = BN.min(
+			managementFeeAmount,
+			depositorsEquity.sub(ONE)
+		);
+
+		const newTotalSharesFactor = depositorsEquity
+			.mul(PERCENTAGE_PRECISION)
+			.div(depositorsEquity.sub(managementFeeAmount));
+		let newTotalShares = accountData.totalShares
+			.mul(newTotalSharesFactor)
+			.div(PERCENTAGE_PRECISION);
+		newTotalShares = BN.max(newTotalShares, accountData.userShares);
+
+		const managementFeeShares = newTotalShares.sub(accountData.totalShares);
+
+		return { totalShares: newTotalShares, managementFeeShares };
 	}
 }
