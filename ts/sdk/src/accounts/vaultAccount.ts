@@ -52,7 +52,10 @@ export class VaultAccount extends VaultsProgramAccount<
 			.div(accountData.totalShares);
 
 		if (accountData.managementFee.eq(ZERO) || depositorsEquity.lte(ZERO)) {
-			return ZERO;
+			return {
+				totalShares: accountData.totalShares,
+				managementFeeShares: ZERO,
+			};
 		}
 
 		const now = new BN(Date.now() / 1000);
