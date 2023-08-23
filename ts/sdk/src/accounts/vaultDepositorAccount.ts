@@ -39,12 +39,12 @@ export class VaultDepositorAccount extends VaultsProgramAccount<
 	}
 
 	/**
-	 * Calculates the percentage of a depositor's funds that will be paid as profit share fees.
+	 * Calculates the percentage of a depositor's equity that will be paid as profit share fees.
 	 *
 	 * @param vaultProfitShare Vault's profit share fee
-	 * @param depositorEquity Vault depositor's net deposit value
+	 * @param depositorEquity Vault depositor's equity amount
 	 */
-	calcProfitShareFeesProportion(vaultProfitShare: BN, depositorEquity: BN): BN {
+	calcProfitShareFeesPct(vaultProfitShare: BN, depositorEquity: BN): BN {
 		const accountData = this.accountSubscriber.getAccountAndSlot().data;
 
 		const profit = depositorEquity
