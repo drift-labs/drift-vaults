@@ -14,8 +14,12 @@ pub trait WithdrawCPI {
     fn drift_withdraw(&self, amount: u64) -> Result<()>;
 }
 
-pub trait UpdateUserCPI {
+pub trait UpdateUserDelegateCPI {
     fn drift_update_user_delegate(&self, delegate: Pubkey) -> Result<()>;
+}
+
+pub trait UpdateUserMarginTradingEnabledCPI {
+    fn drift_update_user_margin_trading_enabled(&self, enabled: bool) -> Result<()>;
 }
 
 pub trait TokenTransferCPI {
