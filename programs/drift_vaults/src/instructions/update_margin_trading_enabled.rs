@@ -45,7 +45,8 @@ impl<'info> UpdateUserMarginTradingEnabledCPI
         };
 
         let drift_program = self.accounts.drift_program.to_account_info().clone();
-        let cpi_context = CpiContext::new_with_signer(drift_program, cpi_accounts, seeds);
+        let cpi_context = CpiContext::new_with_signer(drift_program, cpi_accounts, seeds)
+            .with_remaining_accounts(self.remaining_accounts.into());
         drift::cpi::update_user_margin_trading_enabled(cpi_context, 0, enabled)?;
 
         Ok(())
