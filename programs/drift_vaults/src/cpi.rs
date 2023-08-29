@@ -16,7 +16,9 @@ pub trait WithdrawCPI {
 
 pub trait UpdateUserDelegateCPI {
     fn drift_update_user_delegate(&self, delegate: Pubkey) -> Result<()>;
+}
 
+pub trait UpdateUserReduceOnlyCPI {
     fn drift_update_user_reduce_only(&self, reduce_only: bool) -> Result<()>;
 }
 

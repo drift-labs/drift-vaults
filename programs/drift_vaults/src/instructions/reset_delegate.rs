@@ -1,5 +1,5 @@
 use crate::constraints::is_user_for_vault;
-use crate::cpi::UpdateUserDelegateCPI;
+use crate::cpi::{UpdateUserDelegateCPI, UpdateUserReduceOnlyCPI};
 use crate::error::ErrorCode;
 use crate::{
     declare_vault_seeds, implement_update_user_delegate_cpi, implement_update_user_reduce_only_cpi,
@@ -52,7 +52,9 @@ impl<'info> UpdateUserDelegateCPI for Context<'_, '_, '_, 'info, ResetDelegate<'
         implement_update_user_delegate_cpi!(self, delegate);
         Ok(())
     }
+}
 
+impl<'info> UpdateUserReduceOnlyCPI for Context<'_, '_, '_, 'info, ResetDelegate<'info>> {
     fn drift_update_user_reduce_only(&self, reduce_only: bool) -> Result<()> {
         implement_update_user_reduce_only_cpi!(self, reduce_only);
         Ok(())
