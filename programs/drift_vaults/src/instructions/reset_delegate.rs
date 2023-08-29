@@ -1,7 +1,9 @@
 use crate::constraints::is_user_for_vault;
 use crate::cpi::UpdateUserCPI;
 use crate::error::ErrorCode;
-use crate::{declare_vault_seeds, implement_update_user_delegate_cpi};
+use crate::{
+    declare_vault_seeds, implement_update_user_delegate_cpi, implement_update_user_reduce_only_cpi,
+};
 use crate::{validate, Vault};
 use anchor_lang::prelude::*;
 use drift::cpi::accounts::UpdateUser;
@@ -26,6 +28,7 @@ pub fn reset_delegate<'info>(ctx: Context<'_, '_, '_, 'info, ResetDelegate<'info
     drop(vault);
 
     ctx.drift_update_user_delegate(delegate)?;
+    ctx.drift_update_user_reduce_only(false)?;
 
     Ok(())
 }
@@ -47,6 +50,11 @@ pub struct ResetDelegate<'info> {
 impl<'info> UpdateUserCPI for Context<'_, '_, '_, 'info, ResetDelegate<'info>> {
     fn drift_update_user_delegate(&self, delegate: Pubkey) -> Result<()> {
         implement_update_user_delegate_cpi!(self, delegate);
+        Ok(())
+    }
+
+    fn drift_update_user_reduce_only(&self, reduce_only: bool) -> Result<()> {
+        implement_update_user_reduce_only_cpi!(self, reduce_only);
         Ok(())
     }
 }
