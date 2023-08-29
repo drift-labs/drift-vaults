@@ -299,31 +299,12 @@ impl Vault {
 
         let vault_shares_before: u128 = self.get_manager_shares()?;
 
-        let (withdraw_value, n_shares) = match withdraw_unit {
-            WithdrawUnit::Token => {
-                let n_tokens: u64 = withdraw_amount;
-                let n_shares: u128 =
-                    vault_amount_to_depositor_shares(n_tokens, self.total_shares, vault_equity)?;
-                (n_tokens, n_shares)
-            }
-            WithdrawUnit::Shares => {
-                let n_shares: u128 = withdraw_amount.cast()?;
-                let n_tokens: u64 =
-                    depositor_shares_to_vault_amount(n_shares, self.total_shares, vault_equity)?
-                        .min(vault_equity);
-                (n_tokens, n_shares)
-            }
-            WithdrawUnit::SharesPercent => {
-                let n_shares: u128 = WithdrawUnit::get_shares_from_percent(
-                    withdraw_amount.cast()?,
-                    self.get_manager_shares()?,
-                )?;
-                let n_tokens: u64 =
-                    depositor_shares_to_vault_amount(n_shares, self.total_shares, vault_equity)?
-                        .min(vault_equity);
-                (n_tokens, n_shares)
-            }
-        };
+        let (withdraw_value, n_shares) = withdraw_unit.get_withdraw_value_and_shares(
+            withdraw_amount,
+            vault_equity,
+            self.get_manager_shares()?,
+            self.total_shares,
+        )?;
 
         validate!(
             n_shares > 0,
