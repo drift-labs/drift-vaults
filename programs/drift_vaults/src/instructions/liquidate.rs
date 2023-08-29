@@ -2,8 +2,8 @@ use crate::constraints::{
     is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
 };
 use crate::cpi::UpdateUserDelegateCPI;
-use crate::AccountMapProvider;
 use crate::{declare_vault_seeds, implement_update_user_delegate_cpi};
+use crate::{implement_update_user_reduce_only_cpi, AccountMapProvider};
 use crate::{Vault, VaultDepositor};
 use anchor_lang::prelude::*;
 use drift::cpi::accounts::UpdateUser;
@@ -49,6 +49,7 @@ pub fn liquidate<'info>(ctx: Context<'_, '_, '_, 'info, Liquidate<'info>>) -> Re
     drop(vault);
 
     ctx.drift_update_user_delegate(vault_depositor.authority)?;
+    ctx.drift_update_user_reduce_only(true)?;
 
     Ok(())
 }
@@ -85,6 +86,11 @@ pub struct Liquidate<'info> {
 impl<'info> UpdateUserDelegateCPI for Context<'_, '_, '_, 'info, Liquidate<'info>> {
     fn drift_update_user_delegate(&self, delegate: Pubkey) -> Result<()> {
         implement_update_user_delegate_cpi!(self, delegate);
+        Ok(())
+    }
+
+    fn drift_update_user_reduce_only(&self, reduce_only: bool) -> Result<()> {
+        implement_update_user_reduce_only_cpi!(self, reduce_only);
         Ok(())
     }
 }

@@ -2,7 +2,10 @@ use crate::constraints::{
     is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
 };
 use crate::cpi::{TokenTransferCPI, UpdateUserDelegateCPI, WithdrawCPI};
-use crate::{declare_vault_seeds, implement_update_user_delegate_cpi, AccountMapProvider};
+use crate::{
+    declare_vault_seeds, implement_update_user_delegate_cpi, implement_update_user_reduce_only_cpi,
+    AccountMapProvider,
+};
 use crate::{Vault, VaultDepositor};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Transfer};
@@ -48,6 +51,7 @@ pub fn withdraw<'info>(ctx: Context<'_, '_, '_, 'info, Withdraw<'info>>) -> Resu
         drop(vault);
 
         ctx.drift_update_user_delegate(vault_delegate)?;
+        ctx.drift_update_user_reduce_only(false)?;
     }
 
     Ok(())
@@ -152,6 +156,11 @@ impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, Withdraw<'info>> {
 impl<'info> UpdateUserDelegateCPI for Context<'_, '_, '_, 'info, Withdraw<'info>> {
     fn drift_update_user_delegate(&self, delegate: Pubkey) -> Result<()> {
         implement_update_user_delegate_cpi!(self, delegate);
+        Ok(())
+    }
+
+    fn drift_update_user_reduce_only(&self, reduce_only: bool) -> Result<()> {
+        implement_update_user_reduce_only_cpi!(self, reduce_only);
         Ok(())
     }
 }
