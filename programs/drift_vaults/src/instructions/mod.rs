@@ -13,6 +13,7 @@ pub use manager_withdraw::*;
 pub use request_withdraw::*;
 pub use reset_delegate::*;
 pub use update_delegate::*;
+pub use update_margin_trading_enabled::*;
 pub use update_vault::*;
 pub use withdraw::*;
 
@@ -31,5 +32,6 @@ mod manager_withdraw;
 mod request_withdraw;
 mod reset_delegate;
 mod update_delegate;
+mod update_margin_trading_enabled;
 mod update_vault;
 mod withdraw;

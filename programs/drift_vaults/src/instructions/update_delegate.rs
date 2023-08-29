@@ -1,6 +1,5 @@
 use crate::constraints::{is_manager_for_vault, is_user_for_vault};
-use crate::cpi::UpdateUserCPI;
-use crate::error::ErrorCode;
+use crate::cpi::UpdateUserDelegateCPI;
 use crate::Vault;
 use crate::{declare_vault_seeds, implement_update_user_delegate_cpi};
 use anchor_lang::prelude::*;
@@ -46,13 +45,9 @@ pub struct UpdateDelegate<'info> {
     pub drift_program: Program<'info, Drift>,
 }
 
-impl<'info> UpdateUserCPI for Context<'_, '_, '_, 'info, UpdateDelegate<'info>> {
+impl<'info> UpdateUserDelegateCPI for Context<'_, '_, '_, 'info, UpdateDelegate<'info>> {
     fn drift_update_user_delegate(&self, delegate: Pubkey) -> Result<()> {
         implement_update_user_delegate_cpi!(self, delegate);
         Ok(())
-    }
-
-    fn drift_update_user_reduce_only(&self, _reduce_only: bool) -> Result<()> {
-        Err(ErrorCode::Default.into())
     }
 }

@@ -1,7 +1,7 @@
 use crate::constraints::{
     is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
 };
-use crate::cpi::{TokenTransferCPI, UpdateUserCPI, WithdrawCPI};
+use crate::cpi::{TokenTransferCPI, UpdateUserDelegateCPI, UpdateUserReduceOnlyCPI, WithdrawCPI};
 use crate::{
     declare_vault_seeds, implement_update_user_delegate_cpi, implement_update_user_reduce_only_cpi,
     AccountMapProvider,
@@ -153,12 +153,14 @@ impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, Withdraw<'info>> {
     }
 }
 
-impl<'info> UpdateUserCPI for Context<'_, '_, '_, 'info, Withdraw<'info>> {
+impl<'info> UpdateUserDelegateCPI for Context<'_, '_, '_, 'info, Withdraw<'info>> {
     fn drift_update_user_delegate(&self, delegate: Pubkey) -> Result<()> {
         implement_update_user_delegate_cpi!(self, delegate);
         Ok(())
     }
+}
 
+impl<'info> UpdateUserReduceOnlyCPI for Context<'_, '_, '_, 'info, Withdraw<'info>> {
     fn drift_update_user_reduce_only(&self, reduce_only: bool) -> Result<()> {
         implement_update_user_reduce_only_cpi!(self, reduce_only);
         Ok(())
