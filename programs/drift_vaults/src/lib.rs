@@ -32,6 +32,13 @@ pub mod drift_vaults {
         instructions::update_delegate(ctx, delegate)
     }
 
+    pub fn update_margin_trading_enabled<'info>(
+        ctx: Context<'_, '_, '_, 'info, UpdateMarginTradingEnabled<'info>>,
+        enabled: bool,
+    ) -> Result<()> {
+        instructions::update_margin_trading_enabled(ctx, enabled)
+    }
+
     pub fn update_vault<'info>(
         ctx: Context<'_, '_, '_, 'info, UpdateVault<'info>>,
         params: UpdateVaultParams,

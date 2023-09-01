@@ -112,6 +112,37 @@ export type DriftVaults = {
 			];
 		},
 		{
+			name: 'updateMarginTradingEnabled';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'driftUser';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [
+				{
+					name: 'enabled';
+					type: 'bool';
+				}
+			];
+		},
+		{
 			name: 'updateVault';
 			accounts: [
 				{
@@ -1547,6 +1578,37 @@ export const IDL: DriftVaults = {
 				{
 					name: 'delegate',
 					type: 'publicKey',
+				},
+			],
+		},
+		{
+			name: 'updateMarginTradingEnabled',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'driftUser',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [
+				{
+					name: 'enabled',
+					type: 'bool',
 				},
 			],
 		},
