@@ -33,7 +33,6 @@ yarn cli manager-request-withdraw --vault-address=<VAULT_ADDRESS> --amount=<SHAR
 
 Manager can trigger a profit share calculation (this looks up all `VaultDepositors` for a vault eligible for profit share and batch processes them):
 ```
-```
 yarn cli apply-profit-share-all --vault-address=<VAULT_ADDRESS>
 ```
 
