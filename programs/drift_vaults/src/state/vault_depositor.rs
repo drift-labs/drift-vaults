@@ -600,8 +600,11 @@ impl VaultDepositor {
             oracle_map,
         )?;
 
-        let margin_trading_ok =
-            validate_spot_margin_trading(drift_user, spot_market_map, oracle_map).is_ok();
+        let margin_trading_ok = match validate_spot_margin_trading(drift_user, spot_market_map, oracle_map) {
+            Ok(_) => true,
+            Err(DriftErrorCode::MarginTradingDisabled) => false,
+            Err(e) => return Err(e),
+        };
 
         if sufficient_collateral && margin_trading_ok {
             msg!(
