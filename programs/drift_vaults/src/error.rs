@@ -49,6 +49,8 @@ pub enum ErrorCode {
     SharesPercentTooLarge,
     #[msg("InvalidVaultDeposit")]
     InvalidVaultDeposit,
+    #[msg("OngoingLiquidation")]
+    OngoingLiquidation,
 }
 
 impl From<DriftErrorCode> for ErrorCode {

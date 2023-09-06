@@ -8,6 +8,8 @@ pub fn update_vault<'info>(
 ) -> Result<()> {
     let mut vault = ctx.accounts.vault.load_mut()?;
 
+    validate!(!vault.in_liquidation(), ErrorCode::OngoingLiquidation)?;
+
     if let Some(redeem_period) = params.redeem_period {
         validate!(
             redeem_period < vault.redeem_period,

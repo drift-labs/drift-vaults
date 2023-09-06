@@ -1470,6 +1470,11 @@ export type DriftVaults = {
 			code: 6020;
 			name: 'InvalidVaultDeposit';
 			msg: 'InvalidVaultDeposit';
+		},
+		{
+			code: 6021;
+			name: 'OngoingLiquidation';
+			msg: 'OngoingLiquidation';
 		}
 	];
 };
@@ -2946,6 +2951,11 @@ export const IDL: DriftVaults = {
 			code: 6020,
 			name: 'InvalidVaultDeposit',
 			msg: 'InvalidVaultDeposit',
+		},
+		{
+			code: 6021,
+			name: 'OngoingLiquidation',
+			msg: 'OngoingLiquidation',
 		},
 	],
 };
