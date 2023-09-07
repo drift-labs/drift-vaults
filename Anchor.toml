@@ -2,7 +2,7 @@
 seeds = false
 skip-lint = false
 [programs.localnet]
-drift_vaults = "VAULtLeTwwUxpwAw98E6XmgaDeQucKgV5UaiAuQ655D"
+drift_vaults = "vAuLTsyrvSfZRuRB3XgvkPwNGgYSs9YRYymVebLKoxR"
 
 [registry]
 url = "https://api.apr.dev"
