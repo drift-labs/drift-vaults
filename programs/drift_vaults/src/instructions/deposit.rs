@@ -2,7 +2,8 @@ use crate::constraints::{
     is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
 };
 use crate::cpi::{DepositCPI, TokenTransferCPI};
-use crate::{declare_vault_seeds, AccountMapProvider};
+use crate::error::ErrorCode;
+use crate::{declare_vault_seeds, validate, AccountMapProvider};
 use crate::{Vault, VaultDepositor};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
@@ -15,6 +16,9 @@ pub fn deposit<'info>(ctx: Context<'_, '_, '_, 'info, Deposit<'info>>, amount: u
     let clock = &Clock::get()?;
 
     let mut vault = ctx.accounts.vault.load_mut()?;
+
+    validate!(!vault.in_liquidation(), ErrorCode::OngoingLiquidation)?;
+
     let mut vault_depositor = ctx.accounts.vault_depositor.load_mut()?;
 
     let user = ctx.accounts.drift_user.load()?;

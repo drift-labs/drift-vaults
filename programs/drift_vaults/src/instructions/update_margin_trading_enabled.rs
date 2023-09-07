@@ -1,7 +1,8 @@
 use crate::constraints::{is_manager_for_vault, is_user_for_vault};
 use crate::cpi::UpdateUserMarginTradingEnabledCPI;
-use crate::declare_vault_seeds;
+use crate::error::ErrorCode;
 use crate::Vault;
+use crate::{declare_vault_seeds, validate};
 use anchor_lang::prelude::*;
 use drift::cpi::accounts::UpdateUser;
 use drift::program::Drift;
@@ -11,6 +12,11 @@ pub fn update_margin_trading_enabled<'info>(
     ctx: Context<'_, '_, '_, 'info, UpdateMarginTradingEnabled<'info>>,
     enabled: bool,
 ) -> Result<()> {
+    validate!(
+        !ctx.accounts.vault.load()?.in_liquidation(),
+        ErrorCode::OngoingLiquidation
+    )?;
+
     ctx.drift_update_user_margin_trading_enabled(enabled)?;
 
     Ok(())
