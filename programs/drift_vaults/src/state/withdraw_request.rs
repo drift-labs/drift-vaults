@@ -8,8 +8,11 @@ use drift::math::insurance::{
     vault_amount_to_if_shares as vault_amount_to_depositor_shares,
 };
 use drift::math::safe_math::SafeMath;
+use drift_vaults_macros::assert_no_hidden_padding;
 use solana_program::msg;
+use static_assertions::const_assert_eq;
 
+#[assert_no_hidden_padding]
 #[derive(Default, AnchorSerialize, AnchorDeserialize, Copy, Clone, Eq, PartialEq, Debug)]
 pub struct WithdrawRequest {
     /// request shares of vault withdraw

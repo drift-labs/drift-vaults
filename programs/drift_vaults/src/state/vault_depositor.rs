@@ -27,7 +27,9 @@ use drift::state::perp_market_map::PerpMarketMap;
 use drift::state::spot_market::SpotBalanceType;
 use drift::state::spot_market_map::SpotMarketMap;
 use drift::state::user::User;
+use drift_vaults_macros::assert_no_hidden_padding;
 
+#[assert_no_hidden_padding]
 #[account(zero_copy)]
 #[derive(Default, Eq, PartialEq, Debug)]
 #[repr(C)]
@@ -52,15 +54,15 @@ pub struct VaultDepositor {
     pub total_withdraws: u64,
     /// the token amount of gains the vault depositor has paid performance fees on
     pub cumulative_profit_share_amount: i64,
+    pub profit_share_fee_paid: u64,
     /// the exponent for vault_shares decimal places
     pub vault_shares_base: u32,
     pub padding1: u32,
-    pub profit_share_fee_paid: u64,
-    pub padding: [u8; 24],
+    pub padding: [u64; 8],
 }
 
 impl Size for VaultDepositor {
-    const SIZE: usize = 224 + 8;
+    const SIZE: usize = 264 + 8;
 }
 
 const_assert_eq!(
@@ -84,7 +86,7 @@ impl VaultDepositor {
             cumulative_profit_share_amount: 0,
             padding1: 0,
             profit_share_fee_paid: 0,
-            padding: [0u8; 24],
+            padding: [0u64; 8],
         }
     }
 

@@ -858,6 +858,10 @@ export type DriftVaults = {
 						type: 'i64';
 					},
 					{
+						name: 'profitShareFeePaid';
+						type: 'u64';
+					},
+					{
 						name: 'vaultSharesBase';
 						docs: ['the exponent for vault_shares decimal places'];
 						type: 'u32';
@@ -867,13 +871,9 @@ export type DriftVaults = {
 						type: 'u32';
 					},
 					{
-						name: 'profitShareFeePaid';
-						type: 'u64';
-					},
-					{
 						name: 'padding';
 						type: {
-							array: ['u8', 24];
+							array: ['u64', 8];
 						};
 					}
 				];
@@ -979,19 +979,6 @@ export type DriftVaults = {
 						type: 'u64';
 					},
 					{
-						name: 'sharesBase';
-						docs: [
-							'the base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)'
-						];
-						type: 'u32';
-					},
-					{
-						name: 'padding';
-						type: {
-							array: ['u8', 4];
-						};
-					},
-					{
 						name: 'managementFee';
 						docs: ['manager fee'];
 						type: 'i64';
@@ -1047,6 +1034,19 @@ export type DriftVaults = {
 						type: 'u64';
 					},
 					{
+						name: 'lastManagerWithdrawRequest';
+						type: {
+							defined: 'WithdrawRequest';
+						};
+					},
+					{
+						name: 'sharesBase';
+						docs: [
+							'the base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)'
+						];
+						type: 'u32';
+					},
+					{
 						name: 'profitShare';
 						docs: [
 							"percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION"
@@ -1078,15 +1078,9 @@ export type DriftVaults = {
 						type: 'bool';
 					},
 					{
-						name: 'padding1';
+						name: 'padding';
 						type: {
-							array: ['u8', 4];
-						};
-					},
-					{
-						name: 'lastManagerWithdrawRequest';
-						type: {
-							defined: 'WithdrawRequest';
+							array: ['u64', 8];
 						};
 					}
 				];
@@ -2339,6 +2333,10 @@ export const IDL: DriftVaults = {
 						type: 'i64',
 					},
 					{
+						name: 'profitShareFeePaid',
+						type: 'u64',
+					},
+					{
 						name: 'vaultSharesBase',
 						docs: ['the exponent for vault_shares decimal places'],
 						type: 'u32',
@@ -2348,13 +2346,9 @@ export const IDL: DriftVaults = {
 						type: 'u32',
 					},
 					{
-						name: 'profitShareFeePaid',
-						type: 'u64',
-					},
-					{
 						name: 'padding',
 						type: {
-							array: ['u8', 24],
+							array: ['u64', 8],
 						},
 					},
 				],
@@ -2460,19 +2454,6 @@ export const IDL: DriftVaults = {
 						type: 'u64',
 					},
 					{
-						name: 'sharesBase',
-						docs: [
-							'the base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)',
-						],
-						type: 'u32',
-					},
-					{
-						name: 'padding',
-						type: {
-							array: ['u8', 4],
-						},
-					},
-					{
 						name: 'managementFee',
 						docs: ['manager fee'],
 						type: 'i64',
@@ -2528,6 +2509,19 @@ export const IDL: DriftVaults = {
 						type: 'u64',
 					},
 					{
+						name: 'lastManagerWithdrawRequest',
+						type: {
+							defined: 'WithdrawRequest',
+						},
+					},
+					{
+						name: 'sharesBase',
+						docs: [
+							'the base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)',
+						],
+						type: 'u32',
+					},
+					{
 						name: 'profitShare',
 						docs: [
 							"percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION",
@@ -2559,15 +2553,9 @@ export const IDL: DriftVaults = {
 						type: 'bool',
 					},
 					{
-						name: 'padding1',
+						name: 'padding',
 						type: {
-							array: ['u8', 4],
-						},
-					},
-					{
-						name: 'lastManagerWithdrawRequest',
-						type: {
-							defined: 'WithdrawRequest',
+							array: ['u64', 8],
 						},
 					},
 				],

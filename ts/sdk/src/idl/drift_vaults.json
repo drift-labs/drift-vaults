@@ -870,6 +870,10 @@
             "type": "i64"
           },
           {
+            "name": "profitShareFeePaid",
+            "type": "u64"
+          },
+          {
             "name": "vaultSharesBase",
             "docs": [
               "the exponent for vault_shares decimal places"
@@ -881,15 +885,11 @@
             "type": "u32"
           },
           {
-            "name": "profitShareFeePaid",
-            "type": "u64"
-          },
-          {
             "name": "padding",
             "type": {
               "array": [
-                "u8",
-                24
+                "u64",
+                8
               ]
             }
           }
@@ -1013,22 +1013,6 @@
             "type": "u64"
           },
           {
-            "name": "sharesBase",
-            "docs": [
-              "the base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)"
-            ],
-            "type": "u32"
-          },
-          {
-            "name": "padding",
-            "type": {
-              "array": [
-                "u8",
-                4
-              ]
-            }
-          },
-          {
             "name": "managementFee",
             "docs": [
               "manager fee"
@@ -1106,6 +1090,19 @@
             "type": "u64"
           },
           {
+            "name": "lastManagerWithdrawRequest",
+            "type": {
+              "defined": "WithdrawRequest"
+            }
+          },
+          {
+            "name": "sharesBase",
+            "docs": [
+              "the base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)"
+            ],
+            "type": "u32"
+          },
+          {
             "name": "profitShare",
             "docs": [
               "percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION"
@@ -1141,18 +1138,12 @@
             "type": "bool"
           },
           {
-            "name": "padding1",
+            "name": "padding",
             "type": {
               "array": [
-                "u8",
-                4
+                "u64",
+                8
               ]
-            }
-          },
-          {
-            "name": "lastManagerWithdrawRequest",
-            "type": {
-              "defined": "WithdrawRequest"
             }
           }
         ]
