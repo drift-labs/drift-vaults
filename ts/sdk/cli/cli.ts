@@ -11,6 +11,7 @@ import {
     deposit,
     requestWithdraw,
     withdraw,
+    listDepositorsForVault,
 } from "./commands";
 
 import { Command, Option } from 'commander';
@@ -39,6 +40,11 @@ program
     .addOption(new Option("--vault-address <address>", "Address of the Vault to view").makeOptionMandatory(false))
     .addOption(new Option("--authority <vaultDepositorAuthority>", "VaultDepositor authority address").makeOptionMandatory(false))
     .action((opts) => viewVaultDepositor(program, opts));
+program
+    .command("list-vault-depositors")
+    .description("List VaultDepositors for a Vault")
+    .addOption(new Option("--vault-address <address>", "Address of the Vault to view").makeOptionMandatory(true))
+    .action((opts) => listDepositorsForVault(program, opts));
 program
     .command("manager-deposit")
     .description("Make a deposit to your vault")
@@ -96,4 +102,4 @@ program
     .addOption(new Option("--authority <vaultDepositorAuthority>", "VaultDepositor authority address").makeOptionMandatory(false))
     .action((opts) => withdraw(program, opts));
 
-program.parseAsync().then(() => {});
+program.parseAsync().then(() => { });

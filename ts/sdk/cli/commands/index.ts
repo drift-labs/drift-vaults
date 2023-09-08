@@ -10,3 +10,4 @@ export * from './initVaultDepositor';
 export * from './deposit';
 export * from './requestWithdraw';
 export * from './withdraw';
+export * from './listDepositorsForVault';
