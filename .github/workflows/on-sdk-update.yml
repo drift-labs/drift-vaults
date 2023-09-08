@@ -20,10 +20,15 @@ jobs:
       run: yarn install
 
     - name: Add specific version of sdk
-      run: yarn add @drift-labs/sdk@${{ github.event.client_payload.version }}
+      run: yarn add --dev @drift-labs/sdk@${{ github.event.client_payload.version }}
+
+    - name: Add specific version of sdk to peer dependencies
+      run: yarn add --peer @drift-labs/sdk@${{ github.event.client_payload.version }}
+      working-directory: ts/sdk
 
     - name: Build after new dependency
       run: yarn run build
+      working-directory: ts/sdk
 
     - name: Commit and push changes
       run: |
