@@ -4,7 +4,7 @@ import { EventEmitter } from 'events';
 import StrictEventEmitter from 'strict-event-emitter-types';
 
 export const VAULT_PROGRAM_ID = new PublicKey(
-	'VAULtLeTwwUxpwAw98E6XmgaDeQucKgV5UaiAuQ655D'
+	'vAuLTsyrvSfZRuRB3XgvkPwNGgYSs9YRYymVebLKoxR'
 );
 
 export class WithdrawUnit {

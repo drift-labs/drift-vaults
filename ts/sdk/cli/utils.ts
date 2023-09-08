@@ -103,7 +103,7 @@ export async function getCommandContext(program: Command, needToSign: boolean): 
 
     const provider = new AnchorProvider(connection, wallet, {});
     anchor.setProvider(provider);
-    const vaultProgramId = new PublicKey("VAULtLeTwwUxpwAw98E6XmgaDeQucKgV5UaiAuQ655D");
+    const vaultProgramId = new PublicKey("vAuLTsyrvSfZRuRB3XgvkPwNGgYSs9YRYymVebLKoxR");
     const vaultProgram = new anchor.Program(IDL, vaultProgramId, provider);
 
     const driftVault = new VaultClient({
