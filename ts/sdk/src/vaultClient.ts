@@ -169,6 +169,45 @@ export class VaultClient {
 			.rpc();
 	}
 
+	public async deleteVault(
+		vault: PublicKey,
+	): Promise<TransactionSignature> {
+		const vaultAccount = await this.program.account.vault.fetch(vault);
+
+		const user = new User({
+			driftClient: this.driftClient,
+			userAccountPublicKey: vaultAccount.user,
+		});
+		await user.subscribe();
+		const remainingAccounts = this.driftClient.getRemainingAccounts({
+			userAccounts: [user.getUserAccount()],
+			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
+		});
+
+		const tokenAccount = getTokenVaultAddressSync(
+			this.program.programId,
+			vault
+		);
+		const spotMarket = this.driftClient.getSpotMarketAccount(
+			vaultAccount.spotMarketIndex
+		);
+
+		return await this.program.methods
+			.deleteVault()
+			.accounts({
+				vault: vault,
+				tokenAccount,
+				driftSpotMarket: spotMarket.pubkey,
+				driftSpotMarketMint: spotMarket.mint,
+				driftUser: vaultAccount.user,
+				driftUserStats: vaultAccount.userStats,
+				driftState: await this.driftClient.getStatePublicKey(),
+				driftProgram: this.driftClient.program.programId,
+				manager: this.driftClient.wallet.publicKey,
+			})
+			.remainingAccounts(remainingAccounts)
+			.rpc();
+	}
 	/**
 	 * Updates the delegate address for a vault. The delegate address will be allowed to trade
 	 * on behalf of the vault.

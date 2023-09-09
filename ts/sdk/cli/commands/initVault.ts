@@ -27,27 +27,40 @@ export const initVault = async (program: Command, cmdOpts: OptionValues) => {
     }
     const spotPrecision = TEN.pow(new BN(spotMarket.decimals));
 
-    let newVaultName = cmdOpts.name;
-    if (!newVaultName) {
-        newVaultName = "my new vault";
-    }
-    const vaultNameBytes = encodeName(newVaultName!);
-    console.log(`Initializing a new vault named '${newVaultName}'`);
 
-    const initTx = await driftVault.initializeVault({
-        name: vaultNameBytes,
+    // throw new Error("[initVault] You're gonna want to find this message and complete the code");
+
+    // WARNING: fill in the below
+    // const initTx = await driftVault.initializeVault({
+    //     name: encodeName("my new vault"),
+    //     spotMarketIndex: 0,
+    //     redeemPeriod: new BN(3 * 60 * 60), // 3 hours
+    //     maxTokens: new BN(1000).mul(spotPrecision), // 1000 USDC cap
+    //     managementFee: PERCENTAGE_PRECISION.div(new BN(50)), // 2%
+    //     profitShare: PERCENTAGE_PRECISION.div(new BN(5)), // 20%
+    //     hurdleRate: 0,
+    //     permissioned: false,
+    //     minDepositAmount: new BN(10).mul(spotPrecision), // 10 USDC minimum deposit
+    // });
+    const vaultParams = {
+        name: encodeName("Supercharger Vault"),
         spotMarketIndex: 0,
-        redeemPeriod: new BN(3 * 60 * 60), // 3 hours
-        maxTokens: new BN(1000).mul(spotPrecision), // 1000 USDC cap
-        managementFee: PERCENTAGE_PRECISION.div(new BN(50)), // 2%
-        profitShare: PERCENTAGE_PRECISION.div(new BN(5)), // 20%
+        redeemPeriod: new BN(30 * 24 * 60 * 60), // 30 days
+        maxTokens: new BN(100_000).mul(spotPrecision),
+        managementFee: new BN(0), // 0%
+        profitShare: PERCENTAGE_PRECISION.mul(new BN(3)).div(new BN(10)), // 30%
         hurdleRate: 0,
-        permissioned: false,
-        minDepositAmount: new BN(10).mul(spotPrecision), // 10 USDC minimum deposit
-    });
+        permissioned: true,
+        minDepositAmount: new BN(1).mul(spotPrecision), // 1 USDC minimum deposit
+    }
+    console.log(`Initializing vault based on params':\n${JSON.stringify(vaultParams, null, 2)}'`);
+
+    // throw new Error("check it");
+
+    const initTx = await driftVault.initializeVault(vaultParams);
     console.log(`Initialized vault, tx: ${initTx}`);
 
-    const vaultAddress = getVaultAddressSync(VAULT_PROGRAM_ID, vaultNameBytes);
+    const vaultAddress = getVaultAddressSync(VAULT_PROGRAM_ID, vaultParams.name);
     console.log(`New vault address: ${vaultAddress}`);
 
     let delegate = cmdOpts.delegate;

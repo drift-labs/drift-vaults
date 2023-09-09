@@ -6,6 +6,10 @@ pub trait InitializeUserCPI {
     fn drift_initialize_user_stats(&self, name: [u8; 32], bump: u8) -> Result<()>;
 }
 
+pub trait DeleteUserCPI {
+    fn delete_user(&self, name: [u8; 32], bump: u8) -> Result<()>;
+}
+
 pub trait DepositCPI {
     fn drift_deposit(&self, amount: u64) -> Result<()>;
 }

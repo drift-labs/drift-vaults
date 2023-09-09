@@ -81,6 +81,67 @@ export type DriftVaults = {
 			];
 		},
 		{
+			name: 'deleteVault';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'tokenAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftSpotMarket';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftSpotMarketMint';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUser';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftState';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftProgram';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: true;
+					isSigner: true;
+				},
+				{
+					name: 'payer';
+					isMut: true;
+					isSigner: true;
+				},
+				{
+					name: 'rent';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [];
+		},
+		{
 			name: 'updateDelegate';
 			accounts: [
 				{
@@ -1469,6 +1530,11 @@ export type DriftVaults = {
 			code: 6021;
 			name: 'OngoingLiquidation';
 			msg: 'OngoingLiquidation';
+		},
+		{
+			code: 6022;
+			name: 'VaultCantBeDeleted';
+			msg: 'VaultCantBeDeleted';
 		}
 	];
 };
@@ -1554,6 +1620,67 @@ export const IDL: DriftVaults = {
 					},
 				},
 			],
+		},
+		{
+			name: 'deleteVault',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'tokenAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftSpotMarket',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftSpotMarketMint',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUser',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftState',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftProgram',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: true,
+					isSigner: true,
+				},
+				{
+					name: 'payer',
+					isMut: true,
+					isSigner: true,
+				},
+				{
+					name: 'rent',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [],
 		},
 		{
 			name: 'updateDelegate',
@@ -2944,6 +3071,11 @@ export const IDL: DriftVaults = {
 			code: 6021,
 			name: 'OngoingLiquidation',
 			msg: 'OngoingLiquidation',
+		},
+		{
+			code: 6022,
+			name: 'VaultCantBeDeleted',
+			msg: 'VaultCantBeDeleted',
 		},
 	],
 };

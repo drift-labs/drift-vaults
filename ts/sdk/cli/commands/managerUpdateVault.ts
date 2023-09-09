@@ -20,6 +20,10 @@ export const managerUpdateVault = async (program: Command, cmdOpts: OptionValues
         driftVault
     } = await getCommandContext(program, true);
 
+    // throw new Error("[updateVaultDepositor]: You're gonna want to find this message and complete the code");
+
+    // WARNING: fill in the below
+
     const newParams = {
         redeemPeriod: new BN(30 * 60 * 60 * 24), // 30 days
         maxTokens: null,

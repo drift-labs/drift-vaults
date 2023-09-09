@@ -27,7 +27,7 @@ program
 program
     .command("init")
     .description("Initialize a new vault")
-    .option("-n, --name <vaultName>", "Name of the vault to create", "my new vault")
+    .addOption(new Option("--delegate <delegate>", "Address of the delegate to trade the vault, default is vault manager").makeOptionMandatory(false))
     .action((opts) => initVault(program, opts));
 program
     .command("view-vault")

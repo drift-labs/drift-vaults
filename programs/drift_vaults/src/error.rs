@@ -51,6 +51,8 @@ pub enum ErrorCode {
     InvalidVaultDeposit,
     #[msg("OngoingLiquidation")]
     OngoingLiquidation,
+    #[msg("VaultCantBeDeleted")]
+    VaultCantBeDeleted,
 }
 
 impl From<DriftErrorCode> for ErrorCode {

@@ -23,6 +23,12 @@ pub mod drift_vaults {
         instructions::initialize_vault(ctx, params)
     }
 
+    pub fn delete_vault<'info>(
+        ctx: Context<'_, '_, '_, 'info, DeleteVault<'info>>,
+    ) -> Result<()> {
+        instructions::delete_vault(ctx)
+    }
+
     pub fn update_delegate<'info>(
         ctx: Context<'_, '_, '_, 'info, UpdateDelegate<'info>>,
         delegate: Pubkey,

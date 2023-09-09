@@ -70,6 +70,7 @@ describe('driftVaults', () => {
 			profitShare: ZERO,
 			hurdleRate: ZERO,
 			permissioned: false,
+			minDepositAmount: ZERO,
 		});
 
 		await adminClient.fetchAccounts();
@@ -216,5 +217,48 @@ describe('driftVaults', () => {
 		assert(user.delegate.equals(delegateKeyPair.publicKey));
 
 		await printTxLogs(provider.connection, txSig);
+	});
+
+	it('Delete Vault', async () => {
+		const newVaultName = "another vault";
+		await vaultClient.initializeVault({
+			name: encodeName(newVaultName),
+			spotMarketIndex: 0,
+			redeemPeriod: ZERO,
+			maxTokens: ZERO,
+			managementFee: ZERO,
+			profitShare: ZERO,
+			hurdleRate: ZERO,
+			permissioned: false,
+			minDepositAmount: ZERO,
+		});
+		const vaultAddress = getVaultAddressSync(program.programId, encodeName(newVaultName));
+		console.log(`New vault address: ${vaultAddress.toBase58()}`);
+
+		await adminClient.fetchAccounts();
+		assert(adminClient.getStateAccount().numberOfAuthorities.eq(new BN(2)));
+		assert(adminClient.getStateAccount().numberOfSubAccounts.eq(new BN(2)));
+
+		console.log("deleting vault");
+		await vaultClient.deleteVault(vaultAddress);
+
+		await adminClient.fetchAccounts();
+		assert(adminClient.getStateAccount().numberOfAuthorities.eq(new BN(1)));
+		assert(adminClient.getStateAccount().numberOfSubAccounts.eq(new BN(1)));
+
+		// await vaultClient.initializeVault({
+		// 	name: encodeName(newVaultName),
+		// 	spotMarketIndex: 0,
+		// 	redeemPeriod: ZERO,
+		// 	maxTokens: ZERO,
+		// 	managementFee: ZERO,
+		// 	profitShare: ZERO,
+		// 	hurdleRate: ZERO,
+		// 	permissioned: false,
+		// 	minDepositAmount: ZERO,
+		// });
+		// await adminClient.fetchAccounts();
+		// assert(adminClient.getStateAccount().numberOfAuthorities.eq(new BN(2)));
+		// assert(adminClient.getStateAccount().numberOfSubAccounts.eq(new BN(2)));
 	});
 });

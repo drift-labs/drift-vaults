@@ -43,3 +43,10 @@ pub fn is_user_stats_for_vault(
 ) -> anchor_lang::Result<bool> {
     Ok(vault_depositor.load()?.user_stats.eq(user_stats.key))
 }
+
+pub fn is_spot_market_index(
+    vault: &AccountLoader<Vault>,
+    spot_market_index: u16,
+) -> anchor_lang::Result<bool> {
+    Ok(vault.load()?.spot_market_index == spot_market_index)
+}
