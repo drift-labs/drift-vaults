@@ -31,15 +31,15 @@ pub fn is_delegate_for_vault(
 }
 
 pub fn is_user_for_vault(
-    vault_depositor: &AccountLoader<Vault>,
+    vault: &AccountLoader<Vault>,
     user_key: &Pubkey,
 ) -> anchor_lang::Result<bool> {
-    Ok(vault_depositor.load()?.user.eq(user_key))
+    Ok(vault.load()?.user.eq(user_key))
 }
 
 pub fn is_user_stats_for_vault(
-    vault_depositor: &AccountLoader<Vault>,
+    vault: &AccountLoader<Vault>,
     user_stats: &AccountInfo,
 ) -> anchor_lang::Result<bool> {
-    Ok(vault_depositor.load()?.user_stats.eq(user_stats.key))
+    Ok(vault.load()?.user_stats.eq(user_stats.key))
 }
