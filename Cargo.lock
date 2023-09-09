@@ -664,6 +664,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "drift-macros"
+version = "0.1.0"
+source = "git+https://github.com/drift-labs/drift-macros.git?rev=c57d87#c57d87e073d13d43f4d1fb09fe6822915a4ccc11"
+dependencies = [
+ "quote",
+ "syn 1.0.92",
+]
+
+[[package]]
 name = "drift-vaults"
 version = "0.1.0"
 dependencies = [
@@ -671,16 +680,8 @@ dependencies = [
  "anchor-spl",
  "bytemuck",
  "drift",
- "drift-vaults-macros",
+ "drift-macros",
  "static_assertions",
-]
-
-[[package]]
-name = "drift-vaults-macros"
-version = "1.0.0"
-dependencies = [
- "quote",
- "syn 1.0.92",
 ]
 
 [[package]]

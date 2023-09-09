@@ -19,4 +19,4 @@ anchor-spl = { git = "https://github.com/drift-labs/anchor.git", rev = "ed950fe"
 drift = { git = "https://github.com/drift-labs/protocol-v2.git", rev = "f7a21dd", features = ["cpi", "mainnet-beta"]}
 bytemuck = { version = "1.4.0" }
 static_assertions = "1.1.0"
-drift-vaults-macros = { path = "../../macros" }
+drift-macros = { git = "https://github.com/drift-labs/drift-macros.git", rev = "c57d87" }
