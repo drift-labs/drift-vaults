@@ -192,6 +192,27 @@ export class VaultClient {
 	}
 
 	/**
+	 * Updates the vault margin trading status.
+	 * @param vault vault address to update
+	 * @param enabeld whether to enable margin trading
+	 * @returns
+	 */
+	public async updateMarginTradingEnabled(
+		vault: PublicKey,
+		enabled: boolean
+	): Promise<TransactionSignature> {
+		const vaultAccount = await this.program.account.vault.fetch(vault);
+		return await this.program.methods
+			.updateMarginTradingEnabled(enabled)
+			.accounts({
+				vault: vault,
+				driftUser: vaultAccount.user,
+				driftProgram: this.driftClient.program.programId,
+			})
+			.rpc();
+	}
+
+	/**
 	 *
 	 * @param vault vault address to deposit to
 	 * @param amount amount to deposit

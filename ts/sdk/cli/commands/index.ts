@@ -11,3 +11,4 @@ export * from './deposit';
 export * from './requestWithdraw';
 export * from './withdraw';
 export * from './listDepositorsForVault';
+export * from './managerUpdateMarginTradingEnabled';

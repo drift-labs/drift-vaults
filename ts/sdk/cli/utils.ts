@@ -1,5 +1,5 @@
-import { DriftClient, PublicKey, Wallet, loadKeypair } from "@drift-labs/sdk";
-import { Vault, VaultClient, decodeName } from "../src";
+import { DriftClient, Wallet, loadKeypair } from "@drift-labs/sdk";
+import { VAULT_PROGRAM_ID, Vault, VaultClient, decodeName } from "../src";
 import { Command } from "commander";
 import { Connection, Keypair } from "@solana/web3.js";
 import { AnchorProvider } from "@coral-xyz/anchor";
@@ -103,7 +103,7 @@ export async function getCommandContext(program: Command, needToSign: boolean): 
 
     const provider = new AnchorProvider(connection, wallet, {});
     anchor.setProvider(provider);
-    const vaultProgramId = new PublicKey("vAuLTsyrvSfZRuRB3XgvkPwNGgYSs9YRYymVebLKoxR");
+    const vaultProgramId = VAULT_PROGRAM_ID;
     const vaultProgram = new anchor.Program(IDL, vaultProgramId, provider);
 
     const driftVault = new VaultClient({

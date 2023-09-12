@@ -12,6 +12,7 @@ import {
     requestWithdraw,
     withdraw,
     listDepositorsForVault,
+    managerUpdateMarginTradingEnabled
 } from "./commands";
 
 import { Command, Option } from 'commander';
@@ -62,6 +63,12 @@ program
     .description("Update vault params for a manager")
     .addOption(new Option("--vault-address <address>", "Address of the vault to view").makeOptionMandatory(true))
     .action((opts) => managerUpdateVault(program, opts));
+program
+    .command("manager-update-margin-trading-enabled")
+    .description("Update vault margin trading permissiones a manager")
+    .addOption(new Option("--vault-address <address>", "Address of the vault to view").makeOptionMandatory(true))
+    .addOption(new Option("--enabled <enabled>", "true to enable, false to disable").makeOptionMandatory(true))
+    .action((opts) => managerUpdateMarginTradingEnabled(program, opts));
 program
     .command("manager-withdraw")
     .description("Make a withdraw from your vault")
