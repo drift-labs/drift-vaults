@@ -109,4 +109,6 @@ program
     .addOption(new Option("--authority <vaultDepositorAuthority>", "VaultDepositor authority address").makeOptionMandatory(false))
     .action((opts) => withdraw(program, opts));
 
-program.parseAsync().then(() => { });
+program.parseAsync().then(() => {
+    process.exit(0);
+});
