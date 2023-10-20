@@ -25,5 +25,4 @@ export const requestWithdraw = async (program: Command, cmdOpts: OptionValues) =
 
     const tx = await driftVault.requestWithdraw(vaultDepositorAddress, withdrawAmountBN, WithdrawUnit.SHARES);
     console.log(`Requsted to withdraw ${cmdOpts.amount} shares from the vault: ${tx}`);
-    console.log("Done!");
 };

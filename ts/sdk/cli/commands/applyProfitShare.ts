@@ -36,13 +36,10 @@ export const applyProfitShare = async (program: Command, cmdOpts: OptionValues) 
     }
     console.log(`Cranking ${ixChunks.length} of ${chunkSize} depositors at a time...`);
 
-    const txs = await Promise.all(ixChunks.map((ixs) => driftVault.createAndSendTxn(ixs)));
+    const txs = await Promise.all(ixChunks.map((ixs) => driftVault.createAndSendTxn(ixs, {
+        units: 2_000_000
+    })));
     for (const tx of txs) {
         console.log(`Crank tx: https://solscan.io/tx/${tx}`);
     }
-
-
-    // const ix = await driftVault.getApplyProfitShareIx(vaultAddress, );
-    // console.log(`Withrew ${cmdOpts.shares} shares as vault manager: ${tx}`);
-    console.log("Done!");
 };

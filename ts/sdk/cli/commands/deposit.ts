@@ -31,5 +31,4 @@ export const deposit = async (program: Command, cmdOpts: OptionValues) => {
     console.log(`depositing: ${depositBN.toString()}`);
     const tx = await driftVault.deposit(vaultDepositorAddress, depositBN);
     console.log(`Deposited ${cmdOpts.amount} to vault as manager: ${tx}`);
-    console.log("Done!");
 };

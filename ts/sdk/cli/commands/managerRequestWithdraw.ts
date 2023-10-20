@@ -23,5 +23,4 @@ export const managerRequestWithdraw = async (program: Command, cmdOpts: OptionVa
 
     const tx = await driftVault.managerRequestWithdraw(vaultAddress, new BN(cmdOpts.shares), WithdrawUnit.SHARES);
     console.log(`Requested to withraw ${cmdOpts.shares} shares as vault manager: https://solscan.io/tx/${tx}`);
-    console.log("Done!");
 };

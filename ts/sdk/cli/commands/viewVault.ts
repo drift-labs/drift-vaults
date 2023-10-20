@@ -18,13 +18,13 @@ export const viewVault = async (program: Command, cmdOpts: OptionValues) => {
 
     const {
         driftVault
-    } = await getCommandContext(program, true);
+    } = await getCommandContext(program, false);
 
     const vault = await driftVault.getVault(address);
-    printVault(vault);
+    const { managerSharePct } = printVault(vault);
     const vaultEquity = await driftVault.calculateVaultEquity({
         vault,
     });
-    console.log(`vaultEquity: ${convertToNumber(vaultEquity, QUOTE_PRECISION)}`);
-    console.log("Done!");
+    console.log(`vaultEquity: $${convertToNumber(vaultEquity, QUOTE_PRECISION)}`);
+    console.log(`manager share: $${managerSharePct * convertToNumber(vaultEquity, QUOTE_PRECISION)}`);
 };

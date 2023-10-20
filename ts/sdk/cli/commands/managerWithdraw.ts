@@ -21,5 +21,4 @@ export const managerWithdraw = async (program: Command, cmdOpts: OptionValues) =
 
     const tx = await driftVault.managerWithdraw(vaultAddress);
     console.log(`Withrew as vault manager: https://solscan.io/tx/${tx}`);
-    console.log("Done!");
 };
