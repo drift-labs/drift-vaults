@@ -1,5 +1,6 @@
 export * from './initVault';
 export * from './viewVault';
+export * from './deriveVaultAddress';
 export * from './managerDeposit';
 export * from './managerRequestWithdraw';
 export * from './managerCancelWithdraw';

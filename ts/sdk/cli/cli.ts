@@ -1,6 +1,7 @@
 import {
     initVault,
     viewVault,
+    deriveVaultAddress,
     managerDeposit,
     managerRequestWithdraw,
     managerCancelWithdraw,
@@ -43,6 +44,11 @@ program
     .description("View Vault account details")
     .addOption(new Option("--vault-address <address>", "Address of the Vault to view").makeOptionMandatory(true))
     .action((opts) => viewVault(program, opts));
+program
+    .command("derive-vault-address")
+    .description("Derives the vault address from its name")
+    .addOption(new Option("--vault-name <string>", "Name of the vault").makeOptionMandatory(true))
+    .action((opts) => deriveVaultAddress(program, opts));
 program
     .command("view-vault-depositor")
     .description("View VaultDepositor account details")
