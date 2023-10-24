@@ -7,7 +7,7 @@
     "lib": "lib"
   },
   "peerDependencies": {
-    "@drift-labs/sdk": "2.42.0-beta.15"
+    "@drift-labs/sdk": "2.42.0-beta.16"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.26.0",
