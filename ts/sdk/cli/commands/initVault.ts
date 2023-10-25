@@ -16,7 +16,6 @@ import {
 } from "../../src";
 import { getCommandContext } from "../utils";
 import { VAULT_PROGRAM_ID } from "../../src/types/types";
-import { red } from "bn.js";
 
 export const initVault = async (program: Command, cmdOpts: OptionValues) => {
     const {
@@ -24,7 +23,7 @@ export const initVault = async (program: Command, cmdOpts: OptionValues) => {
         driftVault
     } = await getCommandContext(program, true);
 
-    let newVaultName = cmdOpts.name;
+    const newVaultName = cmdOpts.name;
     if (!newVaultName) {
         throw new Error("Must provide vault name with -n/--name");
     }
@@ -119,7 +118,7 @@ export const initVault = async (program: Command, cmdOpts: OptionValues) => {
         readline.close();
         process.exit(0);
     }
-    console.log('Creating vault...')
+    console.log('Creating vault...');
 
     const initTx = await driftVault.initializeVault({
         name: vaultNameBytes,

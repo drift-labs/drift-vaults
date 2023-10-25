@@ -51,7 +51,7 @@ export function printVault(vault: Vault) {
     return {
         managerShares,
         managerSharePct,
-    }
+    };
 }
 
 export function printVaultDepositor(vaultDepositor) {

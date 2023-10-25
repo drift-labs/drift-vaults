@@ -51,6 +51,8 @@ pub enum ErrorCode {
     InvalidVaultDeposit,
     #[msg("OngoingLiquidation")]
     OngoingLiquidation,
+    #[msg("InvalidInsuranceFundSize")]
+    InvalidAddInsuranceFundSize,
 }
 
 impl From<DriftErrorCode> for ErrorCode {

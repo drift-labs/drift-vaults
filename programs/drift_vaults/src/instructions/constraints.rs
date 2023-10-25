@@ -1,6 +1,7 @@
 use crate::{Vault, VaultDepositor};
 
 use anchor_lang::prelude::*;
+use drift::state::spot_market::SpotMarket;
 
 pub fn is_vault_for_vault_depositor(
     vault_depositor: &AccountLoader<VaultDepositor>,
@@ -42,4 +43,15 @@ pub fn is_user_stats_for_vault(
     user_stats: &AccountInfo,
 ) -> anchor_lang::Result<bool> {
     Ok(vault_depositor.load()?.user_stats.eq(user_stats.key))
+}
+
+pub fn is_spot_market_for_vault(
+    vault_depositor: &AccountLoader<Vault>,
+    drift_spot_market: &AccountLoader<SpotMarket>,
+    market_index: u16,
+) -> anchor_lang::Result<bool> {
+    Ok(
+        (&vault_depositor.load()?.spot_market_index).eq(&drift_spot_market.load()?.market_index)
+            && (&vault_depositor.load()?.spot_market_index).eq(&market_index),
+    )
 }
