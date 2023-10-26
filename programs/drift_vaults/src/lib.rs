@@ -159,4 +159,10 @@ pub mod drift_vaults {
     ) -> Result<()> {
         instructions::remove_insurance_fund_stake(ctx, market_index, amount)
     }
+
+    pub fn initialize_competitor<'info>(
+        ctx: Context<'_, '_, '_, 'info, InitializeCompetitor<'info>>,
+    ) -> Result<()> {
+        instructions::initialize_competitor(ctx)
+    }
 }

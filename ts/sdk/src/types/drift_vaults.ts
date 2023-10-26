@@ -1106,6 +1106,57 @@ export type DriftVaults = {
 					type: 'u64';
 				}
 			];
+		},
+		{
+			name: 'initializeCompetitor';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'payer';
+					isMut: true;
+					isSigner: true;
+				},
+				{
+					name: 'rent';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'systemProgram';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'competitor';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'competition';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftCompetitionsProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [];
 		}
 	];
 	accounts: [
@@ -2903,6 +2954,57 @@ export const IDL: DriftVaults = {
 					type: 'u64',
 				},
 			],
+		},
+		{
+			name: 'initializeCompetitor',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'payer',
+					isMut: true,
+					isSigner: true,
+				},
+				{
+					name: 'rent',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'systemProgram',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'competitor',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'competition',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftCompetitionsProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [],
 		},
 	],
 	accounts: [

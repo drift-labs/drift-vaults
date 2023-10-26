@@ -51,3 +51,7 @@ pub trait RequestRemoveInsuranceFundStakeCPI {
 pub trait RemoveInsuranceFundStakeCPI {
     fn drift_remove_insurance_fund_stake(&self, market_index: u16) -> Result<()>;
 }
+
+pub trait InitializeCompetitorCPI {
+    fn drift_competition_initialize_competitor(&self) -> Result<()>;
+}
