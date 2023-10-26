@@ -25,7 +25,7 @@ mod vault_fcn {
         assert_eq!(vault.manager_total_withdraws, 0);
 
         vault
-            .manager_request_withdraw((amount - 1) as u64, WithdrawUnit::Token, vault_equity, now)
+            .manager_request_withdraw(amount - 1, WithdrawUnit::Token, vault_equity, now)
             .unwrap();
 
         assert_eq!(vault.user_shares, 0);
@@ -179,7 +179,7 @@ mod vault_fcn {
         assert_eq!(vault_manager_amount, 100000000);
 
         vault
-            .manager_request_withdraw(amount as u64, WithdrawUnit::Token, vault_equity, now)
+            .manager_request_withdraw(amount, WithdrawUnit::Token, vault_equity, now)
             .unwrap();
 
         let withdrew = vault.manager_withdraw(vault_equity, now).unwrap();
@@ -279,7 +279,7 @@ mod vault_fcn {
 
         now += 100000;
         vault
-            .manager_request_withdraw(amount as u64, WithdrawUnit::Token, vault_equity, now)
+            .manager_request_withdraw(amount, WithdrawUnit::Token, vault_equity, now)
             .unwrap();
         let withdrew = vault.manager_withdraw(vault_equity, now).unwrap();
         assert_eq!(withdrew, amount);
@@ -324,7 +324,7 @@ mod vault_fcn {
 
         assert_eq!(vault_manager_amount, 100000000);
         vault
-            .manager_request_withdraw(amount as u64, WithdrawUnit::Token, vault_equity, now)
+            .manager_request_withdraw(amount, WithdrawUnit::Token, vault_equity, now)
             .unwrap();
 
         let withdrew = vault.manager_withdraw(vault_equity, now).unwrap();
@@ -388,7 +388,7 @@ mod vault_fcn {
 
         assert_eq!(vault_manager_amount, 100001999);
         vault
-            .manager_request_withdraw(amount as u64, WithdrawUnit::Token, vault_equity, now)
+            .manager_request_withdraw(amount, WithdrawUnit::Token, vault_equity, now)
             .unwrap();
 
         let withdrew = vault.manager_withdraw(vault_equity, now).unwrap();
@@ -475,7 +475,7 @@ mod vault_fcn {
         assert_eq!(vault_manager_amount, 300002849); //$300??
 
         vault
-            .manager_request_withdraw(amount as u64, WithdrawUnit::Token, vault_equity, now)
+            .manager_request_withdraw(amount, WithdrawUnit::Token, vault_equity, now)
             .unwrap();
         assert_eq!(amount, vault.last_manager_withdraw_request.value);
 

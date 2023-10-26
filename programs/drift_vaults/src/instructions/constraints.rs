@@ -51,7 +51,7 @@ pub fn is_spot_market_for_vault(
     market_index: u16,
 ) -> anchor_lang::Result<bool> {
     Ok(
-        (&vault_depositor.load()?.spot_market_index).eq(&drift_spot_market.load()?.market_index)
-            && (&vault_depositor.load()?.spot_market_index).eq(&market_index),
+        (vault_depositor.load()?.spot_market_index).eq(&drift_spot_market.load()?.market_index)
+            && (vault_depositor.load()?.spot_market_index).eq(&market_index),
     )
 }
