@@ -129,17 +129,17 @@ jobs:
           npm install ts-mocha -g
           npm install --global mocha
 
-      - name: build sdk
-        run: |
-          yarn
-          tsc
-        working-directory: ts/sdk
-
       - name: build competitions sdk
         run: |
           yarn
           yarn build
         working-directory: drift-competitions/ts/sdk
+
+      - name: build sdk
+        run: |
+          yarn
+          tsc
+        working-directory: ts/sdk
 
       - name: run anchor tests
         run: anchor test

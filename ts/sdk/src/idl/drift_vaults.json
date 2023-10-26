@@ -1651,11 +1651,6 @@
       "code": 6021,
       "name": "OngoingLiquidation",
       "msg": "OngoingLiquidation"
-    },
-    {
-      "code": 6022,
-      "name": "InvalidAddInsuranceFundSize",
-      "msg": "InvalidInsuranceFundSize"
     }
   ],
   "metadata": {
