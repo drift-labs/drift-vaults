@@ -70,10 +70,13 @@ describe('driftVaults', () => {
 		await adminClient.initialize(usdcMint.publicKey, false);
 		await adminClient.subscribe();
 		await initializeQuoteSpotMarket(adminClient, usdcMint.publicKey);
+		bulkAccountLoader.startPolling();
+		await bulkAccountLoader.load();
 	});
 
 	after(async () => {
 		await adminClient.unsubscribe();
+		bulkAccountLoader.stopPolling();
 	});
 
 	it('Initialize Vault', async () => {
@@ -162,7 +165,6 @@ describe('driftVaults', () => {
 				// userTokenAccount: userUSDCAccount.publicKey,
 				vault,
 				vaultDepositor,
-				// vaultTokenAccount: vaultAccount.tokenAccount as anchor.Address,
 				driftUser: vaultAccount.user,
 				driftUserStats: vaultAccount.userStats,
 				driftState: await adminClient.getStatePublicKey(),
