@@ -1,4 +1,3 @@
-pub use add_insurance_fund_stake::*;
 pub use apply_profit_share::*;
 pub use cancel_withdraw_request::*;
 pub use deposit::*;
@@ -12,8 +11,6 @@ pub use manager_cancel_withdraw_request::*;
 pub use manager_deposit::*;
 pub use manager_request_withdraw::*;
 pub use manager_withdraw::*;
-pub use remove_insurance_fund_stake::*;
-pub use request_remove_insurance_fund_stake::*;
 
 pub use request_withdraw::*;
 pub use reset_delegate::*;
@@ -22,7 +19,6 @@ pub use update_margin_trading_enabled::*;
 pub use update_vault::*;
 pub use withdraw::*;
 
-mod add_insurance_fund_stake;
 mod apply_profit_share;
 mod cancel_withdraw_request;
 pub mod constraints;
@@ -37,8 +33,6 @@ mod manager_cancel_withdraw_request;
 mod manager_deposit;
 mod manager_request_withdraw;
 mod manager_withdraw;
-mod remove_insurance_fund_stake;
-mod request_remove_insurance_fund_stake;
 mod request_withdraw;
 mod reset_delegate;
 mod update_delegate;

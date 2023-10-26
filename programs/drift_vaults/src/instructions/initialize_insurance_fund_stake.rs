@@ -5,7 +5,6 @@ use crate::Vault;
 use anchor_lang::prelude::*;
 use drift::cpi::accounts::InitializeInsuranceFundStake as DriftInitializeInsuranceFundStake;
 use drift::program::Drift;
-use drift::state::insurance_fund_stake::InsuranceFundStake;
 use drift::state::spot_market::SpotMarket;
 
 pub fn initialize_insurance_fund_stake<'info>(
@@ -34,12 +33,14 @@ pub struct InitializeInsuranceFundStake<'info> {
         constraint = is_spot_market_for_vault(&vault, &drift_spot_market, market_index)?,
     )]
     pub drift_spot_market: AccountLoader<'info, SpotMarket>,
+    /// CHECK: checked in drift cpi
     #[account(
         mut,
         seeds = [b"insurance_fund_stake", vault.key().as_ref(), market_index.to_le_bytes().as_ref()],
-        bump
+        bump,
+        seeds::program = drift_program.key(),
     )]
-    pub insurance_fund_stake: AccountLoader<'info, InsuranceFundStake>,
+    pub insurance_fund_stake: AccountInfo<'info>,
     #[account(
         mut,
         constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?

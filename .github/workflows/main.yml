@@ -14,7 +14,7 @@ defaults:
 env:
   CARGO_TERM_COLOR: always
   RUST_TOOLCHAIN: 1.67.0
-  SOLANA_VERSION: '1.14.7'
+  SOLANA_VERSION: "1.14.7"
 
 jobs:
   fmt-clippy:
@@ -59,8 +59,8 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v2
         with:
-          node-version: '16.x'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: "16.x"
+          registry-url: "https://registry.npmjs.org"
       - name: Install yarn
         run: yarn
       - name: Run prettier
@@ -72,8 +72,8 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v2
         with:
-          node-version: '16.x'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: "16.x"
+          registry-url: "https://registry.npmjs.org"
       - name: Install yarn
         run: yarn
       - name: Run lint
@@ -82,7 +82,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout main
+        uses: actions/checkout@v3
+
+      - name: Checkout competitions
+        uses: actions/checkout@v3
+        with:
+          repository: drift-labs/drift-competitions
+          ssh-key: ${{ secrets.DRIFT_COMMON_DEPLOY_KEY }}
+          path: drift-competitions
+          submodules: recursive
 
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
@@ -93,7 +102,7 @@ jobs:
       - name: Cache build artefacts
         uses: Swatinem/rust-cache@v1
         with:
-          cache-on-failure: 'true'
+          cache-on-failure: "true"
 
       - uses: ./.github/actions/setup-solana/
 
@@ -103,8 +112,8 @@ jobs:
       - name: Setup node
         uses: actions/setup-node@v2
         with:
-          node-version: '16.x'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: "16.x"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Setup yarn
         run: npm install -g yarn
@@ -121,7 +130,16 @@ jobs:
           npm install --global mocha
 
       - name: build sdk
-        run: cd ts/sdk/ && yarn && tsc && cd ../..
+        run: |
+          yarn
+          tsc
+        working-directory: ts/sdk
+
+      - name: build competitions sdk
+        run: |
+          yarn
+          yarn build
+        working-directory: drift-competitions/ts/sdk
 
       - name: run anchor tests
         run: anchor test

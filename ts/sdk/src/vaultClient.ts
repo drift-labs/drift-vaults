@@ -1,6 +1,8 @@
 import {
 	BN,
 	DriftClient,
+	encodeName,
+	getInsuranceFundStakeAccountPublicKey,
 	getUserAccountPublicKey,
 	getUserAccountPublicKeySync,
 	getUserStatsAccountPublicKey,
@@ -8,6 +10,11 @@ import {
 } from '@drift-labs/sdk';
 import { BorshAccountsCoder, Program, ProgramAccount } from '@coral-xyz/anchor';
 import { DriftVaults } from './types/drift_vaults';
+import {
+	getCompetitionAddressSync,
+	getCompetitorAddressSync,
+} from '../../../drift-competitions/ts/sdk/src/addresses';
+import { CompetitionsClient } from '../../../drift-competitions/ts/sdk/src/competitionClient';
 import {
 	getTokenVaultAddressSync,
 	getVaultAddressSync,
@@ -921,5 +928,74 @@ export class VaultClient {
 		);
 
 		return txSig;
+	}
+
+	/**
+	 * Initializes an insurance fund stake for the vault.
+	 * @param vault vault address to update
+	 * @param spotMarketIndex spot market index of the insurance fund stake
+	 * @returns
+	 */
+	public async initializeInsuranceFundStake(
+		vault: PublicKey,
+		spotMarketIndex: number
+	): Promise<TransactionSignature> {
+		const vaultAccount = await this.program.account.vault.fetch(vault);
+
+		const ifStakeAccountPublicKey = getInsuranceFundStakeAccountPublicKey(
+			this.driftClient.program.programId,
+			vault,
+			spotMarketIndex
+		);
+
+		return await this.program.methods
+			.initializeInsuranceFundStake(spotMarketIndex)
+			.accounts({
+				vault: vault,
+				driftSpotMarket:
+					this.driftClient.getSpotMarketAccount(spotMarketIndex).pubkey,
+				insuranceFundStake: ifStakeAccountPublicKey,
+				driftUserStats: vaultAccount.userStats,
+				driftState: await this.driftClient.getStatePublicKey(),
+				driftProgram: this.driftClient.program.programId,
+			})
+			.rpc();
+	}
+
+	/**
+	 * Initializes a DriftCompetitions Competitor account for the vault.
+	 * @param vault vault address to initialize Competitor for
+	 * @param competitionName name of the competition to initialize for
+	 * @returns
+	 */
+	public async initializeCompetitor(
+		vault: PublicKey,
+		competitionsClient: CompetitionsClient,
+		competitionName: string
+	): Promise<TransactionSignature> {
+		const vaultAccount = await this.program.account.vault.fetch(vault);
+
+		const encodedName = encodeName(competitionName);
+
+		const competitionAddress = getCompetitionAddressSync(
+			competitionsClient.program.programId,
+			encodedName
+		);
+		const competitorAddress = getCompetitorAddressSync(
+			competitionsClient.program.programId,
+			competitionAddress,
+			vault
+		);
+
+		return await this.program.methods
+			.initializeCompetitor()
+			.accounts({
+				vault: vault,
+				competitor: competitorAddress,
+				competition: competitionAddress,
+				driftUserStats: vaultAccount.userStats,
+				driftCompetitionsProgram: competitionsClient.program.programId,
+			})
+			.rpc();
 	}
 }

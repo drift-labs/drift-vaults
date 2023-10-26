@@ -6,8 +6,6 @@ use anchor_lang::prelude::*;
 use drift::state::user::UserStats;
 use drift_competitions::cpi::accounts::InitializeCompetitor as DriftCompetitionInitializeCompetitor;
 use drift_competitions::program::DriftCompetitions;
-// use drift_competitions::state::{Competition, Competitor};
-use drift_competitions::state::{Competition, Competitor};
 
 pub fn initialize_competitor<'info>(
     ctx: Context<'_, '_, '_, 'info, InitializeCompetitor<'info>>,
@@ -17,7 +15,6 @@ pub fn initialize_competitor<'info>(
 }
 
 #[derive(Accounts)]
-#[instruction(market_index: u16)]
 pub struct InitializeCompetitor<'info> {
     #[account(
         mut,
@@ -33,11 +30,14 @@ pub struct InitializeCompetitor<'info> {
     #[account(
         mut,
         seeds = [b"competitor",  competition.key().as_ref(), vault.key().as_ref()],
-        bump
+        bump,
+        seeds::program = drift_competitions_program.key(),
     )]
-    pub competitor: AccountLoader<'info, Competitor>,
+    /// CHECK: checked in drift cpi
+    pub competitor: AccountInfo<'info>,
     #[account(mut)]
-    pub competition: AccountLoader<'info, Competition>,
+    /// CHECK: checked in drift cpi
+    pub competition: AccountInfo<'info>,
     #[account(
         mut,
         constraint = is_user_stats_for_vault(&vault, &drift_user_stats.to_account_info())?
