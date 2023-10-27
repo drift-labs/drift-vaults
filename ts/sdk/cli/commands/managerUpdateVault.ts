@@ -81,7 +81,7 @@ export const managerUpdateVault = async (program: Command, cmdOpts: OptionValues
     const profitShareAfter = profitShareNumber !== null ? `${profitShareNumber / PERCENTAGE_PRECISION.toNumber() * 100.0}%` : 'unchanged';
     console.log(`  ProfitShare:            ${profitShareBefore}% -> ${profitShareAfter}`);
     const permissionedBefore = vault.permissioned;
-    const permissionedAfter = permissioned !== null ? permissioned : 'unchanged '
+    const permissionedAfter = permissioned !== null ? permissioned : 'unchanged ';
     console.log(`  Permissioned:           ${permissionedBefore} -> ${permissionedAfter}`);
 
     const readline = require('readline').createInterface({

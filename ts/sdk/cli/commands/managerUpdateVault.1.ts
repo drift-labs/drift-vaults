@@ -4,7 +4,10 @@ import {
     Command
 } from "commander";
 import { getCommandContext } from "../utils";
-import { BN, TEN } from "@drift-labs/sdk";
+import {
+    BN,
+    // TEN
+} from "@drift-labs/sdk";
 
 
 export const managerUpdateVault = async (program: Command, cmdOpts: OptionValues) => {
@@ -31,8 +34,8 @@ export const managerUpdateVault = async (program: Command, cmdOpts: OptionValues
     if (!spotMarket) {
         throw new Error("No spot market found");
     }
-    const spotPrecision = TEN.pow(new BN(spotMarket.decimals));
-    const spotMarketName = decodeName(spotMarket.name);
+    // const spotPrecision = TEN.pow(new BN(spotMarket.decimals));
+    // const spotMarketName = decodeName(spotMarket.name);
 
     let redeemPeriodSec = cmdOpts.redeemPeriod;
     if (!redeemPeriodSec) {
@@ -45,21 +48,21 @@ export const managerUpdateVault = async (program: Command, cmdOpts: OptionValues
         maxTokens = "0";
     }
     maxTokens = parseInt(maxTokens);
-    const maxTokensBN = new BN(maxTokens).mul(spotPrecision);
+    // const maxTokensBN = new BN(maxTokens).mul(spotPrecision);
 
     let managementFee = cmdOpts.managementFee;
     if (!managementFee) {
         managementFee = "0";
     }
     managementFee = parseInt(managementFee);
-    const managementFeeBN = new BN(managementFee).mul(PERCENTAGE_PRECISION).div(new BN(100));
+    // const managementFeeBN = new BN(managementFee).mul(PERCENTAGE_PRECISION).div(new BN(100));
 
     let profitShare = cmdOpts.profitShare;
     if (!profitShare) {
         profitShare = "0";
     }
     profitShare = parseInt(profitShare);
-    const profitShareBN = new BN(profitShare).mul(PERCENTAGE_PRECISION).div(new BN(100));
+    // const profitShareBN = new BN(profitShare).mul(PERCENTAGE_PRECISION).div(new BN(100));
 
     let permissioned = cmdOpts.permissioned;
     if (!permissioned) {
@@ -71,7 +74,7 @@ export const managerUpdateVault = async (program: Command, cmdOpts: OptionValues
         minDepositAmount = "0";
     }
     minDepositAmount = parseInt(minDepositAmount);
-    const minDepositAmountBN = new BN(minDepositAmount).mul(spotPrecision);
+    // const minDepositAmountBN = new BN(minDepositAmount).mul(spotPrecision);
 
     // null means unchanged
     const newParams = {
