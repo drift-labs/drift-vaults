@@ -31,7 +31,7 @@ import {
 	CompetitionsClient,
 	getCompetitionAddressSync,
 	getCompetitorAddressSync,
-} from '../drift-competitions/ts/sdk/src';
+} from '@drift-labs/competitions-sdk/src';
 
 describe('driftVaults', () => {
 	// Configure the client to use the local cluster.

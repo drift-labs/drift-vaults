@@ -1,39 +1,68 @@
 name: Deploy on sdk update
 on:
+  push:
+    branches:
+      - master
   repository_dispatch:
-    types: [sdk-update]
+    types: [competitions-sdk-update]
 
 jobs:
   update-sdk:
     runs-on: ubuntu-latest
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Setup node
-      uses: actions/setup-node@v2
-      with:
-        node-version: '16.x'
-        registry-url: 'https://registry.npmjs.org'
+      - name: Setup node
+        uses: actions/setup-node@v2
+        with:
+          node-version: "16.x"
+          registry-url: "https://registry.npmjs.org"
 
-    - name: Install dependencies
-      run: yarn install
+      - name: Determine sdk version
+        id: determine-sdk-version
+        run: |
+          if [[ "${{ github.event_name }}" == "repository_dispatch" ]]; then
+            echo "DRIFT_SDK_VERSION=${{ github.event.client_payload.version }}" >> $GITHUB_ENV
+            echo "COMPETITIONS_SDK_VERSION=${{ github.event.client_payload.version }}" >> $GITHUB_ENV
+          else
+            # Get the current version of sdk used in package.json
+            CURRENT_DRIFT_SDK_VERSION=$(node -e "console.log(require('./ts/sdk/package.json').dependencies['@drift-labs/sdk'])")
+            CURRENT_COMPETITIONS_SDK_VERSION=$(node -e "console.log(require('./package.json').devDependencies['@drift-labs/competitions-sdk'])")
+            echo "DRIFT_SDK_VERSION=$CURRENT_DRIFT_SDK_VERSION" >> $GITHUB_ENV
+            echo "COMPETITIONS_SDK_VERSION=$CURRENT_COMPETITIONS_SDK_VERSION" >> $GITHUB_ENV
+          fi
 
-    - name: Add specific version of sdk
-      run: yarn add --dev @drift-labs/sdk@${{ github.event.client_payload.version }}
+      - name: Install dependencies
+        run: yarn install
 
-    - name: Add specific version of sdk to peer dependencies
-      run: yarn add --peer @drift-labs/sdk@${{ github.event.client_payload.version }}
-      working-directory: ts/sdk
+      - name: Add specific version of sdk
+        run: |
+          yarn add --dev @drift-labs/sdk@$DRIFT_SDK_VERSION
+          yarn add --dev @drift-labs/drift-competitions@$COMPETITIONS_SDK_VERSION
+          cd ts/sdk
+          yarn add @drift-labs/sdk@$DRIFT_SDK_VERSION
 
-    - name: Build after new dependency
-      run: yarn run build
-      working-directory: ts/sdk
+      - name: Build after new dependency
+        run: yarn run build
+        working-directory: ts/sdk
 
-    - name: Commit and push changes
-      run: |
-        git config user.name "GitHub Actions"
-        git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-        git add -A 
-        git commit --allow-empty -m "Bumping sdk dependency to ${{ github.event.client_payload.version }}" --no-verify
-        git push
+      - name: Update package version
+        run: npm version patch
+        working-directory: ts/sdk
+
+      - name: Commit and push changes
+        id: publish-vaults-sdk
+        run: |
+          VERSION=$(node -e "console.log(require('./ts/sdk/package.json').version);")
+          git config user.name "GitHub Actions"
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add -A
+          git commit --allow-empty -m "Bumping sdk and drift-competitions dependencies to $DRIFT_SDK_VERSION and $COMPETITIONS_SDK_VERSION"
+          git push
+
+      - name: Publish to npm
+        run: npm publish --access=public
+        working-directory: ts/sdk
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

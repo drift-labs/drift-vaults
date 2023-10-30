@@ -13,8 +13,8 @@ import { DriftVaults } from './types/drift_vaults';
 import {
 	getCompetitionAddressSync,
 	getCompetitorAddressSync,
-} from '../../../drift-competitions/ts/sdk/src/addresses';
-import { CompetitionsClient } from '../../../drift-competitions/ts/sdk/src/competitionClient';
+} from '@drift-labs/competitions-sdk/src/addresses';
+import { CompetitionsClient } from '@drift-labs/competitions-sdk/src/competitionClient';
 import {
 	getTokenVaultAddressSync,
 	getVaultAddressSync,

@@ -85,14 +85,6 @@ jobs:
       - name: Checkout main
         uses: actions/checkout@v3
 
-      - name: Checkout competitions
-        uses: actions/checkout@v3
-        with:
-          repository: drift-labs/drift-competitions
-          ssh-key: ${{ secrets.DRIFT_COMMON_DEPLOY_KEY }}
-          path: drift-competitions
-          submodules: recursive
-
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -128,12 +120,6 @@ jobs:
         run: |
           npm install ts-mocha -g
           npm install --global mocha
-
-      - name: build competitions sdk
-        run: |
-          yarn
-          yarn build
-        working-directory: drift-competitions/ts/sdk
 
       - name: build sdk
         run: |
