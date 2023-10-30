@@ -15,5 +15,9 @@ wallet = "~/.config/solana/id.json"
 address = "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
 program = "./deps/drift.so"
 
+[[test.genesis]]
+address = "DraWMeQX9LfzQQSYoeBwHAgM5JcqFkgrX7GbTfjzVMVL"
+program = "./deps/drift_competitions.so"
+
 [scripts]
 test = "yarn anchor-tests"

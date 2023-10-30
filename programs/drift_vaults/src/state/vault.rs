@@ -22,7 +22,7 @@ use drift_macros::assert_no_slop;
 use static_assertions::const_assert_eq;
 
 #[assert_no_slop]
-#[account(zero_copy)]
+#[account(zero_copy(unsafe))]
 #[derive(Default, Eq, PartialEq, Debug)]
 #[repr(C)]
 pub struct Vault {

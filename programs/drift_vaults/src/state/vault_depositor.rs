@@ -30,7 +30,7 @@ use drift::state::user::User;
 use drift_macros::assert_no_slop;
 
 #[assert_no_slop]
-#[account(zero_copy)]
+#[account(zero_copy(unsafe))]
 #[derive(Default, Eq, PartialEq, Debug)]
 #[repr(C)]
 pub struct VaultDepositor {

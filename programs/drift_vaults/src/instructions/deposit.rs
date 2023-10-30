@@ -3,7 +3,7 @@ use crate::constraints::{
 };
 use crate::cpi::{DepositCPI, TokenTransferCPI};
 use crate::error::ErrorCode;
-use crate::{declare_vault_seeds, validate, AccountMapProvider};
+use crate::{declare_vault_seeds, implement_deposit, validate, AccountMapProvider};
 use crate::{Vault, VaultDepositor};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
@@ -110,27 +110,7 @@ impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, Deposit<'info>> {
 
 impl<'info> DepositCPI for Context<'_, '_, '_, 'info, Deposit<'info>> {
     fn drift_deposit(&self, amount: u64) -> Result<()> {
-        declare_vault_seeds!(self.accounts.vault, seeds);
-        let spot_market_index = self.accounts.vault.load()?.spot_market_index;
-
-        let cpi_program = self.accounts.drift_program.to_account_info().clone();
-        let cpi_accounts = DriftDeposit {
-            state: self.accounts.drift_state.clone(),
-            user: self.accounts.drift_user.to_account_info().clone(),
-            user_stats: self.accounts.drift_user_stats.clone(),
-            authority: self.accounts.vault.to_account_info().clone(),
-            spot_market_vault: self
-                .accounts
-                .drift_spot_market_vault
-                .to_account_info()
-                .clone(),
-            user_token_account: self.accounts.vault_token_account.to_account_info().clone(),
-            token_program: self.accounts.token_program.to_account_info().clone(),
-        };
-        let cpi_context = CpiContext::new_with_signer(cpi_program, cpi_accounts, seeds)
-            .with_remaining_accounts(self.remaining_accounts.into());
-        drift::cpi::deposit(cpi_context, spot_market_index, amount, false)?;
-
+        implement_deposit!(self, amount);
         Ok(())
     }
 }
