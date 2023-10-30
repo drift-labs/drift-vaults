@@ -23,8 +23,8 @@ jobs:
         id: determine-sdk-version
         run: |
           if [[ "${{ github.event_name }}" == "repository_dispatch" ]]; then
-            echo "DRIFT_SDK_VERSION=${{ github.event.client_payload.version }}" >> $GITHUB_ENV
-            echo "COMPETITIONS_SDK_VERSION=${{ github.event.client_payload.version }}" >> $GITHUB_ENV
+            echo "DRIFT_SDK_VERSION=${{ github.event.client_payload.sdk-version }}" >> $GITHUB_ENV
+            echo "COMPETITIONS_SDK_VERSION=${{ github.event.client_payload.competitions-version }}" >> $GITHUB_ENV
           else
             # Get the current version of sdk used in package.json
             CURRENT_DRIFT_SDK_VERSION=$(node -e "console.log(require('./ts/sdk/package.json').dependencies['@drift-labs/sdk'])")
