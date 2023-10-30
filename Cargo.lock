@@ -1173,7 +1173,7 @@ dependencies = [
 [[package]]
 name = "drift-competitions"
 version = "0.1.0"
-source = "git+https://github.com/drift-labs/drift-competitions.git?rev=5a2817c#5a2817ca35ec553ec78e9f4ed7be762b12fa5ce0"
+source = "git+https://github.com/drift-labs/drift-competitions.git?rev=f611f2f#f611f2ffb6fc86eb503e74037c95c504e8e3e55a"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
