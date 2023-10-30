@@ -13,8 +13,8 @@ import { DriftVaults } from './types/drift_vaults';
 import {
 	getCompetitionAddressSync,
 	getCompetitorAddressSync,
-} from '@drift-labs/competitions-sdk/src/addresses';
-import { CompetitionsClient } from '@drift-labs/competitions-sdk/src/competitionClient';
+} from '@drift-labs/competitions-sdk/lib/addresses';
+import { CompetitionsClient } from '@drift-labs/competitions-sdk/lib/competitionClient';
 import {
 	getTokenVaultAddressSync,
 	getVaultAddressSync,
@@ -992,7 +992,7 @@ export class VaultClient {
 			.accounts({
 				vault: vault,
 				competitor: competitorAddress,
-				competition: competitionAddress,
+				driftCompetitions: competitionAddress,
 				driftUserStats: vaultAccount.userStats,
 				driftCompetitionsProgram: competitionsClient.program.programId,
 			})

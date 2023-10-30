@@ -885,7 +885,7 @@
           "isSigner": false
         },
         {
-          "name": "competition",
+          "name": "driftCompetitions",
           "isMut": true,
           "isSigner": false
         },
