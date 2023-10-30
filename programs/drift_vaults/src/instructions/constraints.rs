@@ -46,12 +46,12 @@ pub fn is_user_stats_for_vault(
 }
 
 pub fn is_spot_market_for_vault(
-    vault_depositor: &AccountLoader<Vault>,
+    vault: &AccountLoader<Vault>,
     drift_spot_market: &AccountLoader<SpotMarket>,
     market_index: u16,
 ) -> anchor_lang::Result<bool> {
     Ok(
-        (vault_depositor.load()?.spot_market_index).eq(&drift_spot_market.load()?.market_index)
-            && (vault_depositor.load()?.spot_market_index).eq(&market_index),
+        (vault.load()?.spot_market_index).eq(&drift_spot_market.load()?.market_index)
+            && (vault.load()?.spot_market_index).eq(&market_index),
     )
 }

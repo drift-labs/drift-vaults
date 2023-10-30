@@ -29,7 +29,7 @@ pub struct InitializeCompetitor<'info> {
 
     #[account(
         mut,
-        seeds = [b"competitor",  competition.key().as_ref(), vault.key().as_ref()],
+        seeds = [b"competitor",  drift_competitions.key().as_ref(), vault.key().as_ref()],
         bump,
         seeds::program = drift_competitions_program.key(),
     )]
@@ -37,7 +37,7 @@ pub struct InitializeCompetitor<'info> {
     pub competitor: AccountInfo<'info>,
     #[account(mut)]
     /// CHECK: checked in drift cpi
-    pub competition: AccountInfo<'info>,
+    pub drift_competitions: AccountInfo<'info>,
     #[account(
         mut,
         constraint = is_user_stats_for_vault(&vault, &drift_user_stats.to_account_info())?
@@ -53,7 +53,7 @@ impl<'info> InitializeCompetitorCPI for Context<'_, '_, '_, 'info, InitializeCom
 
         let cpi_accounts = DriftCompetitionInitializeCompetitor {
             competitor: self.accounts.competitor.to_account_info().clone(),
-            competition: self.accounts.competition.to_account_info().clone(),
+            competition: self.accounts.drift_competitions.to_account_info().clone(),
             drift_user_stats: self.accounts.drift_user_stats.to_account_info().clone(),
             authority: self.accounts.vault.to_account_info().clone(),
             payer: self.accounts.payer.to_account_info().clone(),
