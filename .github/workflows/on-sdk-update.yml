@@ -65,6 +65,7 @@ jobs:
           toolchain: ${{ env.RUST_TOOLCHAIN }}
           profile: minimal
           override: true
+          components: rustfmt, clippy
 
       - name: Commit and push changes
         id: publish-vaults-sdk
