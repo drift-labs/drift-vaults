@@ -39,7 +39,7 @@ jobs:
       - name: Add specific version of sdk
         run: |
           yarn add --dev @drift-labs/sdk@$DRIFT_SDK_VERSION
-          yarn add --dev @drift-labs/drift-competitions@$COMPETITIONS_SDK_VERSION
+          yarn add --dev @drift-labs/competitions-sdk@$COMPETITIONS_SDK_VERSION
           cd ts/sdk
           yarn add @drift-labs/sdk@$DRIFT_SDK_VERSION
 
@@ -58,7 +58,7 @@ jobs:
           git config user.name "GitHub Actions"
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           git add -A
-          git commit --allow-empty -m "Bumping sdk and drift-competitions dependencies to $DRIFT_SDK_VERSION and $COMPETITIONS_SDK_VERSION"
+          git commit --allow-empty -m "Bumping sdk and competitions-sdk dependencies to $DRIFT_SDK_VERSION and $COMPETITIONS_SDK_VERSION"
           git push
 
       - name: Publish to npm
