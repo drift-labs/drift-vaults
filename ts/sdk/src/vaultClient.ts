@@ -11,10 +11,10 @@ import {
 import { BorshAccountsCoder, Program, ProgramAccount } from '@coral-xyz/anchor';
 import { DriftVaults } from './types/drift_vaults';
 import {
+	CompetitionsClient,
 	getCompetitionAddressSync,
 	getCompetitorAddressSync,
-} from '@drift-labs/competitions-sdk/lib/addresses';
-import { CompetitionsClient } from '@drift-labs/competitions-sdk/lib/competitionClient';
+} from '@drift-labs/competitions-sdk';
 import {
 	getTokenVaultAddressSync,
 	getVaultAddressSync,
@@ -57,6 +57,7 @@ export class VaultClient {
 	}
 
 	public async getVault(vault: PublicKey): Promise<Vault> {
+		// @ts-ignore
 		return await this.program.account.vault.fetch(vault);
 	}
 
@@ -109,6 +110,7 @@ export class VaultClient {
 	}): Promise<BN> {
 		let vaultAccount: Vault;
 		if (params.address !== undefined) {
+			// @ts-ignore
 			vaultAccount = await this.program.account.vault.fetch(params.address);
 		} else if (params.vault !== undefined) {
 			vaultAccount = params.vault;
@@ -276,6 +278,7 @@ export class VaultClient {
 		amount: BN,
 		withdrawUnit: WithdrawUnit
 	): Promise<TransactionSignature> {
+		// @ts-ignore
 		const vaultAccount = (await this.program.account.vault.fetch(
 			vault
 		)) as Vault;
