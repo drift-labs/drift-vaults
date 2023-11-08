@@ -1,4 +1,5 @@
 use crate::events::{VaultDepositorAction, VaultDepositorRecord};
+use crate::state::BurnVaultSharesRecord;
 use crate::{validate, Size, VaultDepositor, WithdrawUnit};
 
 use crate::constants::TIME_FOR_LIQUIDATION;
@@ -499,5 +500,75 @@ impl Vault {
     pub fn reset_liquidation_delegate(&mut self) {
         self.liquidation_delegate = Pubkey::default();
         self.liquidation_start_ts = 0;
+    }
+
+    pub fn manager_burn_shares(
+        &mut self,
+        burn_amount: u64,
+        burn_unit: WithdrawUnit,
+        vault_equity: u64,
+        now: i64,
+    ) -> Result<()> {
+        self.apply_rebase(vault_equity)?;
+        self.apply_management_fee(vault_equity, now)?;
+
+        let manager_shares_before: u128 = self.get_manager_shares()?;
+
+        let (burn_value, new_total_shares) = burn_unit.get_transfer_value_with_new_total(
+            burn_amount,
+            vault_equity,
+            self.user_shares,
+            self.total_shares,
+        )?;
+
+        validate!(
+            new_total_shares <= self.total_shares,
+            ErrorCode::InvalidBurnSharesAmount,
+            "new_total_shares > total_shares"
+        )?;
+
+        let total_vault_shares_before = self.total_shares;
+        let user_vault_shares_before = self.user_shares;
+
+        // give manager shares to users
+        msg!("burn_value:       {}", burn_value);
+        msg!("new_total_shares: {}", new_total_shares);
+        msg!("user_shares:  {}", self.user_shares);
+        msg!("total_shares: {}", self.total_shares);
+
+        self.total_shares = new_total_shares;
+
+        let manager_shares_after: u128 = self.get_manager_shares()?;
+        msg!(
+            "mgr shares: {} -> {}",
+            manager_shares_before,
+            manager_shares_after
+        );
+
+        validate!(
+            manager_shares_after < manager_shares_before,
+            ErrorCode::InvalidBurnSharesAmount,
+            "Manager shares not reduced"
+        )?;
+
+        emit!(BurnVaultSharesRecord {
+            ts: now,
+            vault: self.pubkey,
+            depositor_authority: self.manager,
+            amount: burn_value,
+            spot_market_index: self.spot_market_index,
+            vault_equity_before: vault_equity,
+            user_vault_shares_before,
+            manager_shares_before,
+            total_vault_shares_before,
+
+            manager_shares_after,
+            total_vault_shares_after: self.total_shares,
+            user_vault_shares_after: self.user_shares,
+        });
+
+        self.apply_rebase(vault_equity)?;
+
+        Ok(())
     }
 }
