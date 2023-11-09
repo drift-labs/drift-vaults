@@ -509,7 +509,7 @@ mod vault_fcn {
     fn test_manager_burn_shares_for_users() {
         let mut now = 123456789;
         let vault = &mut Vault::default();
-        vault.management_fee = 0;
+        vault.management_fee = 20_000; // 2%
         vault.last_fee_update_ts = now;
         let mut vault_equity: u64 = 0;
 
@@ -522,7 +522,6 @@ mod vault_fcn {
 
         assert_eq!(vault.user_shares, 0);
         assert_eq!(vault.total_shares, 100000000);
-        now += 60 * 60;
 
         // first new user deposits $2000
         let user_deposit_amount = manager_deposit_amount * 20;
@@ -557,13 +556,21 @@ mod vault_fcn {
         .unwrap();
         assert_eq!(user_amount_1, user_deposit_amount);
 
+        now += 365 * 24 * 60 * 60; // 1 year of management fees
+        vault.apply_management_fee(vault_equity, now).unwrap();
         let vault_manager_amount_before = depositor_shares_to_vault_amount(
             vault.total_shares - vault.user_shares,
             vault.total_shares,
             vault_equity,
         )
         .unwrap();
-        assert_eq!(vault_manager_amount_before, manager_deposit_amount);
+        assert_eq!(vault_manager_amount_before, 179_999_372); // 2% of $4k + $100, rounding
+        println!(
+            "user shares: {}, manager shares: {}, total shares: {}",
+            vault.user_shares,
+            vault.total_shares - vault.user_shares,
+            vault.total_shares
+        );
 
         // manager burns half their deposits
         vault
@@ -576,17 +583,23 @@ mod vault_fcn {
             vault_equity,
         )
         .unwrap();
-        assert_eq!(vault_manager_amount_after, 49_999_999); // rounding
-        let manager_amount_diff = vault_manager_amount_before - vault_manager_amount_after;
+        assert_eq!(vault_manager_amount_after, 89_999_685); // 50% of $180, rounding
 
-        // first and second user should each gain half of manager's burnt shares
+        println!(
+            "user shares: {}, manager shares: {}, total shares: {}",
+            vault.user_shares,
+            vault.total_shares - vault.user_shares,
+            vault.total_shares
+        );
+
+        // first and second user should each gain half of manager's burnt value
         let user_amount_0 = depositor_shares_to_vault_amount(
             vd_0.checked_vault_shares(vault).unwrap(),
             vault.total_shares,
             vault_equity,
         )
         .unwrap();
-        assert_eq!(user_amount_0, user_deposit_amount + manager_amount_diff / 2);
+        assert_eq!(user_amount_0, 2005_000_157); // 2000 * 0.98 + 90 / 2, rounding
 
         let user_amount_1 = depositor_shares_to_vault_amount(
             vd_1.checked_vault_shares(vault).unwrap(),
@@ -594,7 +607,7 @@ mod vault_fcn {
             vault_equity,
         )
         .unwrap();
-        assert_eq!(user_amount_1, user_deposit_amount + manager_amount_diff / 2);
+        assert_eq!(user_amount_1, 2005_000_157); // 2000 * 0.98 + 90 / 2, rounding
     }
 
     #[test]
