@@ -679,6 +679,48 @@ export type DriftVaults = {
 			args: [];
 		},
 		{
+			name: 'managerBurnShares';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftUser';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftState';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [
+				{
+					name: 'burnAmount';
+					type: 'u64';
+				},
+				{
+					name: 'burnUnit';
+					type: {
+						defined: 'WithdrawUnit';
+					};
+				}
+			];
+		},
+		{
 			name: 'applyProfitShare';
 			accounts: [
 				{
@@ -1469,6 +1511,51 @@ export type DriftVaults = {
 					index: false;
 				}
 			];
+		},
+		{
+			name: 'BurnVaultSharesRecord';
+			fields: [
+				{
+					name: 'ts';
+					type: 'i64';
+					index: false;
+				},
+				{
+					name: 'vault';
+					type: 'publicKey';
+					index: false;
+				},
+				{
+					name: 'depositorAuthority';
+					type: 'publicKey';
+					index: false;
+				},
+				{
+					name: 'amount';
+					type: 'u64';
+					index: false;
+				},
+				{
+					name: 'spotMarketIndex';
+					type: 'u16';
+					index: false;
+				},
+				{
+					name: 'vaultEquity';
+					type: 'u64';
+					index: false;
+				},
+				{
+					name: 'totalVaultSharesBefore';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'totalVaultSharesAfter';
+					type: 'u128';
+					index: false;
+				}
+			];
 		}
 	];
 	errors: [
@@ -1581,6 +1668,11 @@ export type DriftVaults = {
 			code: 6021;
 			name: 'OngoingLiquidation';
 			msg: 'OngoingLiquidation';
+		},
+		{
+			code: 6022;
+			name: 'InvalidBurnSharesAmount';
+			msg: 'InvalidBurnSharesAmount';
 		}
 	];
 };
@@ -2264,6 +2356,48 @@ export const IDL: DriftVaults = {
 				},
 			],
 			args: [],
+		},
+		{
+			name: 'managerBurnShares',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftUser',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftState',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [
+				{
+					name: 'burnAmount',
+					type: 'u64',
+				},
+				{
+					name: 'burnUnit',
+					type: {
+						defined: 'WithdrawUnit',
+					},
+				},
+			],
 		},
 		{
 			name: 'applyProfitShare',
@@ -3057,6 +3191,51 @@ export const IDL: DriftVaults = {
 				},
 			],
 		},
+		{
+			name: 'BurnVaultSharesRecord',
+			fields: [
+				{
+					name: 'ts',
+					type: 'i64',
+					index: false,
+				},
+				{
+					name: 'vault',
+					type: 'publicKey',
+					index: false,
+				},
+				{
+					name: 'depositorAuthority',
+					type: 'publicKey',
+					index: false,
+				},
+				{
+					name: 'amount',
+					type: 'u64',
+					index: false,
+				},
+				{
+					name: 'spotMarketIndex',
+					type: 'u16',
+					index: false,
+				},
+				{
+					name: 'vaultEquity',
+					type: 'u64',
+					index: false,
+				},
+				{
+					name: 'totalVaultSharesBefore',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'totalVaultSharesAfter',
+					type: 'u128',
+					index: false,
+				},
+			],
+		},
 	],
 	errors: [
 		{
@@ -3168,6 +3347,11 @@ export const IDL: DriftVaults = {
 			code: 6021,
 			name: 'OngoingLiquidation',
 			msg: 'OngoingLiquidation',
+		},
+		{
+			code: 6022,
+			name: 'InvalidBurnSharesAmount',
+			msg: 'InvalidBurnSharesAmount',
 		},
 	],
 };

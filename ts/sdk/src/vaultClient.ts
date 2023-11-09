@@ -463,6 +463,67 @@ export class VaultClient {
 			.rpc();
 	}
 
+	public async managerBurnShares(
+		vault: PublicKey,
+		burnAmount: BN,
+		burnUnit: WithdrawUnit
+	): Promise<TransactionSignature> {
+		// @ts-ignore
+		const vaultAccount = (await this.program.account.vault.fetch(
+			vault
+		)) as Vault;
+
+		if (!this.driftClient.wallet.publicKey.equals(vaultAccount.manager)) {
+			throw new Error(`Only the manager of the vault can request a withdraw.`);
+		}
+
+		const user = new User({
+			driftClient: this.driftClient,
+			userAccountPublicKey: vaultAccount.user,
+		});
+		await user.subscribe();
+		const remainingAccounts = this.driftClient.getRemainingAccounts({
+			userAccounts: [user.getUserAccount()],
+			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
+		});
+
+		const userStatsKey = getUserStatsAccountPublicKey(
+			this.driftClient.program.programId,
+			vault
+		);
+
+		const driftStateKey = await this.driftClient.getStatePublicKey();
+
+		const accounts = {
+			vault,
+			driftUserStats: userStatsKey,
+			driftUser: vaultAccount.user,
+			driftState: driftStateKey,
+		};
+
+		if (this.cliMode) {
+			return await this.program.methods
+				.managerBurnShares(burnAmount, burnUnit)
+				.accounts(accounts)
+				.remainingAccounts(remainingAccounts)
+				.rpc();
+		} else {
+			const burnSharesIx = this.program.instruction.managerBurnShares(
+				burnAmount,
+				burnUnit,
+				{
+					accounts: {
+						manager: this.driftClient.wallet.publicKey,
+						...accounts,
+					},
+					remainingAccounts,
+				}
+			);
+
+			return await this.createAndSendTxn([burnSharesIx]);
+		}
+	}
+
 	public async getApplyProfitShareIx(
 		vault: PublicKey,
 		vaultDepositor: PublicKey
