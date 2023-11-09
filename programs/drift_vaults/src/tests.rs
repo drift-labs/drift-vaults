@@ -512,6 +512,8 @@ mod vault_fcn {
         vault.management_fee = 0;
         vault.last_fee_update_ts = now;
         let mut vault_equity: u64 = 0;
+
+        // manager deposits $100
         let manager_deposit_amount: u64 = 100 * QUOTE_PRECISION_U64;
         vault
             .manager_deposit(manager_deposit_amount, vault_equity, now)
@@ -522,9 +524,8 @@ mod vault_fcn {
         assert_eq!(vault.total_shares, 100000000);
         now += 60 * 60;
 
-        let user_deposit_amount = manager_deposit_amount * 20;
-
         // first new user deposits $2000
+        let user_deposit_amount = manager_deposit_amount * 20;
         let vd_0 =
             &mut VaultDepositor::new(Pubkey::default(), Pubkey::default(), Pubkey::default(), now);
         vd_0.deposit(user_deposit_amount, vault_equity, vault, now)
@@ -532,7 +533,6 @@ mod vault_fcn {
         assert_eq!(vault.user_shares, 2000000000);
         assert_eq!(vault.total_shares, 2000000000 + 100000000);
         vault_equity += user_deposit_amount;
-        //
         let user_amount_0 = depositor_shares_to_vault_amount(
             vd_0.checked_vault_shares(vault).unwrap(),
             vault.total_shares,
@@ -540,7 +540,6 @@ mod vault_fcn {
         )
         .unwrap();
         assert_eq!(user_amount_0, user_deposit_amount);
-        //
 
         // second new user deposits $2000
         let vd_1 =
@@ -550,7 +549,6 @@ mod vault_fcn {
         assert_eq!(vault.user_shares, 4000000000);
         assert_eq!(vault.total_shares, 4000000000 + 100000000);
         vault_equity += user_deposit_amount;
-        //
         let user_amount_1 = depositor_shares_to_vault_amount(
             vd_1.checked_vault_shares(vault).unwrap(),
             vault.total_shares,
@@ -558,7 +556,6 @@ mod vault_fcn {
         )
         .unwrap();
         assert_eq!(user_amount_1, user_deposit_amount);
-        //
 
         let vault_manager_amount_before = depositor_shares_to_vault_amount(
             vault.total_shares - vault.user_shares,
@@ -568,15 +565,9 @@ mod vault_fcn {
         .unwrap();
         assert_eq!(vault_manager_amount_before, manager_deposit_amount);
 
-        // manager burns half of their shares
-        // let manager_shares = vault.get_manager_shares().unwrap();
+        // manager burns half their deposits
         vault
-            .manager_burn_shares(
-                (manager_deposit_amount / 2).try_into().unwrap(),
-                WithdrawUnit::Token,
-                vault_equity,
-                now,
-            )
+            .manager_burn_shares(500_000, WithdrawUnit::SharesPercent, vault_equity, now)
             .unwrap();
 
         let vault_manager_amount_after = depositor_shares_to_vault_amount(
@@ -585,10 +576,10 @@ mod vault_fcn {
             vault_equity,
         )
         .unwrap();
-        assert_eq!(vault_manager_amount_after, 49999999); // rounding
+        assert_eq!(vault_manager_amount_after, 49_999_999); // rounding
         let manager_amount_diff = vault_manager_amount_before - vault_manager_amount_after;
 
-        // first user should half of manager's burnt shares
+        // first and second user should each gain half of manager's burnt shares
         let user_amount_0 = depositor_shares_to_vault_amount(
             vd_0.checked_vault_shares(vault).unwrap(),
             vault.total_shares,
@@ -604,5 +595,47 @@ mod vault_fcn {
         )
         .unwrap();
         assert_eq!(user_amount_1, user_deposit_amount + manager_amount_diff / 2);
+    }
+
+    #[test]
+    fn test_manager_cannot_burn_more_shares_than_owned() {
+        let mut now = 123456789;
+        let vault = &mut Vault::default();
+        vault.management_fee = 0;
+        vault.last_fee_update_ts = now;
+        let mut vault_equity: u64 = 0;
+        let manager_deposit_amount: u64 = 100 * QUOTE_PRECISION_U64;
+        vault
+            .manager_deposit(manager_deposit_amount, vault_equity, now)
+            .unwrap();
+        vault_equity += manager_deposit_amount;
+
+        assert_eq!(vault.user_shares, 0);
+        assert_eq!(vault.total_shares, 100000000);
+        now += 60 * 60;
+
+        let vault_manager_amount_before = depositor_shares_to_vault_amount(
+            vault.total_shares - vault.user_shares,
+            vault.total_shares,
+            vault_equity,
+        )
+        .unwrap();
+        assert_eq!(vault_manager_amount_before, manager_deposit_amount);
+
+        let r = vault.manager_burn_shares(
+            (manager_deposit_amount * 2).try_into().unwrap(),
+            WithdrawUnit::Token,
+            vault_equity,
+            now,
+        );
+        assert!(r.is_err());
+
+        let vault_manager_amount_after = depositor_shares_to_vault_amount(
+            vault.total_shares - vault.user_shares,
+            vault.total_shares,
+            vault_equity,
+        )
+        .unwrap();
+        assert_eq!(vault_manager_amount_after, vault_manager_amount_before);
     }
 }

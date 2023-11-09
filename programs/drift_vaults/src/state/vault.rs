@@ -512,8 +512,6 @@ impl Vault {
         self.apply_rebase(vault_equity)?;
         self.apply_management_fee(vault_equity, now)?;
 
-        let manager_shares_before: u128 = self.get_manager_shares()?;
-
         let (burn_value, new_total_shares) = burn_unit.get_transfer_value_with_new_total(
             burn_amount,
             vault_equity,
@@ -522,34 +520,20 @@ impl Vault {
         )?;
 
         validate!(
-            new_total_shares <= self.total_shares,
+            new_total_shares < self.total_shares,
             ErrorCode::InvalidBurnSharesAmount,
             "new_total_shares > total_shares"
         )?;
 
         let total_vault_shares_before = self.total_shares;
-        let user_vault_shares_before = self.user_shares;
 
-        // give manager shares to users
-        msg!("burn_value:       {}", burn_value);
-        msg!("new_total_shares: {}", new_total_shares);
-        msg!("user_shares:  {}", self.user_shares);
-        msg!("total_shares: {}", self.total_shares);
-
-        self.total_shares = new_total_shares;
-
-        let manager_shares_after: u128 = self.get_manager_shares()?;
         msg!(
-            "mgr shares: {} -> {}",
-            manager_shares_before,
-            manager_shares_after
+            "burn_value: {}, total_shares: {} -> {}",
+            burn_value,
+            total_vault_shares_before,
+            new_total_shares
         );
-
-        validate!(
-            manager_shares_after < manager_shares_before,
-            ErrorCode::InvalidBurnSharesAmount,
-            "Manager shares not reduced"
-        )?;
+        self.total_shares = new_total_shares;
 
         emit!(BurnVaultSharesRecord {
             ts: now,
@@ -557,14 +541,9 @@ impl Vault {
             depositor_authority: self.manager,
             amount: burn_value,
             spot_market_index: self.spot_market_index,
-            vault_equity_before: vault_equity,
-            user_vault_shares_before,
-            manager_shares_before,
+            vault_equity,
             total_vault_shares_before,
-
-            manager_shares_after,
             total_vault_shares_after: self.total_shares,
-            user_vault_shares_after: self.user_shares,
         });
 
         self.apply_rebase(vault_equity)?;
