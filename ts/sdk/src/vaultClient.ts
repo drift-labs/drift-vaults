@@ -151,6 +151,11 @@ export class VaultClient {
 		const spotMarket = this.driftClient.getSpotMarketAccount(
 			params.spotMarketIndex
 		);
+		if (!spotMarket) {
+			throw new Error(
+				`Spot market ${params.spotMarketIndex} not found on driftClient`
+			);
+		}
 
 		const userStatsKey = getUserStatsAccountPublicKey(
 			this.driftClient.program.programId,
@@ -235,6 +240,11 @@ export class VaultClient {
 		const driftSpotMarket = this.driftClient.getSpotMarketAccount(
 			vaultAccount.spotMarketIndex
 		);
+		if (!driftSpotMarket) {
+			throw new Error(
+				`Spot market ${vaultAccount.spotMarketIndex} not found on driftClient`
+			);
+		}
 
 		const user = new User({
 			driftClient: this.driftClient,
@@ -373,8 +383,8 @@ export class VaultClient {
 			const cancelRequestWithdrawIx =
 				this.program.instruction.mangerCancelWithdrawRequest({
 					accounts: {
-						manager: this.driftClient.wallet.publicKey,
 						...accounts,
+						manager: this.driftClient.wallet.publicKey,
 					},
 					remainingAccounts,
 				});
@@ -518,7 +528,7 @@ export class VaultClient {
 		const vaultDepositor = getVaultDepositorAddressSync(
 			this.program.programId,
 			vault,
-			authority
+			authority || this.driftClient.wallet.publicKey
 		);
 
 		const accounts = {
@@ -552,7 +562,7 @@ export class VaultClient {
 		const vaultDepositor = getVaultDepositorAddressSync(
 			this.program.programId,
 			vault,
-			authority
+			authority || this.driftClient.wallet.publicKey
 		);
 
 		const accounts = {
@@ -618,6 +628,11 @@ export class VaultClient {
 		const spotMarket = this.driftClient.getSpotMarketAccount(
 			vaultAccount.spotMarketIndex
 		);
+		if (!spotMarket) {
+			throw new Error(
+				`Spot market ${vaultAccount.spotMarketIndex} not found on driftClient`
+			);
+		}
 
 		const accounts = {
 			vault: vaultPubKey,
@@ -756,6 +771,11 @@ export class VaultClient {
 		const spotMarket = this.driftClient.getSpotMarketAccount(
 			vaultAccount.spotMarketIndex
 		);
+		if (!spotMarket) {
+			throw new Error(
+				`Spot market ${vaultAccount.spotMarketIndex} not found on driftClient`
+			);
+		}
 
 		const accounts = {
 			vault: vaultDepositorAccount.vault,
@@ -951,12 +971,18 @@ export class VaultClient {
 			spotMarketIndex
 		);
 
+		const spotMarket = this.driftClient.getSpotMarketAccount(spotMarketIndex);
+		if (!spotMarket) {
+			throw new Error(
+				`Spot market ${spotMarketIndex} not found on driftClient`
+			);
+		}
+
 		return await this.program.methods
 			.initializeInsuranceFundStake(spotMarketIndex)
 			.accounts({
 				vault: vault,
-				driftSpotMarket:
-					this.driftClient.getSpotMarketAccount(spotMarketIndex).pubkey,
+				driftSpotMarket: spotMarket.pubkey,
 				insuranceFundStake: ifStakeAccountPublicKey,
 				driftUserStats: vaultAccount.userStats,
 				driftState: await this.driftClient.getStatePublicKey(),

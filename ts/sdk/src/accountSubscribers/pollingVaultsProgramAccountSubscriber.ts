@@ -77,11 +77,11 @@ export abstract class PollingVaultsProgramAccountSubscriber<
 			return;
 		}
 
-		this.accountLoader.removeAccount(this.pubkey, this.callbackId);
-		this.callbackId = undefined;
+		this.accountLoader.removeAccount(this.pubkey, this.callbackId!);
+		this.callbackId = null;
 
-		this.accountLoader.removeErrorCallbacks(this.errorCallbackId);
-		this.errorCallbackId = undefined;
+		this.accountLoader.removeErrorCallbacks(this.errorCallbackId!);
+		this.errorCallbackId = null;
 
 		this._isSubscribed = false;
 	}
@@ -102,6 +102,9 @@ export abstract class PollingVaultsProgramAccountSubscriber<
 
 	getAccountAndSlot(): DataAndSlot<Account> {
 		this.assertIsSubscribed();
+		if (!this.account) {
+			throw new Error('Account not loaded');
+		}
 		return this.account;
 	}
 

@@ -5,7 +5,7 @@ import {
 	ONE_YEAR,
 	PERCENTAGE_PRECISION,
 	ZERO,
-	BN
+	BN,
 } from '@drift-labs/sdk';
 import { PublicKey } from '@solana/web3.js';
 import { DriftVaults } from '../types/drift_vaults';
