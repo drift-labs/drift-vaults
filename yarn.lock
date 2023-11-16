@@ -123,13 +123,13 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
-"@drift-labs/competitions-sdk@0.2.5":
-  version "0.2.5"
-  resolved "https://registry.yarnpkg.com/@drift-labs/competitions-sdk/-/competitions-sdk-0.2.5.tgz#5c2f54cd175c22231b64db27f1e4376cbb249e22"
-  integrity sha512-XTyoQqAXz0qnzHLJJ10u/JlCaK8P5nuAlKmPfdYMCY4SAGF3KkUIHCwRIRISlZgQfK0bJfCY9cKg1p11MwHa8g==
+"@drift-labs/competitions-sdk@0.2.20":
+  version "0.2.20"
+  resolved "https://registry.yarnpkg.com/@drift-labs/competitions-sdk/-/competitions-sdk-0.2.20.tgz#265edf70075fba9ac00a9b61c74aa61adbcc5c27"
+  integrity sha512-5Liz6LpZFpqQHtph+rJHlCG3AJoiMJi78y0BWUUjQQwdeKJgSXGMIRJnCs+TpGeTFLYYrPOPPDGli6/XnO6iQw==
   dependencies:
     "@coral-xyz/anchor" "^0.26.0"
-    "@drift-labs/sdk" "2.43.0-beta.5"
+    "@drift-labs/sdk" "2.43.0-beta.18"
     "@solana/web3.js" "1.73.2"
     "@switchboard-xyz/solana.js" "^2.7.1"
     dotenv "^16.3.1"
@@ -137,24 +137,10 @@
     ts-node "^10.9.1"
     typescript "^5.1.6"
 
-"@drift-labs/sdk@2.43.0-beta.17":
-  version "2.43.0-beta.17"
-  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.43.0-beta.17.tgz#179530e5e2324991d10f10a6fa1dde9de15924a2"
-  integrity sha512-auKQfEIAI1ElrwJ6kZMMOCDbNe8AE1SATtc3qftdn2e5TSDAFM1XkNmTAxnb+CvtRUjmiJkpHD2XN4d0GT1/ew==
-  dependencies:
-    "@coral-xyz/anchor" "0.28.1-beta.2"
-    "@ellipsis-labs/phoenix-sdk" "^1.4.2"
-    "@project-serum/serum" "^0.13.38"
-    "@pythnetwork/client" "2.5.3"
-    "@solana/spl-token" "^0.3.7"
-    "@solana/web3.js" "1.73.2"
-    strict-event-emitter-types "^2.0.0"
-    uuid "^8.3.2"
-
-"@drift-labs/sdk@2.43.0-beta.5":
-  version "2.43.0-beta.5"
-  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.43.0-beta.5.tgz#3e7ba3c5b5fb52bdf6028e56fd466532cdea776d"
-  integrity sha512-gJvJbC53cYGRMK7GTfz+I+XoTmOgUyexWzlaARDI47E+oJGyZH/jaFriQjyyHPDp9XNcqkGSpVDwT8JZ3MSbVg==
+"@drift-labs/sdk@2.43.0-beta.18":
+  version "2.43.0-beta.18"
+  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.43.0-beta.18.tgz#f5661c54a0c24fd6e9866c4aff31c3c0dd24073f"
+  integrity sha512-tLfchuo8/FjqzuqLnRXRHCHCdMO8PdFCFd33ltkGLo8IFOVf0TNXqBarsUTY4IAeV007gGsCZOODvIjjiMR1nQ==
   dependencies:
     "@coral-xyz/anchor" "0.28.1-beta.2"
     "@ellipsis-labs/phoenix-sdk" "^1.4.2"
