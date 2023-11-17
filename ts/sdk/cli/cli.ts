@@ -13,6 +13,7 @@ import {
     deposit,
     requestWithdraw,
     withdraw,
+    forceWithdraw,
     listDepositorsForVault,
     managerUpdateMarginTradingEnabled
 } from "./commands";
@@ -135,6 +136,11 @@ program
     .addOption(new Option("--vault-depositor-address <vaultDepositorAddress>", "VaultDepositor address").makeOptionMandatory(false))
     .addOption(new Option("--authority <vaultDepositorAuthority>", "VaultDepositor authority address").makeOptionMandatory(false))
     .action((opts) => withdraw(program, opts));
+program
+    .command("force-withdraw")
+    .description("Forces the vault to send out a withdraw after the redeem period has passed")
+    .addOption(new Option("--vault-depositor-address <vaultDepositorAddress>", "VaultDepositor address").makeOptionMandatory(false))
+    .action((opts) => forceWithdraw(program, opts));
 
 program.parseAsync().then(() => {
     process.exit(0);

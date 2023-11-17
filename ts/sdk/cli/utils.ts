@@ -1,5 +1,5 @@
 import { DriftClient, Wallet, loadKeypair } from "@drift-labs/sdk";
-import { VAULT_PROGRAM_ID, Vault, VaultClient, decodeName } from "../src";
+import { VAULT_PROGRAM_ID, Vault, VaultClient, VaultDepositor, decodeName } from "../src";
 import { Command } from "commander";
 import { Connection, Keypair } from "@solana/web3.js";
 import { AnchorProvider } from "@coral-xyz/anchor";
@@ -54,7 +54,7 @@ export function printVault(vault: Vault) {
     };
 }
 
-export function printVaultDepositor(vaultDepositor) {
+export function printVaultDepositor(vaultDepositor: VaultDepositor) {
     console.log(`vault:          ${vaultDepositor.vault.toBase58()}`);
     console.log(`pubkey:         ${vaultDepositor.pubkey.toBase58()}`);
     console.log(`authority:      ${vaultDepositor.authority.toBase58()}`);

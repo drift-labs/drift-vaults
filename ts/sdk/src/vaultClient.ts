@@ -814,6 +814,82 @@ export class VaultClient {
 		}
 	}
 
+	public async forceWithdraw(
+		vaultDepositor: PublicKey
+	): Promise<TransactionSignature> {
+		const vaultDepositorAccount =
+			await this.program.account.vaultDepositor.fetch(vaultDepositor);
+		const vaultAccount = await this.program.account.vault.fetch(
+			vaultDepositorAccount.vault
+		);
+
+		const user = new User({
+			driftClient: this.driftClient,
+			userAccountPublicKey: vaultAccount.user,
+		});
+		await user.subscribe();
+		const remainingAccounts = this.driftClient.getRemainingAccounts({
+			userAccounts: [user.getUserAccount()],
+			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
+		});
+
+		const userStatsKey = getUserStatsAccountPublicKey(
+			this.driftClient.program.programId,
+			vaultDepositorAccount.vault
+		);
+
+		const driftStateKey = await this.driftClient.getStatePublicKey();
+
+		const spotMarket = this.driftClient.getSpotMarketAccount(
+			vaultAccount.spotMarketIndex
+		);
+		if (!spotMarket) {
+			throw new Error(
+				`Spot market ${vaultAccount.spotMarketIndex} not found on driftClient`
+			);
+		}
+
+		const accounts = {
+			manager: this.driftClient.wallet.publicKey,
+			vault: vaultDepositorAccount.vault,
+			vaultDepositor,
+			vaultTokenAccount: vaultAccount.tokenAccount,
+			driftUserStats: userStatsKey,
+			driftUser: vaultAccount.user,
+			driftState: driftStateKey,
+			driftSpotMarketVault: spotMarket.vault,
+			driftSigner: this.driftClient.getStateAccount().signer,
+			userTokenAccount: getAssociatedTokenAddressSync(
+				spotMarket.mint,
+				vaultDepositorAccount.authority,
+				true
+			),
+			driftProgram: this.driftClient.program.programId,
+			tokenProgram: TOKEN_PROGRAM_ID,
+		};
+
+		if (this.cliMode) {
+			return await this.program.methods
+				.forceWithdraw()
+				.preInstructions([
+					ComputeBudgetProgram.setComputeUnitLimit({
+						units: 400_000,
+					}),
+				])
+				.accounts(accounts)
+				.remainingAccounts(remainingAccounts)
+				.rpc();
+		} else {
+			const forceWithdrawIx = this.program.instruction.forceWithdraw({
+				accounts: {
+					...accounts,
+				},
+				remainingAccounts,
+			});
+			return await this.createAndSendTxn([forceWithdrawIx]);
+		}
+	}
+
 	public async cancelRequestWithdraw(
 		vaultDepositor: PublicKey
 	): Promise<TransactionSignature> {

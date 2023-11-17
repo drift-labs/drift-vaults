@@ -90,7 +90,7 @@ export const managerUpdateVault = async (program: Command, cmdOpts: OptionValues
     });
     console.log('');
     const answer = await new Promise(resolve => {
-        readline.question('Is the above information correct? (yes/no) ', (answer) => {
+        readline.question('Is the above information correct? (yes/no) ', (answer: string) => {
             readline.close();
             resolve(answer);
         });
