@@ -1,4 +1,3 @@
-import { PublicKey } from "@solana/web3.js";
 import {
     OptionValues,
     Command
@@ -6,7 +5,6 @@ import {
 import { getCommandContext } from "../utils";
 import { VaultDepositorRecord } from "../../src";
 import { BN, TEN, convertToNumber, getVariant } from "@drift-labs/sdk";
-import { conversationContext } from "@slack/bolt/dist/conversation-store";
 
 export const decodeLogs = async (program: Command, cmdOpts: OptionValues) => {
 
@@ -36,16 +34,16 @@ export const decodeLogs = async (program: Command, cmdOpts: OptionValues) => {
     for (const event of driftVault.program._events._eventParser.parseLogs(
         tx!.meta!.logMessages
     )) {
+
+        /* eslint-disable no-case-declarations */
         switch (event.name) {
             case "VaultDepositorRecord":
                 const data: VaultDepositorRecord = event.data;
-
-                // const vault = await driftVault.getVault(data.vault);
                 const spotMarket = driftClient.getSpotMarketAccount(data.spotMarketIndex);
                 const spotPrecision = TEN.pow(new BN(spotMarket!.decimals));
+                const date = new Date(data.ts.toNumber() * 1000);
 
                 console.log(event.name);
-                const date = new Date(data.ts.toNumber() * 1000);
                 console.log(` ts: ${date.toISOString()} (${data.ts.toNumber()})`);
                 console.log(` vault:              ${data.vault.toBase58()}`);
                 console.log(` depositorAuthority: ${data.depositorAuthority.toBase58()}`);
@@ -62,6 +60,8 @@ export const decodeLogs = async (program: Command, cmdOpts: OptionValues) => {
                 console.log(` managementFee:  ${data.managementFee.toNumber()}`);
                 console.log(` managementFeeShares:  ${data.managementFeeShares.toNumber()}`);
                 break;
+            default:
+                console.log(event);
         }
     }
 

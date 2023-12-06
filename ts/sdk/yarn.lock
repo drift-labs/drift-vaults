@@ -102,38 +102,25 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
-"@drift-labs/competitions-sdk@^0.2.5":
-  version "0.2.5"
-  resolved "https://registry.yarnpkg.com/@drift-labs/competitions-sdk/-/competitions-sdk-0.2.5.tgz#5c2f54cd175c22231b64db27f1e4376cbb249e22"
-  integrity sha512-XTyoQqAXz0qnzHLJJ10u/JlCaK8P5nuAlKmPfdYMCY4SAGF3KkUIHCwRIRISlZgQfK0bJfCY9cKg1p11MwHa8g==
+"@drift-labs/competitions-sdk@0.2.73":
+  version "0.2.73"
+  resolved "https://registry.yarnpkg.com/@drift-labs/competitions-sdk/-/competitions-sdk-0.2.73.tgz#1f036b24cbfbfc6852c3dda40e5d1b02a5a307a4"
+  integrity sha512-Os3eaECzYZASLY3/lp0gDC2Wn4qIY4ipU5r9aOBL6bmbB+BXAndkFb9vX+wn1PGU6FBLYnjhCBWcROrZSVklSw==
   dependencies:
     "@coral-xyz/anchor" "^0.26.0"
-    "@drift-labs/sdk" "2.43.0-beta.5"
+    "@drift-labs/sdk" "2.49.0-beta.10"
     "@solana/web3.js" "1.73.2"
     "@switchboard-xyz/solana.js" "^2.7.1"
+    cerializr "^3.1.4"
     dotenv "^16.3.1"
     strict-event-emitter-types "^2.0.0"
     ts-node "^10.9.1"
     typescript "^5.1.6"
 
-"@drift-labs/sdk@2.43.0-beta.5":
-  version "2.43.0-beta.5"
-  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.43.0-beta.5.tgz#3e7ba3c5b5fb52bdf6028e56fd466532cdea776d"
-  integrity sha512-gJvJbC53cYGRMK7GTfz+I+XoTmOgUyexWzlaARDI47E+oJGyZH/jaFriQjyyHPDp9XNcqkGSpVDwT8JZ3MSbVg==
-  dependencies:
-    "@coral-xyz/anchor" "0.28.1-beta.2"
-    "@ellipsis-labs/phoenix-sdk" "^1.4.2"
-    "@project-serum/serum" "^0.13.38"
-    "@pythnetwork/client" "2.5.3"
-    "@solana/spl-token" "^0.3.7"
-    "@solana/web3.js" "1.73.2"
-    strict-event-emitter-types "^2.0.0"
-    uuid "^8.3.2"
-
-"@drift-labs/sdk@2.49.0-beta.9":
-  version "2.49.0-beta.9"
-  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.49.0-beta.9.tgz#9e46d2c28c7bc3bf7c0da6279fd04f5cd4788080"
-  integrity sha512-0OyJm17KV5BPwHSiTnQ2pzf+q/UzPAjIdJjdateAbzqxYTLzkasfFpesSfZBPLGvA3CWF1/jaFYXo7y5BEsQTQ==
+"@drift-labs/sdk@2.49.0-beta.10":
+  version "2.49.0-beta.10"
+  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.49.0-beta.10.tgz#0d2021daf10174c6d19a07a6e36e6271ea465ecf"
+  integrity sha512-jSSqinLAajbqG2DxRGblKPrflp7w3/oqQ+di5YXVRRexsKs43XBkoApTtsoRy5KpNB3pkG3em88iwdk99a7hJg==
   dependencies:
     "@coral-xyz/anchor" "0.28.1-beta.2"
     "@ellipsis-labs/phoenix-sdk" "^1.4.2"
@@ -754,6 +741,14 @@ camelcase@^6.2.1, camelcase@^6.3.0:
   resolved "https://registry.yarnpkg.com/camelcase/-/camelcase-6.3.0.tgz#5685b95eb209ac9c0c177467778c9c84df58ba9a"
   integrity sha512-Gmy6FhYlCY7uOElZUSbxo2UCDH8owEk996gkbrpsgGtrJLM3J7jGxl9Ic7Qwwj4ivOE5AWZWRMecDdF7hqGjFA==
 
+cerializr@^3.1.4:
+  version "3.1.4"
+  resolved "https://registry.yarnpkg.com/cerializr/-/cerializr-3.1.4.tgz#e26dcedbd1e715ec57f54ca4d383e3abe43fac6b"
+  integrity sha512-awwd2yRT5gQRQvK+FI4hyv8FSczlT9VNQ9PFfY7Yz15kRFQUI4zbROiNV1uzL1WuLC0rzw79mdDZyvGbQUtErg==
+  dependencies:
+    lodash "^4.17.15"
+    tslib "^1.9.0"
+
 chalk@^4.0.0:
   version "4.1.2"
   resolved "https://registry.yarnpkg.com/chalk/-/chalk-4.1.2.tgz#aac4e2b7734a740867aeb16bf02aad556a1e7a01"
@@ -1096,7 +1091,7 @@ jsonparse@^1.2.0:
   resolved "https://registry.yarnpkg.com/jsonparse/-/jsonparse-1.3.1.tgz#3f4dae4a91fac315f71062f8521cc239f1366280"
   integrity sha512-POQXvpdL69+CluYsillJ7SUhKvytYjW9vG/GKpnf+xP8UWgYEM/RaMzHHofbALDiKbbP1W8UEYmgGl39WkPZsg==
 
-lodash@^4.17.20, lodash@^4.17.21:
+lodash@^4.17.15, lodash@^4.17.20, lodash@^4.17.21:
   version "4.17.21"
   resolved "https://registry.yarnpkg.com/lodash/-/lodash-4.17.21.tgz#679591c564c3bffaae8454cf0b3df370c3d6911c"
   integrity sha512-v2kDEe57lecTulaDIuNTPy3Ry4gLGJ6Z1O3vE1krgXZNrsQ+LFTGHVxVjcXPs17LhbZVGedAJv8XZ1tvj5FvSg==
@@ -1337,6 +1332,11 @@ ts-node@^10.9.1:
     make-error "^1.1.1"
     v8-compile-cache-lib "^3.0.1"
     yn "3.1.1"
+
+tslib@^1.9.0:
+  version "1.14.1"
+  resolved "https://registry.yarnpkg.com/tslib/-/tslib-1.14.1.tgz#cf2d38bdc34a134bcaf1091c41f6619e2f672d00"
+  integrity sha512-Xni35NKzjgMrwevysHTCArtLDpPvye8zV/0E4EyYn43P7/7qvQwPh9BGkHewbMulVntbigmcT7rdX3BNo9wRJg==
 
 tslib@^2.0.3:
   version "2.6.0"
