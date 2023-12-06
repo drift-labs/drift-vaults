@@ -34,7 +34,7 @@ export const initVault = async (program: Command, cmdOpts: OptionValues) => {
         spotMarketIndex = "0";
     }
     spotMarketIndex = parseInt(spotMarketIndex);
-    const spotMarket = driftClient.getSpotMarketAccount(spotMarketIndex); // takes USDC deposits
+    const spotMarket = driftClient.getSpotMarketAccount(spotMarketIndex);
     if (!spotMarket) {
         throw new Error("No spot market found");
     }
@@ -77,8 +77,8 @@ export const initVault = async (program: Command, cmdOpts: OptionValues) => {
     if (!minDepositAmount) {
         minDepositAmount = "0";
     }
-    minDepositAmount = parseInt(minDepositAmount);
-    const minDepositAmountBN = new BN(minDepositAmount).mul(spotPrecision);
+    minDepositAmount = parseFloat(minDepositAmount);
+    const minDepositAmountBN = new BN(spotPrecision.toNumber() * minDepositAmount);
 
     let delegate = cmdOpts.delegate;
     if (!delegate) {

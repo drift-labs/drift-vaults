@@ -21,7 +21,11 @@ export const deposit = async (program: Command, cmdOpts: OptionValues) => {
         driftVault
     } = await getCommandContext(program, true);
 
-    const spotMarket = driftClient.getSpotMarketAccount(0); // takes USDC deposits
+    const vaultDepositorAccount =
+        await driftVault.program.account.vaultDepositor.fetch(vaultDepositorAddress);
+    const vaultAddress = vaultDepositorAccount.vault;
+    const vaultAccount = await driftVault.program.account.vault.fetch(vaultAddress);
+    const spotMarket = driftClient.getSpotMarketAccount(vaultAccount.spotMarketIndex);
     if (!spotMarket) {
         throw new Error("No spot market found");
     }

@@ -15,7 +15,8 @@ import {
     withdraw,
     forceWithdraw,
     listDepositorsForVault,
-    managerUpdateMarginTradingEnabled
+    managerUpdateMarginTradingEnabled,
+    decodeLogs,
 } from "./commands";
 
 import { Command, Option } from 'commander';
@@ -141,6 +142,11 @@ program
     .description("Forces the vault to send out a withdraw after the redeem period has passed")
     .addOption(new Option("--vault-depositor-address <vaultDepositorAddress>", "VaultDepositor address").makeOptionMandatory(false))
     .action((opts) => forceWithdraw(program, opts));
+program
+    .command("decode-logs")
+    .description("Decode program logs from a txid")
+    .addOption(new Option("--tx <tx>", "Transaction hash").makeOptionMandatory(true))
+    .action((opts) => decodeLogs(program, opts));
 
 program.parseAsync().then(() => {
     process.exit(0);

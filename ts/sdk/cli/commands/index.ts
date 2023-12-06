@@ -15,3 +15,4 @@ export * from './forceWithdraw';
 export * from './withdraw';
 export * from './listDepositorsForVault';
 export * from './managerUpdateMarginTradingEnabled';
+export * from './decodeLogs';

@@ -91,7 +91,9 @@ export async function getCommandContext(program: Command, needToSign: boolean): 
     }
 
     const wallet = new Wallet(keypair);
-    console.log(`Signing wallet address (need to sign: ${needToSign}): `, wallet.publicKey.toBase58());
+    if (needToSign) {
+        console.log(`Signing wallet address: `, wallet.publicKey.toBase58());
+    }
 
     const connection = new Connection(opts.url, {
         commitment: opts.commitment,
