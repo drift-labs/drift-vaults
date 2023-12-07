@@ -61,25 +61,32 @@ export const managerUpdateVault = async (program: Command, cmdOpts: OptionValues
 
     let minDepositAmount = cmdOpts.minDepositAmount;
     let minDepositAmountBN: BN | null = null;
-    if (!minDepositAmount) {
+    if (minDepositAmount !== undefined && minDepositAmount !== null) {
         minDepositAmount = parseInt(minDepositAmount);
         minDepositAmountBN = new BN(minDepositAmount).mul(spotPrecision);
     }
 
     console.log(`Updating params:`);
-    console.log(`  RedeemPeriod:           ${vault.redeemPeriod.toNumber()} -> ${redeemPeriodBN}`);
-    const maxTokensBefore = convertToNumber(vault.maxTokens, spotPrecision);
-    const maxTokensAfter = maxTokensBN ? convertToNumber(maxTokensBN, spotPrecision) : 'unchanged';
-    console.log(`  MaxTokens:              ${maxTokensBefore} ${spotMarketName} -> ${maxTokensAfter} ${spotMarketName}`);
-    const minDepositAmountBefore = convertToNumber(vault.minDepositAmount, spotPrecision);
-    const minDepositAmountAfter = minDepositAmountBN ? convertToNumber(minDepositAmountBN, spotPrecision) : 'unchanged';
-    console.log(`  MinDepositAmount:       ${minDepositAmountBefore} ${spotMarketName} -> ${minDepositAmountAfter} ${spotMarketName}`);
+    const redeemPeriodBefore = vault.redeemPeriod.toNumber();
+    const redeemPeriodAfter = redeemPeriodBN ? redeemPeriodBN.toNumber() : 'unchanged';
+    console.log(`  RedeemPeriod:           ${redeemPeriodBefore} -> ${redeemPeriodAfter}`);
+
+    const maxTokensBefore = `${convertToNumber(vault.maxTokens, spotPrecision)} ${spotMarketName}`;
+    const maxTokensAfter = maxTokensBN ? `${convertToNumber(maxTokensBN, spotPrecision)} ${spotMarketName}` : 'unchanged';
+    console.log(`  MaxTokens:              ${maxTokensBefore} -> ${maxTokensAfter}`);
+
+    const minDepositAmountBefore = `${convertToNumber(vault.minDepositAmount, spotPrecision)} ${spotMarketName}`;
+    const minDepositAmountAfter = minDepositAmountBN ? `${convertToNumber(minDepositAmountBN, spotPrecision)} ${spotMarketName}` : 'unchanged';
+    console.log(`  MinDepositAmount:       ${minDepositAmountBefore} -> ${minDepositAmountAfter}`);
+
     const managementFeeBefore = convertToNumber(vault.managementFee, PERCENTAGE_PRECISION) * 100.0;
     const managementFeeAfter = managementFeeBN ? `${convertToNumber(managementFeeBN, PERCENTAGE_PRECISION) * 100.0}%` : 'unchanged';
     console.log(`  ManagementFee:          ${managementFeeBefore}% -> ${managementFeeAfter}`);
+
     const profitShareBefore = vault.profitShare / PERCENTAGE_PRECISION.toNumber() * 100.0;
     const profitShareAfter = profitShareNumber !== null ? `${profitShareNumber / PERCENTAGE_PRECISION.toNumber() * 100.0}%` : 'unchanged';
     console.log(`  ProfitShare:            ${profitShareBefore}% -> ${profitShareAfter}`);
+
     const permissionedBefore = vault.permissioned;
     const permissionedAfter = permissioned !== null ? permissioned : 'unchanged ';
     console.log(`  Permissioned:           ${permissionedBefore} -> ${permissionedAfter}`);
