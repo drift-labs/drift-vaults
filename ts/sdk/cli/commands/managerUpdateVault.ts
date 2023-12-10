@@ -57,8 +57,6 @@ export const managerUpdateVault = async (program: Command, cmdOpts: OptionValues
         profitShareNumber = profitShare * PERCENTAGE_PRECISION.toNumber() / 100.0;
     }
 
-    const permissioned: boolean | null = (cmdOpts.permissioned === null || cmdOpts.permissioned === undefined) ? null : cmdOpts.permissioned;
-
     let minDepositAmount = cmdOpts.minDepositAmount;
     let minDepositAmountBN: BN | null = null;
     if (minDepositAmount !== undefined && minDepositAmount !== null) {
@@ -87,8 +85,9 @@ export const managerUpdateVault = async (program: Command, cmdOpts: OptionValues
     const profitShareAfter = profitShareNumber !== null ? `${profitShareNumber / PERCENTAGE_PRECISION.toNumber() * 100.0}%` : 'unchanged';
     console.log(`  ProfitShare:            ${profitShareBefore}% -> ${profitShareAfter}`);
 
+    const permissioned: boolean | null = (cmdOpts.permissioned === null || cmdOpts.permissioned === undefined) ? null : JSON.parse(cmdOpts.permissioned);
     const permissionedBefore = vault.permissioned;
-    const permissionedAfter = permissioned !== null ? permissioned : 'unchanged ';
+    const permissionedAfter = permissioned !== null ? permissioned : 'unchanged';
     console.log(`  Permissioned:           ${permissionedBefore} -> ${permissionedAfter}`);
 
     const readline = require('readline').createInterface({
@@ -117,7 +116,7 @@ export const managerUpdateVault = async (program: Command, cmdOpts: OptionValues
         managementFee: managementFeeBN,
         profitShare: profitShareNumber,
         hurdleRate: null,
-        permissioned
+        permissioned,
     };
 
     const tx = await driftVault.managerUpdateVault(vaultAddress, newParams);
