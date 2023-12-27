@@ -131,10 +131,10 @@
     strict-event-emitter-types "^2.0.0"
     uuid "^8.3.2"
 
-"@drift-labs/sdk@2.53.0-beta.4":
-  version "2.53.0-beta.4"
-  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.53.0-beta.4.tgz#723eaaf5d50128012765dd29571b03a9ad379e82"
-  integrity sha512-F1/0IB+j51CJGE4fb+U5WpZkg1iPbFGH5aLC3Qqlfy1oThaQuPioz+xqsLu4wI86zfKtGmvUB1qSkaXrkwOUPA==
+"@drift-labs/sdk@2.53.0-beta.6":
+  version "2.53.0-beta.6"
+  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.53.0-beta.6.tgz#49cd6e26198edb1391e21bd9c567781dfcd440b6"
+  integrity sha512-WDJm1KkD5CTeYt3E1rllujnj5DAcJyaRmDzhyKGn7JnclCCOZ9LeUFZuvRFZvkr+YU+YtX/jIH3tAPmECHjQcQ==
   dependencies:
     "@coral-xyz/anchor" "0.28.1-beta.2"
     "@ellipsis-labs/phoenix-sdk" "^1.4.2"
