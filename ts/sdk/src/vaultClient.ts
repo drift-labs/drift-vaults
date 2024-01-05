@@ -65,7 +65,7 @@ export class VaultClient {
 		return await this.program.account.vaultDepositor.fetch(vaultDepositor);
 	}
 
-	public async getAllVaultDepositors(
+	public async getAllVaultDepositorsWithNoWithdrawRequest(
 		vault: PublicKey
 	): Promise<ProgramAccount<VaultDepositor>[]> {
 		const filters = [
@@ -86,10 +86,37 @@ export class VaultClient {
 				},
 			},
 			{
-				// last_withdraw_request_ts = 0
+				// last_withdraw_request.shares (u128) = 0
 				memcmp: {
-					offset: 144,
-					bytes: bs58.encode(Uint8Array.from([0])),
+					offset: 112,
+					bytes: bs58.encode(new Uint8Array(16).fill(0)),
+				},
+			},
+		];
+		// @ts-ignore
+		return (await this.program.account.vaultDepositor.all(
+			filters
+		)) as ProgramAccount<VaultDepositor>[];
+	}
+
+	public async getAllVaultDepositors(
+		vault: PublicKey
+	): Promise<ProgramAccount<VaultDepositor>[]> {
+		const filters = [
+			{
+				// discriminator = VaultDepositor
+				memcmp: {
+					offset: 0,
+					bytes: bs58.encode(
+						BorshAccountsCoder.accountDiscriminator('VaultDepositor')
+					),
+				},
+			},
+			{
+				// vault = vault
+				memcmp: {
+					offset: 8,
+					bytes: vault.toBase58(),
 				},
 			},
 		];

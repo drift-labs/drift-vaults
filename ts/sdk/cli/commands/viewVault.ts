@@ -4,7 +4,7 @@ import {
     Command
 } from "commander";
 import { getCommandContext, printVault } from "../utils";
-import { QUOTE_PRECISION, convertToNumber } from "@drift-labs/sdk";
+import { BN, PRICE_PRECISION, QUOTE_PRECISION, TEN, convertToNumber, decodeName } from "@drift-labs/sdk";
 
 export const viewVault = async (program: Command, cmdOpts: OptionValues) => {
 
@@ -17,14 +17,38 @@ export const viewVault = async (program: Command, cmdOpts: OptionValues) => {
     }
 
     const {
-        driftVault
+        driftVault,
+        driftClient,
     } = await getCommandContext(program, false);
+
 
     const vault = await driftVault.getVault(address);
     const { managerSharePct } = printVault(vault);
     const vaultEquity = await driftVault.calculateVaultEquity({
         vault,
     });
-    console.log(`vaultEquity: $${convertToNumber(vaultEquity, QUOTE_PRECISION)}`);
-    console.log(`manager share: $${managerSharePct * convertToNumber(vaultEquity, QUOTE_PRECISION)}`);
+
+    const spotMarket = driftClient.getSpotMarketAccount(vault.spotMarketIndex);
+    if (!spotMarket) {
+        throw new Error(`Spot market ${vault.spotMarketIndex} not found`);
+    }
+    const spotOracle = driftClient.getOracleDataForSpotMarket(vault.spotMarketIndex);
+    if (!spotOracle) {
+        throw new Error(`Spot oracle ${vault.spotMarketIndex} not found`);
+    }
+    const oraclePriceNum = convertToNumber(spotOracle.price, PRICE_PRECISION);
+    const spotPrecision = TEN.pow(new BN(spotMarket.decimals));
+    const spotSymbol = decodeName(spotMarket.name);
+
+    const vaultEquityNum = convertToNumber(vaultEquity, QUOTE_PRECISION);
+    const netDepositsNum = convertToNumber(vault.netDeposits, spotPrecision);
+    console.log(`vaultEquity (USDC):   $${vaultEquityNum}`);
+    console.log(`manager share (USDC): $${managerSharePct * vaultEquityNum}`);
+    console.log(`vault PnL (USDC):     $${vaultEquityNum - netDepositsNum}`);
+
+    const vaultEquitySpot = vaultEquityNum / oraclePriceNum;
+
+    console.log(`vaultEquity (${spotSymbol}):   ${vaultEquitySpot}`);
+    console.log(`manager share (${spotSymbol}): ${managerSharePct * vaultEquitySpot}`);
+    console.log(`vault PnL (${spotSymbol}):     ${vaultEquitySpot - netDepositsNum}`);
 };

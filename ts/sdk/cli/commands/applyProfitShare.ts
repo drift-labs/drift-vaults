@@ -1,4 +1,4 @@
-import { PublicKey, TransactionInstruction } from "@solana/web3.js";
+import { ComputeBudgetProgram, PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
 import {
     OptionValues,
     Command
@@ -19,27 +19,45 @@ export const applyProfitShare = async (program: Command, cmdOpts: OptionValues) 
         driftVault
     } = await getCommandContext(program, true);
 
-    const allVaultDepositors = await driftVault.getAllVaultDepositors(vaultAddress);
-    // console.log(allVaultDepositors);
-
-    console.log(`Cranking profit share for ${allVaultDepositors.length} depositors...`);
+    const vdToRealizeProfit = await driftVault.getAllVaultDepositorsWithNoWithdrawRequest(vaultAddress);
+    console.log(`Applying profit share for ${vdToRealizeProfit.length} depositors...`);
 
     const chunkSize = 10;
     const ixChunks: Array<Array<TransactionInstruction>> = [];
-    for (let i = 0; i < allVaultDepositors.length; i += chunkSize) {
-        const chunk = allVaultDepositors.slice(i, i + chunkSize);
+    for (let i = 0; i < vdToRealizeProfit.length; i += chunkSize) {
+        const chunk = vdToRealizeProfit.slice(i, i + chunkSize);
         const ixs = await Promise.all(chunk.map((vaultDepositor) => {
             return driftVault.getApplyProfitShareIx(vaultAddress, vaultDepositor.publicKey);
         }));
 
         ixChunks.push(ixs);
     }
-    console.log(`Cranking ${ixChunks.length} of ${chunkSize} depositors at a time...`);
+    console.log(`Sending ${ixChunks.length} transactions...`);
 
-    const txs = await Promise.all(ixChunks.map((ixs) => driftVault.createAndSendTxn(ixs, {
-        units: 2_000_000
-    })));
-    for (const tx of txs) {
-        console.log(`Crank tx: https://solscan.io/tx/${tx}`);
+    for (let i = 0; i < ixChunks.length; i++) {
+        const ixs = ixChunks[i];
+        try {
+            ixs.unshift(ComputeBudgetProgram.setComputeUnitLimit({
+                units: 1_400_000,
+            }));
+            ixs.unshift(ComputeBudgetProgram.setComputeUnitPrice({
+                microLamports: 100,
+            }));
+
+            const tx = new Transaction();
+            tx.add(...ixs);
+            const { txSig } = await driftVault.driftClient.sendTransaction(
+                tx,
+                [],
+                driftVault.driftClient.opts
+            );
+
+            console.log(`[${i}]: https://solscan.io/tx/${txSig}`);
+
+        } catch (e) {
+            console.error(e);
+            continue;
+        }
+
     }
 };

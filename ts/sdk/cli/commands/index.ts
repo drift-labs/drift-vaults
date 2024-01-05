@@ -16,3 +16,5 @@ export * from './withdraw';
 export * from './listDepositorsForVault';
 export * from './managerUpdateMarginTradingEnabled';
 export * from './decodeLogs';
+export * from './vaultInvariantChecks';
+

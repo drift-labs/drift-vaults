@@ -17,6 +17,7 @@ import {
     listDepositorsForVault,
     managerUpdateMarginTradingEnabled,
     decodeLogs,
+    vaultInvariantChecks,
 } from "./commands";
 
 import { Command, Option } from 'commander';
@@ -147,6 +148,11 @@ program
     .description("Decode program logs from a txid")
     .addOption(new Option("--tx <tx>", "Transaction hash").makeOptionMandatory(true))
     .action((opts) => decodeLogs(program, opts));
+program
+    .command("check-invariants")
+    .description("Perform sanity checks on vault/depositor invariants")
+    .addOption(new Option("--vault-address <address>", "Vault address").makeOptionMandatory(true))
+    .action((opts) => vaultInvariantChecks(program, opts));
 
 program.parseAsync().then(() => {
     process.exit(0);
