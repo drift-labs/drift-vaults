@@ -42,6 +42,11 @@ export class VaultClient {
 	program: Program<DriftVaults>;
 	cliMode: boolean;
 
+	/**
+	 * Cache map of drift user accounts of vaults.
+	 */
+	readonly vaultUsers: Map<string, User> = new Map<string, User>();
+
 	constructor({
 		driftClient,
 		program,
@@ -126,6 +131,30 @@ export class VaultClient {
 		)) as ProgramAccount<VaultDepositor>[];
 	}
 
+	public async getSubscribedVaultUser(vaultDriftUserAccountPubKey: PublicKey) {
+		let vaultUser = this.vaultUsers.get(
+			vaultDriftUserAccountPubKey.toBase58()
+		);
+
+		if (!vaultUser) {
+			vaultUser = new User({
+				driftClient: this.driftClient,
+				userAccountPublicKey: vaultDriftUserAccountPubKey,
+			});
+			await vaultUser.subscribe();
+			this.vaultUsers.set(
+				vaultDriftUserAccountPubKey.toBase58(),
+				vaultUser
+			);
+		}
+
+		if (!vaultUser?.isSubscribed) {
+			await vaultUser.subscribe();
+		}
+
+		return vaultUser;
+	}
+
 	/**
 	 *
 	 * @param vault pubkey
@@ -145,11 +174,7 @@ export class VaultClient {
 			throw new Error('Must supply address or vault');
 		}
 
-		const user = new User({
-			driftClient: this.driftClient,
-			userAccountPublicKey: vaultAccount.user,
-		});
-		await user.subscribe();
+		const user = await this.getSubscribedVaultUser(vaultAccount.user);
 
 		const netSpotValue = user.getNetSpotMarketValue();
 		const unrealizedPnl = user.getUnrealizedPNL(true, undefined, undefined);
@@ -273,11 +298,7 @@ export class VaultClient {
 			);
 		}
 
-		const user = new User({
-			driftClient: this.driftClient,
-			userAccountPublicKey: vaultAccount.user,
-		});
-		await user.subscribe();
+		const user = await this.getSubscribedVaultUser(vaultAccount.user);
 
 		const remainingAccounts = this.driftClient.getRemainingAccounts({
 			userAccounts: [user.getUserAccount()],
@@ -324,11 +345,7 @@ export class VaultClient {
 			throw new Error(`Only the manager of the vault can request a withdraw.`);
 		}
 
-		const user = new User({
-			driftClient: this.driftClient,
-			userAccountPublicKey: vaultAccount.user,
-		});
-		await user.subscribe();
+		const user = await this.getSubscribedVaultUser(vaultAccount.user);
 		const remainingAccounts = this.driftClient.getRemainingAccounts({
 			userAccounts: [user.getUserAccount()],
 			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
@@ -391,11 +408,7 @@ export class VaultClient {
 			driftState: driftStateKey,
 		};
 
-		const user = new User({
-			driftClient: this.driftClient,
-			userAccountPublicKey: vaultAccount.user,
-		});
-		await user.subscribe();
+		const user = await this.getSubscribedVaultUser(vaultAccount.user);
 		const remainingAccounts = this.driftClient.getRemainingAccounts({
 			userAccounts: [user.getUserAccount()],
 		});
@@ -429,11 +442,7 @@ export class VaultClient {
 			throw new Error(`Only the manager of the vault can request a withdraw.`);
 		}
 
-		const user = new User({
-			driftClient: this.driftClient,
-			userAccountPublicKey: vaultAccount.user,
-		});
-		await user.subscribe();
+		const user = await this.getSubscribedVaultUser(vaultAccount.user);
 
 		const remainingAccounts = this.driftClient.getRemainingAccounts({
 			userAccounts: [user.getUserAccount()],
@@ -506,11 +515,7 @@ export class VaultClient {
 	): Promise<TransactionInstruction> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
 
-		const user = new User({
-			driftClient: this.driftClient,
-			userAccountPublicKey: vaultAccount.user,
-		});
-		await user.subscribe();
+		const user = await this.getSubscribedVaultUser(vaultAccount.user);
 
 		const spotMarket = this.driftClient.getSpotMarketAccount(
 			vaultAccount.spotMarketIndex
@@ -635,11 +640,7 @@ export class VaultClient {
 
 		const vaultAccount = await this.program.account.vault.fetch(vaultPubKey);
 
-		const user = new User({
-			driftClient: this.driftClient,
-			userAccountPublicKey: vaultAccount.user,
-		});
-		await user.subscribe();
+		const user = await this.getSubscribedVaultUser(vaultAccount.user);
 		const remainingAccounts = this.driftClient.getRemainingAccounts({
 			userAccounts: [user.getUserAccount()],
 			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
@@ -722,11 +723,7 @@ export class VaultClient {
 			vaultDepositorAccount.vault
 		);
 
-		const user = new User({
-			driftClient: this.driftClient,
-			userAccountPublicKey: vaultAccount.user,
-		});
-		await user.subscribe();
+		const user = await this.getSubscribedVaultUser(vaultAccount.user);
 		const remainingAccounts = this.driftClient.getRemainingAccounts({
 			userAccounts: [user.getUserAccount()],
 		});
@@ -778,11 +775,7 @@ export class VaultClient {
 			vaultDepositorAccount.vault
 		);
 
-		const user = new User({
-			driftClient: this.driftClient,
-			userAccountPublicKey: vaultAccount.user,
-		});
-		await user.subscribe();
+		const user = await this.getSubscribedVaultUser(vaultAccount.user);
 		const remainingAccounts = this.driftClient.getRemainingAccounts({
 			userAccounts: [user.getUserAccount()],
 			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
@@ -850,11 +843,7 @@ export class VaultClient {
 			vaultDepositorAccount.vault
 		);
 
-		const user = new User({
-			driftClient: this.driftClient,
-			userAccountPublicKey: vaultAccount.user,
-		});
-		await user.subscribe();
+		const user = await this.getSubscribedVaultUser(vaultAccount.user);
 		const remainingAccounts = this.driftClient.getRemainingAccounts({
 			userAccounts: [user.getUserAccount()],
 			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
@@ -941,11 +930,7 @@ export class VaultClient {
 			driftState: driftStateKey,
 		};
 
-		const user = new User({
-			driftClient: this.driftClient,
-			userAccountPublicKey: vaultAccount.user,
-		});
-		await user.subscribe();
+		const user = await this.getSubscribedVaultUser(vaultAccount.user);
 		const remainingAccounts = this.driftClient.getRemainingAccounts({
 			userAccounts: [user.getUserAccount()],
 		});
@@ -985,11 +970,7 @@ export class VaultClient {
 
 		const vaultAccount = await this.program.account.vault.fetch(vaultPubKey);
 
-		const user = new User({
-			driftClient: this.driftClient,
-			userAccountPublicKey: vaultAccount.user,
-		});
-		await user.subscribe();
+		const user = await this.getSubscribedVaultUser(vaultAccount.user);
 		const remainingAccounts = this.driftClient.getRemainingAccounts({
 			userAccounts: [user.getUserAccount()],
 			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
