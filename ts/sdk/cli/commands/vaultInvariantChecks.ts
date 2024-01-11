@@ -37,10 +37,15 @@ export const vaultInvariantChecks = async (program: Command, cmdOpts: OptionValu
     const spotMarket = driftVault.driftClient.getSpotMarketAccount(vault.spotMarketIndex);
     const spotPrecision = new BN(10).pow(new BN(spotMarket!.decimals));
 
-    const allVaultDepositors = await driftVault.getAllVaultDepositors(vaultAddress);
+    let allVaultDepositors = await driftVault.getAllVaultDepositors(vaultAddress);
+
+    // Sort allVaultDepositors by vaultShares in descending order
+    allVaultDepositors = allVaultDepositors.sort((a, b) => b.account.vaultShares.cmp(a.account.vaultShares));
 
     let totalUserShares = new BN(0);
     let totalUserProfitSharePaid = new BN(0);
+    let totalUserProfitShareSharesPaid = new BN(0);
+    let totalPendingProfitShareAmount = new BN(0);
 
     for (const vd of allVaultDepositors) {
         totalUserShares = totalUserShares.add(vd.account.vaultShares);
@@ -54,10 +59,12 @@ export const vaultInvariantChecks = async (program: Command, cmdOpts: OptionValu
             // console.log(`Profit share paid: ${vd.publicKey.toBase58()} (auth: ${vd.account.authority.toBase58()}): ${Math.ceil(profitSharePaid * 100.0)}%`);
         }
         totalUserProfitSharePaid = totalUserProfitSharePaid.add(vd.account.profitShareFeePaid);
+        totalUserProfitShareSharesPaid = totalUserProfitShareSharesPaid.add(vd.account.cumulativeProfitShareAmount);
 
         const pendingProfitShares = calculateApplyProfitShare(vd.account, vaultEquity, vault);
+        totalPendingProfitShareAmount = totalPendingProfitShareAmount.add(pendingProfitShares.profitShareAmount);
+
         console.log(`Pending profit shares: ${vd.publicKey.toBase58()} (auth: ${vd.account.authority.toBase58()}): $${convertToNumber(pendingProfitShares.profitShareAmount, spotPrecision)}`);
-        console.log(` . ${pendingProfitShares.profitShareShares}, ${pendingProfitShares.profitShareAmount}`);
     }
     console.log(`==== Vault Depositor Shares == vault.user_shares ====`);
     console.log(`total vd shares:        ${totalUserShares.toString()}`);
@@ -69,4 +76,8 @@ export const vaultInvariantChecks = async (program: Command, cmdOpts: OptionValu
     console.log(`total vault d profitshares: ${totalUserProfitSharePaid.toString()}`);
     console.log(`vault total profit shares:  ${vault.managerTotalProfitShare.toString()}`);
     console.log(`diff: ${vault.managerTotalProfitShare.sub(totalUserProfitSharePaid)}`);
+
+    console.log(``);
+    console.log(`==== Pending profit shares to realize ====`);
+    console.log(`${convertToNumber(totalPendingProfitShareAmount, spotPrecision)}`);
 };

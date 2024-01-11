@@ -132,9 +132,7 @@ export class VaultClient {
 	}
 
 	public async getSubscribedVaultUser(vaultDriftUserAccountPubKey: PublicKey) {
-		let vaultUser = this.vaultUsers.get(
-			vaultDriftUserAccountPubKey.toBase58()
-		);
+		let vaultUser = this.vaultUsers.get(vaultDriftUserAccountPubKey.toBase58());
 
 		if (!vaultUser) {
 			vaultUser = new User({
@@ -142,10 +140,7 @@ export class VaultClient {
 				userAccountPublicKey: vaultDriftUserAccountPubKey,
 			});
 			await vaultUser.subscribe();
-			this.vaultUsers.set(
-				vaultDriftUserAccountPubKey.toBase58(),
-				vaultUser
-			);
+			this.vaultUsers.set(vaultDriftUserAccountPubKey.toBase58(), vaultUser);
 		}
 
 		if (!vaultUser?.isSubscribed) {
