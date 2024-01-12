@@ -2,15 +2,22 @@ import Solana from '@ledgerhq/hw-app-solana';
 import type { default as Transport } from '@ledgerhq/hw-transport';
 import TransportNodeHid from '@ledgerhq/hw-transport-node-hid';
 import { getDevices } from '@ledgerhq/hw-transport-node-hid-noevents';
-import { LedgerWalletAdapter, getDerivationPath } from '@solana/wallet-adapter-ledger';
-import { PublicKey } from '@solana/web3.js';
+import {
+  LedgerWalletAdapter,
+  getDerivationPath,
+} from '@solana/wallet-adapter-ledger';
+import { PublicKey, Keypair } from '@solana/web3.js';
+import type { Wallet } from '@drift-labs/sdk';
 
-// https://docs.solana.com/wallet-guide/hardware-wallets#specify-a-keypair-url
+// Follows solana cli url format
 // usb://<MANUFACTURER>[/<WALLET_ID>][?key=<ACCOUNT>[/<CHANGE>]]
-export const parseKeypairUrl = (url = ''): {
-  walletId?: string,
-  account?: number,
-  change?: number,
+// See: https://docs.solana.com/wallet-guide/hardware-wallets#specify-a-keypair-url
+export const parseKeypairUrl = (
+  url = ''
+): {
+  walletId?: string;
+  account?: number;
+  change?: number;
 } => {
   const walletId = url.match(/(?<=usb:\/\/ledger\/)(\w+)?/)?.[0];
   const [account, change] = (url.split('?key=')[1]?.split('/') ?? []).map(
@@ -23,14 +30,13 @@ export const parseKeypairUrl = (url = ''): {
   };
 };
 
-
 async function getPublicKey(
   transport: Transport,
   account?: number,
   change?: number
 ): Promise<PublicKey> {
   const path =
-    "44'/501'" +
+    "44'/501'" + // Following BIP44 standard
     (account !== undefined ? `/${account}` : '') +
     (change !== undefined ? `/${change}` : '');
 
@@ -38,48 +44,68 @@ async function getPublicKey(
   return new PublicKey(new Uint8Array(address));
 }
 
-// Fix class type
-interface Wallet extends LedgerWalletAdapter {
-  publicKey: PublicKey;
-}
-
+/*
+ * Returns a Drift compatible wallet backed by ledger hardware device
+ * This only works in an nodejs environment, based on the transport used
+ *
+ * Key derivation path is set based on:
+ * https://docs.solana.com/wallet-guide/hardware-wallets
+ */
 export async function getLedgerWallet(url = ''): Promise<Wallet> {
   const { account, change, walletId } = parseKeypairUrl(url);
 
   const derivationPath = getDerivationPath(account, change);
 
+  // Load the first device
   let transport = await TransportNodeHid.open('');
 
-  let publicKey = await getPublicKey(transport, account, change);
-
-  // If walletId is specified, we need to find the correct device.
+  // If walletId is specified, we need to loop and correct device.
   if (walletId) {
     const devices = getDevices();
+    let correctDeviceFound = false;
+
     for (let device of devices) {
-      if (publicKey.toString() === walletId) {
-        // Correct device found.
+      // Wallet id is the public key of the device (with no account or change)
+      const connectedWalletId = await getPublicKey(
+        transport,
+        undefined,
+        undefined
+      );
+
+      if (connectedWalletId.toString() === walletId) {
+        correctDeviceFound = true;
         break;
       }
-      transport.close(); // Close the previous transport
-      // Open new device and see if it matches wallet
+
+      transport.close();
       transport = await TransportNodeHid.open(device.path);
-      publicKey = await getPublicKey(transport, account, change);
     }
 
-    if (publicKey.toString() !== walletId) {
+    if (!correctDeviceFound) {
       throw new Error('Wallet not found');
     }
   }
 
+  const publicKey = await getPublicKey(transport, account, change);
+
+  // We can reuse the existing ledger wallet adapter
+  // But we need to inject/hack in our own transport (as we not a browser)
   const wallet = new LedgerWalletAdapter({ derivationPath });
-  // Ledger wallet adapter assumes web interface
-  // Inject our own transport and public key
+
+  // Do some hacky things to get the wallet to work
+  // These are all done in the `connect` of the ledger wallet adapter
   wallet['_transport'] = transport;
   wallet['_publicKey'] = publicKey;
-
-  // Hook up things done on connect
   transport.on('disconnect', wallet['_disconnected']);
   wallet.emit('connect', publicKey);
 
-  return wallet as Wallet;
+  // Return a Drift compatible wallet
+  return {
+    payer: undefined as unknown as Keypair, // Doesn't appear to break things
+    publicKey: publicKey,
+    signTransaction: wallet.signTransaction,
+    signVersionedTransaction: wallet.signTransaction,
+    signAllTransactions: wallet.signAllTransactions,
+    signAllVersionedTransactions: wallet.signAllTransactions,
+  };
 }
