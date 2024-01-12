@@ -103,9 +103,9 @@ export async function getLedgerWallet(url = ''): Promise<Wallet> {
   return {
     payer: undefined as unknown as Keypair, // Doesn't appear to break things
     publicKey: publicKey,
-    signTransaction: wallet.signTransaction,
-    signVersionedTransaction: wallet.signTransaction,
-    signAllTransactions: wallet.signAllTransactions,
-    signAllVersionedTransactions: wallet.signAllTransactions,
+    signTransaction: wallet.signTransaction.bind(wallet),
+    signVersionedTransaction: wallet.signTransaction.bind(wallet),
+    signAllTransactions: wallet.signAllTransactions.bind(wallet),
+    signAllVersionedTransactions: wallet.signAllTransactions.bind(wallet),
   };
 }
