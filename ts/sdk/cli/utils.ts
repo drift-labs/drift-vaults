@@ -5,6 +5,7 @@ import { Connection, Keypair } from "@solana/web3.js";
 import { AnchorProvider } from "@coral-xyz/anchor";
 import * as anchor from '@coral-xyz/anchor';
 import { IDL } from "../src/types/drift_vaults";
+import { getLedgerWallet } from "./ledgerWallet";
 
 export function printVault(vault: Vault) {
     console.log(`vault: ${decodeName(vault.name)}`);
@@ -77,20 +78,22 @@ export async function getCommandContext(program: Command, needToSign: boolean): 
 
     const opts = program.opts();
 
-    let keypair: Keypair;
-    if (needToSign) {
+    let wallet: Wallet;
+    if (!needToSign) {
+        wallet = new Wallet(Keypair.generate());
+    } else if (opts.keypair.startsWith('usb://ledger')) {
+        wallet = await getLedgerWallet(opts.keypair) as unknown as Wallet;
+    } else {
         try {
             console.log(opts.keypair);
-            keypair = loadKeypair(opts.keypair as string);
+            const keypair = loadKeypair(opts.keypair as string);
+            wallet = new Wallet(keypair);
         } catch (e) {
             console.error(`Need to provide a valid keypair: ${e}`);
             process.exit(1);
         }
-    } else {
-        keypair = Keypair.generate();
     }
 
-    const wallet = new Wallet(keypair);
     if (needToSign) {
         console.log(`Signing wallet address: `, wallet.publicKey.toBase58());
     }
