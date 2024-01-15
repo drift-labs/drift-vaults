@@ -7,6 +7,7 @@ import {
 	getUserAccountPublicKeySync,
 	getUserStatsAccountPublicKey,
 	User,
+	UserMap,
 } from '@drift-labs/sdk';
 import { BorshAccountsCoder, Program, ProgramAccount } from '@coral-xyz/anchor';
 import { DriftVaults } from './types/drift_vaults';
@@ -36,6 +37,7 @@ import {
 } from '@solana/spl-token';
 import { Vault, VaultDepositor, WithdrawUnit } from './types/types';
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
+import { UserMapConfig } from '@drift-labs/sdk/lib/userMap/userMapConfig';
 
 export class VaultClient {
 	driftClient: DriftClient;
@@ -45,20 +47,35 @@ export class VaultClient {
 	/**
 	 * Cache map of drift user accounts of vaults.
 	 */
-	readonly vaultUsers: Map<string, User> = new Map<string, User>();
+	readonly vaultUsers: UserMap;
 
 	constructor({
 		driftClient,
 		program,
 		cliMode,
+		userMapConfig
 	}: {
 		driftClient: DriftClient;
 		program: Program<DriftVaults>;
 		cliMode?: boolean;
+		userMapConfig?: UserMapConfig;
 	}) {
 		this.driftClient = driftClient;
 		this.program = program;
 		this.cliMode = !!cliMode;
+
+		if (!userMapConfig) {
+			this.vaultUsers = new UserMap({
+				driftClient: driftClient,
+				subscriptionConfig: {
+					type: 'polling',
+					frequency: 1000,
+					commitment: 'processed'
+				}
+			});
+		} else {
+			this.vaultUsers = new UserMap(userMapConfig);
+		}
 	}
 
 	public async getVault(vault: PublicKey): Promise<Vault> {
@@ -139,8 +156,9 @@ export class VaultClient {
 				driftClient: this.driftClient,
 				userAccountPublicKey: vaultDriftUserAccountPubKey,
 			});
-			await vaultUser.subscribe();
-			this.vaultUsers.set(vaultDriftUserAccountPubKey.toBase58(), vaultUser);
+			await this.vaultUsers.addPubkey(
+				vaultDriftUserAccountPubKey,
+			);
 		}
 
 		if (!vaultUser?.isSubscribed) {
