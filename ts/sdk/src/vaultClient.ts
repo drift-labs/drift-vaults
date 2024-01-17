@@ -1040,6 +1040,7 @@ export class VaultClient {
 				}
 			)
 		);
+		tx.add(ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 1_000_000 }));
 		tx.add(...ixs);
 		const { txSig } = await this.driftClient.sendTransaction(
 			tx,
