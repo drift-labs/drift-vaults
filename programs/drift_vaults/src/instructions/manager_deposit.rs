@@ -9,8 +9,8 @@ use drift::instructions::optional_accounts::AccountMaps;
 use drift::program::Drift;
 use drift::state::user::User;
 
-pub fn manager_deposit<'info>(
-    ctx: Context<'_, '_, '_, 'info, ManagerDeposit<'info>>,
+pub fn manager_deposit<'c: 'info, 'info>(
+    ctx: Context<'_, '_, 'c, 'info, ManagerDeposit<'info>>,
     amount: u64,
 ) -> Result<()> {
     let clock = &Clock::get()?;

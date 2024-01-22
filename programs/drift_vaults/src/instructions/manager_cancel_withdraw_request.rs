@@ -7,8 +7,8 @@ use crate::constraints::{is_manager_for_vault, is_user_for_vault, is_user_stats_
 use crate::AccountMapProvider;
 use crate::Vault;
 
-pub fn manager_cancel_withdraw_request<'info>(
-    ctx: Context<'_, '_, '_, 'info, ManagerCancelWithdrawRequest<'info>>,
+pub fn manager_cancel_withdraw_request<'c: 'info, 'info>(
+    ctx: Context<'_, '_, 'c, 'info, ManagerCancelWithdrawRequest<'info>>,
 ) -> Result<()> {
     let clock = &Clock::get()?;
     let vault = &mut ctx.accounts.vault.load_mut()?;
