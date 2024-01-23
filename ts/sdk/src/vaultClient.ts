@@ -53,7 +53,7 @@ export class VaultClient {
 		driftClient,
 		program,
 		cliMode,
-		userMapConfig
+		userMapConfig,
 	}: {
 		driftClient: DriftClient;
 		program: Program<DriftVaults>;
@@ -70,8 +70,8 @@ export class VaultClient {
 				subscriptionConfig: {
 					type: 'polling',
 					frequency: 1000,
-					commitment: 'processed'
-				}
+					commitment: 'processed',
+				},
 			});
 		} else {
 			this.vaultUsers = new UserMap(userMapConfig);
@@ -156,9 +156,7 @@ export class VaultClient {
 				driftClient: this.driftClient,
 				userAccountPublicKey: vaultDriftUserAccountPubKey,
 			});
-			await this.vaultUsers.addPubkey(
-				vaultDriftUserAccountPubKey,
-			);
+			await this.vaultUsers.addPubkey(vaultDriftUserAccountPubKey);
 		}
 
 		if (!vaultUser?.isSubscribed) {
@@ -1040,7 +1038,9 @@ export class VaultClient {
 				}
 			)
 		);
-		tx.add(ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 1_000_000 }));
+		tx.add(
+			ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 1_000_000 })
+		);
 		tx.add(...ixs);
 		const { txSig } = await this.driftClient.sendTransaction(
 			tx,

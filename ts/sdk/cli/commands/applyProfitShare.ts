@@ -22,7 +22,7 @@ export const applyProfitShare = async (program: Command, cmdOpts: OptionValues) 
     const vdToRealizeProfit = await driftVault.getAllVaultDepositorsWithNoWithdrawRequest(vaultAddress);
     console.log(`Applying profit share for ${vdToRealizeProfit.length} depositors...`);
 
-    const chunkSize = 10;
+    const chunkSize = 6;
     const ixChunks: Array<Array<TransactionInstruction>> = [];
     for (let i = 0; i < vdToRealizeProfit.length; i += chunkSize) {
         const chunk = vdToRealizeProfit.slice(i, i + chunkSize);
