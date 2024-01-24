@@ -773,7 +773,9 @@ export class VaultClient {
 				}
 			);
 
-			return await this.createAndSendTxn([requestWithdrawIx]);
+			return await this.createAndSendTxn([requestWithdrawIx], {
+				units: 650_000,
+			});
 		}
 	}
 

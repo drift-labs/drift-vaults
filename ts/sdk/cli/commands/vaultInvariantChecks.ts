@@ -50,8 +50,16 @@ export const vaultInvariantChecks = async (program: Command, cmdOpts: OptionValu
     for (const vd of allVaultDepositors) {
         totalUserShares = totalUserShares.add(vd.account.vaultShares);
         if (!vd.account.lastWithdrawRequest.shares.eq(new BN(0))) {
+            const withdrawRequested = vd.account.lastWithdrawRequest.ts.toNumber();
+            const secToWithdrawal = withdrawRequested + vault.redeemPeriod.toNumber() - Date.now() / 1000;
+            const withdrawAvailable = secToWithdrawal < 0;
+
             const pct = vd.account.lastWithdrawRequest.shares.toNumber() / vd.account.vaultShares.toNumber();
             console.log(`Vd has withdrawal ${vd.publicKey.toBase58()} (auth: ${vd.account.authority.toBase58()}): ${vd.account.lastWithdrawRequest.shares.toString()} ($${convertToNumber(vd.account.lastWithdrawRequest.value, spotPrecision)}), ${(pct * 100.00).toFixed(2)}%`);
+            console.log(`  - requested at: ${new Date(withdrawRequested * 1000).toISOString()}`);
+            const daysUntilWithdraw = Math.floor(secToWithdrawal / 86400);
+            const hoursUntilWithdraw = Math.floor((secToWithdrawal % 86400) / 3600);
+            console.log(`  - can withdraw in: ${daysUntilWithdraw} days and ${hoursUntilWithdraw} hours ${withdrawAvailable ? "<--- WITHDRAWABLE" : ""}`);
         }
 
         if (!vd.account.cumulativeProfitShareAmount.eq(new BN(0))) {
