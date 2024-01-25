@@ -843,7 +843,9 @@ export class VaultClient {
 				remainingAccounts,
 			});
 
-			return await this.createAndSendTxn([withdrawIx]);
+			return await this.createAndSendTxn([withdrawIx], {
+				units: 650_000,
+			});
 		}
 	}
 
