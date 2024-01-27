@@ -131,6 +131,20 @@
     strict-event-emitter-types "^2.0.0"
     uuid "^8.3.2"
 
+"@drift-labs/sdk@2.58.0-beta.1":
+  version "2.58.0-beta.1"
+  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.58.0-beta.1.tgz#fabf157248481944299945723a5bdcf85a7f1189"
+  integrity sha512-6DkeR2nSIneS3c/tYn5GvvWrha7Tv7/P4j11hu41//pi8htBveW/kkMeXnRpx1vfBRhhy0GcREy/PO5KrTOE1Q==
+  dependencies:
+    "@coral-xyz/anchor" "0.28.1-beta.2"
+    "@ellipsis-labs/phoenix-sdk" "^1.4.2"
+    "@project-serum/serum" "^0.13.38"
+    "@pythnetwork/client" "2.5.3"
+    "@solana/spl-token" "^0.3.7"
+    "@solana/web3.js" "1.73.2"
+    strict-event-emitter-types "^2.0.0"
+    uuid "^8.3.2"
+
 "@ellipsis-labs/phoenix-sdk@^1.4.2":
   version "1.4.5"
   resolved "https://registry.yarnpkg.com/@ellipsis-labs/phoenix-sdk/-/phoenix-sdk-1.4.5.tgz#42cf8de8463b32c910ab8844eae71ca082a6773a"
