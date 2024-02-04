@@ -49,3 +49,16 @@ impl Default for VaultDepositorAction {
         VaultDepositorAction::Deposit
     }
 }
+
+#[event]
+#[derive(Default)]
+pub struct BurnVaultSharesRecord {
+    pub ts: i64,
+    pub vault: Pubkey,
+    pub depositor_authority: Pubkey,
+    pub amount: u64,
+    pub spot_market_index: u16,
+    pub vault_equity: u64,
+    pub total_vault_shares_before: u128,
+    pub total_vault_shares_after: u128,
+}
