@@ -83,8 +83,31 @@ export class VaultClient {
 		return await this.program.account.vault.fetch(vault);
 	}
 
+	public async getVaultAndSlot(
+		vault: PublicKey
+	): Promise<{ vault: Vault; slot: number }> {
+		const vaultAndSlot = await this.program.account.vault.fetchAndContext(
+			vault
+		);
+		return {
+			vault: vaultAndSlot.data as Vault,
+			slot: vaultAndSlot.context.slot,
+		};
+	}
+
 	public async getVaultDepositor(vaultDepositor: PublicKey): Promise<any> {
 		return await this.program.account.vaultDepositor.fetch(vaultDepositor);
+	}
+
+	public async getVaultDepositorAndSlot(
+		vaultDepositor: PublicKey
+	): Promise<{ vaultDepositor: any; slot: number }> {
+		const vaultDepositorAndSlot =
+			await this.program.account.vaultDepositor.fetchAndContext(vaultDepositor);
+		return {
+			vaultDepositor: vaultDepositorAndSlot.data,
+			slot: vaultDepositorAndSlot.context.slot,
+		};
 	}
 
 	public async getAllVaultDepositorsWithNoWithdrawRequest(
