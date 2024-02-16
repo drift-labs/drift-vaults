@@ -8,11 +8,7 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.26.0",
-<<<<<<< Updated upstream
-    "@drift-labs/competitions-sdk": "0.2.146",
-=======
     "@drift-labs/competitions-sdk": "0.2.186",
->>>>>>> Stashed changes
     "@drift-labs/sdk": "2.63.0-beta.4",
     "@solana/web3.js": "1.73.2",
     "commander": "^11.0.0",
