@@ -172,21 +172,9 @@ export class VaultClient {
 	}
 
 	public async getSubscribedVaultUser(vaultDriftUserAccountPubKey: PublicKey) {
-		let vaultUser = this.vaultUsers.get(vaultDriftUserAccountPubKey.toBase58());
-
-		if (!vaultUser) {
-			vaultUser = new User({
-				driftClient: this.driftClient,
-				userAccountPublicKey: vaultDriftUserAccountPubKey,
-			});
-			await this.vaultUsers.addPubkey(vaultDriftUserAccountPubKey);
-		}
-
-		if (!vaultUser?.isSubscribed) {
-			await vaultUser.subscribe();
-		}
-
-		return vaultUser;
+		return this.vaultUsers.mustGet(vaultDriftUserAccountPubKey.toBase58(), {
+			type: 'websocket',
+		});
 	}
 
 	/**
