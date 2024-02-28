@@ -90,7 +90,7 @@ jobs:
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: token ${{ secrets.GH_PAT }}" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            "${{ secrets.REPO_DISPATCH_URL }}" \
+            ${{ secrets.REPO_DISPATCH_URL }} \
             -d "{\"event_type\": \"jit-sdk-update\", \"client_payload\": {
               \"sdk-version\": \"$SDK_VERSION\",
               \"vault-version\": \"$VAULT_VERSION\"
