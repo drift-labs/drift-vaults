@@ -23,10 +23,8 @@ import {
 import {
 	ComputeBudgetProgram,
 	PublicKey,
-	SetComputeUnitLimitParams,
 	SystemProgram,
 	SYSVAR_RENT_PUBKEY,
-	Transaction,
 	TransactionInstruction,
 	TransactionSignature,
 } from '@solana/web3.js';
@@ -37,6 +35,12 @@ import {
 import { Vault, VaultDepositor, WithdrawUnit } from './types/types';
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
 import { UserMapConfig } from '@drift-labs/sdk/lib/userMap/userMapConfig';
+
+export type TxParams = {
+	cuLimit?: number;
+	cuPriceMicroLamports?: number;
+	simulateTransaction?: boolean;
+};
 
 export class VaultClient {
 	driftClient: DriftClient;
@@ -505,7 +509,7 @@ export class VaultClient {
 			remainingAccounts,
 		});
 		return this.createAndSendTxn([ix], {
-			units: 1_000_000,
+			cuLimit: 1_000_000,
 		});
 	}
 
@@ -784,13 +788,14 @@ export class VaultClient {
 			);
 
 			return await this.createAndSendTxn([requestWithdrawIx], {
-				units: 650_000,
+				cuLimit: 650_000,
 			});
 		}
 	}
 
 	public async withdraw(
-		vaultDepositor: PublicKey
+		vaultDepositor: PublicKey,
+		txParams?: TxParams
 	): Promise<TransactionSignature> {
 		const vaultDepositorAccount =
 			await this.program.account.vaultDepositor.fetch(vaultDepositor);
@@ -854,7 +859,8 @@ export class VaultClient {
 			});
 
 			return await this.createAndSendTxn([withdrawIx], {
-				units: 650_000,
+				cuLimit: txParams?.cuLimit ?? 650_000,
+				...txParams,
 			});
 		}
 	}
@@ -1041,28 +1047,49 @@ export class VaultClient {
 	 * Used for UI wallet adapters compatibility
 	 */
 	public async createAndSendTxn(
-		ixs: TransactionInstruction[],
-		computeUnitParams?: SetComputeUnitLimitParams
+		vaultIxs: TransactionInstruction[],
+		txParams?: TxParams
 	): Promise<TransactionSignature> {
-		const tx = new Transaction();
-		tx.add(
-			ComputeBudgetProgram.setComputeUnitLimit(
-				computeUnitParams || {
-					units: 400_000,
-				}
-			)
-		);
-		tx.add(
-			ComputeBudgetProgram.setComputeUnitPrice({ microLamports: 1_000_000 })
-		);
-		tx.add(...ixs);
-		const { txSig } = await this.driftClient.sendTransaction(
-			tx,
+		const ixs = [
+			ComputeBudgetProgram.setComputeUnitLimit({
+				units: txParams?.cuLimit ?? 400_000,
+			}),
+			ComputeBudgetProgram.setComputeUnitPrice({
+				microLamports: txParams?.cuPriceMicroLamports ?? 1_000_000,
+			}),
+			...vaultIxs,
+		];
+
+		const tx = await this.driftClient.txSender.getVersionedTransaction(
+			ixs,
 			[],
-			this.driftClient.opts
+			undefined,
+			undefined
 		);
 
-		return txSig;
+		let txSig = bs58.encode(tx.signatures[0]);
+		if (txParams?.simulateTransaction) {
+			const resp = await this.driftClient.connection.simulateTransaction(tx, {
+				// replaceRecentBlockhash: true,
+				sigVerify: false,
+				commitment: this.driftClient.connection.commitment,
+			});
+			console.log(`Simulated transaction:\n${JSON.stringify(resp, null, 2)}`);
+		} else {
+			const resp = await this.driftClient.sendTransaction(
+				tx,
+				[],
+				this.driftClient.opts
+			);
+			if (resp.txSig !== txSig) {
+				console.error(
+					`Transaction signature mismatch with self calculated value: ${resp.txSig} !== ${txSig}`
+				);
+				txSig = resp.txSig;
+			}
+		}
+
+		return txSig!;
 	}
 
 	/**
