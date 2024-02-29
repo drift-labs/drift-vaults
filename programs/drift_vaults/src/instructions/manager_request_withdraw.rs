@@ -5,8 +5,8 @@ use anchor_lang::prelude::*;
 use drift::instructions::optional_accounts::AccountMaps;
 use drift::state::user::User;
 
-pub fn manager_request_withdraw<'info>(
-    ctx: Context<'_, '_, '_, 'info, ManagerRequestWithdraw<'info>>,
+pub fn manager_request_withdraw<'c: 'info, 'info>(
+    ctx: Context<'_, '_, 'c, 'info, ManagerRequestWithdraw<'info>>,
     withdraw_amount: u64,
     withdraw_unit: WithdrawUnit,
 ) -> Result<()> {

@@ -10,8 +10,8 @@ use drift::instructions::optional_accounts::AccountMaps;
 use drift::program::Drift;
 use drift::state::user::User;
 
-pub fn manager_withdraw<'info>(
-    ctx: Context<'_, '_, '_, 'info, ManagerWithdraw<'info>>,
+pub fn manager_withdraw<'c: 'info, 'info>(
+    ctx: Context<'_, '_, 'c, 'info, ManagerWithdraw<'info>>,
 ) -> Result<()> {
     let clock = &Clock::get()?;
     let mut vault = ctx.accounts.vault.load_mut()?;
