@@ -1064,17 +1064,23 @@ export class VaultClient {
 			ixs,
 			[],
 			undefined,
-			undefined
+			this.driftClient.opts
 		);
 
 		let txSig = bs58.encode(tx.signatures[0]);
 		if (txParams?.simulateTransaction) {
-			const resp = await this.driftClient.connection.simulateTransaction(tx, {
-				// replaceRecentBlockhash: true,
-				sigVerify: false,
-				commitment: this.driftClient.connection.commitment,
-			});
-			console.log(`Simulated transaction:\n${JSON.stringify(resp, null, 2)}`);
+			try {
+				const resp = await this.driftClient.connection.simulateTransaction(tx, {
+					sigVerify: false,
+					commitment: this.driftClient.connection.commitment,
+				});
+				console.log(`Simulated transaction:\n${JSON.stringify(resp, null, 2)}`);
+			} catch (e) {
+				const err = e as Error;
+				console.error(
+					`Error simulating transaction: ${err.message}\n:${err.stack ?? ''}`
+				);
+			}
 		} else {
 			const resp = await this.driftClient.sendTransaction(
 				tx,
