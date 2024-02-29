@@ -1085,7 +1085,10 @@ export class VaultClient {
 			ixs,
 			[],
 			undefined,
-			this.driftClient.opts
+			{
+				preflightCommitment: 'confirmed',
+				...this.driftClient.opts,
+			}
 		);
 
 		let txSig = bs58.encode(tx.signatures[0]);
