@@ -29,6 +29,7 @@ import {
 	TransactionSignature,
 } from '@solana/web3.js';
 import {
+	createAssociatedTokenAccountInstruction,
 	getAssociatedTokenAddressSync,
 	TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
@@ -825,6 +826,25 @@ export class VaultClient {
 			);
 		}
 
+		const userAta = getAssociatedTokenAddressSync(
+			spotMarket.mint,
+			this.driftClient.wallet.publicKey,
+			true
+		);
+
+		let createAtaIx: TransactionInstruction | undefined = undefined;
+		const userAtaExists = await this.driftClient.connection.getAccountInfo(
+			userAta
+		);
+		if (userAtaExists === null) {
+			createAtaIx = createAssociatedTokenAccountInstruction(
+				this.driftClient.wallet.publicKey,
+				userAta,
+				this.driftClient.wallet.publicKey,
+				spotMarket.mint
+			);
+		}
+
 		const accounts = {
 			vault: vaultDepositorAccount.vault,
 			vaultDepositor,
@@ -834,11 +854,7 @@ export class VaultClient {
 			driftState: driftStateKey,
 			driftSpotMarketVault: spotMarket.vault,
 			driftSigner: this.driftClient.getStateAccount().signer,
-			userTokenAccount: getAssociatedTokenAddressSync(
-				spotMarket.mint,
-				this.driftClient.wallet.publicKey,
-				true
-			),
+			userTokenAccount: userAta,
 			driftProgram: this.driftClient.program.programId,
 			tokenProgram: TOKEN_PROGRAM_ID,
 		};
@@ -850,16 +866,21 @@ export class VaultClient {
 				.remainingAccounts(remainingAccounts)
 				.rpc();
 		} else {
-			const withdrawIx = this.program.instruction.withdraw({
-				accounts: {
-					authority: this.driftClient.wallet.publicKey,
-					...accounts,
-				},
-				remainingAccounts,
-			});
+			const ixs = [
+				this.program.instruction.withdraw({
+					accounts: {
+						authority: this.driftClient.wallet.publicKey,
+						...accounts,
+					},
+					remainingAccounts,
+				}),
+			];
+			if (createAtaIx) {
+				ixs.unshift(createAtaIx);
+			}
 
-			return await this.createAndSendTxn([withdrawIx], {
-				cuLimit: txParams?.cuLimit ?? 650_000,
+			return await this.createAndSendTxn(ixs, {
+				cuLimit: (txParams?.cuLimit ?? 650_000) + (createAtaIx ? 100_000 : 0),
 				...txParams,
 			});
 		}
