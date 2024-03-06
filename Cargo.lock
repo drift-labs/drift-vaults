@@ -1161,11 +1161,39 @@ dependencies = [
  "num-derive",
  "num-integer",
  "num-traits",
- "phoenix-v1",
+ "phoenix-v1 0.2.4 (git+https://github.com/drift-labs/phoenix-v1?rev=4c65c9)",
  "pyth-client",
  "serum_dex",
  "solana-program",
  "solana-security-txt",
+ "thiserror",
+ "uint",
+]
+
+[[package]]
+name = "drift"
+version = "2.67.0"
+source = "git+https://github.com/drift-labs/protocol-v2.git?tag=v2.67.0#90cb797f1051ee60fd8db024e288a08fcda7e296"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "arrayref",
+ "base64 0.13.0",
+ "borsh 0.9.3",
+ "bytemuck",
+ "drift-macros",
+ "enumflags2",
+ "getrandom 0.2.9",
+ "num-derive",
+ "num-integer",
+ "num-traits",
+ "phoenix-v1 0.2.4 (git+https://github.com/drift-labs/phoenix-v1?rev=bf6b84)",
+ "pyth-client",
+ "serum_dex",
+ "solana-program",
+ "solana-security-txt",
+ "static_assertions",
+ "switchboard-solana",
  "thiserror",
  "uint",
 ]
@@ -1178,7 +1206,7 @@ dependencies = [
  "anchor-lang",
  "anchor-spl",
  "bytemuck",
- "drift",
+ "drift 2.40.0",
  "drift-macros",
  "getrandom 0.2.9",
  "static_assertions",
@@ -1201,7 +1229,7 @@ dependencies = [
  "anchor-lang",
  "anchor-spl",
  "bytemuck",
- "drift",
+ "drift 2.67.0",
  "drift-competitions",
  "drift-macros",
  "static_assertions",
@@ -2396,6 +2424,26 @@ dependencies = [
 name = "phoenix-v1"
 version = "0.2.4"
 source = "git+https://github.com/drift-labs/phoenix-v1?rev=4c65c9#4c65c97cd62493e27425ea2830447c833152bed1"
+dependencies = [
+ "borsh 0.9.3",
+ "bytemuck",
+ "ellipsis-macros",
+ "itertools 0.10.5",
+ "lib-sokoban",
+ "num_enum",
+ "shank",
+ "solana-program",
+ "solana-security-txt",
+ "spl-associated-token-account",
+ "spl-token",
+ "static_assertions",
+ "thiserror",
+]
+
+[[package]]
+name = "phoenix-v1"
+version = "0.2.4"
+source = "git+https://github.com/drift-labs/phoenix-v1?rev=bf6b84#bf6b8447047aa16485d8d976528e43f5d53331d9"
 dependencies = [
  "borsh 0.9.3",
  "bytemuck",
