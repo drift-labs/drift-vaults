@@ -22,6 +22,7 @@ import {
 } from './addresses';
 import {
 	ComputeBudgetProgram,
+	ConfirmOptions,
 	PublicKey,
 	SystemProgram,
 	SYSVAR_RENT_PUBKEY,
@@ -524,15 +525,19 @@ export class VaultClient {
 			profitShare: number | null;
 			hurdleRate: number | null;
 			permissioned: boolean | null;
-		}
+		},
+		preIxs?: Array<TransactionInstruction>,
+		opts?: ConfirmOptions
 	): Promise<TransactionSignature> {
-		return await this.program.methods
-			.updateVault(params)
-			.accounts({
-				vault,
-				manager: this.driftClient.wallet.publicKey,
-			})
-			.rpc();
+		let builder = this.program.methods.updateVault(params).accounts({
+			vault,
+			manager: this.driftClient.wallet.publicKey,
+		});
+		if (preIxs) {
+			builder = builder.preInstructions(preIxs);
+		}
+
+		return builder.rpc(opts);
 	}
 
 	public async getApplyProfitShareIx(
@@ -887,8 +892,12 @@ export class VaultClient {
 	}
 
 	public async forceWithdraw(
-		vaultDepositor: PublicKey
-	): Promise<TransactionSignature> {
+		vaultDepositor: PublicKey,
+		ixOnly?: boolean,
+		preIxs?: Array<TransactionInstruction>,
+		simulate?: boolean,
+		opts?: ConfirmOptions
+	): Promise<TransactionSignature | TransactionInstruction | undefined> {
 		const vaultDepositorAccount =
 			await this.program.account.vaultDepositor.fetch(vaultDepositor);
 		const vaultAccount = await this.program.account.vault.fetch(
@@ -937,16 +946,49 @@ export class VaultClient {
 		};
 
 		if (this.cliMode) {
-			return await this.program.methods
-				.forceWithdraw()
-				.preInstructions([
-					ComputeBudgetProgram.setComputeUnitLimit({
-						units: 400_000,
-					}),
-				])
-				.accounts(accounts)
-				.remainingAccounts(remainingAccounts)
-				.rpc();
+			if (ixOnly) {
+				return await this.program.methods
+					.forceWithdraw()
+					.accounts(accounts)
+					.remainingAccounts(remainingAccounts)
+					.instruction();
+			} else if (simulate) {
+				let builder = this.program.methods.forceWithdraw();
+				if (preIxs) {
+					builder = builder.preInstructions(preIxs);
+				} else {
+					builder = builder.preInstructions([
+						ComputeBudgetProgram.setComputeUnitLimit({
+							units: 600_000,
+						}),
+					]);
+				}
+				const simResult = await builder
+					.accounts(accounts)
+					.remainingAccounts(remainingAccounts)
+					.simulate();
+
+				console.log(simResult);
+				console.log(simResult.events);
+			} else {
+				let builder = this.program.methods.forceWithdraw();
+				if (preIxs) {
+					builder = builder.preInstructions(preIxs);
+				} else {
+					builder = builder.preInstructions([
+						ComputeBudgetProgram.setComputeUnitLimit({
+							units: 600_000,
+						}),
+						ComputeBudgetProgram.setComputeUnitPrice({
+							microLamports: 100_000,
+						}),
+					]);
+				}
+				return await builder
+					.accounts(accounts)
+					.remainingAccounts(remainingAccounts)
+					.rpc(opts);
+			}
 		} else {
 			const forceWithdrawIx = this.program.instruction.forceWithdraw({
 				accounts: {
@@ -1076,7 +1118,7 @@ export class VaultClient {
 				units: txParams?.cuLimit ?? 400_000,
 			}),
 			ComputeBudgetProgram.setComputeUnitPrice({
-				microLamports: txParams?.cuPriceMicroLamports ?? 1_000_000,
+				microLamports: txParams?.cuPriceMicroLamports ?? 80_000,
 			}),
 			...vaultIxs,
 		];

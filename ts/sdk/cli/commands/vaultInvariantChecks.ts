@@ -4,10 +4,11 @@ import {
     Command
 } from "commander";
 import { getCommandContext } from "../utils";
-import { BN, convertToNumber } from "@drift-labs/sdk";
+import { BN, QUOTE_PRECISION, ZERO, convertToNumber } from "@drift-labs/sdk";
 import {
     calculateApplyProfitShare,
 } from "../../src/math";
+import { VaultDepositor } from "../../src";
 
 export const vaultInvariantChecks = async (program: Command, cmdOpts: OptionValues) => {
 
@@ -37,42 +38,51 @@ export const vaultInvariantChecks = async (program: Command, cmdOpts: OptionValu
     const spotMarket = driftVault.driftClient.getSpotMarketAccount(vault.spotMarketIndex);
     const spotPrecision = new BN(10).pow(new BN(spotMarket!.decimals));
 
-    let allVaultDepositors = await driftVault.getAllVaultDepositors(vaultAddress);
+    const allVaultDepositors = await driftVault.getAllVaultDepositors(vaultAddress);
+    const approxSlot = await driftVault.driftClient.connection.getSlot();
+    const now = Date.now();
 
-    // Sort allVaultDepositors by vaultShares in descending order
-    allVaultDepositors = allVaultDepositors.sort((a, b) => b.account.vaultShares.cmp(a.account.vaultShares));
+    let nonZeroDepositors = allVaultDepositors.filter(vd => vd.account.vaultShares.gt(new BN(0)));
+    nonZeroDepositors = nonZeroDepositors.sort((a, b) => b.account.vaultShares.cmp(a.account.vaultShares));
 
     let totalUserShares = new BN(0);
     let totalUserProfitSharePaid = new BN(0);
     let totalUserProfitShareSharesPaid = new BN(0);
     let totalPendingProfitShareAmount = new BN(0);
+    let totalPendingProfitShareShares = new BN(0);
 
-    for (const vd of allVaultDepositors) {
-        totalUserShares = totalUserShares.add(vd.account.vaultShares);
-        if (!vd.account.lastWithdrawRequest.shares.eq(new BN(0))) {
-            const withdrawRequested = vd.account.lastWithdrawRequest.ts.toNumber();
+    console.log(`Vault ${vaultAddress} vd and invariant check at approx slot: ${approxSlot}, date: ${new Date(now).toLocaleString()}`);
+    console.log(`Depositors with 0 shares: ${allVaultDepositors.length - nonZeroDepositors.length}/${allVaultDepositors.length}`);
+    for (const vd of nonZeroDepositors) {
+        const vdAccount = vd.account as VaultDepositor;
+
+        totalUserShares = totalUserShares.add(vdAccount.vaultShares);
+        const vdAuth = vdAccount.authority.toBase58();
+        const vdPct = vdAccount.vaultShares.toNumber() / vault.totalShares.toNumber();
+        console.log(`- ${vdAuth} has ${vdAccount.vaultShares.toNumber()} shares (${(vdPct * 100.0).toFixed(2)}% of vault)`);
+
+        if (!vdAccount.lastWithdrawRequest.shares.eq(new BN(0))) {
+            const withdrawRequested = vdAccount.lastWithdrawRequest.ts.toNumber();
             const secToWithdrawal = withdrawRequested + vault.redeemPeriod.toNumber() - Date.now() / 1000;
             const withdrawAvailable = secToWithdrawal < 0;
-
-            const pct = vd.account.lastWithdrawRequest.shares.toNumber() / vd.account.vaultShares.toNumber();
-            console.log(`Vd has withdrawal ${vd.publicKey.toBase58()} (auth: ${vd.account.authority.toBase58()}): ${vd.account.lastWithdrawRequest.shares.toString()} ($${convertToNumber(vd.account.lastWithdrawRequest.value, spotPrecision)}), ${(pct * 100.00).toFixed(2)}%`);
-            console.log(`  - requested at: ${new Date(withdrawRequested * 1000).toISOString()}`);
+            const pct = vdAccount.lastWithdrawRequest.shares.toNumber() / vd.account.vaultShares.toNumber();
             const daysUntilWithdraw = Math.floor(secToWithdrawal / 86400);
             const hoursUntilWithdraw = Math.floor((secToWithdrawal % 86400) / 3600);
-            console.log(`  - can withdraw in: ${daysUntilWithdraw} days and ${hoursUntilWithdraw} hours ${withdrawAvailable ? "<--- WITHDRAWABLE" : ""}`);
+
+            console.log(`  - pending withdrawal: ${vdAccount.lastWithdrawRequest.shares.toString()} ($${convertToNumber(vd.account.lastWithdrawRequest.value, spotPrecision)}), ${(pct * 100.00).toFixed(2)}% of their deposit ${withdrawAvailable ? "<--- WITHDRAWABLE" : ""}`);
+            console.log(`    - requested at: ${new Date(withdrawRequested * 1000).toISOString()}`);
+            console.log(`    - can withdraw in: ${daysUntilWithdraw} days and ${hoursUntilWithdraw} hours`);
         }
 
-        if (!vd.account.cumulativeProfitShareAmount.eq(new BN(0))) {
-            // const profitSharePaid = vd.account.profitShareFeePaid.toNumber() / vd.account.cumulativeProfitShareAmount.toNumber();
-            // console.log(`Profit share paid: ${vd.publicKey.toBase58()} (auth: ${vd.account.authority.toBase58()}): ${Math.ceil(profitSharePaid * 100.0)}%`);
+        totalUserProfitSharePaid = totalUserProfitSharePaid.add(vdAccount.profitShareFeePaid);
+        totalUserProfitShareSharesPaid = totalUserProfitShareSharesPaid.add(vdAccount.cumulativeProfitShareAmount);
+
+        const pendingProfitShares = calculateApplyProfitShare(vdAccount, vaultEquity, vault);
+        if (pendingProfitShares.profitShareAmount.gt(ZERO)) {
+            totalPendingProfitShareAmount = totalPendingProfitShareAmount.add(pendingProfitShares.profitShareAmount);
+            totalPendingProfitShareShares = totalPendingProfitShareShares.add(pendingProfitShares.profitShareShares);
+            console.log(`  - pending profit share amount: $${convertToNumber(pendingProfitShares.profitShareAmount, spotPrecision)}`);
         }
-        totalUserProfitSharePaid = totalUserProfitSharePaid.add(vd.account.profitShareFeePaid);
-        totalUserProfitShareSharesPaid = totalUserProfitShareSharesPaid.add(vd.account.cumulativeProfitShareAmount);
-
-        const pendingProfitShares = calculateApplyProfitShare(vd.account, vaultEquity, vault);
-        totalPendingProfitShareAmount = totalPendingProfitShareAmount.add(pendingProfitShares.profitShareAmount);
-
-        console.log(`Pending profit shares: ${vd.publicKey.toBase58()} (auth: ${vd.account.authority.toBase58()}): $${convertToNumber(pendingProfitShares.profitShareAmount, spotPrecision)}`);
     }
     console.log(`==== Vault Depositor Shares == vault.user_shares ====`);
     console.log(`total vd shares:        ${totalUserShares.toString()}`);
@@ -88,4 +98,17 @@ export const vaultInvariantChecks = async (program: Command, cmdOpts: OptionValu
     console.log(``);
     console.log(`==== Pending profit shares to realize ====`);
     console.log(`${convertToNumber(totalPendingProfitShareAmount, spotPrecision)}`);
+    console.log(`csv: ${cmdOpts.csv}`);
+
+    console.log(``);
+    console.log(`==== Manager share ====`);
+    console.log(`  Vault total shares: ${vault.totalShares.toNumber()}`);
+    const managerShares = vault.totalShares.sub(vault.userShares);
+    const managerSharePct = managerShares.toNumber() / vault.totalShares.toNumber();
+    const managerShareWithPendingPct = managerShares.add(totalPendingProfitShareShares).toNumber() / vault.totalShares.toNumber();
+    console.log(`  Manager shares: ${managerShares.toString()} (${(managerSharePct * 100.0).toFixed(4)}%)`);
+    const vaultEquityNum = convertToNumber(vaultEquity, QUOTE_PRECISION);
+    console.log(`vaultEquity (USDC):   $${vaultEquityNum}`);
+    console.log(`manager share (w/o pending) (USDC):  $${managerSharePct * vaultEquityNum}`);
+    console.log(`manager share (with pending) (USDC): $${managerShareWithPendingPct * vaultEquityNum}`);
 };

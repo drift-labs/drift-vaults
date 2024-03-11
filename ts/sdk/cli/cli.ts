@@ -74,7 +74,8 @@ program
     .command("manager-request-withdraw")
     .description("Make a withdraw request from your vault")
     .addOption(new Option("--vault-address <address>", "Address of the vault to withdraw from").makeOptionMandatory(true))
-    .addOption(new Option("--shares <shares>", "Amount of shares to withdraw (raw precision, as expected by contract)").makeOptionMandatory(true))
+    .addOption(new Option("--shares <shares>", "Amount of shares to withdraw (raw precision, as expected by contract)").makeOptionMandatory(false))
+    .addOption(new Option("--amount <amount>", "Amount of spot asset to withdraw (human format, 5 for 5 USDC)").makeOptionMandatory(false))
     .action((opts) => managerRequestWithdraw(program, opts));
 program
     .command("manager-update-vault")
@@ -113,6 +114,7 @@ program
     .command("apply-profit-share-all")
     .description("Turn the profit share crank for all depositors")
     .addOption(new Option("--vault-address <address>", "Address of the vault to view").makeOptionMandatory(true))
+    .addOption(new Option("--threshold <amount>", "Minimum threshold (in spot tokens) before profit share is applied").default("1000", "default is 1000"))
     .action((opts) => applyProfitShare(program, opts));
 program
     .command("init-vault-depositor")
@@ -142,6 +144,8 @@ program
     .command("force-withdraw")
     .description("Forces the vault to send out a withdraw after the redeem period has passed")
     .addOption(new Option("--vault-depositor-address <vaultDepositorAddress>", "VaultDepositor address").makeOptionMandatory(false))
+    .addOption(new Option("--vault-depositor-authority <vaultDepositorAuthority>", "Authority address of VaultDepositor, must also provide --vault-address").makeOptionMandatory(false))
+    .addOption(new Option("--vault-address <vaultAddress>", "Address of vault, must required if only --vault-deposit-authority is provided").makeOptionMandatory(false))
     .action((opts) => forceWithdraw(program, opts));
 program
     .command("decode-logs")
@@ -152,6 +156,8 @@ program
     .command("check-invariants")
     .description("Perform sanity checks on vault/depositor invariants")
     .addOption(new Option("--vault-address <address>", "Vault address").makeOptionMandatory(true))
+    .addOption(new Option("--csv", "Output to csv"))
+
     .action((opts) => vaultInvariantChecks(program, opts));
 
 program.parseAsync().then(() => {

@@ -1,4 +1,4 @@
-import { PublicKey } from "@solana/web3.js";
+import { ComputeBudgetProgram, PublicKey } from "@solana/web3.js";
 import {
     OptionValues,
     Command
@@ -119,6 +119,31 @@ export const managerUpdateVault = async (program: Command, cmdOpts: OptionValues
         permissioned,
     };
 
-    const tx = await driftVault.managerUpdateVault(vaultAddress, newParams);
-    console.log(`Updated vault params as vault manager: https://solscan.io/tx/${tx}`);
+    const preIxs = [
+        ComputeBudgetProgram.setComputeUnitLimit({
+            units: 600_000,
+        }),
+        ComputeBudgetProgram.setComputeUnitPrice({
+            microLamports: 100_000,
+        }),
+    ];
+
+    let done = false;
+    while (!done) {
+        try {
+            const tx = await driftVault.managerUpdateVault(vaultAddress, newParams, preIxs, { maxRetries: 0 });
+            console.log(`Updated vault params as vault manager: https://solana.fm/tx/${tx}`);
+            done = true;
+            break;
+        } catch (e) {
+            const err = e as Error;
+            if (err.message.includes('TransactionExpiredTimeoutError')) {
+                console.log(err.message);
+                console.log('Transaction timeout. Retrying...');
+                await new Promise(resolve => setTimeout(resolve, 5000));
+            } else {
+                throw err;
+            }
+        }
+    }
 };
