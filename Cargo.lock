@@ -1148,8 +1148,8 @@ dependencies = [
 
 [[package]]
 name = "drift"
-version = "2.40.0"
-source = "git+https://github.com/drift-labs/protocol-v2.git?rev=65a4386#65a4386bd8d0b72d3f32d604788174b19413f48e"
+version = "2.71.0"
+source = "git+https://github.com/drift-labs/protocol-v2.git?tag=v2.71.0#7df812dc26f590fd96f8623de0a93faf471d2193"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
@@ -1157,6 +1157,7 @@ dependencies = [
  "base64 0.13.0",
  "borsh 0.9.3",
  "bytemuck",
+ "drift-macros",
  "enumflags2",
  "num-derive",
  "num-integer",
@@ -1166,6 +1167,8 @@ dependencies = [
  "serum_dex",
  "solana-program",
  "solana-security-txt",
+ "static_assertions",
+ "switchboard",
  "thiserror",
  "uint",
 ]
@@ -1173,7 +1176,7 @@ dependencies = [
 [[package]]
 name = "drift-competitions"
 version = "0.1.0"
-source = "git+https://github.com/drift-labs/drift-competitions.git?rev=f611f2f#f611f2ffb6fc86eb503e74037c95c504e8e3e55a"
+source = "git+https://github.com/drift-labs/drift-competitions.git?rev=678c7a#678c7a58b5938ea56ed42fb4fae8e50518a63bce"
 dependencies = [
  "anchor-lang",
  "anchor-spl",
@@ -2395,7 +2398,7 @@ dependencies = [
 [[package]]
 name = "phoenix-v1"
 version = "0.2.4"
-source = "git+https://github.com/drift-labs/phoenix-v1?rev=4c65c9#4c65c97cd62493e27425ea2830447c833152bed1"
+source = "git+https://github.com/drift-labs/phoenix-v1?rev=bf6b84#bf6b8447047aa16485d8d976528e43f5d53331d9"
 dependencies = [
  "borsh 0.9.3",
  "bytemuck",
@@ -4102,6 +4105,14 @@ name = "superslice"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ab16ced94dbd8a46c82fd81e3ed9a8727dac2977ea869d217bcc4ea1f122e81f"
+
+[[package]]
+name = "switchboard"
+version = "0.1.0"
+source = "git+https://github.com/drift-labs/protocol-v2.git?tag=v2.71.0#7df812dc26f590fd96f8623de0a93faf471d2193"
+dependencies = [
+ "anchor-lang",
+]
 
 [[package]]
 name = "switchboard-common"
