@@ -232,10 +232,10 @@ export async function initializeAndSubscribeDriftClient(
 			? {
 					type: 'polling',
 					accountLoader,
-				}
+			  }
 			: {
 					type: 'websocket',
-				},
+			  },
 	});
 	await driftClient.subscribe();
 	await driftClient.initializeUserAccount();
@@ -417,10 +417,10 @@ export async function initUserAccounts(
 				? {
 						type: 'polling',
 						accountLoader,
-					}
+				  }
 				: {
 						type: 'websocket',
-					},
+				  },
 		});
 
 		// await driftClient1.initialize(usdcMint.publicKey, false);
@@ -501,8 +501,9 @@ export const setFeedPrice = async (
 	newPrice: number,
 	priceFeed: PublicKey
 ) => {
-	const info =
-		await oracleProgram.provider.connection.getAccountInfo(priceFeed);
+	const info = await oracleProgram.provider.connection.getAccountInfo(
+		priceFeed
+	);
 	const data = parsePriceData(info.data);
 	await oracleProgram.rpc.setPrice(new BN(newPrice * 10 ** -data.exponent), {
 		accounts: { price: priceFeed },
@@ -513,8 +514,9 @@ export const setFeedTwap = async (
 	newTwap: number,
 	priceFeed: PublicKey
 ) => {
-	const info =
-		await oracleProgram.provider.connection.getAccountInfo(priceFeed);
+	const info = await oracleProgram.provider.connection.getAccountInfo(
+		priceFeed
+	);
 	const data = parsePriceData(info.data);
 	await oracleProgram.rpc.setTwap(new BN(newTwap * 10 ** -data.exponent), {
 		accounts: { price: priceFeed },
@@ -524,8 +526,9 @@ export const getFeedData = async (
 	oracleProgram: Program,
 	priceFeed: PublicKey
 ) => {
-	const info =
-		await oracleProgram.provider.connection.getAccountInfo(priceFeed);
+	const info = await oracleProgram.provider.connection.getAccountInfo(
+		priceFeed
+	);
 	return parsePriceData(info.data);
 };
 
@@ -533,8 +536,9 @@ export const getOraclePriceData = async (
 	oracleProgram: Program,
 	priceFeed: PublicKey
 ): Promise<OraclePriceData> => {
-	const info =
-		await oracleProgram.provider.connection.getAccountInfo(priceFeed);
+	const info = await oracleProgram.provider.connection.getAccountInfo(
+		priceFeed
+	);
 	const interData = parsePriceData(info.data);
 	const oraclePriceData: OraclePriceData = {
 		price: new BN(interData.price * PRICE_PRECISION.toNumber()),

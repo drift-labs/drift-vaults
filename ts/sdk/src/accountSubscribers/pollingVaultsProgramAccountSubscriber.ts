@@ -15,7 +15,7 @@ import {
 
 export abstract class PollingVaultsProgramAccountSubscriber<
 	Account,
-	AccountEvents extends VaultsProgramAccountBaseEvents,
+	AccountEvents extends VaultsProgramAccountBaseEvents
 > implements VaultsProgramAccountSubscriber<Account, AccountEvents>
 {
 	protected program: Program<DriftVaults>;

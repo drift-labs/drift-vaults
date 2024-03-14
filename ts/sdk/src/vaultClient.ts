@@ -90,8 +90,9 @@ export class VaultClient {
 	public async getVaultAndSlot(
 		vault: PublicKey
 	): Promise<{ vault: Vault; slot: number }> {
-		const vaultAndSlot =
-			await this.program.account.vault.fetchAndContext(vault);
+		const vaultAndSlot = await this.program.account.vault.fetchAndContext(
+			vault
+		);
 		return {
 			vault: vaultAndSlot.data as Vault,
 			slot: vaultAndSlot.context.slot,
@@ -832,8 +833,9 @@ export class VaultClient {
 		);
 
 		let createAtaIx: TransactionInstruction | undefined = undefined;
-		const userAtaExists =
-			await this.driftClient.connection.getAccountInfo(userAta);
+		const userAtaExists = await this.driftClient.connection.getAccountInfo(
+			userAta
+		);
 		if (userAtaExists === null) {
 			createAtaIx = createAssociatedTokenAccountInstruction(
 				this.driftClient.wallet.publicKey,

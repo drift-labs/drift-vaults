@@ -69,7 +69,7 @@ export type DriftVaults = {
 					name: 'tokenProgram';
 					isMut: false;
 					isSigner: false;
-				},
+				}
 			];
 			args: [
 				{
@@ -77,7 +77,7 @@ export type DriftVaults = {
 					type: {
 						defined: 'VaultParams';
 					};
-				},
+				}
 			];
 		},
 		{
@@ -102,13 +102,13 @@ export type DriftVaults = {
 					name: 'driftProgram';
 					isMut: false;
 					isSigner: false;
-				},
+				}
 			];
 			args: [
 				{
 					name: 'delegate';
 					type: 'publicKey';
-				},
+				}
 			];
 		},
 		{
@@ -133,13 +133,13 @@ export type DriftVaults = {
 					name: 'driftProgram';
 					isMut: false;
 					isSigner: false;
-				},
+				}
 			];
 			args: [
 				{
 					name: 'enabled';
 					type: 'bool';
-				},
+				}
 			];
 		},
 		{
@@ -154,7 +154,7 @@ export type DriftVaults = {
 					name: 'manager';
 					isMut: false;
 					isSigner: true;
-				},
+				}
 			];
 			args: [
 				{
@@ -162,7 +162,7 @@ export type DriftVaults = {
 					type: {
 						defined: 'UpdateVaultParams';
 					};
-				},
+				}
 			];
 		},
 		{
@@ -197,7 +197,7 @@ export type DriftVaults = {
 					name: 'systemProgram';
 					isMut: false;
 					isSigner: false;
-				},
+				}
 			];
 			args: [];
 		},
@@ -258,13 +258,13 @@ export type DriftVaults = {
 					name: 'tokenProgram';
 					isMut: false;
 					isSigner: false;
-				},
+				}
 			];
 			args: [
 				{
 					name: 'amount';
 					type: 'u64';
-				},
+				}
 			];
 		},
 		{
@@ -299,7 +299,7 @@ export type DriftVaults = {
 					name: 'driftState';
 					isMut: false;
 					isSigner: false;
-				},
+				}
 			];
 			args: [
 				{
@@ -311,7 +311,7 @@ export type DriftVaults = {
 					type: {
 						defined: 'WithdrawUnit';
 					};
-				},
+				}
 			];
 		},
 		{
@@ -346,7 +346,7 @@ export type DriftVaults = {
 					name: 'driftState';
 					isMut: false;
 					isSigner: false;
-				},
+				}
 			];
 			args: [];
 		},
@@ -412,7 +412,7 @@ export type DriftVaults = {
 					name: 'tokenProgram';
 					isMut: false;
 					isSigner: false;
-				},
+				}
 			];
 			args: [];
 		},
@@ -453,7 +453,7 @@ export type DriftVaults = {
 					name: 'driftProgram';
 					isMut: false;
 					isSigner: false;
-				},
+				}
 			];
 			args: [];
 		},
@@ -479,7 +479,7 @@ export type DriftVaults = {
 					name: 'driftProgram';
 					isMut: false;
 					isSigner: false;
-				},
+				}
 			];
 			args: [];
 		},
@@ -535,13 +535,13 @@ export type DriftVaults = {
 					name: 'tokenProgram';
 					isMut: false;
 					isSigner: false;
-				},
+				}
 			];
 			args: [
 				{
 					name: 'amount';
 					type: 'u64';
-				},
+				}
 			];
 		},
 		{
@@ -571,7 +571,7 @@ export type DriftVaults = {
 					name: 'driftState';
 					isMut: false;
 					isSigner: false;
-				},
+				}
 			];
 			args: [
 				{
@@ -583,7 +583,7 @@ export type DriftVaults = {
 					type: {
 						defined: 'WithdrawUnit';
 					};
-				},
+				}
 			];
 		},
 		{
@@ -613,7 +613,7 @@ export type DriftVaults = {
 					name: 'driftState';
 					isMut: false;
 					isSigner: false;
-				},
+				}
 			];
 			args: [];
 		},
@@ -674,7 +674,7 @@ export type DriftVaults = {
 					name: 'tokenProgram';
 					isMut: false;
 					isSigner: false;
-				},
+				}
 			];
 			args: [];
 		},
@@ -720,7 +720,7 @@ export type DriftVaults = {
 					name: 'driftProgram';
 					isMut: false;
 					isSigner: false;
-				},
+				}
 			];
 			args: [];
 		},
@@ -786,7 +786,7 @@ export type DriftVaults = {
 					name: 'tokenProgram';
 					isMut: false;
 					isSigner: false;
-				},
+				}
 			];
 			args: [];
 		},
@@ -842,13 +842,13 @@ export type DriftVaults = {
 					name: 'driftProgram';
 					isMut: false;
 					isSigner: false;
-				},
+				}
 			];
 			args: [
 				{
 					name: 'marketIndex';
 					type: 'u16';
-				},
+				}
 			];
 		},
 		{
@@ -898,10 +898,10 @@ export type DriftVaults = {
 					name: 'driftCompetitionsProgram';
 					isMut: false;
 					isSigner: false;
-				},
+				}
 			];
 			args: [];
-		},
+		}
 	];
 	accounts: [
 		{
@@ -917,21 +917,21 @@ export type DriftVaults = {
 					{
 						name: 'pubkey';
 						docs: [
-							"The vault depositor account's pubkey. It is a pda of vault and authority",
+							"The vault depositor account's pubkey. It is a pda of vault and authority"
 						];
 						type: 'publicKey';
 					},
 					{
 						name: 'authority';
 						docs: [
-							'The authority is the address w permission to deposit/withdraw',
+							'The authority is the address w permission to deposit/withdraw'
 						];
 						type: 'publicKey';
 					},
 					{
 						name: 'vaultShares';
 						docs: [
-							"share of vault owned by this depositor. vault_shares / vault.total_shares is depositor's ownership of vault_equity",
+							"share of vault owned by this depositor. vault_shares / vault.total_shares is depositor's ownership of vault_equity"
 						];
 						type: 'u128';
 					},
@@ -965,7 +965,7 @@ export type DriftVaults = {
 					{
 						name: 'cumulativeProfitShareAmount';
 						docs: [
-							'the token amount of gains the vault depositor has paid performance fees on',
+							'the token amount of gains the vault depositor has paid performance fees on'
 						];
 						type: 'i64';
 					},
@@ -987,7 +987,7 @@ export type DriftVaults = {
 						type: {
 							array: ['u64', 8];
 						};
-					},
+					}
 				];
 			};
 		},
@@ -999,7 +999,7 @@ export type DriftVaults = {
 					{
 						name: 'name';
 						docs: [
-							'The name of the vault. Vault pubkey is derived from this name.',
+							'The name of the vault. Vault pubkey is derived from this name.'
 						];
 						type: {
 							array: ['u8', 32];
@@ -1008,21 +1008,21 @@ export type DriftVaults = {
 					{
 						name: 'pubkey';
 						docs: [
-							"The vault's pubkey. It is a pda of name and also used as the authority for drift user",
+							"The vault's pubkey. It is a pda of name and also used as the authority for drift user"
 						];
 						type: 'publicKey';
 					},
 					{
 						name: 'manager';
 						docs: [
-							'The manager of the vault who has ability to update vault params',
+							'The manager of the vault who has ability to update vault params'
 						];
 						type: 'publicKey';
 					},
 					{
 						name: 'tokenAccount';
 						docs: [
-							'The vaults token account. Used to receive tokens between deposits and withdrawals',
+							'The vaults token account. Used to receive tokens between deposits and withdrawals'
 						];
 						type: 'publicKey';
 					},
@@ -1040,7 +1040,7 @@ export type DriftVaults = {
 						name: 'delegate';
 						docs: [
 							'The vaults designated delegate for drift user account',
-							'Can differ from actual user delegate if vault is in liquidation',
+							'Can differ from actual user delegate if vault is in liquidation'
 						];
 						type: 'publicKey';
 					},
@@ -1052,7 +1052,7 @@ export type DriftVaults = {
 					{
 						name: 'userShares';
 						docs: [
-							'the sum of all shares held by the users (vault depositors)',
+							'the sum of all shares held by the users (vault depositors)'
 						];
 						type: 'u128';
 					},
@@ -1074,7 +1074,7 @@ export type DriftVaults = {
 					{
 						name: 'redeemPeriod';
 						docs: [
-							'the period (in seconds) that a vault depositor must wait after requesting a withdraw to complete withdraw',
+							'the period (in seconds) that a vault depositor must wait after requesting a withdraw to complete withdraw'
 						];
 						type: 'i64';
 					},
@@ -1086,7 +1086,7 @@ export type DriftVaults = {
 					{
 						name: 'maxTokens';
 						docs: [
-							'max token capacity, once hit/passed vault will reject new deposits (updateable)',
+							'max token capacity, once hit/passed vault will reject new deposits (updateable)'
 						];
 						type: 'u64';
 					},
@@ -1154,28 +1154,28 @@ export type DriftVaults = {
 					{
 						name: 'sharesBase';
 						docs: [
-							'the base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)',
+							'the base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)'
 						];
 						type: 'u32';
 					},
 					{
 						name: 'profitShare';
 						docs: [
-							"percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION",
+							"percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION"
 						];
 						type: 'u32';
 					},
 					{
 						name: 'hurdleRate';
 						docs: [
-							'vault admin only collect incentive fees during periods when returns are higher than this amount: PERCENTAGE_PRECISION',
+							'vault admin only collect incentive fees during periods when returns are higher than this amount: PERCENTAGE_PRECISION'
 						];
 						type: 'u32';
 					},
 					{
 						name: 'spotMarketIndex';
 						docs: [
-							'The spot market index the vault deposits into/withdraws from',
+							'The spot market index the vault deposits into/withdraws from'
 						];
 						type: 'u16';
 					},
@@ -1194,10 +1194,10 @@ export type DriftVaults = {
 						type: {
 							array: ['u64', 8];
 						};
-					},
+					}
 				];
 			};
-		},
+		}
 	];
 	types: [
 		{
@@ -1242,7 +1242,7 @@ export type DriftVaults = {
 					{
 						name: 'permissioned';
 						type: 'bool';
-					},
+					}
 				];
 			};
 		},
@@ -1292,7 +1292,7 @@ export type DriftVaults = {
 						type: {
 							option: 'bool';
 						};
-					},
+					}
 				];
 			};
 		},
@@ -1309,7 +1309,7 @@ export type DriftVaults = {
 					{
 						name: 'value';
 						docs: [
-							'requested value (in vault spot_market_index) of shares for withdraw',
+							'requested value (in vault spot_market_index) of shares for withdraw'
 						];
 						type: 'u64';
 					},
@@ -1317,7 +1317,7 @@ export type DriftVaults = {
 						name: 'ts';
 						docs: ['request ts of vault withdraw'];
 						type: 'i64';
-					},
+					}
 				];
 			};
 		},
@@ -1340,7 +1340,7 @@ export type DriftVaults = {
 					},
 					{
 						name: 'FeePayment';
-					},
+					}
 				];
 			};
 		},
@@ -1357,10 +1357,10 @@ export type DriftVaults = {
 					},
 					{
 						name: 'SharesPercent';
-					},
+					}
 				];
 			};
-		},
+		}
 	];
 	events: [
 		{
@@ -1380,7 +1380,7 @@ export type DriftVaults = {
 					name: 'vaultEquityBefore';
 					type: 'u64';
 					index: false;
-				},
+				}
 			];
 		},
 		{
@@ -1467,9 +1467,9 @@ export type DriftVaults = {
 					name: 'managementFeeShares';
 					type: 'i64';
 					index: false;
-				},
+				}
 			];
-		},
+		}
 	];
 	errors: [
 		{
@@ -1581,7 +1581,7 @@ export type DriftVaults = {
 			code: 6021;
 			name: 'OngoingLiquidation';
 			msg: 'OngoingLiquidation';
-		},
+		}
 	];
 };
 

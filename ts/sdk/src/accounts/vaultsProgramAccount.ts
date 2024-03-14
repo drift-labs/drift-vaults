@@ -7,7 +7,7 @@ import {
 
 export abstract class VaultsProgramAccount<
 	Account,
-	AccountEvents extends VaultsProgramAccountBaseEvents,
+	AccountEvents extends VaultsProgramAccountBaseEvents
 > {
 	// @ts-ignore
 	accountSubscriber: VaultsProgramAccountSubscriber<Account, AccountEvents>;
