@@ -147,9 +147,8 @@ describe('driftVaults', () => {
 			writableSpotMarketIndexes: [0],
 		});
 
-		const vaultDepositorAccount = await program.account.vaultDepositor.fetch(
-			vaultDepositor
-		);
+		const vaultDepositorAccount =
+			await program.account.vaultDepositor.fetch(vaultDepositor);
 		assert(vaultDepositorAccount.lastWithdrawRequest.value.eq(new BN(0)));
 		console.log(
 			'vaultDepositorAccount.vaultShares:',

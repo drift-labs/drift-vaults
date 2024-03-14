@@ -91,7 +91,7 @@ export type VaultAccountEvents = {
 
 export interface VaultsProgramAccountSubscriber<
 	Account,
-	AccountEvents extends VaultsProgramAccountBaseEvents
+	AccountEvents extends VaultsProgramAccountBaseEvents,
 > {
 	eventEmitter: StrictEventEmitter<EventEmitter, AccountEvents>;
 	isSubscribed: boolean;
