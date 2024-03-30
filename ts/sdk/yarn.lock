@@ -131,10 +131,10 @@
     strict-event-emitter-types "^2.0.0"
     uuid "^8.3.2"
 
-"@drift-labs/sdk@2.75.0-beta.2":
-  version "2.75.0-beta.2"
-  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.75.0-beta.2.tgz#abcf227c4beec46fefeed75099d5a23852cd2fbc"
-  integrity sha512-sNX7nidy4DpiSWCv5H1VgznNqPh8OFoHDboO4+DG9MuFetGp3x8j3rg+00Nqc08IxVvcNKVJbI2vcS8cHT24Eg==
+"@drift-labs/sdk@2.75.0-beta.3":
+  version "2.75.0-beta.3"
+  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.75.0-beta.3.tgz#91eaa10ec2c217af45eec39cd6738147923256e1"
+  integrity sha512-TLbf7aOIb7vM/PBUAxETG1hC8+uE4L/4aQgCG1VGBegdkjlHO4xJ9RaXjqoV5q3hVxSInsU115deDvjxi5CDPA==
   dependencies:
     "@coral-xyz/anchor" "0.28.1-beta.2"
     "@ellipsis-labs/phoenix-sdk" "^1.4.2"
@@ -144,6 +144,7 @@
     "@solana/web3.js" "1.73.2"
     strict-event-emitter-types "^2.0.0"
     uuid "^8.3.2"
+    zstddec "^0.1.0"
 
 "@ellipsis-labs/phoenix-sdk@^1.4.2":
   version "1.4.5"
@@ -1443,3 +1444,8 @@ yn@3.1.1:
   version "3.1.1"
   resolved "https://registry.yarnpkg.com/yn/-/yn-3.1.1.tgz#1e87401a09d767c1d5eab26a6e4c185182d2eb50"
   integrity sha512-Ux4ygGWsu2c7isFWe8Yu1YluJmqVhxqK2cLXNQA5AcC3QfbGNpM7fu0Y8b/z16pXLnFxZYvWhd3fhBY9DLmC6Q==
+
+zstddec@^0.1.0:
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/zstddec/-/zstddec-0.1.0.tgz#7050f3f0e0c3978562d0c566b3e5a427d2bad7ec"
+  integrity sha512-w2NTI8+3l3eeltKAdK8QpiLo/flRAr2p8AGeakfMZOXBxOg9HIu4LVDxBi81sYgVhFhdJjv1OrB5ssI8uFPoLg==

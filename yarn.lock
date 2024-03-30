@@ -123,13 +123,13 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
-"@drift-labs/competitions-sdk@0.2.260":
-  version "0.2.260"
-  resolved "https://registry.yarnpkg.com/@drift-labs/competitions-sdk/-/competitions-sdk-0.2.260.tgz#1351acc07ebe1d074808bb08725989e39bee0151"
-  integrity sha512-FP7pwt+XHMogqWb4/bs4d4GMSmgZz6RFaKX/zkoPHxBXWfFcPQUrIDzzzEMifLKTVPxxCbmL0Zinsc40o7xe2Q==
+"@drift-labs/competitions-sdk@0.2.261":
+  version "0.2.261"
+  resolved "https://registry.yarnpkg.com/@drift-labs/competitions-sdk/-/competitions-sdk-0.2.261.tgz#ca0f70f0c79aa47a4471c384e89b39c1983ff68a"
+  integrity sha512-fyTNPWGRBOYMRHDuK6+wzYM63E4RgMfDreOVJOU8/hpDzuh4SJ8sF6yCw8d3tSnAXEWJwGye63LGvlJkpIAHmw==
   dependencies:
     "@coral-xyz/anchor" "^0.26.0"
-    "@drift-labs/sdk" "2.75.0-beta.2"
+    "@drift-labs/sdk" "2.75.0-beta.3"
     "@solana/web3.js" "1.73.2"
     "@switchboard-xyz/solana.js" "^2.7.1"
     cerializr "^3.1.4"
@@ -138,10 +138,10 @@
     ts-node "^10.9.1"
     typescript "^5.1.6"
 
-"@drift-labs/sdk@2.75.0-beta.2":
-  version "2.75.0-beta.2"
-  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.75.0-beta.2.tgz#abcf227c4beec46fefeed75099d5a23852cd2fbc"
-  integrity sha512-sNX7nidy4DpiSWCv5H1VgznNqPh8OFoHDboO4+DG9MuFetGp3x8j3rg+00Nqc08IxVvcNKVJbI2vcS8cHT24Eg==
+"@drift-labs/sdk@2.75.0-beta.3":
+  version "2.75.0-beta.3"
+  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.75.0-beta.3.tgz#91eaa10ec2c217af45eec39cd6738147923256e1"
+  integrity sha512-TLbf7aOIb7vM/PBUAxETG1hC8+uE4L/4aQgCG1VGBegdkjlHO4xJ9RaXjqoV5q3hVxSInsU115deDvjxi5CDPA==
   dependencies:
     "@coral-xyz/anchor" "0.28.1-beta.2"
     "@ellipsis-labs/phoenix-sdk" "^1.4.2"
@@ -151,6 +151,7 @@
     "@solana/web3.js" "1.73.2"
     strict-event-emitter-types "^2.0.0"
     uuid "^8.3.2"
+    zstddec "^0.1.0"
 
 "@ellipsis-labs/phoenix-sdk@^1.4.2":
   version "1.4.4"
@@ -2813,3 +2814,8 @@ yocto-queue@^0.1.0:
   version "0.1.0"
   resolved "https://registry.npmjs.org/yocto-queue/-/yocto-queue-0.1.0.tgz"
   integrity sha512-rVksvsnNCdJ/ohGc6xgPwyN8eheCxsiLM8mxuE/t/mOVqJewPuO1miLpTHQiRgTKCLexL4MeAFVagts7HmNZ2Q==
+
+zstddec@^0.1.0:
+  version "0.1.0"
+  resolved "https://registry.yarnpkg.com/zstddec/-/zstddec-0.1.0.tgz#7050f3f0e0c3978562d0c566b3e5a427d2bad7ec"
+  integrity sha512-w2NTI8+3l3eeltKAdK8QpiLo/flRAr2p8AGeakfMZOXBxOg9HIu4LVDxBi81sYgVhFhdJjv1OrB5ssI8uFPoLg==
