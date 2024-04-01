@@ -123,10 +123,10 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
-"@drift-labs/competitions-sdk@0.2.262":
-  version "0.2.262"
-  resolved "https://registry.yarnpkg.com/@drift-labs/competitions-sdk/-/competitions-sdk-0.2.262.tgz#8c23855074551ad72952edbcd359c0834e397720"
-  integrity sha512-XUHpe/j5krM5vBrSttQy7T9FST4dq2L8bdRhPdY1NQW3FpMQXQS7GdiGBXXyS+Kg3fCr1d8jpg/tmPf3Z7V8iw==
+"@drift-labs/competitions-sdk@0.2.263":
+  version "0.2.263"
+  resolved "https://registry.yarnpkg.com/@drift-labs/competitions-sdk/-/competitions-sdk-0.2.263.tgz#a171c5351c2f45dc792874752fbf645329767d95"
+  integrity sha512-pg7UUz9XJrorBkjAO8f4BQaJf910P6htMVPKU7cVUWLwZ7HMCDhzTawFjUMdRQk2pH56QDEVQiEMXDNNtONgsA==
   dependencies:
     "@coral-xyz/anchor" "^0.26.0"
     "@drift-labs/sdk" "2.75.0-beta.4"
