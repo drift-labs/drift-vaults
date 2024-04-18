@@ -110,6 +110,14 @@ pub mod drift_vaults {
         instructions::manager_withdraw(ctx)
     }
 
+    pub fn manager_burn_shares<'info>(
+        ctx: Context<'_, '_, '_, 'info, ManagerBurnShares<'info>>,
+        burn_amount: u64,
+        burn_unit: WithdrawUnit,
+    ) -> Result<()> {
+        instructions::manager_burn_shares(ctx, burn_amount, burn_unit)
+    }
+
     pub fn apply_profit_share<'info>(
         ctx: Context<'_, '_, '_, 'info, ApplyProfitShare<'info>>,
     ) -> Result<()> {

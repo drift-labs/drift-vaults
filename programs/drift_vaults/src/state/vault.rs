@@ -1,4 +1,5 @@
 use crate::events::{VaultDepositorAction, VaultDepositorRecord};
+use crate::state::BurnVaultSharesRecord;
 use crate::{validate, Size, VaultDepositor, WithdrawUnit};
 
 use crate::constants::TIME_FOR_LIQUIDATION;
@@ -499,5 +500,54 @@ impl Vault {
     pub fn reset_liquidation_delegate(&mut self) {
         self.liquidation_delegate = Pubkey::default();
         self.liquidation_start_ts = 0;
+    }
+
+    pub fn manager_burn_shares(
+        &mut self,
+        burn_amount: u64,
+        burn_unit: WithdrawUnit,
+        vault_equity: u64,
+        now: i64,
+    ) -> Result<()> {
+        self.apply_rebase(vault_equity)?;
+        self.apply_management_fee(vault_equity, now)?;
+
+        let (burn_value, new_total_shares) = burn_unit.get_transfer_value_with_new_total(
+            burn_amount,
+            vault_equity,
+            self.user_shares,
+            self.total_shares,
+        )?;
+
+        validate!(
+            new_total_shares < self.total_shares,
+            ErrorCode::InvalidBurnSharesAmount,
+            "new_total_shares > total_shares"
+        )?;
+
+        let total_vault_shares_before = self.total_shares;
+
+        msg!(
+            "burn_value: {}, total_shares: {} -> {}",
+            burn_value,
+            total_vault_shares_before,
+            new_total_shares
+        );
+        self.total_shares = new_total_shares;
+
+        emit!(BurnVaultSharesRecord {
+            ts: now,
+            vault: self.pubkey,
+            depositor_authority: self.manager,
+            amount: burn_value,
+            spot_market_index: self.spot_market_index,
+            vault_equity,
+            total_vault_shares_before,
+            total_vault_shares_after: self.total_shares,
+        });
+
+        self.apply_rebase(vault_equity)?;
+
+        Ok(())
     }
 }
