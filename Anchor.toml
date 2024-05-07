@@ -11,6 +11,11 @@ url = "https://api.apr.dev"
 cluster = "Localnet"
 wallet = "~/.config/solana/id.json"
 
+[scripts]
+test = "yarn anchor-test"
+test-phoenix = "ANCHOR_TEST_FILE=vaultPhoenix.ts anchor test"
+
+
 [[test.genesis]]
 address = "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
 program = "./deps/drift.so"
@@ -19,5 +24,34 @@ program = "./deps/drift.so"
 address = "DraWMeQX9LfzQQSYoeBwHAgM5JcqFkgrX7GbTfjzVMVL"
 program = "./deps/drift_competitions.so"
 
-[scripts]
-test = "yarn anchor-tests"
+[[test.genesis]]
+address = "PhoeNiXZ8ByJGLkxNfZRnkUfjvmuYqLR89jjFHGqdXY"
+program = "./deps/phoenix_dex.so"
+
+[[test.genesis]]
+address = "PSMxQbAoDWDbvd9ezQJgARyq6R9L5kJAasaLDVcZwf1"
+program = "./deps/phoenix_seat_manager.so"
+
+[[test.validator.account]]
+address = "4DoNfFBfF7UokCC2FQzriy7yHK6DY6NVdYpuekQ5pRgg"
+filename = "./deps/configs/phoenix_sol_usdc_market.json"
+
+[[test.validator.account]]
+address = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+filename = "./deps/configs/usdc-god.json"
+
+[[test.validator.account]]
+address = "So11111111111111111111111111111111111111112"
+filename = "./deps/configs/wsol-god.json"
+
+[[test.validator.account]]
+address = "8g4Z9d6PqGkgH31tMW6FwxGhwYJrXpxZHQrkikpLJKrG"
+filename = "./deps/configs/phoenix_sol_usdc_base_vault.json"
+
+[[test.validator.account]]
+address = "3HSYXeGc3LjEPCuzoNDjQN37F1ebsSiR4CqXVqQCdekZ"
+filename = "./deps/configs/phoenix_sol_usdc_quote_vault.json"
+
+[[test.validator.account]]
+address = "JB3443UaUDA3z47AYdK4AUG8pgFgLfJVyyitHYkqC17L"
+filename = "./deps/configs/phoenix_seat_manager.json"

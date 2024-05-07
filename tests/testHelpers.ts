@@ -36,6 +36,7 @@ import {
 	QUOTE_PRECISION,
 	User,
 	OracleSource,
+	MarketStatus,
 } from '@drift-labs/sdk';
 
 export async function mockOracle(
@@ -230,12 +231,12 @@ export async function initializeAndSubscribeDriftClient(
 		oracleInfos,
 		accountSubscription: accountLoader
 			? {
-					type: 'polling',
-					accountLoader,
-			  }
+				type: 'polling',
+				accountLoader,
+			}
 			: {
-					type: 'websocket',
-			  },
+				type: 'websocket',
+			},
 	});
 	await driftClient.subscribe();
 	await driftClient.initializeUserAccount();
@@ -280,7 +281,7 @@ export async function createWSolTokenAccountForUser(
 	await provider.connection.requestAirdrop(
 		userKeypair.publicKey,
 		amount.toNumber() +
-			(await getMinimumBalanceForRentExemptAccount(provider.connection))
+		(await getMinimumBalanceForRentExemptAccount(provider.connection))
 	);
 	return await createWrappedNativeAccount(
 		provider.connection,
@@ -415,12 +416,12 @@ export async function initUserAccounts(
 			oracleInfos,
 			accountSubscription: accountLoader
 				? {
-						type: 'polling',
-						accountLoader,
-				  }
+					type: 'polling',
+					accountLoader,
+				}
 				: {
-						type: 'websocket',
-				  },
+					type: 'websocket',
+				},
 		});
 
 		// await driftClient1.initialize(usdcMint.publicKey, false);
@@ -592,9 +593,9 @@ function readBigInt64LE(buffer, offset = 0) {
 		(BigInt(val) << BigInt(32)) +
 		BigInt(
 			first +
-				buffer[++offset] * 2 ** 8 +
-				buffer[++offset] * 2 ** 16 +
-				buffer[++offset] * 2 ** 24
+			buffer[++offset] * 2 ** 8 +
+			buffer[++offset] * 2 ** 16 +
+			buffer[++offset] * 2 ** 24
 		)
 	);
 }
@@ -824,6 +825,7 @@ export async function initializeQuoteSpotMarket(
 		marketIndex,
 		new BN(10 ** 10).mul(QUOTE_PRECISION)
 	);
+	await admin.updateSpotMarketStatus(0, MarketStatus.ACTIVE);
 }
 
 export async function initializeSolSpotMarket(

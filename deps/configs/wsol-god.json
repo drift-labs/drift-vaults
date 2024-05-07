@@ -1,0 +1,13 @@
+{
+    "pubkey": "So11111111111111111111111111111111111111112",
+    "account": {
+        "lamports": 545636242773,
+        "data": [
+            "AAAAANuZX+JRadFByrm7upK6oB+fLh7OffTLKsBRkPN/zB+dAAAAAAAAAAAJAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+            "base64"
+        ],
+        "owner": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+        "executable": false,
+        "rentEpoch": 0
+    }
+}

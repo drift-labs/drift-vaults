@@ -49,6 +49,10 @@ describe('driftVaults', () => {
 	const adminClient = new AdminClient({
 		connection,
 		wallet: provider.wallet,
+		accountSubscription: {
+			type: 'websocket',
+			resubTimeoutMs: 30_000,
+		},
 	});
 
 	const vaultClient = new VaultClient({

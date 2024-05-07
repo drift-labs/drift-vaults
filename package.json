@@ -8,13 +8,14 @@
         "prepare": "husky install",
         "update-types": "cp target/types/drift_vaults.ts ts/sdk/src/types/drift_vaults.ts && prettier --write ts/sdk/src/types/drift_vaults.ts",
         "update-idl": "cp target/idl/drift_vaults.json ts/sdk/src/idl/drift_vaults.json",
-        "anchor-tests": "yarn update-types && yarn update-idl && yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+        "anchor-test": "yarn update-types && yarn update-idl && yarn run ts-mocha -p ./tsconfig.json -t 1000000 ./tests/${ANCHOR_TEST_FILE:-**/*.ts}"
     },
     "devDependencies": {
         "@coral-xyz/anchor": "^0.26.0",
         "@drift-labs/competitions-sdk": "0.2.303",
         "@drift-labs/sdk": "2.82.0-beta.12",
         "@solana/web3.js": "1.73.2",
+        "@ellipsis-labs/phoenix-sdk": "2.0.3",
         "@types/bn.js": "^5.1.0",
         "@types/chai": "^4.3.0",
         "@types/mocha": "^9.0.0",
