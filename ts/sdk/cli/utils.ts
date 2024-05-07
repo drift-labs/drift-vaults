@@ -1,4 +1,4 @@
-import { BASE_PRECISION, BN, DriftClient, OraclePriceData, PRICE_PRECISION, QUOTE_PRECISION, SpotMarketAccount, TEN, User, Wallet, convertToNumber, getSignedTokenAmount, getTokenAmount, loadKeypair } from "@drift-labs/sdk";
+import { BASE_PRECISION, BN, DriftClient, OraclePriceData, PRICE_PRECISION, QUOTE_PRECISION, SpotMarketAccount, TEN, User, Wallet, WhileValidTxSender, convertToNumber, getSignedTokenAmount, getTokenAmount, loadKeypair } from "@drift-labs/sdk";
 import { VAULT_PROGRAM_ID, Vault, VaultClient, VaultDepositor, decodeName } from "../src";
 import { Command } from "commander";
 import { Connection, Keypair } from "@solana/web3.js";
@@ -67,6 +67,7 @@ export async function printVault(slot: number, driftClient: DriftClient, vault: 
         userAccountPublicKey: vault.user,
     });
     await user.subscribe();
+
     for (const spotPos of user.getActiveSpotPositions()) {
         const sm = driftClient.getSpotMarketAccount(spotPos.marketIndex)!;
         const prec = TEN.pow(new BN(sm.decimals));
@@ -74,6 +75,7 @@ export async function printVault(slot: number, driftClient: DriftClient, vault: 
         const bal = getSignedTokenAmount(getTokenAmount(spotPos.scaledBalance, sm, spotPos.balanceType), spotPos.balanceType);
         console.log(`Spot Position: ${spotPos.marketIndex}, ${convertToNumber(bal, prec)} ${sym}`);
     }
+
     for (const perpPos of user.getActivePerpPositions()) {
         console.log(`Perp Position: ${perpPos.marketIndex}, base: ${convertToNumber(perpPos.baseAssetAmount, BASE_PRECISION)}, quote: ${convertToNumber(perpPos.quoteAssetAmount, QUOTE_PRECISION)}`);
         const upnl = user.getUnrealizedPNL(true, perpPos.marketIndex);
@@ -82,7 +84,9 @@ export async function printVault(slot: number, driftClient: DriftClient, vault: 
 
     console.log(`vaultEquity (${spotSymbol}):   ${vaultEquitySpot}`);
     console.log(`manager share (${spotSymbol}): ${managerSharePct * vaultEquitySpot}`);
-    console.log(`vault PnL (${spotSymbol}):     ${vaultEquitySpot - netDepositsNum}`);
+    console.log(`vault PnL     (${spotSymbol}):   ${vaultEquitySpot - netDepositsNum}`);
+    console.log(`vault PnL (USD) ${convertToNumber(user.getTotalAllTimePnl(), QUOTE_PRECISION)}`);
+    console.log(`vault PnL (spot) ${convertToNumber(user.getTotalAllTimePnl(), QUOTE_PRECISION) / oraclePriceNum}`);
 
     return {
         managerShares,
@@ -134,6 +138,7 @@ export async function getCommandContext(program: Command, needToSign: boolean): 
     const connection = new Connection(opts.url, {
         commitment: opts.commitment,
     });
+
     const driftClient = new DriftClient({
         connection,
         wallet,
@@ -143,6 +148,14 @@ export async function getCommandContext(program: Command, needToSign: boolean): 
             skipPreflight: false,
             preflightCommitment: opts.commitment,
         },
+        txSender: new WhileValidTxSender({
+            connection,
+            wallet,
+            opts: {
+                maxRetries: 0,
+            },
+            retrySleep: 1000,
+        }),
     });
     await driftClient.subscribe();
 

@@ -1,4 +1,4 @@
-import { ComputeBudgetProgram, PublicKey } from "@solana/web3.js";
+import { PublicKey } from "@solana/web3.js";
 import {
     OptionValues,
     Command
@@ -119,19 +119,10 @@ export const managerUpdateVault = async (program: Command, cmdOpts: OptionValues
         permissioned,
     };
 
-    const preIxs = [
-        ComputeBudgetProgram.setComputeUnitLimit({
-            units: 600_000,
-        }),
-        ComputeBudgetProgram.setComputeUnitPrice({
-            microLamports: 100_000,
-        }),
-    ];
-
     let done = false;
     while (!done) {
         try {
-            const tx = await driftVault.managerUpdateVault(vaultAddress, newParams, preIxs, { maxRetries: 0 });
+            const tx = await driftVault.managerUpdateVault(vaultAddress, newParams);
             console.log(`Updated vault params as vault manager: https://solana.fm/tx/${tx}`);
             done = true;
             break;

@@ -1,4 +1,4 @@
-import { ComputeBudgetProgram, PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
+import { ComputeBudgetProgram, PublicKey, TransactionInstruction, VersionedTransactionResponse } from "@solana/web3.js";
 import {
     OptionValues,
     Command
@@ -21,11 +21,11 @@ export const applyProfitShare = async (program: Command, cmdOpts: OptionValues) 
     const {
         driftVault,
         driftClient,
-    } = await getCommandContext(program, true);
+    } = await getCommandContext(program, true, true);
 
     const vault = await driftVault.getVault(vaultAddress);
     const vdWithNoWithdrawRequests = await driftVault.getAllVaultDepositorsWithNoWithdrawRequest(vaultAddress);
-    const vaultEquity = await driftVault.calculateVaultEquity({ vault });
+    const vaultEquitySpot = await driftVault.calculateVaultEquityInDepositAsset({ vault });
 
     const spotMarket = driftClient.getSpotMarketAccount(vault.spotMarketIndex);
     if (!spotMarket) {
@@ -36,7 +36,7 @@ export const applyProfitShare = async (program: Command, cmdOpts: OptionValues) 
     const thresholdBN = numberToSafeBN(thresholdNumber, spotMarketPrecision);
     let pendingProfitShareToRealize = ZERO;
     const vdWithPendingProfitShare = vdWithNoWithdrawRequests.filter((vd: ProgramAccount<VaultDepositor>) => {
-        const pendingProfitShares = calculateApplyProfitShare(vd.account, vaultEquity, vault);
+        const pendingProfitShares = calculateApplyProfitShare(vd.account, vaultEquitySpot, vault);
         const doRealize = pendingProfitShares.profitShareAmount.gt(thresholdBN);
         if (doRealize) {
             pendingProfitShareToRealize = pendingProfitShareToRealize.add(pendingProfitShares.profitShareAmount);
@@ -49,7 +49,7 @@ export const applyProfitShare = async (program: Command, cmdOpts: OptionValues) 
     console.log(`${vdWithPendingProfitShare.length}/${vdWithNoWithdrawRequests.length} depositors have pending profit shares above threshold ${cmdOpts.threshold} (${thresholdBN.toString()})`);
     console.log(`Applying profit share for ${vdWithPendingProfitShare.length} depositors.`);
 
-    const chunkSize = 5;
+    const chunkSize = 1;
     const ixChunks: Array<Array<TransactionInstruction>> = [];
     for (let i = 0; i < vdWithPendingProfitShare.length; i += chunkSize) {
         const chunk = vdWithPendingProfitShare.slice(i, i + chunkSize);
@@ -65,22 +65,30 @@ export const applyProfitShare = async (program: Command, cmdOpts: OptionValues) 
         const ixs = ixChunks[i];
         console.log(`Sending chunk ${i + 1}/${ixChunks.length}`);
         try {
-            ixs.unshift(ComputeBudgetProgram.setComputeUnitLimit({
-                units: 1_400_000,
-            }));
             ixs.unshift(ComputeBudgetProgram.setComputeUnitPrice({
-                microLamports: 100,
+                microLamports: 10000,
+            }));
+            ixs.unshift(ComputeBudgetProgram.setComputeUnitLimit({
+                units: 170_000,
             }));
 
-            const tx = new Transaction();
-            tx.add(...ixs);
-            const { txSig } = await driftVault.driftClient.sendTransaction(
-                tx,
-                [],
-                driftVault.driftClient.opts
-            );
+            const tx = await driftClient.txSender.getVersionedTransaction(ixs, [], undefined, undefined);
 
-            console.log(`[${i}]: https://solscan.io/tx/${txSig}`);
+            let attempt = 0;
+            let txResp: VersionedTransactionResponse | null = null;
+            while (txResp === null) {
+                attempt++;
+                const { txSig } = await driftClient.txSender.sendVersionedTransaction(
+                    tx,
+                );
+                console.log(`[${i}]: https://solscan.io/tx/${txSig} (attempt ${attempt})`);
+
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                txResp = await driftClient.connection.getTransaction(txSig, { commitment: 'confirmed', maxSupportedTransactionVersion: 0 });
+            }
+            console.log(txResp);
+
 
         } catch (e) {
             console.error(e);

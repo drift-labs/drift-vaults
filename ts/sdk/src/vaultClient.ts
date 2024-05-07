@@ -6,6 +6,7 @@ import {
 	getUserAccountPublicKey,
 	getUserAccountPublicKeySync,
 	getUserStatsAccountPublicKey,
+	TEN,
 	UserMap,
 } from '@drift-labs/sdk';
 import { BorshAccountsCoder, Program, ProgramAccount } from '@coral-xyz/anchor';
@@ -184,7 +185,7 @@ export class VaultClient {
 	/**
 	 *
 	 * @param vault pubkey
-	 * @returns vault equity, in QUOTE_PRECISION
+	 * @returns vault equity, in USDC
 	 */
 	public async calculateVaultEquity(params: {
 		address?: PublicKey;
@@ -206,6 +207,38 @@ export class VaultClient {
 		const unrealizedPnl = user.getUnrealizedPNL(true, undefined, undefined);
 
 		return netSpotValue.add(unrealizedPnl);
+	}
+
+	/**
+	 *
+	 * @param vault pubkey
+	 * @returns vault equity, in spot deposit asset
+	 */
+	public async calculateVaultEquityInDepositAsset(params: {
+		address?: PublicKey;
+		vault?: Vault;
+	}): Promise<BN> {
+		let vaultAccount: Vault;
+		if (params.address !== undefined) {
+			// @ts-ignore
+			vaultAccount = await this.program.account.vault.fetch(params.address);
+		} else if (params.vault !== undefined) {
+			vaultAccount = params.vault;
+		} else {
+			throw new Error('Must supply address or vault');
+		}
+		const vaultEquity = await this.calculateVaultEquity({
+			vault: vaultAccount,
+		});
+		const spotMarket = this.driftClient.getSpotMarketAccount(
+			vaultAccount.spotMarketIndex
+		);
+		const spotOracle = this.driftClient.getOracleDataForSpotMarket(
+			vaultAccount.spotMarketIndex
+		);
+		const spotPrecision = TEN.pow(new BN(spotMarket!.decimals));
+
+		return vaultEquity.mul(spotPrecision).div(spotOracle.price);
 	}
 
 	public async initializeVault(params: {
@@ -526,13 +559,16 @@ export class VaultClient {
 			permissioned: boolean | null;
 		}
 	): Promise<TransactionSignature> {
-		return await this.program.methods
-			.updateVault(params)
-			.accounts({
+		const ix = this.program.instruction.updateVault(params, {
+			accounts: {
 				vault,
 				manager: this.driftClient.wallet.publicKey,
-			})
-			.rpc();
+			},
+		});
+		return this.createAndSendTxn([ix], {
+			cuLimit: 600_000,
+			cuPriceMicroLamports: 10_000,
+		});
 	}
 
 	public async getApplyProfitShareIx(
@@ -941,7 +977,10 @@ export class VaultClient {
 				.forceWithdraw()
 				.preInstructions([
 					ComputeBudgetProgram.setComputeUnitLimit({
-						units: 400_000,
+						units: 500_000,
+					}),
+					ComputeBudgetProgram.setComputeUnitPrice({
+						microLamports: 50_000,
 					}),
 				])
 				.accounts(accounts)

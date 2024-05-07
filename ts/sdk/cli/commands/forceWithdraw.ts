@@ -48,6 +48,6 @@ export const forceWithdraw = async (program: Command, cmdOpts: OptionValues) => 
         driftVault
     } = await getCommandContext(program, true);
 
-    const tx = await driftVault.forceWithdraw(vaultDepositorAddress, false);
+    const tx = await driftVault.forceWithdraw(vaultDepositorAddress);
     console.log(`Forced withdraw from vault: ${tx}`);
 };

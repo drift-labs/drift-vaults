@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.26.0",
-    "@drift-labs/competitions-sdk": "0.2.302",
+    "@drift-labs/competitions-sdk": "0.2.303",
     "@drift-labs/sdk": "2.82.0-beta.12",
     "@solana/web3.js": "1.73.2",
     "commander": "^11.0.0",
