@@ -139,6 +139,21 @@
     uuid "^8.3.2"
     zstddec "^0.1.0"
 
+"@drift-labs/sdk@2.82.0-beta.13":
+  version "2.82.0-beta.13"
+  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.82.0-beta.13.tgz#58808f9991d4717f33a593f0ee6a7da4f33f46bc"
+  integrity sha512-rAnFCZCWEqjFOTqBohQUrP6MXhNFCSHQiaB2kOVta3807piRFBVhQ3ctxmyi1eMfoASmGF5ZZug0pKIqVRoKoA==
+  dependencies:
+    "@coral-xyz/anchor" "0.28.1-beta.2"
+    "@ellipsis-labs/phoenix-sdk" "^1.4.2"
+    "@project-serum/serum" "^0.13.38"
+    "@pythnetwork/client" "2.5.3"
+    "@solana/spl-token" "^0.3.7"
+    "@solana/web3.js" "1.91.7"
+    strict-event-emitter-types "^2.0.0"
+    uuid "^8.3.2"
+    zstddec "^0.1.0"
+
 "@ellipsis-labs/phoenix-sdk@^1.4.2":
   version "1.4.5"
   resolved "https://registry.yarnpkg.com/@ellipsis-labs/phoenix-sdk/-/phoenix-sdk-1.4.5.tgz#42cf8de8463b32c910ab8844eae71ca082a6773a"
