@@ -22,6 +22,7 @@ import {
 	getVaultDepositorAddressSync,
 } from './addresses';
 import {
+	AddressLookupTableAccount,
 	ComputeBudgetProgram,
 	PublicKey,
 	SystemProgram,
@@ -42,6 +43,7 @@ export type TxParams = {
 	cuLimit?: number;
 	cuPriceMicroLamports?: number;
 	simulateTransaction?: boolean;
+	lookupTables?: AddressLookupTableAccount[];
 };
 
 export class VaultClient {
@@ -1124,7 +1126,7 @@ export class VaultClient {
 
 		const tx = await this.driftClient.txSender.getVersionedTransaction(
 			ixs,
-			[],
+			txParams?.lookupTables ?? [],
 			undefined,
 			{
 				preflightCommitment: 'confirmed',
