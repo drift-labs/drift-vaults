@@ -29,6 +29,7 @@ import {
 	SYSVAR_RENT_PUBKEY,
 	TransactionInstruction,
 	TransactionSignature,
+	VersionedTransaction,
 } from '@solana/web3.js';
 import {
 	createAssociatedTokenAccountInstruction,
@@ -1124,16 +1125,16 @@ export class VaultClient {
 			...vaultIxs,
 		];
 
-		const tx = await this.driftClient.txSender.getVersionedTransaction(
-			ixs,
-			txParams?.lookupTables ?? [],
-			undefined,
-			{
-				preflightCommitment: 'confirmed',
-				...this.driftClient.opts,
-			}
-		);
-
+		const tx = (await this.driftClient.txHandler.buildTransaction({
+			connection: this.driftClient.connection,
+			instructions: ixs,
+			lookupTables: txParams?.lookupTables ?? [],
+			preFlightCommitment: 'confirmed',
+			forceVersionedTransaction: true,
+			txVersion: 0,
+			fetchMarketLookupTableAccount:
+				this.driftClient.fetchMarketLookupTableAccount,
+		})) as VersionedTransaction;
 		let txSig = bs58.encode(tx.signatures[0]);
 		if (txParams?.simulateTransaction) {
 			try {

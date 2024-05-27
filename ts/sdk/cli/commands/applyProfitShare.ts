@@ -21,7 +21,7 @@ export const applyProfitShare = async (program: Command, cmdOpts: OptionValues) 
     const {
         driftVault,
         driftClient,
-    } = await getCommandContext(program, true, true);
+    } = await getCommandContext(program, true);
 
     const vault = await driftVault.getVault(vaultAddress);
     const vdWithNoWithdrawRequests = await driftVault.getAllVaultDepositorsWithNoWithdrawRequest(vaultAddress);
