@@ -1133,7 +1133,7 @@ export class VaultClient {
 			forceVersionedTransaction: true,
 			txVersion: 0,
 			fetchMarketLookupTableAccount:
-				this.driftClient.fetchMarketLookupTableAccount,
+				this.driftClient.fetchMarketLookupTableAccount.bind(this.driftClient),
 		})) as VersionedTransaction;
 		let txSig = bs58.encode(tx.signatures[0]);
 		if (txParams?.simulateTransaction) {
