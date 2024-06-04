@@ -58,6 +58,7 @@ describe('driftVaults', () => {
 	const vaultClient = new VaultClient({
 		driftClient: adminClient,
 		program: program,
+		cliMode: true,
 	});
 
 	let usdcMint: Keypair;
