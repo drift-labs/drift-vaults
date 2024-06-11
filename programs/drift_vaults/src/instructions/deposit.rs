@@ -12,7 +12,10 @@ use drift::instructions::optional_accounts::AccountMaps;
 use drift::program::Drift;
 use drift::state::user::User;
 
-pub fn deposit<'c: 'info, 'info>(ctx: Context<'_, '_, 'c, 'info, Deposit<'info>>, amount: u64) -> Result<()> {
+pub fn deposit<'c: 'info, 'info>(
+    ctx: Context<'_, '_, 'c, 'info, Deposit<'info>>,
+    amount: u64,
+) -> Result<()> {
     let clock = &Clock::get()?;
 
     let mut vault = ctx.accounts.vault.load_mut()?;

@@ -35,17 +35,12 @@ pub struct VaultDepositorRecord {
     pub management_fee_shares: i64,
 }
 
-#[derive(Clone, Copy, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
+#[derive(Clone, Copy, BorshSerialize, BorshDeserialize, PartialEq, Eq, Default)]
 pub enum VaultDepositorAction {
+    #[default]
     Deposit,
     WithdrawRequest,
     CancelWithdrawRequest,
     Withdraw,
     FeePayment,
-}
-
-impl Default for VaultDepositorAction {
-    fn default() -> Self {
-        VaultDepositorAction::Deposit
-    }
 }

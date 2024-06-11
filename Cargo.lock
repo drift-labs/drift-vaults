@@ -1051,6 +1051,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "drift"
+version = "2.83.0"
+source = "git+https://github.com/drift-labs/protocol-v2.git?rev=a95009#a9500947038624afbf03d565833be50567145af7"
+dependencies = [
+ "anchor-lang",
+ "anchor-spl",
+ "arrayref",
+ "base64 0.13.0",
+ "borsh 0.10.3",
+ "bytemuck",
+ "drift-macros",
+ "enumflags2",
+ "num-derive 0.3.3",
+ "num-integer",
+ "num-traits",
+ "phoenix-v1",
+ "pyth-client",
+ "serum_dex",
+ "solana-program",
+ "solana-security-txt",
+ "static_assertions",
+ "switchboard",
+ "thiserror",
+ "uint",
+]
+
+[[package]]
 name = "drift-competitions"
 version = "0.1.0"
 source = "git+https://github.com/drift-labs/drift-competitions.git?rev=4754f5#4754f56fa455e03626d9e6e27ce632bd60762bad"
@@ -1058,7 +1085,7 @@ dependencies = [
  "anchor-lang",
  "anchor-spl",
  "bytemuck",
- "drift",
+ "drift 2.55.0",
  "drift-macros",
  "getrandom 0.2.9",
  "static_assertions",
@@ -1081,7 +1108,7 @@ dependencies = [
  "anchor-lang",
  "anchor-spl",
  "bytemuck",
- "drift",
+ "drift 2.83.0",
  "drift-competitions",
  "drift-macros",
  "static_assertions",
@@ -3525,6 +3552,14 @@ dependencies = [
  "serde",
  "sval",
  "sval_nested",
+]
+
+[[package]]
+name = "switchboard"
+version = "0.1.0"
+source = "git+https://github.com/drift-labs/protocol-v2.git?rev=a95009#a9500947038624afbf03d565833be50567145af7"
+dependencies = [
+ "anchor-lang",
 ]
 
 [[package]]

@@ -1,8 +1,8 @@
-use std::collections::BTreeSet;
 use anchor_lang::prelude::Context;
 use drift::error::DriftResult;
 use drift::instructions::optional_accounts::{load_maps, AccountMaps};
 use drift::state::spot_market_map::get_writable_spot_market_set;
+use std::collections::BTreeSet;
 
 pub trait AccountMapProvider<'a> {
     fn load_maps(
@@ -12,7 +12,9 @@ pub trait AccountMapProvider<'a> {
     ) -> DriftResult<AccountMaps<'a>>;
 }
 
-impl<'a: 'info, 'info, T: anchor_lang::Bumps> AccountMapProvider<'a> for Context<'_, '_, 'a, 'info, T> {
+impl<'a: 'info, 'info, T: anchor_lang::Bumps> AccountMapProvider<'a>
+    for Context<'_, '_, 'a, 'info, T>
+{
     fn load_maps(
         &self,
         slot: u64,
