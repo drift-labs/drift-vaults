@@ -1,4 +1,4 @@
 .env
 lib
 node_modules
-*.txt
+_scripts

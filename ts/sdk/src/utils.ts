@@ -10,7 +10,7 @@ export const getDriftVaultProgram = (
 	connection: Connection,
 	wallet: IWallet
 ): anchor.Program<DriftVaults> => {
-	const provider = new AnchorProvider(connection, wallet, {});
+	const provider = new AnchorProvider(connection, wallet as anchor.Wallet, {});
 	anchor.setProvider(provider);
 	const vaultProgram = new anchor.Program(IDL, VAULT_PROGRAM_ID, provider);
 
