@@ -48,6 +48,13 @@ pub mod drift_vaults {
         instructions::initialize_vault_depositor(ctx)
     }
 
+    pub fn initialize_tokenized_vault_depositor(
+        ctx: Context<InitializeTokenizedVaultDepositor>,
+        params: InitializeTokenizedVaultDepositorParams,
+    ) -> Result<()> {
+        instructions::initialize_tokenized_vault_depositor(ctx, params)
+    }
+
     pub fn deposit<'c: 'info, 'info>(
         ctx: Context<'_, '_, 'c, 'info, Deposit<'info>>,
         amount: u64,

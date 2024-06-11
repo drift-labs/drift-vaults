@@ -202,6 +202,64 @@ export type DriftVaults = {
 			args: [];
 		},
 		{
+			name: 'initializeTokenizedVaultDepositor';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'tokenizedVaultDepositor';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'mintAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'metadataAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'payer';
+					isMut: true;
+					isSigner: true;
+				},
+				{
+					name: 'tokenProgram';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'tokenMetadataProgram';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'rent';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'systemProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [
+				{
+					name: 'params';
+					type: {
+						defined: 'InitializeTokenizedVaultDepositorParams';
+					};
+				}
+			];
+		},
+		{
 			name: 'deposit';
 			accounts: [
 				{
@@ -905,6 +963,79 @@ export type DriftVaults = {
 	];
 	accounts: [
 		{
+			name: 'tokenizedVaultDepositor';
+			type: {
+				kind: 'struct';
+				fields: [
+					{
+						name: 'vault';
+						docs: ['The vault deposited into'];
+						type: 'publicKey';
+					},
+					{
+						name: 'pubkey';
+						docs: [
+							"The vault depositor account's pubkey. It is a pda of vault"
+						];
+						type: 'publicKey';
+					},
+					{
+						name: 'vaultShares';
+						docs: [
+							"share of vault owned by this depositor. vault_shares / vault.total_shares is depositor's ownership of vault_equity"
+						];
+						type: 'u128';
+					},
+					{
+						name: 'lastValidTs';
+						docs: ['creation ts of vault depositor'];
+						type: 'i64';
+					},
+					{
+						name: 'netDeposits';
+						docs: ['lifetime net deposits of vault depositor for the vault'];
+						type: 'i64';
+					},
+					{
+						name: 'totalDeposits';
+						docs: ['lifetime total deposits'];
+						type: 'u64';
+					},
+					{
+						name: 'totalWithdraws';
+						docs: ['lifetime total withdraws'];
+						type: 'u64';
+					},
+					{
+						name: 'cumulativeProfitShareAmount';
+						docs: [
+							'the token amount of gains the vault depositor has paid performance fees on'
+						];
+						type: 'i64';
+					},
+					{
+						name: 'profitShareFeePaid';
+						type: 'u64';
+					},
+					{
+						name: 'vaultSharesBase';
+						docs: ['the exponent for vault_shares decimal places'];
+						type: 'u32';
+					},
+					{
+						name: 'padding1';
+						type: 'u32';
+					},
+					{
+						name: 'padding';
+						type: {
+							array: ['u64', 8];
+						};
+					}
+				];
+			};
+		},
+		{
 			name: 'vaultDepositor';
 			type: {
 				kind: 'struct';
@@ -1200,6 +1331,26 @@ export type DriftVaults = {
 		}
 	];
 	types: [
+		{
+			name: 'InitializeTokenizedVaultDepositorParams';
+			type: {
+				kind: 'struct';
+				fields: [
+					{
+						name: 'tokenName';
+						type: 'string';
+					},
+					{
+						name: 'tokenSymbol';
+						type: 'string';
+					},
+					{
+						name: 'tokenUri';
+						type: 'string';
+					}
+				];
+			};
+		},
 		{
 			name: 'VaultParams';
 			type: {
@@ -1787,6 +1938,64 @@ export const IDL: DriftVaults = {
 				},
 			],
 			args: [],
+		},
+		{
+			name: 'initializeTokenizedVaultDepositor',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'tokenizedVaultDepositor',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'mintAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'metadataAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'payer',
+					isMut: true,
+					isSigner: true,
+				},
+				{
+					name: 'tokenProgram',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'tokenMetadataProgram',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'rent',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'systemProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [
+				{
+					name: 'params',
+					type: {
+						defined: 'InitializeTokenizedVaultDepositorParams',
+					},
+				},
+			],
 		},
 		{
 			name: 'deposit',
@@ -2492,6 +2701,79 @@ export const IDL: DriftVaults = {
 	],
 	accounts: [
 		{
+			name: 'tokenizedVaultDepositor',
+			type: {
+				kind: 'struct',
+				fields: [
+					{
+						name: 'vault',
+						docs: ['The vault deposited into'],
+						type: 'publicKey',
+					},
+					{
+						name: 'pubkey',
+						docs: [
+							"The vault depositor account's pubkey. It is a pda of vault",
+						],
+						type: 'publicKey',
+					},
+					{
+						name: 'vaultShares',
+						docs: [
+							"share of vault owned by this depositor. vault_shares / vault.total_shares is depositor's ownership of vault_equity",
+						],
+						type: 'u128',
+					},
+					{
+						name: 'lastValidTs',
+						docs: ['creation ts of vault depositor'],
+						type: 'i64',
+					},
+					{
+						name: 'netDeposits',
+						docs: ['lifetime net deposits of vault depositor for the vault'],
+						type: 'i64',
+					},
+					{
+						name: 'totalDeposits',
+						docs: ['lifetime total deposits'],
+						type: 'u64',
+					},
+					{
+						name: 'totalWithdraws',
+						docs: ['lifetime total withdraws'],
+						type: 'u64',
+					},
+					{
+						name: 'cumulativeProfitShareAmount',
+						docs: [
+							'the token amount of gains the vault depositor has paid performance fees on',
+						],
+						type: 'i64',
+					},
+					{
+						name: 'profitShareFeePaid',
+						type: 'u64',
+					},
+					{
+						name: 'vaultSharesBase',
+						docs: ['the exponent for vault_shares decimal places'],
+						type: 'u32',
+					},
+					{
+						name: 'padding1',
+						type: 'u32',
+					},
+					{
+						name: 'padding',
+						type: {
+							array: ['u64', 8],
+						},
+					},
+				],
+			},
+		},
+		{
 			name: 'vaultDepositor',
 			type: {
 				kind: 'struct',
@@ -2787,6 +3069,26 @@ export const IDL: DriftVaults = {
 		},
 	],
 	types: [
+		{
+			name: 'InitializeTokenizedVaultDepositorParams',
+			type: {
+				kind: 'struct',
+				fields: [
+					{
+						name: 'tokenName',
+						type: 'string',
+					},
+					{
+						name: 'tokenSymbol',
+						type: 'string',
+					},
+					{
+						name: 'tokenUri',
+						type: 'string',
+					},
+				],
+			},
+		},
 		{
 			name: 'VaultParams',
 			type: {
