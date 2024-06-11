@@ -10,7 +10,9 @@ use drift::instructions::optional_accounts::AccountMaps;
 use drift::program::Drift;
 use drift::state::user::User;
 
-pub fn apply_profit_share(ctx: Context<ApplyProfitShare>) -> Result<()> {
+pub fn apply_profit_share<'c: 'info, 'info>(
+    ctx: Context<'_, '_, 'c, 'info, ApplyProfitShare<'info>>,
+) -> Result<()> {
     let clock = &Clock::get()?;
 
     let mut vault = ctx.accounts.vault.load_mut()?;

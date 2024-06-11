@@ -9,8 +9,8 @@ use crate::constraints::{
 use crate::AccountMapProvider;
 use crate::{Vault, VaultDepositor};
 
-pub fn cancel_withdraw_request<'info>(
-    ctx: Context<'_, '_, '_, 'info, CancelWithdrawRequest<'info>>,
+pub fn cancel_withdraw_request<'c: 'info, 'info>(
+    ctx: Context<'_, '_, 'c, 'info, CancelWithdrawRequest<'info>>,
 ) -> Result<()> {
     let clock = &Clock::get()?;
     let vault = &mut ctx.accounts.vault.load_mut()?;

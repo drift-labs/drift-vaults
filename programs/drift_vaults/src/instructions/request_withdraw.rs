@@ -8,8 +8,8 @@ use drift::instructions::optional_accounts::AccountMaps;
 use drift::math::casting::Cast;
 use drift::state::user::User;
 
-pub fn request_withdraw<'info>(
-    ctx: Context<'_, '_, '_, 'info, RequestWithdraw<'info>>,
+pub fn request_withdraw<'c: 'info, 'info>(
+    ctx: Context<'_, '_, 'c, 'info, RequestWithdraw<'info>>,
     withdraw_amount: u64,
     withdraw_unit: WithdrawUnit,
 ) -> Result<()> {

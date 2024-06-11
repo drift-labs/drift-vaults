@@ -11,7 +11,9 @@ use drift::instructions::optional_accounts::AccountMaps;
 use drift::program::Drift;
 use drift::state::user::User;
 
-pub fn liquidate<'info>(ctx: Context<'_, '_, '_, 'info, Liquidate<'info>>) -> Result<()> {
+pub fn liquidate<'c: 'info, 'info>(
+    ctx: Context<'_, '_, 'c, 'info, Liquidate<'info>>,
+) -> Result<()> {
     let clock = &Clock::get()?;
     let now = Clock::get()?.unix_timestamp;
 
