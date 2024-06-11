@@ -36,6 +36,7 @@ import {
 	QUOTE_PRECISION,
 	User,
 	OracleSource,
+	MarketStatus,
 } from '@drift-labs/sdk';
 
 export async function mockOracle(
@@ -824,6 +825,7 @@ export async function initializeQuoteSpotMarket(
 		marketIndex,
 		new BN(10 ** 10).mul(QUOTE_PRECISION)
 	);
+	await admin.updateSpotMarketStatus(marketIndex, MarketStatus.ACTIVE);
 }
 
 export async function initializeSolSpotMarket(
@@ -868,5 +870,6 @@ export async function initializeSolSpotMarket(
 		marketIndex,
 		new BN(10 ** 10).mul(QUOTE_PRECISION)
 	);
+	await admin.updateSpotMarketStatus(marketIndex, MarketStatus.ACTIVE);
 	return txSig;
 }

@@ -1,4 +1,4 @@
-import { DriftClient, Wallet, loadKeypair } from "@drift-labs/sdk";
+import { BASE_PRECISION, BN, DriftClient, OraclePriceData, PRICE_PRECISION, QUOTE_PRECISION, SpotMarketAccount, TEN, User, Wallet, WhileValidTxSender, convertToNumber, getSignedTokenAmount, getTokenAmount, loadKeypair } from "@drift-labs/sdk";
 import { VAULT_PROGRAM_ID, Vault, VaultClient, VaultDepositor, decodeName } from "../src";
 import { Command } from "commander";
 import { Connection, Keypair } from "@solana/web3.js";
@@ -6,7 +6,13 @@ import { AnchorProvider } from "@coral-xyz/anchor";
 import * as anchor from '@coral-xyz/anchor';
 import { IDL } from "../src/types/drift_vaults";
 
-export function printVault(vault: Vault) {
+export async function printVault(slot: number, driftClient: DriftClient, vault: Vault, vaultEquity: BN, spotMarket: SpotMarketAccount, spotOracle: OraclePriceData) {
+
+    const oraclePriceNum = convertToNumber(spotOracle.price, PRICE_PRECISION);
+    const spotPrecision = TEN.pow(new BN(spotMarket.decimals));
+    const spotSymbol = decodeName(spotMarket.name);
+
+    console.log(`slot: ${slot}`);
     console.log(`vault: ${decodeName(vault.name)}`);
     console.log(`pubkey:         ${vault.pubkey.toBase58()}`);
     console.log(`manager:         ${vault.manager.toBase58()}`);
@@ -25,21 +31,21 @@ export function printVault(vault: Vault) {
     console.log(`liquidationStartTs: ${vault.liquidationStartTs.toString()}`);
     console.log(`redeemPeriod:            ${vault.redeemPeriod.toString()}`);
     console.log(`totalWithdrawRequested:  ${vault.totalWithdrawRequested.toString()}`);
-    console.log(`maxTokens:               ${vault.maxTokens.toString()}`);
+    console.log(`maxTokens:               ${convertToNumber(vault.maxTokens, spotPrecision)} ${spotSymbol} (${vault.maxTokens.toString()})`);
     console.log(`sharesBase:              ${vault.sharesBase}`);
     console.log(`managementFee:           ${vault.managementFee.toString()}`);
     console.log(`initTs:                  ${vault.initTs.toString()}`);
-    console.log(`netDeposits:             ${vault.netDeposits.toString()}`);
-    console.log(`managerNetDeposits:      ${vault.managerNetDeposits.toString()}`);
-    console.log(`totalDeposits:           ${vault.totalDeposits.toString()}`);
-    console.log(`totalWithdraws:          ${vault.totalWithdraws.toString()}`);
-    console.log(`managerTotalDeposits:    ${vault.managerTotalDeposits.toString()}`);
-    console.log(`managerTotalWithdraws:   ${vault.managerTotalWithdraws.toString()}`);
-    console.log(`managerTotalFee:         ${vault.managerTotalFee.toString()}`);
-    console.log(`managerTotalProfitShare: ${vault.managerTotalProfitShare.toString()}`);
+    console.log(`netDeposits:             ${convertToNumber(vault.netDeposits, spotPrecision)} ${spotSymbol} (${vault.netDeposits.toString()})`);
+    console.log(`totalDeposits:           ${convertToNumber(vault.totalDeposits, spotPrecision)} ${spotSymbol} (${vault.totalDeposits.toString()})`);
+    console.log(`totalWithdraws:           ${convertToNumber(vault.totalWithdraws, spotPrecision)} ${spotSymbol} (${vault.totalWithdraws.toString()})`);
+    console.log(`managerNetDeposits:      ${convertToNumber(vault.managerNetDeposits, spotPrecision)} ${spotSymbol} (${vault.managerNetDeposits.toString()})`);
+    console.log(`managerTotalDeposits:    ${convertToNumber(vault.managerTotalDeposits, spotPrecision)} ${spotSymbol} (${vault.managerTotalDeposits.toString()})`);
+    console.log(`managerTotalWithdraws:   ${convertToNumber(vault.managerTotalWithdraws, spotPrecision)} ${spotSymbol} (${vault.managerTotalWithdraws.toString()})`);
+    console.log(`managerTotalFee:         ${convertToNumber(vault.managerTotalFee, spotPrecision)} ${spotSymbol} (${vault.managerTotalFee.toString()})`);
+    console.log(`managerTotalProfitShare: ${convertToNumber(vault.managerTotalProfitShare, spotPrecision)} ${spotSymbol} (${vault.managerTotalProfitShare.toString()})`);
     console.log(`lastManagerWithdrawRequest:`);
     console.log(`  shares: ${vault.lastManagerWithdrawRequest.shares.toString()}`);
-    console.log(`  values: ${vault.lastManagerWithdrawRequest.value.toString()}`);
+    console.log(`  values: ${convertToNumber(vault.lastManagerWithdrawRequest.value, spotPrecision)} ${spotSymbol} (${vault.lastManagerWithdrawRequest.value.toString()})`);
     console.log(`  ts:     ${vault.lastManagerWithdrawRequest.ts.toString()}`);
 
     console.log(`minDepositAmount:  ${vault.minDepositAmount.toString()}`);
@@ -47,6 +53,40 @@ export function printVault(vault: Vault) {
     console.log(`hurdleRate:        ${vault.hurdleRate}`);
     console.log(`spotMarketIndex:   ${vault.spotMarketIndex}`);
     console.log(`permissioned:      ${vault.permissioned}`);
+
+    const vaultEquityNum = convertToNumber(vaultEquity, QUOTE_PRECISION);
+    const netDepositsNum = convertToNumber(vault.netDeposits, spotPrecision);
+    console.log(`vaultEquity (USDC):   $${vaultEquityNum}`);
+    console.log(`manager share (USDC): $${managerSharePct * vaultEquityNum}`);
+
+    const vaultEquitySpot = vaultEquityNum / oraclePriceNum;
+
+    const user = new User({
+        // accountSubscription,
+        driftClient,
+        userAccountPublicKey: vault.user,
+    });
+    await user.subscribe();
+
+    for (const spotPos of user.getActiveSpotPositions()) {
+        const sm = driftClient.getSpotMarketAccount(spotPos.marketIndex)!;
+        const prec = TEN.pow(new BN(sm.decimals));
+        const sym = decodeName(sm.name);
+        const bal = getSignedTokenAmount(getTokenAmount(spotPos.scaledBalance, sm, spotPos.balanceType), spotPos.balanceType);
+        console.log(`Spot Position: ${spotPos.marketIndex}, ${convertToNumber(bal, prec)} ${sym}`);
+    }
+
+    for (const perpPos of user.getActivePerpPositions()) {
+        console.log(`Perp Position: ${perpPos.marketIndex}, base: ${convertToNumber(perpPos.baseAssetAmount, BASE_PRECISION)}, quote: ${convertToNumber(perpPos.quoteAssetAmount, QUOTE_PRECISION)}`);
+        const upnl = user.getUnrealizedPNL(true, perpPos.marketIndex);
+        console.log(`  upnl: ${convertToNumber(upnl, QUOTE_PRECISION)}`);
+    }
+
+    console.log(`vaultEquity (${spotSymbol}):   ${vaultEquitySpot}`);
+    console.log(`manager share (${spotSymbol}): ${managerSharePct * vaultEquitySpot}`);
+    console.log(`vault PnL     (${spotSymbol}):   ${vaultEquitySpot - netDepositsNum}`);
+    console.log(`vault PnL (USD) ${convertToNumber(user.getTotalAllTimePnl(), QUOTE_PRECISION)}`);
+    console.log(`vault PnL (spot) ${convertToNumber(user.getTotalAllTimePnl(), QUOTE_PRECISION) / oraclePriceNum}`);
 
     return {
         managerShares,
@@ -98,6 +138,7 @@ export async function getCommandContext(program: Command, needToSign: boolean): 
     const connection = new Connection(opts.url, {
         commitment: opts.commitment,
     });
+
     const driftClient = new DriftClient({
         connection,
         wallet,
@@ -107,6 +148,14 @@ export async function getCommandContext(program: Command, needToSign: boolean): 
             skipPreflight: false,
             preflightCommitment: opts.commitment,
         },
+        txSender: new WhileValidTxSender({
+            connection,
+            wallet,
+            opts: {
+                maxRetries: 0,
+            },
+            retrySleep: 1000,
+        }),
     });
     await driftClient.subscribe();
 

@@ -119,6 +119,22 @@ export const managerUpdateVault = async (program: Command, cmdOpts: OptionValues
         permissioned,
     };
 
-    const tx = await driftVault.managerUpdateVault(vaultAddress, newParams);
-    console.log(`Updated vault params as vault manager: https://solscan.io/tx/${tx}`);
+    let done = false;
+    while (!done) {
+        try {
+            const tx = await driftVault.managerUpdateVault(vaultAddress, newParams);
+            console.log(`Updated vault params as vault manager: https://solana.fm/tx/${tx}`);
+            done = true;
+            break;
+        } catch (e) {
+            const err = e as Error;
+            if (err.message.includes('TransactionExpiredTimeoutError')) {
+                console.log(err.message);
+                console.log('Transaction timeout. Retrying...');
+                await new Promise(resolve => setTimeout(resolve, 5000));
+            } else {
+                throw err;
+            }
+        }
+    }
 };
