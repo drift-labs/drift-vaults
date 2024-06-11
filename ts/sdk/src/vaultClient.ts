@@ -398,6 +398,7 @@ export class VaultClient {
 		amount: BN,
 		withdrawUnit: WithdrawUnit
 	): Promise<TransactionSignature> {
+		this.program.idl.types;
 		// @ts-ignore
 		const vaultAccount = (await this.program.account.vault.fetch(
 			vault

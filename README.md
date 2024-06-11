@@ -8,9 +8,14 @@ soon^TM
 
 # Development
 
-Developed using Anchor 0.26.0:
+* anchor 0.29.0
+* rust 1.70.0
+* solana 1.16.27
+
 ```
-avm use 0.26.0
+avm use 0.29.0
+rustup default 1.70.0
+sh -c "$(curl -sSfL https://release.solana.com/v1.16.27/install)"
 ```
 
 ## Run tests
