@@ -4,6 +4,7 @@ use crate::constraints::{
 };
 use crate::{Vault, VaultDepositor};
 
+use crate::state::traits::VaultDepositorBase;
 use crate::AccountMapProvider;
 use anchor_lang::prelude::*;
 use drift::instructions::optional_accounts::AccountMaps;

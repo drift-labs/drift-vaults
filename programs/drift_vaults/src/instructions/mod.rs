@@ -1,6 +1,7 @@
 pub use apply_profit_share::*;
 pub use cancel_withdraw_request::*;
 pub use deposit::*;
+pub use tokenize_shares::*;
 pub use force_withdraw::*;
 pub use initialize_competitor::*;
 pub use initialize_insurance_fund_stake::*;
@@ -24,6 +25,7 @@ mod apply_profit_share;
 mod cancel_withdraw_request;
 pub mod constraints;
 mod deposit;
+mod tokenize_shares;
 mod force_withdraw;
 mod initialize_competitor;
 mod initialize_insurance_fund_stake;

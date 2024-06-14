@@ -210,7 +210,7 @@ export type DriftVaults = {
 					isSigner: false;
 				},
 				{
-					name: 'tokenizedVaultDepositor';
+					name: 'vaultDepositor';
 					isMut: true;
 					isSigner: false;
 				},
@@ -255,6 +255,63 @@ export type DriftVaults = {
 					name: 'params';
 					type: {
 						defined: 'InitializeTokenizedVaultDepositorParams';
+					};
+				}
+			];
+		},
+		{
+			name: 'tokenizeShares';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'vaultDepositor';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'authority';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'tokenizedVaultDepositor';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'mint';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'userTokenAccount';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftUser';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'tokenProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [
+				{
+					name: 'amount';
+					type: 'u64';
+				},
+				{
+					name: 'unit';
+					type: {
+						defined: 'WithdrawUnit';
 					};
 				}
 			];
@@ -980,10 +1037,21 @@ export type DriftVaults = {
 						type: 'publicKey';
 					},
 					{
+						name: 'mint';
+						docs: [
+							'The token mint for tokenized shares owned by this VaultDepositor'
+						];
+						type: 'publicKey';
+					},
+					{
 						name: 'vaultShares';
 						docs: [
 							"share of vault owned by this depositor. vault_shares / vault.total_shares is depositor's ownership of vault_equity"
 						];
+						type: 'u128';
+					},
+					{
+						name: 'lastVaultShares';
 						type: 'u128';
 					},
 					{
@@ -1023,13 +1091,14 @@ export type DriftVaults = {
 						type: 'u32';
 					},
 					{
-						name: 'padding1';
-						type: 'u32';
+						name: 'bump';
+						docs: ['The bump for the vault pda'];
+						type: 'u8';
 					},
 					{
 						name: 'padding';
 						type: {
-							array: ['u64', 8];
+							array: ['u8', 3];
 						};
 					}
 				];
@@ -1347,6 +1416,10 @@ export type DriftVaults = {
 					{
 						name: 'tokenUri';
 						type: 'string';
+					},
+					{
+						name: 'decimals';
+						type: 'u8';
 					}
 				];
 			};
@@ -1617,6 +1690,61 @@ export type DriftVaults = {
 				{
 					name: 'managementFeeShares';
 					type: 'i64';
+					index: false;
+				}
+			];
+		},
+		{
+			name: 'ShareTransferRecord';
+			fields: [
+				{
+					name: 'ts';
+					type: 'i64';
+					index: false;
+				},
+				{
+					name: 'vault';
+					type: 'publicKey';
+					index: false;
+				},
+				{
+					name: 'fromVaultDepositor';
+					type: 'publicKey';
+					index: false;
+				},
+				{
+					name: 'toVaultDepositor';
+					type: 'publicKey';
+					index: false;
+				},
+				{
+					name: 'shares';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'value';
+					type: 'u64';
+					index: false;
+				},
+				{
+					name: 'fromDepositorSharesBefore';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'fromDepositorSharesAfter';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'toDepositorSharesBefore';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'toDepositorSharesAfter';
+					type: 'u128';
 					index: false;
 				}
 			];
@@ -1948,7 +2076,7 @@ export const IDL: DriftVaults = {
 					isSigner: false,
 				},
 				{
-					name: 'tokenizedVaultDepositor',
+					name: 'vaultDepositor',
 					isMut: true,
 					isSigner: false,
 				},
@@ -1993,6 +2121,63 @@ export const IDL: DriftVaults = {
 					name: 'params',
 					type: {
 						defined: 'InitializeTokenizedVaultDepositorParams',
+					},
+				},
+			],
+		},
+		{
+			name: 'tokenizeShares',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'vaultDepositor',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'authority',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'tokenizedVaultDepositor',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'mint',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'userTokenAccount',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftUser',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'tokenProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [
+				{
+					name: 'amount',
+					type: 'u64',
+				},
+				{
+					name: 'unit',
+					type: {
+						defined: 'WithdrawUnit',
 					},
 				},
 			],
@@ -2718,10 +2903,21 @@ export const IDL: DriftVaults = {
 						type: 'publicKey',
 					},
 					{
+						name: 'mint',
+						docs: [
+							'The token mint for tokenized shares owned by this VaultDepositor',
+						],
+						type: 'publicKey',
+					},
+					{
 						name: 'vaultShares',
 						docs: [
 							"share of vault owned by this depositor. vault_shares / vault.total_shares is depositor's ownership of vault_equity",
 						],
+						type: 'u128',
+					},
+					{
+						name: 'lastVaultShares',
 						type: 'u128',
 					},
 					{
@@ -2761,13 +2957,14 @@ export const IDL: DriftVaults = {
 						type: 'u32',
 					},
 					{
-						name: 'padding1',
-						type: 'u32',
+						name: 'bump',
+						docs: ['The bump for the vault pda'],
+						type: 'u8',
 					},
 					{
 						name: 'padding',
 						type: {
-							array: ['u64', 8],
+							array: ['u8', 3],
 						},
 					},
 				],
@@ -3086,6 +3283,10 @@ export const IDL: DriftVaults = {
 						name: 'tokenUri',
 						type: 'string',
 					},
+					{
+						name: 'decimals',
+						type: 'u8',
+					},
 				],
 			},
 		},
@@ -3355,6 +3556,61 @@ export const IDL: DriftVaults = {
 				{
 					name: 'managementFeeShares',
 					type: 'i64',
+					index: false,
+				},
+			],
+		},
+		{
+			name: 'ShareTransferRecord',
+			fields: [
+				{
+					name: 'ts',
+					type: 'i64',
+					index: false,
+				},
+				{
+					name: 'vault',
+					type: 'publicKey',
+					index: false,
+				},
+				{
+					name: 'fromVaultDepositor',
+					type: 'publicKey',
+					index: false,
+				},
+				{
+					name: 'toVaultDepositor',
+					type: 'publicKey',
+					index: false,
+				},
+				{
+					name: 'shares',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'value',
+					type: 'u64',
+					index: false,
+				},
+				{
+					name: 'fromDepositorSharesBefore',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'fromDepositorSharesAfter',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'toDepositorSharesBefore',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'toDepositorSharesAfter',
+					type: 'u128',
 					index: false,
 				},
 			],

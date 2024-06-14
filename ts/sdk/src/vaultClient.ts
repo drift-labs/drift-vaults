@@ -17,6 +17,8 @@ import {
 	getCompetitorAddressSync,
 } from '@drift-labs/competitions-sdk';
 import {
+	getTokenizedVaultAddressSync,
+	getTokenizedVaultMintAddressSync,
 	getTokenVaultAddressSync,
 	getVaultAddressSync,
 	getVaultDepositorAddressSync,
@@ -27,6 +29,7 @@ import {
 	PublicKey,
 	SystemProgram,
 	SYSVAR_RENT_PUBKEY,
+	Transaction,
 	TransactionInstruction,
 	TransactionSignature,
 	VersionedTransaction,
@@ -39,6 +42,7 @@ import {
 import { Vault, VaultDepositor, WithdrawUnit } from './types/types';
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
 import { UserMapConfig } from '@drift-labs/sdk/lib/userMap/userMapConfig';
+import { Metaplex } from '@metaplex-foundation/js';
 
 export type TxParams = {
 	cuLimit?: number;
@@ -49,6 +53,7 @@ export type TxParams = {
 
 export class VaultClient {
 	driftClient: DriftClient;
+	metaplex?: Metaplex;
 	program: Program<DriftVaults>;
 	cliMode: boolean;
 
@@ -60,15 +65,18 @@ export class VaultClient {
 	constructor({
 		driftClient,
 		program,
+		metaplex,
 		cliMode,
 		userMapConfig,
 	}: {
 		driftClient: DriftClient;
 		program: Program<DriftVaults>;
+		metaplex?: Metaplex;
 		cliMode?: boolean;
 		userMapConfig?: UserMapConfig;
 	}) {
 		this.driftClient = driftClient;
+		this.metaplex = metaplex;
 		this.program = program;
 		this.cliMode = !!cliMode;
 
@@ -677,6 +685,160 @@ export class VaultClient {
 		} else {
 			const initIx = this.createInitVaultDepositorIx(vault, authority);
 			return await this.createAndSendTxn([initIx]);
+		}
+	}
+
+	public async initializeTokenizedVaultDepositor(params: {
+		vault: PublicKey;
+		tokenName: string;
+		tokenSymbol: string;
+		tokenUri: string;
+		decimals?: number;
+	}): Promise<TransactionSignature> {
+		if (!this.metaplex) {
+			throw new Error(
+				'Metaplex instance is required when constructing VaultClient to initialize a tokenized vault depositor'
+			);
+		}
+
+		if (params.decimals === undefined) {
+			const vault = await this.program.account.vault.fetch(params.vault);
+			const spotMarketAccount = this.driftClient.getSpotMarketAccount(
+				vault.spotMarketIndex
+			);
+			if (!spotMarketAccount) {
+				throw new Error(
+					`DriftClient failed to load vault's spot market (marketIndex: ${vault.spotMarketIndex})`
+				);
+			}
+			params.decimals = spotMarketAccount.decimals;
+		}
+
+		const mintAccount = getTokenizedVaultMintAddressSync(
+			this.program.programId,
+			params.vault
+		);
+
+		const accounts = {
+			vault: params.vault,
+			vaultDepositor: getTokenizedVaultAddressSync(
+				this.program.programId,
+				params.vault
+			),
+			mintAccount,
+			metadataAccount: this.metaplex.nfts().pdas().metadata({
+				mint: mintAccount,
+			}),
+			tokenMetadataProgram: this.metaplex.programs().getTokenMetadata().address,
+			payer: this.driftClient.wallet.publicKey,
+		};
+
+		if (!this.cliMode) {
+			throw new Error(
+				'CLI mode is not supported for initializeTokenizedVaultDepositor'
+			);
+		}
+		return await this.program.methods
+			.initializeTokenizedVaultDepositor(params)
+			.accounts(accounts)
+			.rpc();
+	}
+
+	public async createTokenizeSharesIx(
+		vaultDepositor: PublicKey,
+		amount: BN,
+		unit: WithdrawUnit
+	): Promise<TransactionInstruction[]> {
+		const vaultDepositorAccount =
+			await this.program.account.vaultDepositor.fetch(vaultDepositor);
+		const vaultAccount = await this.program.account.vault.fetch(
+			vaultDepositorAccount.vault
+		);
+
+		const mint = getTokenizedVaultMintAddressSync(
+			this.program.programId,
+			vaultDepositorAccount.vault
+		);
+
+		const userAta = getAssociatedTokenAddressSync(
+			mint,
+			this.driftClient.wallet.publicKey,
+			true
+		);
+
+		const ixs = [];
+
+		const userAtaExists = await this.driftClient.connection.getAccountInfo(
+			userAta
+		);
+		if (userAtaExists === null) {
+			ixs.push(
+				createAssociatedTokenAccountInstruction(
+					this.driftClient.wallet.publicKey,
+					userAta,
+					this.driftClient.wallet.publicKey,
+					mint
+				)
+			);
+		}
+
+		const user = await this.getSubscribedVaultUser(vaultAccount.user);
+		const remainingAccounts = this.driftClient.getRemainingAccounts({
+			userAccounts: [user.getUserAccount()],
+			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
+		});
+
+		ixs.push(
+			await this.program.methods
+				.tokenizeShares(amount, unit)
+				.accounts({
+					authority: this.driftClient.wallet.publicKey,
+					vault: vaultDepositorAccount.vault,
+					vaultDepositor,
+					tokenizedVaultDepositor: getTokenizedVaultAddressSync(
+						this.program.programId,
+						vaultDepositorAccount.vault
+					),
+					mint,
+					userTokenAccount: userAta,
+					driftUser: vaultAccount.user,
+					tokenProgram: TOKEN_PROGRAM_ID,
+				})
+				.remainingAccounts(remainingAccounts)
+				.instruction()
+		);
+
+		return ixs;
+	}
+
+	public async tokenizeShares(
+		vaultDepositor: PublicKey,
+		amount: BN,
+		unit: WithdrawUnit,
+		txParams?: TxParams
+	): Promise<TransactionSignature> {
+		const ixs = await this.createTokenizeSharesIx(vaultDepositor, amount, unit);
+		if (this.cliMode) {
+			// const msg = (new Transaction().add(...ixs)).compileMessage();
+			// const tx = new VersionedTransaction(msg);
+			try {
+				const tx = new Transaction().add(...ixs);
+				const txSig = await this.driftClient.txSender.send(
+					tx,
+					undefined,
+					undefined,
+					false
+				);
+				return txSig.txSig;
+			} catch (e) {
+				console.error(e);
+				throw e;
+			}
+
+			// tx.feePayer = this.driftClient.wallet.publicKey;
+			// tx.recentBlockhash = (await this.driftClient.connection.getLatestBlockhash()).blockhash;
+		} else {
+			return await this.createAndSendTxn(ixs, txParams);
 		}
 	}
 

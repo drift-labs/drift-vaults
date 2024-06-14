@@ -13,10 +13,11 @@ pub fn initialize_tokenized_vault_depositor(
     ctx: Context<InitializeTokenizedVaultDepositor>,
     params: InitializeTokenizedVaultDepositorParams,
 ) -> Result<()> {
-    let mut tokenized_vault_depositor = ctx.accounts.tokenized_vault_depositor.load_init()?;
+    let mut tokenized_vault_depositor = ctx.accounts.vault_depositor.load_init()?;
     tokenized_vault_depositor.vault = ctx.accounts.vault.key();
-    tokenized_vault_depositor.pubkey = ctx.accounts.tokenized_vault_depositor.key();
+    tokenized_vault_depositor.pubkey = ctx.accounts.vault_depositor.key();
     tokenized_vault_depositor.mint = ctx.accounts.mint_account.key();
+    tokenized_vault_depositor.bump = ctx.bumps.vault_depositor;
     let vault = ctx.accounts.vault.load()?;
     validate!(
         vault.manager == *ctx.accounts.payer.key,
@@ -24,10 +25,10 @@ pub fn initialize_tokenized_vault_depositor(
         "Tokenized vault depositor can only be created by vault manager"
     )?;
 
-    let signer_seeds: &[&[&[u8]]] = &[&[b"mint", &[ctx.bumps.mint_account]]];
+    let signer_seeds: &[&[&[u8]]] = &[&[b"vault", vault.name.as_ref(), &[vault.bump]]];
 
     create_metadata_accounts_v3(
-        CpiContext::new(
+        CpiContext::new_with_signer(
             ctx.accounts.token_metadata_program.to_account_info(),
             CreateMetadataAccountsV3 {
                 metadata: ctx.accounts.metadata_account.to_account_info(),
@@ -38,8 +39,8 @@ pub fn initialize_tokenized_vault_depositor(
                 system_program: ctx.accounts.system_program.to_account_info(),
                 rent: ctx.accounts.rent.to_account_info(),
             },
-        )
-        .with_signer(signer_seeds),
+            signer_seeds,
+        ),
         DataV2 {
             name: params.token_name,
             symbol: params.token_symbol,
@@ -58,6 +59,7 @@ pub fn initialize_tokenized_vault_depositor(
 }
 
 #[derive(Accounts)]
+#[instruction(params: InitializeTokenizedVaultDepositorParams)]
 pub struct InitializeTokenizedVaultDepositor<'info> {
     pub vault: AccountLoader<'info, Vault>,
     #[account(
@@ -67,13 +69,13 @@ pub struct InitializeTokenizedVaultDepositor<'info> {
         bump,
         payer = payer
     )]
-    pub tokenized_vault_depositor: AccountLoader<'info, TokenizedVaultDepositor>,
+    pub vault_depositor: AccountLoader<'info, TokenizedVaultDepositor>,
     #[account(
         init,
-        seeds = [b"mint"],
+        seeds = [b"mint", vault.key().as_ref()],
         bump,
         payer = payer,
-        mint::decimals = 9,
+        mint::decimals = params.decimals,
         mint::authority = vault.key(),
         mint::freeze_authority = vault.key(),
     )]
@@ -99,4 +101,5 @@ pub struct InitializeTokenizedVaultDepositorParams {
     pub token_name: String,
     pub token_symbol: String,
     pub token_uri: String,
+    pub decimals: u8,
 }

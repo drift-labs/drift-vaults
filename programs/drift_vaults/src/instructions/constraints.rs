@@ -1,4 +1,4 @@
-use crate::{Vault, VaultDepositor};
+use crate::{TokenizedVaultDepositor, Vault, VaultDepositor};
 
 use anchor_lang::prelude::*;
 use drift::state::spot_market::SpotMarket;
@@ -54,4 +54,18 @@ pub fn is_spot_market_for_vault(
         (vault.load()?.spot_market_index).eq(&drift_spot_market.load()?.market_index)
             && (vault.load()?.spot_market_index).eq(&market_index),
     )
+}
+
+pub fn is_tokenized_depositor_for_vault(
+    tokenized_vault_depositor: &AccountLoader<TokenizedVaultDepositor>,
+    vault: &AccountLoader<Vault>,
+) -> anchor_lang::Result<bool> {
+    Ok(tokenized_vault_depositor.load()?.vault.eq(&vault.key()))
+}
+
+pub fn is_mint_for_tokenized_depositor(
+    mint: &Pubkey,
+    tokenized_vault_depositor: &AccountLoader<TokenizedVaultDepositor>,
+) -> anchor_lang::Result<bool> {
+    Ok(tokenized_vault_depositor.load()?.mint.eq(&mint))
 }
