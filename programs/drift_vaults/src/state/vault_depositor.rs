@@ -5,13 +5,11 @@ use anchor_lang::prelude::*;
 use drift::controller::spot_balance::update_spot_balances;
 use drift::error::{DriftResult, ErrorCode as DriftErrorCode};
 
-use drift::math::constants::PERCENTAGE_PRECISION;
-
 use crate::state::vault::Vault;
 use crate::validate;
 use static_assertions::const_assert_eq;
 
-use crate::events::{ShareTransferRecord, VaultDepositorAction, VaultDepositorRecord};
+use crate::events::{VaultDepositorAction, VaultDepositorRecord};
 
 use drift::math::insurance::{
     if_shares_to_vault_amount as depositor_shares_to_vault_amount,
@@ -71,6 +69,9 @@ const_assert_eq!(
 );
 
 impl VaultDepositorBase for VaultDepositor {
+    fn get_authority(&self) -> Pubkey {
+        self.authority
+    }
     fn get_pubkey(&self) -> Pubkey {
         self.pubkey
     }
@@ -594,98 +595,6 @@ impl VaultDepositor {
         drift_user.spot_positions = user_spot_position_before;
 
         Ok(())
-    }
-
-    /// Transfer shares from `self` to `to`
-    ///
-    /// Returns the number of shares transferred
-    pub fn transfer_shares(
-        self: &mut VaultDepositor,
-        to: &mut dyn VaultDepositorBase,
-        vault: &mut Vault,
-        withdraw_amount: u64,
-        withdraw_unit: WithdrawUnit,
-        vault_equity: u64,
-        now: i64,
-    ) -> Result<u128> {
-        self.apply_rebase(vault, vault_equity)?;
-        let (management_fee, management_fee_shares) =
-            vault.apply_management_fee(vault_equity, now)?;
-
-        validate!(
-            !self.last_withdraw_request.pending(),
-            ErrorCode::InvalidVaultDeposit,
-            "Cannot transfer shares with a pending withdraw request"
-        )?;
-        let profit_share: u64 = self.apply_profit_share(vault_equity, vault)?;
-
-        let (withdraw_value, n_shares) = withdraw_unit.get_withdraw_value_and_shares(
-            withdraw_amount,
-            vault_equity,
-            self.get_vault_shares(),
-            vault.total_shares,
-        )?;
-
-        validate!(
-            n_shares > 0,
-            ErrorCode::InvalidVaultWithdrawSize,
-            "Requested n_shares = 0"
-        )?;
-
-        let vault_shares_before: u128 = self.checked_vault_shares(vault)?;
-        let total_vault_shares_before = vault.total_shares;
-        let user_vault_shares_before = vault.user_shares;
-
-        let from_depositor_shares_before = self.checked_vault_shares(vault)?;
-        let to_depositor_shares_before = to.checked_vault_shares(vault)?;
-
-        self.decrease_vault_shares(n_shares, vault)?;
-        to.increase_vault_shares(n_shares, vault)?;
-
-        let from_depositor_shares_after = self.checked_vault_shares(vault)?;
-        let to_depositor_shares_after = to.checked_vault_shares(vault)?;
-
-        validate!(
-            from_depositor_shares_before.safe_add(to_depositor_shares_before)
-                == from_depositor_shares_after.safe_add(to_depositor_shares_after),
-            ErrorCode::InvalidVaultSharesDetected,
-            "VaultDepositor: total shares mismatch"
-        )?;
-
-        emit!(ShareTransferRecord {
-            ts: now,
-            vault: vault.pubkey,
-            from_vault_depositor: self.get_pubkey(),
-            to_vault_depositor: to.get_pubkey(),
-
-            shares: n_shares,
-            value: withdraw_value,
-            from_depositor_shares_before,
-            from_depositor_shares_after,
-            to_depositor_shares_before,
-            to_depositor_shares_after,
-        });
-
-        emit!(VaultDepositorRecord {
-            ts: now,
-            vault: vault.pubkey,
-            depositor_authority: self.authority,
-            action: VaultDepositorAction::Withdraw,
-            amount: withdraw_amount,
-            spot_market_index: vault.spot_market_index,
-            vault_equity_before: vault_equity,
-            vault_shares_before,
-            user_vault_shares_before,
-            total_vault_shares_before,
-            vault_shares_after: self.checked_vault_shares(vault)?,
-            total_vault_shares_after: vault.total_shares,
-            user_vault_shares_after: vault.user_shares,
-            profit_share: 0,
-            management_fee,
-            management_fee_shares,
-        });
-
-        Ok(n_shares)
     }
 }
 

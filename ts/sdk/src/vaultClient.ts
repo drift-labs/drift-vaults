@@ -26,6 +26,7 @@ import {
 } from './addresses';
 import {
 	AddressLookupTableAccount,
+	ComputeBudgetInstruction,
 	ComputeBudgetProgram,
 	PublicKey,
 	SystemProgram,
@@ -874,8 +875,6 @@ export class VaultClient {
 	): Promise<TransactionSignature> {
 		const ixs = await this.createTokenizeSharesIx(vaultDepositor, amount, unit);
 		if (this.cliMode) {
-			// const msg = (new Transaction().add(...ixs)).compileMessage();
-			// const tx = new VersionedTransaction(msg);
 			try {
 				const tx = new Transaction().add(...ixs);
 				const txSig = await this.driftClient.txSender.send(
@@ -889,9 +888,6 @@ export class VaultClient {
 				console.error(e);
 				throw e;
 			}
-
-			// tx.feePayer = this.driftClient.wallet.publicKey;
-			// tx.recentBlockhash = (await this.driftClient.connection.getLatestBlockhash()).blockhash;
 		} else {
 			return await this.createAndSendTxn(ixs, txParams);
 		}

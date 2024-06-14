@@ -11,6 +11,7 @@ import {
 	createInitializeAccountInstruction,
 	createMintToInstruction,
 	createWrappedNativeAccount,
+	getAssociatedTokenAddressSync,
 } from '@solana/spl-token';
 import {
 	Connection,
@@ -38,6 +39,12 @@ import {
 	OracleSource,
 	MarketStatus,
 } from '@drift-labs/sdk';
+import {
+	getTokenizedVaultAddressSync,
+	getTokenizedVaultMintAddressSync,
+	getVaultDepositorAddressSync,
+} from '../ts/sdk/src/addresses';
+import { DriftVaults } from '../target/types/drift_vaults';
 
 export async function mockOracle(
 	price: number = 50 * 10e7,
@@ -872,4 +879,63 @@ export async function initializeSolSpotMarket(
 	);
 	await admin.updateSpotMarketStatus(marketIndex, MarketStatus.ACTIVE);
 	return txSig;
+}
+
+export function calculateAllPdas(
+	vaultProgramId: PublicKey,
+	vault: PublicKey,
+	vaultDepositorAuthority: PublicKey
+): {
+	vaultDepositor: PublicKey;
+	tokenizedVaultDepositor: PublicKey;
+	mintAddress: PublicKey;
+	userVaultTokenAta: PublicKey;
+	vaultTokenizedTokenAta: PublicKey;
+} {
+	const mintAddress = getTokenizedVaultMintAddressSync(vaultProgramId, vault);
+
+	return {
+		vaultDepositor: getVaultDepositorAddressSync(
+			vaultProgramId,
+			vault,
+			vaultDepositorAuthority
+		),
+		tokenizedVaultDepositor: getTokenizedVaultAddressSync(
+			vaultProgramId,
+			vault
+		),
+		mintAddress,
+		userVaultTokenAta: getAssociatedTokenAddressSync(
+			mintAddress,
+			vaultDepositorAuthority,
+			true
+		),
+		vaultTokenizedTokenAta: getAssociatedTokenAddressSync(
+			mintAddress,
+			vault,
+			true
+		),
+	};
+}
+
+export async function validateTotalUserShares(
+	program: anchor.Program<DriftVaults>,
+	vault: PublicKey
+) {
+	const vaultAccount = await program.account.vault.fetch(vault);
+	const allVds = await program.account.vaultDepositor.all();
+	const allTvds = await program.account.tokenizedVaultDepositor.all();
+	const vdSharesTotal = allVds.reduce(
+		(acc, vd) => acc.add(vd.account.vaultShares),
+		new BN(0)
+	);
+	const tvdSharesTotal = allTvds.reduce(
+		(acc, vd) => acc.add(vd.account.vaultShares),
+		new BN(0)
+	);
+
+	assert(
+		tvdSharesTotal.add(vdSharesTotal).eq(vaultAccount.userShares),
+		`vdSharesTotal (${vdSharesTotal.toString()}) + tvdSharesTotal (${tvdSharesTotal.toString()}) != vault.userShares (${vaultAccount.userShares.toString()})`
+	);
 }
