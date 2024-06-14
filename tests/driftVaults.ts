@@ -25,7 +25,6 @@ import { Keypair } from '@solana/web3.js';
 import { assert } from 'chai';
 import {
 	VaultClient,
-	getTokenizedVaultAddressSync,
 	getTokenizedVaultMintAddressSync,
 	getVaultAddressSync,
 	getVaultDepositorAddressSync,
@@ -38,7 +37,7 @@ import {
 	getCompetitorAddressSync,
 } from '@drift-labs/competitions-sdk/lib';
 
-import { getMint, getAssociatedTokenAddressSync } from '@solana/spl-token';
+import { getMint } from '@solana/spl-token';
 import { Metaplex } from '@metaplex-foundation/js';
 
 describe('driftVaults', () => {
