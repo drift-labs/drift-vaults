@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod vault_fcn {
+    use crate::state::traits::VaultDepositorBase;
     use crate::{Vault, VaultDepositor, WithdrawUnit};
     use anchor_lang::prelude::Pubkey;
     use drift::math::constants::{ONE_YEAR, QUOTE_PRECISION_U64};

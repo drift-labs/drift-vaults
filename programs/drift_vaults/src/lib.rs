@@ -48,6 +48,28 @@ pub mod drift_vaults {
         instructions::initialize_vault_depositor(ctx)
     }
 
+    pub fn initialize_tokenized_vault_depositor(
+        ctx: Context<InitializeTokenizedVaultDepositor>,
+        params: InitializeTokenizedVaultDepositorParams,
+    ) -> Result<()> {
+        instructions::initialize_tokenized_vault_depositor(ctx, params)
+    }
+
+    pub fn tokenize_shares<'info>(
+        ctx: Context<'_, '_, 'info, 'info, TokenizeShares<'info>>,
+        amount: u64,
+        unit: WithdrawUnit,
+    ) -> Result<()> {
+        instructions::tokenize_shares(ctx, amount, unit)
+    }
+
+    pub fn redeem_tokens<'info>(
+        ctx: Context<'_, '_, 'info, 'info, RedeemShares<'info>>,
+        tokens_to_burn: u64,
+    ) -> Result<()> {
+        instructions::redeem_tokens(ctx, tokens_to_burn)
+    }
+
     pub fn deposit<'c: 'info, 'info>(
         ctx: Context<'_, '_, 'c, 'info, Deposit<'info>>,
         amount: u64,
