@@ -1,12 +1,11 @@
 use crate::error::ErrorCode;
-use crate::events::{ShareTransferRecord, VaultDepositorAction, VaultDepositorRecord};
+use crate::events::{VaultDepositorAction, VaultDepositorRecord};
 use crate::state::vault::Vault;
 use crate::validate;
 use crate::{Size, VaultDepositorBase};
 use static_assertions::const_assert_eq;
 
 use anchor_lang::prelude::*;
-use anchor_spl::token::Mint;
 use drift::math::casting::Cast;
 use drift::math::insurance::{
     if_shares_to_vault_amount as depositor_shares_to_vault_amount,
@@ -28,6 +27,8 @@ pub struct TokenizedVaultDepositor {
     pub mint: Pubkey, // 32
     /// share of vault owned by this depositor. vault_shares / vault.total_shares is depositor's ownership of vault_equity
     vault_shares: u128, // 16
+    /// stores the vault_shares from the most recent liquidity event (redeem or issuance) before a spl token
+    /// CPI is done, used track invariants
     last_vault_shares: u128, // 16
     /// creation ts of vault depositor
     pub last_valid_ts: i64, // 8
@@ -58,6 +59,9 @@ const_assert_eq!(
 );
 
 impl VaultDepositorBase for TokenizedVaultDepositor {
+    fn get_authority(&self) -> Pubkey {
+        self.vault
+    }
     fn get_pubkey(&self) -> Pubkey {
         self.pubkey
     }
@@ -144,7 +148,7 @@ impl TokenizedVaultDepositor {
         Ok(profit_share)
     }
 
-    pub fn process_tokenized_shares(
+    pub fn tokenize_shares(
         self: &mut TokenizedVaultDepositor,
         vault: &mut Vault,
         mint_supply: u64,
@@ -161,8 +165,6 @@ impl TokenizedVaultDepositor {
         let vault_shares_before = self.checked_vault_shares(vault)?;
         let total_vault_shares_before = vault.total_shares;
         let user_vault_shares_before = vault.user_shares;
-
-        // TODO: do things
 
         let new_last_vault_shares = self
             .last_vault_shares
@@ -182,7 +184,7 @@ impl TokenizedVaultDepositor {
         )?;
 
         msg!(
-            "shares_transferred: {}, total_shares_before: {}, token_supply_before: {}, tokens_to_mint: {}",
+            "shares_transferred: {}, tokenized_vd.last_vault_shares: {}, token_supply_before: {}, tokens_to_mint: {}",
             shares_transferred,
             self.last_vault_shares,
             mint_supply,
@@ -212,15 +214,67 @@ impl TokenizedVaultDepositor {
 
         Ok(tokens_to_mint.cast()?)
     }
-}
 
+    pub fn redeem_tokens(
+        self: &mut TokenizedVaultDepositor,
+        vault: &mut Vault,
+        mint_supply: u64,
+        vault_equity: u64,
+        tokens_to_burn: u64,
+        now: i64,
+    ) -> Result<u64> {
+        self.apply_rebase(vault, vault_equity)?;
+
+        let (management_fee, management_fee_shares) =
+            vault.apply_management_fee(vault_equity, now)?;
+        let profit_share: u64 = self.apply_profit_share(vault_equity, vault)?;
+
+        let vault_shares_before = self.checked_vault_shares(vault)?;
+        let total_vault_shares_before = vault.total_shares;
+        let user_vault_shares_before = vault.user_shares;
+
+        let shares_to_redeem = depositor_shares_to_vault_amount(
+            tokens_to_burn.cast()?,
+            mint_supply.cast()?,
+            self.last_vault_shares.cast()?,
+        )?;
+
+        msg!(
+            "tokens_to_burn: {}, tokenized_vd.last_vault_shares: {}, token_supply_before: {}, shares_to_redeem: {}",
+            tokens_to_burn,
+            self.last_vault_shares,
+            mint_supply,
+           shares_to_redeem
+        );
+
+        self.last_vault_shares = self.checked_vault_shares(vault)?;
+
+        emit!(VaultDepositorRecord {
+            ts: now,
+            vault: vault.pubkey,
+            depositor_authority: vault.pubkey,
+            action: VaultDepositorAction::FeePayment,
+            amount: 0,
+            spot_market_index: vault.spot_market_index,
+            vault_equity_before: vault_equity,
+            vault_shares_before,
+            user_vault_shares_before,
+            total_vault_shares_before,
+            vault_shares_after: self.last_vault_shares,
+            total_vault_shares_after: vault.total_shares,
+            user_vault_shares_after: vault.user_shares,
+            profit_share,
+            management_fee,
+            management_fee_shares,
+        });
+
+        Ok(shares_to_redeem.cast()?)
+    }
+}
 #[cfg(test)]
 mod tests {
-    use crate::{TokenizedVaultDepositor, Vault, WithdrawUnit};
+    use crate::{TokenizedVaultDepositor, Vault};
     use anchor_lang::prelude::Pubkey;
-    use drift::math::casting::Cast;
-    use drift::math::constants::{PERCENTAGE_PRECISION_U64, QUOTE_PRECISION_U64};
-    use drift::math::insurance::if_shares_to_vault_amount;
 
     fn base_init() {
         let now = 1337;
@@ -253,7 +307,7 @@ mod tests {
         let mut total_supply = 0;
         let vault_equity = 1_000_000;
         let tokens_issued_1 = tvd
-            .process_tokenized_shares(vault, total_supply, vault_equity, shares_transferred, now)
+            .tokenize_shares(vault, total_supply, vault_equity, shares_transferred, now)
             .unwrap();
 
         // first tokenization will issue same amount of tokens as shares
@@ -268,7 +322,7 @@ mod tests {
         tvd.vault_shares = tvd.last_vault_shares + shares_transferred;
 
         let tokens_issued_2 = tvd
-            .process_tokenized_shares(vault, total_supply, vault_equity, shares_transferred, now)
+            .tokenize_shares(vault, total_supply, vault_equity, shares_transferred, now)
             .unwrap();
 
         // first tokenization will issue same amount of tokens as shares
@@ -278,5 +332,39 @@ mod tests {
             tvd.vault_shares,
             (tokens_issued_1 + tokens_issued_2) as u128
         );
+    }
+
+    #[test]
+    fn test_redeem_tokens() {
+        let now = 1337;
+        let vault = &mut Vault::default();
+        let mut tvd = TokenizedVaultDepositor::new(
+            Pubkey::default(),
+            Pubkey::default(),
+            Pubkey::default(),
+            now,
+        );
+        let shares_transferred = 500_000;
+        tvd.vault_shares = shares_transferred;
+        tvd.last_vault_shares = tvd.vault_shares;
+
+        assert_eq!(tvd.last_vault_shares, shares_transferred);
+
+        let total_supply = shares_transferred;
+        let vault_equity = 1_000_000;
+
+        // redeem 50% of tokens
+        let tokens_to_burn = total_supply / 2;
+        let shares_to_transfer = tvd
+            .redeem_tokens(
+                vault,
+                total_supply as u64,
+                vault_equity,
+                tokens_to_burn as u64,
+                now,
+            )
+            .expect("redeem_tokens");
+        assert_eq!(shares_to_transfer, tokens_to_burn as u64);
+        assert_eq!(tvd.last_vault_shares, tvd.vault_shares);
     }
 }

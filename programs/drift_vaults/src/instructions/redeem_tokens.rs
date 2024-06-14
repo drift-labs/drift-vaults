@@ -2,20 +2,19 @@ use crate::constraints::{
     is_authority_for_vault_depositor, is_mint_for_tokenized_depositor,
     is_tokenized_depositor_for_vault, is_user_for_vault,
 };
-use crate::cpi::MintTokensCPI;
+use crate::cpi::{BurnTokensCPI, TokenTransferCPI};
 use crate::error::ErrorCode;
 use crate::state::traits::VaultDepositorBase;
 use crate::{validate, AccountMapProvider};
 use crate::{TokenizedVaultDepositor, Vault, VaultDepositor, WithdrawUnit};
 use anchor_lang::prelude::*;
-use anchor_spl::token::{mint_to, Mint, MintTo, Token, TokenAccount};
+use anchor_spl::token::{burn, transfer, Burn, Mint, Token, TokenAccount, Transfer};
 use drift::instructions::optional_accounts::AccountMaps;
 use drift::state::user::User;
 
-pub fn tokenize_shares<'info>(
-    ctx: Context<'_, '_, 'info, 'info, TokenizeShares<'info>>,
-    amount: u64,
-    unit: WithdrawUnit,
+pub fn redeem_tokens<'info>(
+    ctx: Context<'_, '_, 'info, 'info, RedeemShares<'info>>,
+    tokens_to_burn: u64,
 ) -> Result<()> {
     let clock = &Clock::get()?;
 
@@ -40,24 +39,29 @@ pub fn tokenize_shares<'info>(
     validate!(
         !vault_depositor.last_withdraw_request.pending(),
         ErrorCode::InvalidVaultDeposit,
-        "Cannot tokenize shares with a pending withdraw request"
+        "Cannot redeem shares with a pending withdraw request"
     )?;
 
-    let shares_transferred = vault_depositor.transfer_shares(
-        &mut *tokenized_vault_depositor,
-        &mut vault,
-        amount,
-        unit,
-        vault_equity,
-        clock.unix_timestamp,
-    )?;
-
-    let tokens_to_mint = tokenized_vault_depositor.tokenize_shares(
+    let shares_to_transfer = tokenized_vault_depositor.redeem_tokens(
         &mut vault,
         ctx.accounts.mint.supply,
         vault_equity,
-        shares_transferred,
+        tokens_to_burn,
         clock.unix_timestamp,
+    )?;
+
+    let shares_transferred = tokenized_vault_depositor.transfer_shares(
+        &mut *vault_depositor,
+        &mut vault,
+        shares_to_transfer,
+        WithdrawUnit::Shares,
+        vault_equity,
+        clock.unix_timestamp,
+    )?;
+
+    validate!(
+        shares_transferred == shares_to_transfer.into(),
+        ErrorCode::InvalidVaultSharesDetected
     )?;
 
     let vault_name = vault.name;
@@ -67,11 +71,12 @@ pub fn tokenize_shares<'info>(
     drop(vault_depositor);
     drop(tokenized_vault_depositor);
 
-    ctx.mint(vault_name, vault_bump, tokens_to_mint)?;
+    ctx.token_transfer(tokens_to_burn)?;
+    ctx.burn(vault_name, vault_bump, tokens_to_burn)?;
 
     msg!(
-        "Minted {} tokens to {}",
-        tokens_to_mint,
+        "Burned {} tokens from {}",
+        tokens_to_burn,
         ctx.accounts.user_token_account.key()
     );
 
@@ -79,7 +84,7 @@ pub fn tokenize_shares<'info>(
 }
 
 #[derive(Accounts)]
-pub struct TokenizeShares<'info> {
+pub struct RedeemShares<'info> {
     #[account(mut)]
     pub vault: AccountLoader<'info, Vault>,
     #[account(
@@ -104,10 +109,17 @@ pub struct TokenizeShares<'info> {
     )]
     pub mint: Account<'info, Mint>,
     #[account(
+        mut,
         token::authority = authority,
         token::mint = tokenized_vault_depositor.load()?.mint
     )]
     pub user_token_account: Account<'info, TokenAccount>,
+    #[account(
+        mut,
+        token::authority = vault.key(),
+        token::mint = tokenized_vault_depositor.load()?.mint
+    )]
+    pub vault_token_account: Account<'info, TokenAccount>,
     #[account(
         mut,
         constraint = is_user_for_vault(&vault, &drift_user.key())?
@@ -117,14 +129,30 @@ pub struct TokenizeShares<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-impl<'info> MintTokensCPI for Context<'_, '_, '_, 'info, TokenizeShares<'info>> {
-    fn mint(&self, vault_name: [u8; 32], vault_bump: u8, amount: u64) -> Result<()> {
+impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, RedeemShares<'info>> {
+    fn token_transfer(&self, amount: u64) -> Result<()> {
+        let cpi_accounts = Transfer {
+            from: self.accounts.user_token_account.to_account_info(),
+            to: self.accounts.vault_token_account.to_account_info(),
+            authority: self.accounts.authority.to_account_info(),
+        };
+        let token_program = self.accounts.token_program.to_account_info();
+        let cpi_context = CpiContext::new(token_program, cpi_accounts);
+
+        transfer(cpi_context, amount)?;
+
+        Ok(())
+    }
+}
+
+impl<'info> BurnTokensCPI for Context<'_, '_, '_, 'info, RedeemShares<'info>> {
+    fn burn(&self, vault_name: [u8; 32], vault_bump: u8, amount: u64) -> Result<()> {
         let signature_seeds = Vault::get_vault_signer_seeds(&vault_name, &vault_bump);
         let signers = &[&signature_seeds[..]];
 
-        let cpi_accounts = MintTo {
+        let cpi_accounts = Burn {
             mint: self.accounts.mint.to_account_info(),
-            to: self.accounts.user_token_account.to_account_info(),
+            from: self.accounts.vault_token_account.to_account_info(),
             authority: self.accounts.vault.to_account_info(),
         };
 
@@ -134,7 +162,7 @@ impl<'info> MintTokensCPI for Context<'_, '_, '_, 'info, TokenizeShares<'info>> 
             signers,
         );
 
-        mint_to(cpi_context, amount)?;
+        burn(cpi_context, amount)?;
 
         Ok(())
     }

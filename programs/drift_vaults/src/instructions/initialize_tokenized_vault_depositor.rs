@@ -25,7 +25,8 @@ pub fn initialize_tokenized_vault_depositor(
         "Tokenized vault depositor can only be created by vault manager"
     )?;
 
-    let signer_seeds: &[&[&[u8]]] = &[&[b"vault", vault.name.as_ref(), &[vault.bump]]];
+    let signature_seeds = Vault::get_vault_signer_seeds(vault.name.as_ref(), &vault.bump);
+    let signers = &[&signature_seeds[..]];
 
     create_metadata_accounts_v3(
         CpiContext::new_with_signer(
@@ -39,7 +40,7 @@ pub fn initialize_tokenized_vault_depositor(
                 system_program: ctx.accounts.system_program.to_account_info(),
                 rent: ctx.accounts.rent.to_account_info(),
             },
-            signer_seeds,
+            signers,
         ),
         DataV2 {
             name: params.token_name,

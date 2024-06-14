@@ -317,6 +317,62 @@ export type DriftVaults = {
 			];
 		},
 		{
+			name: 'redeemTokens';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'vaultDepositor';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'authority';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'tokenizedVaultDepositor';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'mint';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'userTokenAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'vaultTokenAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUser';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'tokenProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [
+				{
+					name: 'tokensToBurn';
+					type: 'u64';
+				}
+			];
+		},
+		{
 			name: 'deposit';
 			accounts: [
 				{
@@ -1052,6 +1108,10 @@ export type DriftVaults = {
 					},
 					{
 						name: 'lastVaultShares';
+						docs: [
+							'stores the vault_shares from the most recent liquidity event (redeem or issuance) before a spl token',
+							'CPI is done, used track invariants'
+						];
 						type: 'u128';
 					},
 					{
@@ -2183,6 +2243,62 @@ export const IDL: DriftVaults = {
 			],
 		},
 		{
+			name: 'redeemTokens',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'vaultDepositor',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'authority',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'tokenizedVaultDepositor',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'mint',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'userTokenAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'vaultTokenAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUser',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'tokenProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [
+				{
+					name: 'tokensToBurn',
+					type: 'u64',
+				},
+			],
+		},
+		{
 			name: 'deposit',
 			accounts: [
 				{
@@ -2918,6 +3034,10 @@ export const IDL: DriftVaults = {
 					},
 					{
 						name: 'lastVaultShares',
+						docs: [
+							'stores the vault_shares from the most recent liquidity event (redeem or issuance) before a spl token',
+							'CPI is done, used track invariants',
+						],
 						type: 'u128',
 					},
 					{

@@ -67,5 +67,5 @@ pub fn is_mint_for_tokenized_depositor(
     mint: &Pubkey,
     tokenized_vault_depositor: &AccountLoader<TokenizedVaultDepositor>,
 ) -> anchor_lang::Result<bool> {
-    Ok(tokenized_vault_depositor.load()?.mint.eq(&mint))
+    Ok(tokenized_vault_depositor.load()?.mint.eq(mint))
 }

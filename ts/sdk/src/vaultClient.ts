@@ -25,6 +25,7 @@ import {
 } from './addresses';
 import {
 	AddressLookupTableAccount,
+	ComputeBudgetInstruction,
 	ComputeBudgetProgram,
 	PublicKey,
 	SystemProgram,
@@ -701,6 +702,7 @@ export class VaultClient {
 			);
 		}
 
+		let spotMarketDecimals = 6;
 		if (params.decimals === undefined) {
 			const vault = await this.program.account.vault.fetch(params.vault);
 			const spotMarketAccount = this.driftClient.getSpotMarketAccount(
@@ -711,10 +713,10 @@ export class VaultClient {
 					`DriftClient failed to load vault's spot market (marketIndex: ${vault.spotMarketIndex})`
 				);
 			}
-			params.decimals = spotMarketAccount.decimals;
+			spotMarketDecimals = spotMarketAccount.decimals;
 		}
 
-		const mintAccount = getTokenizedVaultMintAddressSync(
+		const mintAddress = getTokenizedVaultMintAddressSync(
 			this.program.programId,
 			params.vault
 		);
@@ -725,13 +727,25 @@ export class VaultClient {
 				this.program.programId,
 				params.vault
 			),
-			mintAccount,
+			mintAccount: mintAddress,
 			metadataAccount: this.metaplex.nfts().pdas().metadata({
-				mint: mintAccount,
+				mint: mintAddress,
 			}),
 			tokenMetadataProgram: this.metaplex.programs().getTokenMetadata().address,
 			payer: this.driftClient.wallet.publicKey,
 		};
+
+		const vaultTokenAta = getAssociatedTokenAddressSync(
+			mintAddress,
+			params.vault,
+			true
+		);
+		const createAtaIx = createAssociatedTokenAccountInstruction(
+			this.driftClient.wallet.publicKey,
+			vaultTokenAta,
+			params.vault,
+			mintAddress
+		);
 
 		if (!this.cliMode) {
 			throw new Error(
@@ -739,7 +753,16 @@ export class VaultClient {
 			);
 		}
 		return await this.program.methods
-			.initializeTokenizedVaultDepositor(params)
+			.initializeTokenizedVaultDepositor({
+				...params,
+				decimals: params.decimals ?? spotMarketDecimals,
+			})
+			.preInstructions([
+				ComputeBudgetProgram.setComputeUnitPrice({
+					microLamports: 50_000,
+				}),
+			])
+			.postInstructions([createAtaIx])
 			.accounts(accounts)
 			.rpc();
 	}
@@ -819,8 +842,6 @@ export class VaultClient {
 	): Promise<TransactionSignature> {
 		const ixs = await this.createTokenizeSharesIx(vaultDepositor, amount, unit);
 		if (this.cliMode) {
-			// const msg = (new Transaction().add(...ixs)).compileMessage();
-			// const tx = new VersionedTransaction(msg);
 			try {
 				const tx = new Transaction().add(...ixs);
 				const txSig = await this.driftClient.txSender.send(
@@ -834,11 +855,86 @@ export class VaultClient {
 				console.error(e);
 				throw e;
 			}
-
-			// tx.feePayer = this.driftClient.wallet.publicKey;
-			// tx.recentBlockhash = (await this.driftClient.connection.getLatestBlockhash()).blockhash;
 		} else {
 			return await this.createAndSendTxn(ixs, txParams);
+		}
+	}
+
+	public async createRedeemTokensIx(
+		vaultDepositor: PublicKey,
+		tokensToBurn: BN
+	): Promise<TransactionInstruction> {
+		const vaultDepositorAccount =
+			await this.program.account.vaultDepositor.fetch(vaultDepositor);
+		const vaultAccount = await this.program.account.vault.fetch(
+			vaultDepositorAccount.vault
+		);
+
+		const mint = getTokenizedVaultMintAddressSync(
+			this.program.programId,
+			vaultDepositorAccount.vault
+		);
+
+		const userAta = getAssociatedTokenAddressSync(
+			mint,
+			this.driftClient.wallet.publicKey,
+			true
+		);
+
+		const vaultTokenAta = getAssociatedTokenAddressSync(
+			mint,
+			vaultDepositorAccount.vault,
+			true
+		);
+
+		const user = await this.getSubscribedVaultUser(vaultAccount.user);
+		const remainingAccounts = this.driftClient.getRemainingAccounts({
+			userAccounts: [user.getUserAccount()],
+			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
+		});
+
+		return await this.program.methods
+			.redeemTokens(tokensToBurn)
+			.accounts({
+				authority: this.driftClient.wallet.publicKey,
+				vault: vaultDepositorAccount.vault,
+				vaultDepositor,
+				tokenizedVaultDepositor: getTokenizedVaultAddressSync(
+					this.program.programId,
+					vaultDepositorAccount.vault
+				),
+				mint,
+				userTokenAccount: userAta,
+				vaultTokenAccount: vaultTokenAta,
+				driftUser: vaultAccount.user,
+				tokenProgram: TOKEN_PROGRAM_ID,
+			})
+			.remainingAccounts(remainingAccounts)
+			.instruction();
+	}
+
+	public async redeemTokens(
+		vaultDepositor: PublicKey,
+		tokensToBurn: BN,
+		txParams?: TxParams
+	): Promise<TransactionSignature> {
+		const ix = await this.createRedeemTokensIx(vaultDepositor, tokensToBurn);
+		if (this.cliMode) {
+			try {
+				const tx = new Transaction().add(ix);
+				const txSig = await this.driftClient.txSender.send(
+					tx,
+					undefined,
+					undefined,
+					false
+				);
+				return txSig.txSig;
+			} catch (e) {
+				console.error(e);
+				throw e;
+			}
+		} else {
+			return await this.createAndSendTxn([ix], txParams);
 		}
 	}
 
@@ -856,7 +952,8 @@ export class VaultClient {
 			authority: PublicKey;
 			vault: PublicKey;
 		},
-		txParams?: TxParams
+		txParams?: TxParams,
+		userTokenAccount?: PublicKey
 	): Promise<TransactionSignature> {
 		let vaultPubKey: PublicKey;
 		if (initVaultDepositor) {
@@ -899,11 +996,13 @@ export class VaultClient {
 			driftUser: vaultAccount.user,
 			driftState: driftStateKey,
 			driftSpotMarketVault: spotMarket.vault,
-			userTokenAccount: getAssociatedTokenAddressSync(
-				spotMarket.mint,
-				this.driftClient.wallet.publicKey,
-				true
-			),
+			userTokenAccount:
+				userTokenAccount ??
+				getAssociatedTokenAddressSync(
+					spotMarket.mint,
+					this.driftClient.wallet.publicKey,
+					true
+				),
 			driftProgram: this.driftClient.program.programId,
 			tokenProgram: TOKEN_PROGRAM_ID,
 		};
