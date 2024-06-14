@@ -427,7 +427,7 @@ describe('driftVaults', () => {
 		}
 	});
 
-	it('Initialize Tokenized Vault Depositor', async () => {
+	it('Initialize TokenizedVaultDepositor', async () => {
 		try {
 			await vaultClient.initializeTokenizedVaultDepositor({
 				vault,
@@ -464,12 +464,40 @@ describe('driftVaults', () => {
 		assert(metadata.uri === '');
 	});
 
-	it('Tokenize vault shares', async () => {
-		const vaultDepositor = getVaultDepositorAddressSync(
+	it('Initialize another TokenizedVaultDepositor', async () => {
+		const { tokenizedVaultDepositor } = calculateAllPdas(
 			program.programId,
 			vault,
 			provider.wallet.publicKey
 		);
+		const tvdAccount = await connection.getAccountInfo(tokenizedVaultDepositor);
+		assert(tvdAccount !== null, 'TokenizedVaultDepositor account should exist');
+		try {
+			const initTx = await vaultClient.initializeTokenizedVaultDepositor({
+				vault,
+				tokenName: 'Tokenized Vault',
+				tokenSymbol: 'TV',
+				tokenUri: '',
+				decimals: 6,
+			});
+			await printTxLogs(provider.connection, initTx);
+		} catch (e) {
+			return;
+		}
+		assert(
+			false,
+			'Should not have been able to initialize a second TokenizedVaultDepositor'
+		);
+	});
+
+	it('Tokenize vault shares', async () => {
+		const {
+			vaultDepositor,
+			tokenizedVaultDepositor,
+			mintAddress,
+			userVaultTokenAta,
+			vaultTokenizedTokenAta,
+		} = calculateAllPdas(program.programId, vault, provider.wallet.publicKey);
 
 		await vaultClient.deposit(
 			vaultDepositor,
@@ -479,63 +507,100 @@ describe('driftVaults', () => {
 			userUSDCAccount.publicKey
 		);
 
-		const mintAddress = getTokenizedVaultMintAddressSync(
-			program.programId,
-			vault
-		);
-		let mintAccount = await getMint(connection, mintAddress);
-		assert(Number(mintAccount.supply) === 0);
+		await validateTotalUserShares(program, vault);
 
 		const vdBefore = await program.account.vaultDepositor.fetch(vaultDepositor);
-		const vaultBefore = await program.account.vault.fetch(vault);
-
-		assert(Number(vdBefore.vaultShares) === Number(usdcAmount));
-
-		const txSig = await vaultClient.tokenizeShares(
-			vaultDepositor,
-			vdBefore.vaultShares,
-			WithdrawUnit.SHARES
+		const vdtBefore = await program.account.tokenizedVaultDepositor.fetch(
+			tokenizedVaultDepositor
 		);
-		await printTxLogs(provider.connection, txSig);
+		const vaultBefore = await program.account.vault.fetch(vault);
+		const mintAccountBefore = await getMint(connection, mintAddress);
+		const tvdTokenBalanceBefore = await connection.getTokenAccountBalance(
+			vaultTokenizedTokenAta
+		);
+
+		assert(
+			(await connection.getAccountInfo(userVaultTokenAta)) === null,
+			'User vault token account should not exist'
+		);
+		assert(
+			tvdTokenBalanceBefore.value.uiAmount === 0,
+			'TokenizedVaultDepositor token account has tokens'
+		);
+		assert(Number(mintAccountBefore.supply) === 0, 'Mint supply !== 0');
+
+		assert(
+			Number(vdBefore.vaultShares) === Number(usdcAmount),
+			`VaultDepositor has no shares`
+		);
+
+		try {
+			const txSig = await vaultClient.tokenizeShares(
+				vaultDepositor,
+				vdBefore.vaultShares,
+				WithdrawUnit.SHARES
+			);
+			await printTxLogs(provider.connection, txSig);
+		} catch (e) {
+			console.error(e);
+			assert(false, 'tokenizeShares threw');
+		}
 
 		const vdAfter = await program.account.vaultDepositor.fetch(vaultDepositor);
+		const vdtAfter = await program.account.tokenizedVaultDepositor.fetch(
+			tokenizedVaultDepositor
+		);
 		const vaultAfter = await program.account.vault.fetch(vault);
-		assert(Number(vdAfter.vaultShares) === 0);
-
-		mintAccount = await getMint(connection, mintAddress);
-
-		// first tokenize, so tokens should equal amount of shares transferred
-		assert(Number(mintAccount.supply) === Number(vdBefore.vaultShares));
-		const userAta = getAssociatedTokenAddressSync(
-			mintAddress,
-			vdBefore.authority,
-			false
+		const mintAccountAfter = await getMint(connection, mintAddress);
+		const userTokenBalanceAfter = await connection.getTokenAccountBalance(
+			userVaultTokenAta
 		);
-		const tokenAccountBalance = await connection.getTokenAccountBalance(
-			userAta
+		const tvdTokenBalanceAfter = await connection.getTokenAccountBalance(
+			vaultTokenizedTokenAta
+		);
+
+		assert(
+			tvdTokenBalanceAfter.value.uiAmount === 0,
+			'TokenizedVaultDepositor token account has tokens'
+		);
+
+		const vdSharesDelta = vdAfter.vaultShares.sub(vdBefore.vaultShares);
+		const vdtSharesDelta = vdtAfter.vaultShares.sub(vdtBefore.vaultShares);
+		const tokenBalanceDelta = new BN(userTokenBalanceAfter.value.amount).sub(
+			ZERO
+		);
+		const mintSupplyDelta = new BN(String(mintAccountAfter.supply)).sub(
+			new BN(String(mintAccountBefore.supply))
+		);
+
+		assert(
+			vdAfter.vaultSharesBase === vdBefore.vaultSharesBase,
+			'VaultDepositor shares base changed'
 		);
 		assert(
-			Number(tokenAccountBalance.value.amount) === Number(vdBefore.vaultShares)
+			vdtAfter.vaultSharesBase === vdtBefore.vaultSharesBase,
+			'TokenizedVaultDepositor shares base changed'
+		);
+
+		assert(
+			vdSharesDelta.neg().eq(vdtSharesDelta),
+			'VaultDepositor and TokenizedVaultDepositor shares delta should be equal and opposite'
 		);
 		assert(
-			Number(tokenAccountBalance.value.amount) === Number(mintAccount.supply)
+			tokenBalanceDelta.eq(mintSupplyDelta),
+			'Token balance delta should equal mint supply delta'
 		);
 
-		assert(vaultBefore.totalShares.eq(vaultAfter.totalShares));
-		assert(vaultBefore.userShares.eq(vaultAfter.userShares));
+		assert(
+			vaultBefore.totalShares.eq(vaultAfter.totalShares),
+			'Vault total shares should not have changed'
+		);
+		assert(
+			vaultBefore.userShares.eq(vaultAfter.userShares),
+			'Vault user shares should not have changed'
+		);
 
-		// check that all vd + tvd === total shares
-		const allVds = await program.account.vaultDepositor.all();
-		const allTvds = await program.account.tokenizedVaultDepositor.all();
-		const vdSharesTotal = allVds.reduce(
-			(acc, vd) => acc.add(vd.account.vaultShares),
-			new BN(0)
-		);
-		const tvdSharesTotal = allTvds.reduce(
-			(acc, vd) => acc.add(vd.account.vaultShares),
-			new BN(0)
-		);
-		assert(tvdSharesTotal.add(vdSharesTotal).eq(vaultAfter.userShares));
+		await validateTotalUserShares(program, vault);
 	});
 
 	it('Redeem vault tokens', async () => {
@@ -575,11 +640,16 @@ describe('driftVaults', () => {
 			'Mint supply is 0, redeem vault tokens test will fail'
 		);
 
-		const txSig = await vaultClient.redeemTokens(
-			vaultDepositor,
-			new BN(userTokenBalanceBefore.value.amount).div(TWO)
-		);
-		await printTxLogs(provider.connection, txSig);
+		try {
+			const txSig = await vaultClient.redeemTokens(
+				vaultDepositor,
+				new BN(userTokenBalanceBefore.value.amount).div(TWO)
+			);
+			await printTxLogs(provider.connection, txSig);
+		} catch (e) {
+			console.error(e);
+			assert(false, 'redeemTokens threw');
+		}
 
 		const vdAfter = await program.account.vaultDepositor.fetch(vaultDepositor);
 		const vdtAfter = await program.account.tokenizedVaultDepositor.fetch(
@@ -626,7 +696,6 @@ describe('driftVaults', () => {
 			'Token balance delta should equal mint supply delta'
 		);
 
-		// total shares should not have changed
 		assert(
 			vaultBefore.totalShares.eq(vaultAfter.totalShares),
 			'Vault total shares should not have changed'
