@@ -1920,6 +1920,11 @@ export type DriftVaults = {
 			code: 6021;
 			name: 'OngoingLiquidation';
 			msg: 'OngoingLiquidation';
+		},
+		{
+			code: 6022;
+			name: 'InvalidTokenization';
+			msg: 'InvalidTokenization';
 		}
 	];
 };
@@ -3846,6 +3851,11 @@ export const IDL: DriftVaults = {
 			code: 6021,
 			name: 'OngoingLiquidation',
 			msg: 'OngoingLiquidation',
+		},
+		{
+			code: 6022,
+			name: 'InvalidTokenization',
+			msg: 'InvalidTokenization',
 		},
 	],
 };

@@ -51,6 +51,8 @@ pub enum ErrorCode {
     InvalidVaultDeposit,
     #[msg("OngoingLiquidation")]
     OngoingLiquidation,
+    #[msg("InvalidTokenization")]
+    InvalidTokenization,
 }
 
 impl From<DriftErrorCode> for ErrorCode {

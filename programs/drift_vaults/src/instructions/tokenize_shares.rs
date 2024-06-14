@@ -10,6 +10,7 @@ use crate::{TokenizedVaultDepositor, Vault, VaultDepositor, WithdrawUnit};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{mint_to, Mint, MintTo, Token, TokenAccount};
 use drift::instructions::optional_accounts::AccountMaps;
+use drift::math::safe_math::SafeMath;
 use drift::state::user::User;
 
 pub fn tokenize_shares<'info>(
@@ -25,6 +26,10 @@ pub fn tokenize_shares<'info>(
 
     let mut vault_depositor = ctx.accounts.vault_depositor.load_mut()?;
     let mut tokenized_vault_depositor = ctx.accounts.tokenized_vault_depositor.load_mut()?;
+
+    let total_shares_before = vault_depositor
+        .get_vault_shares()
+        .safe_add(tokenized_vault_depositor.get_vault_shares())?;
 
     let user = ctx.accounts.drift_user.load()?;
     let spot_market_index = vault.spot_market_index;
@@ -52,12 +57,24 @@ pub fn tokenize_shares<'info>(
         clock.unix_timestamp,
     )?;
 
+    let total_supply_before = ctx.accounts.mint.supply;
+
     let tokens_to_mint = tokenized_vault_depositor.tokenize_shares(
         &mut vault,
-        ctx.accounts.mint.supply,
+        total_supply_before,
         vault_equity,
         shares_transferred,
         clock.unix_timestamp,
+    )?;
+
+    let total_shares_after = vault_depositor
+        .get_vault_shares()
+        .safe_add(tokenized_vault_depositor.get_vault_shares())?;
+
+    validate!(
+        total_shares_after.eq(&total_shares_before),
+        ErrorCode::InvalidVaultSharesDetected,
+        "Total vault depositor shares before != after"
     )?;
 
     let vault_name = vault.name;
@@ -74,6 +91,24 @@ pub fn tokenize_shares<'info>(
         tokens_to_mint,
         ctx.accounts.user_token_account.key()
     );
+
+    ctx.accounts.mint.reload()?;
+    let total_supply_after = ctx.accounts.mint.supply;
+
+    validate!(
+        total_supply_after > total_supply_before,
+        ErrorCode::InvalidTokenization,
+        "Total supply after < total supply before"
+    )?;
+
+    let supply_delta = total_supply_after.safe_sub(total_supply_before)?;
+    validate!(
+        supply_delta.eq(&tokens_to_mint),
+        ErrorCode::InvalidTokenization,
+        "Tokens minted ({}) != supply delta ({})",
+        tokens_to_mint,
+        supply_delta
+    )?;
 
     Ok(())
 }
