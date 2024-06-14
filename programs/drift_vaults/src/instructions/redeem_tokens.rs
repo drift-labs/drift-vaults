@@ -10,6 +10,7 @@ use crate::{TokenizedVaultDepositor, Vault, VaultDepositor, WithdrawUnit};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{burn, transfer, Burn, Mint, Token, TokenAccount, Transfer};
 use drift::instructions::optional_accounts::AccountMaps;
+use drift::math::safe_math::SafeMath;
 use drift::state::user::User;
 
 pub fn redeem_tokens<'info>(
@@ -24,6 +25,10 @@ pub fn redeem_tokens<'info>(
 
     let mut vault_depositor = ctx.accounts.vault_depositor.load_mut()?;
     let mut tokenized_vault_depositor = ctx.accounts.tokenized_vault_depositor.load_mut()?;
+
+    let total_shares_before = vault_depositor
+        .get_vault_shares()
+        .safe_add(tokenized_vault_depositor.get_vault_shares())?;
 
     let user = ctx.accounts.drift_user.load()?;
     let spot_market_index = vault.spot_market_index;
@@ -42,9 +47,11 @@ pub fn redeem_tokens<'info>(
         "Cannot redeem shares with a pending withdraw request"
     )?;
 
+    let total_supply_before = ctx.accounts.mint.supply;
+
     let shares_to_transfer = tokenized_vault_depositor.redeem_tokens(
         &mut vault,
-        ctx.accounts.mint.supply,
+        total_supply_before,
         vault_equity,
         tokens_to_burn,
         clock.unix_timestamp,
@@ -57,6 +64,16 @@ pub fn redeem_tokens<'info>(
         WithdrawUnit::Shares,
         vault_equity,
         clock.unix_timestamp,
+    )?;
+
+    let total_shares_after = vault_depositor
+        .get_vault_shares()
+        .safe_add(tokenized_vault_depositor.get_vault_shares())?;
+
+    validate!(
+        total_shares_after.eq(&total_shares_before),
+        ErrorCode::InvalidVaultSharesDetected,
+        "Total vault depositor shares before != after"
     )?;
 
     validate!(
@@ -79,6 +96,24 @@ pub fn redeem_tokens<'info>(
         tokens_to_burn,
         ctx.accounts.user_token_account.key()
     );
+
+    ctx.accounts.mint.reload()?;
+    let total_supply_after = ctx.accounts.mint.supply;
+
+    validate!(
+        total_supply_after < total_supply_before,
+        ErrorCode::InvalidTokenization,
+        "Total supply after > total supply before"
+    )?;
+
+    let supply_delta = total_supply_before.safe_sub(total_supply_after)?;
+    validate!(
+        supply_delta.eq(&tokens_to_burn),
+        ErrorCode::InvalidTokenization,
+        "Tokens burned ({}) != supply delta ({})",
+        tokens_to_burn,
+        supply_delta
+    )?;
 
     Ok(())
 }
