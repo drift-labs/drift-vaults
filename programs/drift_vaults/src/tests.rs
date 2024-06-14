@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod vault_fcn {
+    use crate::state::traits::VaultDepositorBase;
     use crate::withdraw_request::WithdrawRequest;
     use crate::{Vault, VaultDepositor, WithdrawUnit};
     use anchor_lang::prelude::Pubkey;

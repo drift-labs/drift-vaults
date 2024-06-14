@@ -1,6 +1,6 @@
 use crate::error::ErrorCode;
 use crate::state::withdraw_unit::WithdrawUnit;
-use crate::Size;
+use crate::{Size, VaultDepositorBase};
 use anchor_lang::prelude::*;
 use drift::controller::spot_balance::update_spot_balances;
 use drift::error::{DriftResult, ErrorCode as DriftErrorCode};
@@ -11,7 +11,7 @@ use crate::state::vault::Vault;
 use crate::validate;
 use static_assertions::const_assert_eq;
 
-use crate::events::{VaultDepositorAction, VaultDepositorRecord};
+use crate::events::{ShareTransferRecord, VaultDepositorAction, VaultDepositorRecord};
 
 use drift::math::insurance::{
     if_shares_to_vault_amount as depositor_shares_to_vault_amount,
@@ -70,6 +70,47 @@ const_assert_eq!(
     std::mem::size_of::<VaultDepositor>() + 8
 );
 
+impl VaultDepositorBase for VaultDepositor {
+    fn get_pubkey(&self) -> Pubkey {
+        self.pubkey
+    }
+
+    fn get_vault_shares(&self) -> u128 {
+        self.vault_shares
+    }
+    fn set_vault_shares(&mut self, shares: u128) {
+        self.vault_shares = shares;
+    }
+
+    fn get_vault_shares_base(&self) -> u32 {
+        self.vault_shares_base
+    }
+    fn set_vault_shares_base(&mut self, base: u32) {
+        self.vault_shares_base = base;
+    }
+
+    fn get_net_deposits(&self) -> i64 {
+        self.net_deposits
+    }
+    fn set_net_deposits(&mut self, amount: i64) {
+        self.net_deposits = amount;
+    }
+
+    fn get_cumulative_profit_share_amount(&self) -> i64 {
+        self.cumulative_profit_share_amount
+    }
+    fn set_cumulative_profit_share_amount(&mut self, amount: i64) {
+        self.cumulative_profit_share_amount = amount;
+    }
+
+    fn get_profit_share_fee_paid(&self) -> u64 {
+        self.profit_share_fee_paid
+    }
+    fn set_profit_share_fee_paid(&mut self, amount: u64) {
+        self.profit_share_fee_paid = amount;
+    }
+}
+
 impl VaultDepositor {
     pub fn new(vault: Pubkey, pubkey: Pubkey, authority: Pubkey, now: i64) -> Self {
         VaultDepositor {
@@ -90,52 +131,13 @@ impl VaultDepositor {
         }
     }
 
-    fn validate_base(&self, vault: &Vault) -> Result<()> {
-        validate!(
-            self.vault_shares_base == vault.shares_base,
-            ErrorCode::InvalidVaultRebase,
-            "vault depositor bases mismatch. user base: {} vault base {}",
-            self.vault_shares_base,
-            vault.shares_base
-        )?;
-
-        Ok(())
-    }
-
-    pub fn checked_vault_shares(&self, vault: &Vault) -> Result<u128> {
-        self.validate_base(vault)?;
-        Ok(self.vault_shares)
-    }
-
-    pub fn unchecked_vault_shares(&self) -> u128 {
-        self.vault_shares
-    }
-
-    pub fn increase_vault_shares(&mut self, delta: u128, vault: &Vault) -> Result<()> {
-        self.validate_base(vault)?;
-        self.vault_shares = self.vault_shares.safe_add(delta)?;
-        Ok(())
-    }
-
-    pub fn decrease_vault_shares(&mut self, delta: u128, vault: &Vault) -> Result<()> {
-        self.validate_base(vault)?;
-        self.vault_shares = self.vault_shares.safe_sub(delta)?;
-        Ok(())
-    }
-
-    pub fn update_vault_shares(&mut self, new_shares: u128, vault: &Vault) -> Result<()> {
-        self.validate_base(vault)?;
-        self.vault_shares = new_shares;
-
-        Ok(())
-    }
-
     pub fn apply_rebase(
         self: &mut VaultDepositor,
         vault: &mut Vault,
         vault_equity: u64,
     ) -> Result<Option<u128>> {
         vault.apply_rebase(vault_equity)?;
+
         let mut rebase_divisor = None;
 
         if vault.shares_base != self.vault_shares_base {
@@ -176,36 +178,6 @@ impl VaultDepositor {
         )?;
 
         Ok(rebase_divisor)
-    }
-
-    pub fn calculate_profit_share_and_update(
-        self: &mut VaultDepositor,
-        total_amount: u64,
-        vault: &Vault,
-    ) -> Result<u128> {
-        let profit = total_amount.cast::<i64>()?.safe_sub(
-            self.net_deposits
-                .safe_add(self.cumulative_profit_share_amount)?,
-        )?;
-        if profit > 0 {
-            let profit_u128 = profit.cast::<u128>()?;
-
-            let profit_share_amount = profit_u128
-                .safe_mul(vault.profit_share.cast()?)?
-                .safe_div(PERCENTAGE_PRECISION)?;
-
-            self.cumulative_profit_share_amount = self
-                .cumulative_profit_share_amount
-                .safe_add(profit_u128.cast()?)?;
-
-            self.profit_share_fee_paid = self
-                .profit_share_fee_paid
-                .safe_add(profit_share_amount.cast()?)?;
-
-            return Ok(profit_share_amount);
-        }
-
-        Ok(0)
     }
 
     pub fn deposit(
@@ -251,6 +223,12 @@ impl VaultDepositor {
 
         let (management_fee, management_fee_shares) =
             vault.apply_management_fee(vault_equity, now)?;
+
+        validate!(
+            !self.last_withdraw_request.pending(),
+            ErrorCode::InvalidVaultDeposit,
+            "Cannot deposit with a pending withdraw request"
+        )?;
         let profit_share: u64 = self.apply_profit_share(vault_equity, vault)?;
 
         let n_shares = vault_amount_to_depositor_shares(amount, vault.total_shares, vault_equity)?;
@@ -300,12 +278,18 @@ impl VaultDepositor {
         let rebase_divisor = self.apply_rebase(vault, vault_equity)?;
         let (management_fee, management_fee_shares) =
             vault.apply_management_fee(vault_equity, now)?;
+
+        validate!(
+            !self.last_withdraw_request.pending(),
+            ErrorCode::InvalidVaultDeposit,
+            "Cannot make new withdraws with a pending withdraw request"
+        )?;
         let profit_share: u64 = self.apply_profit_share(vault_equity, vault)?;
 
         let (withdraw_value, n_shares) = withdraw_unit.get_withdraw_value_and_shares(
             withdraw_amount,
             vault_equity,
-            self.vault_shares,
+            self.get_vault_shares(),
             vault.total_shares,
             rebase_divisor,
         )?;
@@ -436,7 +420,10 @@ impl VaultDepositor {
 
         let (management_fee, management_fee_shares) =
             vault.apply_management_fee(vault_equity, now)?;
-        msg!("after management_fee vault_shares={}", self.vault_shares,);
+        msg!(
+            "after management_fee vault_shares={}",
+            self.get_vault_shares(),
+        );
 
         let amount: u64 =
             depositor_shares_to_vault_amount(n_shares, vault.total_shares, vault_equity)?;
@@ -449,7 +436,7 @@ impl VaultDepositor {
         );
         msg!(
             "vault_shares={}, last_withdraw_request_shares={}",
-            self.vault_shares,
+            self.get_vault_shares(),
             self.last_withdraw_request.shares
         );
 
@@ -495,38 +482,6 @@ impl VaultDepositor {
         Ok((withdraw_amount, finishing_liquidation))
     }
 
-    pub fn apply_profit_share(
-        self: &mut VaultDepositor,
-        vault_equity: u64,
-        vault: &mut Vault,
-    ) -> Result<u64> {
-        validate!(
-            !self.last_withdraw_request.pending(),
-            ErrorCode::InvalidVaultDeposit,
-            "Cannot apply profit share to depositor with pending withdraw request"
-        )?;
-
-        let total_amount =
-            depositor_shares_to_vault_amount(self.vault_shares, vault.total_shares, vault_equity)?;
-
-        let profit_share: u64 = self
-            .calculate_profit_share_and_update(total_amount, vault)?
-            .cast()?;
-
-        let profit_share_shares: u128 =
-            vault_amount_to_depositor_shares(profit_share, vault.total_shares, vault_equity)?;
-
-        self.decrease_vault_shares(profit_share_shares, vault)?;
-
-        vault.user_shares = vault.user_shares.safe_sub(profit_share_shares)?;
-
-        vault.manager_total_profit_share = vault
-            .manager_total_profit_share
-            .saturating_add(profit_share);
-
-        Ok(profit_share)
-    }
-
     pub fn realize_profits(
         self: &mut VaultDepositor,
         vault_equity: u64,
@@ -540,6 +495,11 @@ impl VaultDepositor {
         let total_vault_shares_before = vault.total_shares;
         let user_vault_shares_before = vault.user_shares;
 
+        validate!(
+            !self.last_withdraw_request.pending(),
+            ErrorCode::InvalidVaultDeposit,
+            "Cannot realize profits with a pending withdraw request"
+        )?;
         let profit_share = self.apply_profit_share(vault_equity, vault)?;
 
         emit!(VaultDepositorRecord {
@@ -553,7 +513,7 @@ impl VaultDepositor {
             vault_shares_before,
             user_vault_shares_before,
             total_vault_shares_before,
-            vault_shares_after: self.vault_shares,
+            vault_shares_after: self.get_vault_shares(),
             total_vault_shares_after: vault.total_shares,
             user_vault_shares_after: vault.user_shares,
             profit_share,
@@ -635,10 +595,103 @@ impl VaultDepositor {
 
         Ok(())
     }
+
+    /// Transfer shares from `self` to `to`
+    ///
+    /// Returns the number of shares transferred
+    pub fn transfer_shares(
+        self: &mut VaultDepositor,
+        to: &mut dyn VaultDepositorBase,
+        vault: &mut Vault,
+        withdraw_amount: u64,
+        withdraw_unit: WithdrawUnit,
+        vault_equity: u64,
+        now: i64,
+    ) -> Result<u128> {
+        self.apply_rebase(vault, vault_equity)?;
+        let (management_fee, management_fee_shares) =
+            vault.apply_management_fee(vault_equity, now)?;
+
+        validate!(
+            !self.last_withdraw_request.pending(),
+            ErrorCode::InvalidVaultDeposit,
+            "Cannot transfer shares with a pending withdraw request"
+        )?;
+        let profit_share: u64 = self.apply_profit_share(vault_equity, vault)?;
+
+        let (withdraw_value, n_shares) = withdraw_unit.get_withdraw_value_and_shares(
+            withdraw_amount,
+            vault_equity,
+            self.get_vault_shares(),
+            vault.total_shares,
+        )?;
+
+        validate!(
+            n_shares > 0,
+            ErrorCode::InvalidVaultWithdrawSize,
+            "Requested n_shares = 0"
+        )?;
+
+        let vault_shares_before: u128 = self.checked_vault_shares(vault)?;
+        let total_vault_shares_before = vault.total_shares;
+        let user_vault_shares_before = vault.user_shares;
+
+        let from_depositor_shares_before = self.checked_vault_shares(vault)?;
+        let to_depositor_shares_before = to.checked_vault_shares(vault)?;
+
+        self.decrease_vault_shares(n_shares, vault)?;
+        to.increase_vault_shares(n_shares, vault)?;
+
+        let from_depositor_shares_after = self.checked_vault_shares(vault)?;
+        let to_depositor_shares_after = to.checked_vault_shares(vault)?;
+
+        validate!(
+            from_depositor_shares_before.safe_add(to_depositor_shares_before)
+                == from_depositor_shares_after.safe_add(to_depositor_shares_after),
+            ErrorCode::InvalidVaultSharesDetected,
+            "VaultDepositor: total shares mismatch"
+        )?;
+
+        emit!(ShareTransferRecord {
+            ts: now,
+            vault: vault.pubkey,
+            from_vault_depositor: self.get_pubkey(),
+            to_vault_depositor: to.get_pubkey(),
+
+            shares: n_shares,
+            value: withdraw_value,
+            from_depositor_shares_before,
+            from_depositor_shares_after,
+            to_depositor_shares_before,
+            to_depositor_shares_after,
+        });
+
+        emit!(VaultDepositorRecord {
+            ts: now,
+            vault: vault.pubkey,
+            depositor_authority: self.authority,
+            action: VaultDepositorAction::Withdraw,
+            amount: withdraw_amount,
+            spot_market_index: vault.spot_market_index,
+            vault_equity_before: vault_equity,
+            vault_shares_before,
+            user_vault_shares_before,
+            total_vault_shares_before,
+            vault_shares_after: self.checked_vault_shares(vault)?,
+            total_vault_shares_after: vault.total_shares,
+            user_vault_shares_after: vault.user_shares,
+            profit_share: 0,
+            management_fee,
+            management_fee_shares,
+        });
+
+        Ok(n_shares)
+    }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::state::traits::VaultDepositorBase;
     use crate::{Vault, VaultDepositor, WithdrawUnit};
     use anchor_lang::prelude::Pubkey;
     use drift::math::casting::Cast;

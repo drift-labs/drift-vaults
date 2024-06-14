@@ -30,6 +30,10 @@ pub trait TokenTransferCPI {
     fn token_transfer(&self, amount: u64) -> Result<()>;
 }
 
+pub trait MintTokensCPI {
+    fn mint(&self, vault_name: [u8; 32], vault_bump: u8, amount: u64) -> Result<()>;
+}
+
 pub trait InitializeInsuranceFundStakeCPI {
     fn drift_initialize_insurance_fund_stake(&self, market_index: u16) -> Result<()>;
 }

@@ -7,7 +7,7 @@ pub use withdraw_unit::*;
 
 pub mod account_maps;
 pub mod events;
-mod traits;
+pub mod traits;
 mod vault;
 mod vault_depositor;
 mod tokenized_vault_depositor;

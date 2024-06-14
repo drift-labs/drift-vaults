@@ -19,5 +19,11 @@ program = "./deps/drift.so"
 address = "DraWMeQX9LfzQQSYoeBwHAgM5JcqFkgrX7GbTfjzVMVL"
 program = "./deps/drift_competitions.so"
 
+[test.validator]
+url = "https://api.mainnet-beta.solana.com"
+
+[[test.validator.clone]]
+address = "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s" # implicitly also clones PwDiXFxQsGra4sFFTT8r1QWRMd4vfumiWC1jfWNfdYT
+
 [scripts]
 test = "yarn anchor-tests"
