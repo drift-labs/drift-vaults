@@ -430,6 +430,7 @@ export class VaultClient {
 
 		if (this.cliMode) {
 			return await this.program.methods
+				// @ts-ignore, 0.29.0 anchor issues..
 				.managerRequestWithdraw(amount, withdrawUnit)
 				.accounts(accounts)
 				.remainingAccounts(remainingAccounts)
@@ -813,6 +814,7 @@ export class VaultClient {
 
 		if (this.cliMode) {
 			return await this.program.methods
+				// @ts-ignore
 				.requestWithdraw(amount, withdrawUnit)
 				.accounts(accounts)
 				.remainingAccounts(remainingAccounts)
