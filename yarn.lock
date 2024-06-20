@@ -137,13 +137,13 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
-"@drift-labs/competitions-sdk@0.2.334":
-  version "0.2.334"
-  resolved "https://registry.yarnpkg.com/@drift-labs/competitions-sdk/-/competitions-sdk-0.2.334.tgz#b2950ac25296d2a945ceac5ce95045393a4fca8e"
-  integrity sha512-oSBlPHdKULwvX1qPBxdUFWYgV9kusXH9iWt/kZTrAqvNjuXYyDUDQl0t8Bf54Odc7nQcyGJnXbmiBCDuWV/y/g==
+"@drift-labs/competitions-sdk@0.2.335":
+  version "0.2.335"
+  resolved "https://registry.yarnpkg.com/@drift-labs/competitions-sdk/-/competitions-sdk-0.2.335.tgz#0f4a09bb449ff289ba09c753a47834fd99f040ae"
+  integrity sha512-1cWchWIAKWtPDrFRBCnbEdOSN9ZfZsiCOP7Y8ltt/sN2zRi0mLRJzUq86Px0uP6y3hOaD2J9wQSh/Opb3bhsCA==
   dependencies:
     "@coral-xyz/anchor" "^0.26.0"
-    "@drift-labs/sdk" "2.84.0-beta.6"
+    "@drift-labs/sdk" "2.84.0-beta.7"
     "@solana/web3.js" "1.73.2"
     "@switchboard-xyz/solana.js" "^2.7.1"
     cerializr "^3.1.4"
@@ -152,18 +152,19 @@
     ts-node "^10.9.1"
     typescript "^5.1.6"
 
-"@drift-labs/sdk@2.84.0-beta.6":
-  version "2.84.0-beta.6"
-  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.84.0-beta.6.tgz#74117e5fd07d5d19f5dae79b1bdb1a8e4facc4ad"
-  integrity sha512-T42Mvx7D0w8f/eZcVijhZ4U+/D4oZ3S5nM5BRYqEKJHztCFL6Y0d3HvTpMFxc6MNbozSOq8djyjyJg1Zx0Nk9Q==
+"@drift-labs/sdk@2.84.0-beta.7":
+  version "2.84.0-beta.7"
+  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.84.0-beta.7.tgz#73da7ee158830b549d047ea047100291e9e82c52"
+  integrity sha512-CnpOMRHHPf/RZ2tmKMWc6OQOcDIDNYYmaNVeZpwXQEkJwhuAumByVEQAYALoqjxPzNeMFu0XLYoBGF8/tq8sFg==
   dependencies:
     "@coral-xyz/anchor" "0.28.0"
     "@ellipsis-labs/phoenix-sdk" "^1.4.2"
     "@project-serum/serum" "^0.13.38"
     "@pythnetwork/client" "2.5.3"
     "@pythnetwork/pyth-solana-receiver" "^0.7.0"
-    "@solana/spl-token" "^0.3.7"
+    "@solana/spl-token" "0.3.7"
     "@solana/web3.js" "1.92.3"
+    rpc-websockets "7.5.1"
     strict-event-emitter-types "^2.0.0"
     uuid "^8.3.2"
     zstddec "^0.1.0"
@@ -519,6 +520,15 @@
   dependencies:
     buffer "~6.0.3"
 
+"@solana/spl-token@0.3.7", "@solana/spl-token@^0.3.7":
+  version "0.3.7"
+  resolved "https://registry.npmjs.org/@solana/spl-token/-/spl-token-0.3.7.tgz"
+  integrity sha512-bKGxWTtIw6VDdCBngjtsGlKGLSmiu/8ghSt/IOYJV24BsymRbgq7r12GToeetpxmPaZYLddKwAz7+EwprLfkfg==
+  dependencies:
+    "@solana/buffer-layout" "^4.0.0"
+    "@solana/buffer-layout-utils" "^0.2.0"
+    buffer "^6.0.3"
+
 "@solana/spl-token@^0.1.6":
   version "0.1.8"
   resolved "https://registry.npmjs.org/@solana/spl-token/-/spl-token-0.1.8.tgz"
@@ -530,15 +540,6 @@
     buffer "6.0.3"
     buffer-layout "^1.2.0"
     dotenv "10.0.0"
-
-"@solana/spl-token@^0.3.7":
-  version "0.3.7"
-  resolved "https://registry.npmjs.org/@solana/spl-token/-/spl-token-0.3.7.tgz"
-  integrity sha512-bKGxWTtIw6VDdCBngjtsGlKGLSmiu/8ghSt/IOYJV24BsymRbgq7r12GToeetpxmPaZYLddKwAz7+EwprLfkfg==
-  dependencies:
-    "@solana/buffer-layout" "^4.0.0"
-    "@solana/buffer-layout-utils" "^0.2.0"
-    buffer "^6.0.3"
 
 "@solana/spl-token@^0.3.8":
   version "0.3.8"
@@ -2552,7 +2553,7 @@ rimraf@^3.0.2:
   dependencies:
     glob "^7.1.3"
 
-rpc-websockets@^7.5.0, rpc-websockets@^7.5.1:
+rpc-websockets@7.5.1, rpc-websockets@^7.5.0, rpc-websockets@^7.5.1:
   version "7.5.1"
   resolved "https://registry.npmjs.org/rpc-websockets/-/rpc-websockets-7.5.1.tgz"
   integrity sha512-kGFkeTsmd37pHPMaHIgN1LVKXMi0JD782v4Ds9ZKtLlwdTKjn+CxM9A9/gLT2LaOuEcEFGL98h1QWQtlOIdW0w==
