@@ -2,13 +2,13 @@ use anchor_lang::prelude::*;
 use drift::instructions::optional_accounts::AccountMaps;
 use drift::state::user::User;
 
-use crate::{Vault, WithdrawUnit};
+use crate::{Vault, VaultProtocol, WithdrawUnit};
 use crate::AccountMapProvider;
-use crate::constraints::{is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault};
+use crate::constraints::{is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault, is_vault_protocol_for_vault};
 use crate::state::VaultProtocolProvider;
 
-pub fn manager_request_withdraw<'c: 'info, 'info>(
-  ctx: Context<'_, '_, 'c, 'info, ManagerRequestWithdraw<'info>>,
+pub fn protocol_request_withdraw<'c: 'info, 'info>(
+  ctx: Context<'_, '_, 'c, 'info, ProtocolRequestWithdraw<'info>>,
   withdraw_amount: u64,
   withdraw_unit: WithdrawUnit,
 ) -> Result<()> {
@@ -31,16 +31,19 @@ pub fn manager_request_withdraw<'c: 'info, 'info>(
 
   let vault_equity = vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
-  vault.manager_request_withdraw(&mut vp, withdraw_amount, withdraw_unit, vault_equity, now)?;
+  vault.protocol_request_withdraw(&mut vp, withdraw_amount, withdraw_unit, vault_equity, now)?;
 
   Ok(())
 }
 
 #[derive(Accounts)]
-pub struct ManagerRequestWithdraw<'info> {
+pub struct ProtocolRequestWithdraw<'info> {
   #[account(mut,
   constraint = is_manager_for_vault(& vault, & manager) ?)]
   pub vault: AccountLoader<'info, Vault>,
+  #[account(mut,
+  constraint = is_vault_protocol_for_vault(& vault_protocol, & vault) ?)]
+  pub vault_protocol: AccountLoader<'info, VaultProtocol>,
   pub manager: Signer<'info>,
   #[account(constraint = is_user_stats_for_vault(& vault, & drift_user_stats) ?)]
   /// CHECK: checked in drift cpi

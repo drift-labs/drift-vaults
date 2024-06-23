@@ -11,7 +11,9 @@ pub use manager_cancel_withdraw_request::*;
 pub use manager_deposit::*;
 pub use manager_request_withdraw::*;
 pub use manager_withdraw::*;
-
+pub use protocol_cancel_withdraw_request::*;
+pub use protocol_request_withdraw::*;
+pub use protocol_withdraw::*;
 pub use request_withdraw::*;
 pub use reset_delegate::*;
 pub use update_delegate::*;
@@ -39,3 +41,6 @@ mod update_delegate;
 mod update_margin_trading_enabled;
 mod update_vault;
 mod withdraw;
+mod protocol_withdraw;
+mod protocol_request_withdraw;
+mod protocol_cancel_withdraw_request;

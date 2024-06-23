@@ -1,53 +1,50 @@
-use crate::constraints::{is_manager_for_vault, is_user_for_vault};
-use crate::cpi::UpdateUserDelegateCPI;
-use crate::Vault;
-use crate::{declare_vault_seeds, implement_update_user_delegate_cpi};
 use anchor_lang::prelude::*;
 use drift::cpi::accounts::UpdateUser;
 use drift::program::Drift;
 use drift::state::user::User;
 
+use crate::{declare_vault_seeds, implement_update_user_delegate_cpi};
+use crate::constraints::{is_manager_for_vault, is_user_for_vault};
+use crate::drift_cpi::UpdateUserDelegateCPI;
+use crate::Vault;
+
 pub fn update_delegate<'info>(
-    ctx: Context<'_, '_, '_, 'info, UpdateDelegate<'info>>,
-    delegate: Pubkey,
+  ctx: Context<'_, '_, '_, 'info, UpdateDelegate<'info>>,
+  delegate: Pubkey,
 ) -> Result<()> {
-    let mut vault = ctx.accounts.vault.load_mut()?;
+  let mut vault = ctx.accounts.vault.load_mut()?;
 
-    if vault.in_liquidation() {
-        let now = Clock::get()?.unix_timestamp;
-        vault.check_can_exit_liquidation(now)?;
-        vault.reset_liquidation_delegate();
-    }
+  if vault.in_liquidation() {
+    let now = Clock::get()?.unix_timestamp;
+    vault.check_can_exit_liquidation(now)?;
+    vault.reset_liquidation_delegate();
+  }
 
-    vault.delegate = delegate;
+  vault.delegate = delegate;
 
-    drop(vault);
+  drop(vault);
 
-    ctx.drift_update_user_delegate(delegate)?;
+  ctx.drift_update_user_delegate(delegate)?;
 
-    Ok(())
+  Ok(())
 }
 
 #[derive(Accounts)]
 pub struct UpdateDelegate<'info> {
-    #[account(
-        mut,
-        constraint = is_manager_for_vault(&vault, &manager)?,
-    )]
-    pub vault: AccountLoader<'info, Vault>,
-    pub manager: Signer<'info>,
-    #[account(
-        mut,
-        constraint = is_user_for_vault(&vault, &drift_user.key())?
-    )]
-    /// CHECK: checked in drift cpi
-    pub drift_user: AccountLoader<'info, User>,
-    pub drift_program: Program<'info, Drift>,
+  #[account(mut,
+  constraint = is_manager_for_vault(& vault, & manager) ?,)]
+  pub vault: AccountLoader<'info, Vault>,
+  pub manager: Signer<'info>,
+  #[account(mut,
+  constraint = is_user_for_vault(& vault, & drift_user.key()) ?)]
+  /// CHECK: checked in drift cpi
+  pub drift_user: AccountLoader<'info, User>,
+  pub drift_program: Program<'info, Drift>,
 }
 
 impl<'info> UpdateUserDelegateCPI for Context<'_, '_, '_, 'info, UpdateDelegate<'info>> {
-    fn drift_update_user_delegate(&self, delegate: Pubkey) -> Result<()> {
-        implement_update_user_delegate_cpi!(self, delegate);
-        Ok(())
-    }
+  fn drift_update_user_delegate(&self, delegate: Pubkey) -> Result<()> {
+    implement_update_user_delegate_cpi!(self, delegate);
+    Ok(())
+  }
 }
