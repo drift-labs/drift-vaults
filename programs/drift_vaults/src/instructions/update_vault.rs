@@ -62,13 +62,13 @@ pub fn update_vault<'c: 'info, 'info>(
     }
   }
 
-  if let Some(manager_profit_share) = params.manager_profit_share {
+  if let Some(manager_profit_share) = params.profit_share {
     validate!(
-            manager_profit_share < vault.manager_profit_share,
+            manager_profit_share < vault.profit_share,
             ErrorCode::InvalidVaultUpdate,
             "new manager profit share must be less than existing manager profit share"
         )?;
-    vault.manager_profit_share = manager_profit_share;
+    vault.profit_share = manager_profit_share;
   }
 
   if let Some(hurdle_rate) = params.hurdle_rate {
@@ -95,10 +95,9 @@ pub struct UpdateVaultParams {
   pub max_tokens: Option<u64>,
   pub management_fee: Option<i64>,
   pub min_deposit_amount: Option<u64>,
-  pub manager_profit_share: Option<u32>,
+  pub profit_share: Option<u32>,
   pub hurdle_rate: Option<u32>,
   pub permissioned: Option<bool>,
-  // todo: check old clients default to None here upon serialization
   pub vault_protocol: Option<UpdateVaultProtocolParams>,
 }
 

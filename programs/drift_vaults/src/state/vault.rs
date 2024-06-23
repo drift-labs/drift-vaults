@@ -89,7 +89,7 @@ pub struct Vault {
     /// The base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)
     pub shares_base: u32,
     /// Percentage the manager charges on all profits realized by depositors: PERCENTAGE_PRECISION
-    pub manager_profit_share: u32,
+    pub profit_share: u32,
     /// Vault manager only collect incentive fees during periods when returns are higher than this amount: PERCENTAGE_PRECISION
     pub hurdle_rate: u32,
     /// The spot market index the vault deposits into/withdraws from
@@ -239,8 +239,8 @@ impl Vault {
 
     pub fn get_profit_share(&self, vault_protocol: &Option<&VaultProtocol>) -> VaultResult<u32> {
         Ok(match vault_protocol {
-            None => self.manager_profit_share,
-            Some(vp) => self.manager_profit_share.safe_add(vp.protocol_profit_share)?
+            None => self.profit_share,
+            Some(vp) => self.profit_share.safe_add(vp.protocol_profit_share)?
         })
     }
 
@@ -995,8 +995,8 @@ impl Vault {
 
     pub fn profit_share(&self, vault_protocol: &Option<RefMut<VaultProtocol>>) -> u32 {
         match vault_protocol {
-            None => self.manager_profit_share,
-            Some(vp) => self.manager_profit_share.saturating_add(vp.protocol_profit_share),
+            None => self.profit_share,
+            Some(vp) => self.profit_share.saturating_add(vp.protocol_profit_share),
         }
     }
 }

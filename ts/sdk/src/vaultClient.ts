@@ -36,7 +36,15 @@ import {
 	getAssociatedTokenAddressSync,
 	TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
-import { Vault, VaultDepositor, WithdrawUnit } from './types/types';
+import {
+	UpdateVaultParams,
+	UpdateVaultProtocolParams,
+	Vault,
+	VaultDepositor,
+	VaultParams,
+	VaultProtocolParams,
+	WithdrawUnit
+} from './types/types';
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
 import { UserMapConfig } from '@drift-labs/sdk/lib/userMap/userMapConfig';
 
@@ -98,6 +106,7 @@ export class VaultClient {
 			vault
 		);
 		return {
+			// todo: this didn't have "as unknown" before it added vaultProtocol
 			vault: vaultAndSlot.data as Vault,
 			slot: vaultAndSlot.context.slot,
 		};
@@ -254,7 +263,22 @@ export class VaultClient {
 		profitShare: number;
 		hurdleRate: number;
 		permissioned: boolean;
+		vaultProtocol?: VaultProtocolParams;
 	}): Promise<TransactionSignature> {
+		// this is a workaround to make client backwards compatible.
+		// vaultProtocol is optionally undefined, but the anchor type is optionally null.
+		// Old clients will default to undefined, and we can cast to null internally.
+		const _params: VaultParams = {
+			...params,
+			vaultProtocol: params.vaultProtocol
+				? {
+					protocol: params.vaultProtocol.protocol,
+					protocolFee: params.vaultProtocol.protocolFee,
+					protocolProfitShare: params.vaultProtocol.protocolProfitShare,
+				}
+				: null,
+		};
+
 		const vault = getVaultAddressSync(this.program.programId, params.name);
 		const tokenAccount = getTokenVaultAddressSync(
 			this.program.programId,
@@ -292,7 +316,7 @@ export class VaultClient {
 		};
 
 		return await this.program.methods
-			.initializeVault(params)
+			.initializeVault(_params)
 			.accounts(accounts)
 			.rpc();
 	}
@@ -562,9 +586,22 @@ export class VaultClient {
 			profitShare: number | null;
 			hurdleRate: number | null;
 			permissioned: boolean | null;
+			vaultProtocol?: UpdateVaultProtocolParams;
 		}
 	): Promise<TransactionSignature> {
-		const ix = this.program.instruction.updateVault(params, {
+		// this is a workaround to make client backwards compatible.
+		// vaultProtocol is optionally undefined, but the anchor type is optionally null.
+		// Old clients will default to undefined, and we can cast to null internally.
+		const _params: UpdateVaultParams = {
+			...params,
+			vaultProtocol: params.vaultProtocol
+			? {
+					protocolFee: params.vaultProtocol.protocolFee,
+					protocolProfitShare: params.vaultProtocol.protocolProfitShare,
+				}
+				: null,
+		};
+		const ix = this.program.instruction.updateVault(_params, {
 			accounts: {
 				vault,
 				manager: this.driftClient.wallet.publicKey,

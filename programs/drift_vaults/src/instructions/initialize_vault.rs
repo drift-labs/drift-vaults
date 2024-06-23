@@ -67,11 +67,11 @@ pub fn initialize_vault<'c: 'info, 'info>(
     vp.protocol_fee = vp_params.protocol_fee;
 
     validate!(
-        params.manager_profit_share + vp_params.protocol_profit_share < PERCENTAGE_PRECISION_U64.cast()?,
+        params.profit_share + vp_params.protocol_profit_share < PERCENTAGE_PRECISION_U64.cast()?,
         ErrorCode::InvalidVaultInitialization,
         "manager profit share protocol profit share must be < 100%"
     )?;
-    vault.manager_profit_share = params.manager_profit_share;
+    vault.profit_share = params.profit_share;
     vp.protocol_profit_share = vp_params.protocol_profit_share;
 
     vp.protocol = vp_params.protocol;
@@ -84,11 +84,11 @@ pub fn initialize_vault<'c: 'info, 'info>(
     vault.management_fee = params.management_fee;
 
     validate!(
-        params.manager_profit_share < PERCENTAGE_PRECISION_U64.cast()?,
+        params.profit_share < PERCENTAGE_PRECISION_U64.cast()?,
         ErrorCode::InvalidVaultInitialization,
         "manager profit share protocol profit share must be < 100%"
     )?;
-    vault.manager_profit_share = params.manager_profit_share;
+    vault.profit_share = params.profit_share;
   }
 
   validate!(
@@ -115,11 +115,10 @@ pub struct VaultParams {
   pub max_tokens: u64,
   pub management_fee: i64,
   pub min_deposit_amount: u64,
-  pub manager_profit_share: u32,
+  pub profit_share: u32,
   pub hurdle_rate: u32,
   pub spot_market_index: u16,
   pub permissioned: bool,
-  // todo: check is this is backwards compatible (old clients are missing field so this must serialize to None)
   pub vault_protocol: Option<VaultProtocolParams>,
 }
 
@@ -214,3 +213,33 @@ impl<'info> InitializeUserCPI for Context<'_, '_, '_, 'info, InitializeVault<'in
     Ok(())
   }
 }
+
+
+
+// #[test]
+// fn borsh_option() {
+//   use anchor_lang::prelude::borsh::{BorshDeserialize, BorshSerialize};
+//
+//   #[derive(BorshSerialize, BorshDeserialize, Debug)]
+//   struct MyStruct {
+//     field1: u32,
+//     field2: Option<u32>,
+//   }
+//
+//   // Serialized data with missing `field2`
+//   let data = vec![1, 0, 0, 0, 1, 1, 0, 0, 0]; // Only `field1` is present (value 1)
+//
+//   // Deserialize
+//   let result = MyStruct::try_from_slice(&data);
+//
+//   match result {
+//     Ok(my_struct) => {
+//       println!("field1: {}", my_struct.field1);
+//       match my_struct.field2 {
+//         Some(value) => println!("field2: {}", value),
+//         None => println!("field2: None"),
+//       }
+//     }
+//     Err(e) => println!("Error: {}", e),
+//   }
+// }

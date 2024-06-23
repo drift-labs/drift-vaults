@@ -262,7 +262,7 @@ mod vault_fcn {
         let mut vault = Vault::default();
         let mut vp = None;
         vault.management_fee = 0;
-        vault.manager_profit_share = 150_000; // 15%
+        vault.profit_share = 150_000; // 15%
 
         vault.last_fee_update_ts = now;
         let mut vault_equity: u64 = 0;
@@ -315,7 +315,7 @@ mod vault_fcn {
         let mut vault = Vault::default();
         let mut vp = None;
         vault.management_fee = 100; // .01%
-        vault.manager_profit_share = 150000; // 15%
+        vault.profit_share = 150000; // 15%
 
         vault.last_fee_update_ts = now;
         let mut vault_equity: u64 = 0;
@@ -385,7 +385,7 @@ mod vault_fcn {
         let mut vault = Vault::default();
         let mut vp = None;
         vault.management_fee = 100; // .01%
-        vault.manager_profit_share = 150000; // 15%
+        vault.profit_share = 150000; // 15%
 
         vault.last_fee_update_ts = now;
         let mut vault_equity: u64 = 0;
@@ -739,7 +739,7 @@ mod vault_v1_fcn {
         let mut vault = Vault::default();
         let vp = RefCell::new(VaultProtocol::default());
         vault.management_fee = 0;
-        vault.manager_profit_share = 150_000; // 15%
+        vault.profit_share = 150_000; // 15%
 
         vault.last_fee_update_ts = now;
         let mut vault_equity: u64 = 0;
@@ -792,7 +792,7 @@ mod vault_v1_fcn {
         let mut vault = Vault::default();
         let vp = RefCell::new(VaultProtocol::default());
         vault.management_fee = 100; // .01%
-        vault.manager_profit_share = 150000; // 15%
+        vault.profit_share = 150000; // 15%
 
         vault.last_fee_update_ts = now;
         let mut vault_equity: u64 = 0;
@@ -862,7 +862,7 @@ mod vault_v1_fcn {
         let mut vault = Vault::default();
         let vp = RefCell::new(VaultProtocol::default());
         vault.management_fee = 100; // .01%
-        vault.manager_profit_share = 150000; // 15%
+        vault.profit_share = 150000; // 15%
 
         vault.last_fee_update_ts = now;
         let mut vault_equity: u64 = 0;

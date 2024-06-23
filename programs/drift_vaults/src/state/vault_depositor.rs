@@ -187,7 +187,7 @@ impl VaultDepositor {
         if profit > 0 {
             let profit_u128 = profit.cast::<u128>()?;
 
-            let manager_profit_share_amount = profit_u128.safe_mul(vault.manager_profit_share.cast()?)?.safe_div(PERCENTAGE_PRECISION)?;
+            let manager_profit_share_amount = profit_u128.safe_mul(vault.profit_share.cast()?)?.safe_div(PERCENTAGE_PRECISION)?;
             let protocol_profit_share_amount = match vault_protocol {
                 None => 0,
                 Some(vp) => profit_u128.safe_mul(vp.protocol_profit_share.cast()?)?.safe_div(PERCENTAGE_PRECISION)?
@@ -858,7 +858,7 @@ mod vault_v1_tests {
         assert_eq!(vault.user_shares, 100_000_000);
         assert_eq!(vault.total_shares, 200_000_000);
 
-        vault.manager_profit_share = 100_000; // 10% profit share
+        vault.profit_share = 100_000; // 10% profit share
         vp.borrow_mut().protocol_profit_share = 50_000; // 5% profit share
         vault_equity = 400 * QUOTE_PRECISION_U64; // vault gains 100% in value ($200 -> $400)
 
@@ -924,7 +924,7 @@ mod vault_v1_tests {
         assert_eq!(vault.user_shares, 100_000_000);
         assert_eq!(vault.total_shares, 200_000_000);
 
-        vault.manager_profit_share = 100_000; // 10% profit share
+        vault.profit_share = 100_000; // 10% profit share
         vault_equity = 400 * QUOTE_PRECISION_U64; // vault gains 100% in value ($200 -> $400)
 
         // withdraw principal
@@ -981,7 +981,7 @@ mod vault_v1_tests {
         assert_eq!(vault.user_shares, 100_000_000);
         assert_eq!(vault.total_shares, 200_000_000);
 
-        vault.manager_profit_share = 100_000; // 10% profit share
+        vault.profit_share = 100_000; // 10% profit share
         vp.borrow_mut().protocol_profit_share = 50_000; // 5% profit share
         vault_equity = 400 * QUOTE_PRECISION_U64; // up 100%
 
@@ -1062,7 +1062,7 @@ mod vault_v1_tests {
         assert_eq!(vault.user_shares, 100_000_000);
         assert_eq!(vault.total_shares, 200_000_000);
 
-        vault.manager_profit_share = 100_000; // 10% profit share
+        vault.profit_share = 100_000; // 10% profit share
         vault_equity = 400 * QUOTE_PRECISION_U64; // up 100%
 
         // withdraw all
@@ -1142,7 +1142,7 @@ mod vault_v1_tests {
         assert_eq!(vault.user_shares, 100000000);
         assert_eq!(vault.total_shares, 200000000);
 
-        vault.manager_profit_share = 100_000; // 10% profit share
+        vault.profit_share = 100_000; // 10% profit share
         // vault_protocol.protocol_profit_share = 50_000; // 5% profit share
         vault_equity = 400 * QUOTE_PRECISION_U64; // up 100%
 
@@ -1207,7 +1207,7 @@ mod vault_v1_tests {
         assert_eq!(vault.user_shares, 100000000);
         assert_eq!(vault.total_shares, 200000000);
 
-        vault.manager_profit_share = 100_000; // 10% profit share
+        vault.profit_share = 100_000; // 10% profit share
         vp.borrow_mut().protocol_profit_share = 50_000; // 5% profit share
         vault.redeem_period = 3600; // 1 hour
         vault_equity = 100 * QUOTE_PRECISION_U64; // down 50%
@@ -1277,7 +1277,7 @@ mod vault_v1_tests {
         assert_eq!(vault.user_shares, 100000000);
         assert_eq!(vault.total_shares, 200000000);
 
-        vault.manager_profit_share = 100_000; // 10% profit share
+        vault.profit_share = 100_000; // 10% profit share
         vp.borrow_mut().protocol_profit_share = 50_000; // 5% profit share
         vault.redeem_period = 3600; // 1 hour
         vault_equity = 200 * QUOTE_PRECISION_U64;
