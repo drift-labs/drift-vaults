@@ -9,9 +9,8 @@ use drift::state::spot_market::SpotMarket;
 use crate::{error::ErrorCode, Size, validate};
 use crate::constants::ONE_DAY;
 use crate::drift_cpi::InitializeUserCPI;
-use crate::state::{Vault, VaultProtocolProvider};
+use crate::state::{Vault, VaultProtocol, VaultProtocolProvider};
 
-// todo
 pub fn initialize_vault<'c: 'info, 'info>(
   ctx: Context<'_, '_, 'c, 'info, InitializeVault<'info>>,
   params: VaultParams,
@@ -29,16 +28,10 @@ pub fn initialize_vault<'c: 'info, 'info>(
   vault.init_ts = Clock::get()?.unix_timestamp;
 
   // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
-  let mut vp = ctx.vault_protocol();
+  // let mut vp = ctx.vault_protocol();
+  let mut vp: Option<AccountLoader<crate::state::VaultProtocol>> = None;
+  
   let vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
-
-  let vp_key = match &vp {
-    None => None,
-    Some(vp) => {
-      let seeds = vp.get_vault_protocol_seeds(ctx.accounts.vault.to_account_info().key.as_ref(), &vp.bump);
-      Some(Pubkey::find_program_address(&seeds, ctx.program_id).0)
-    }
-  };
 
   validate!(
       params.redeem_period < ONE_DAY * 90,
@@ -49,13 +42,6 @@ pub fn initialize_vault<'c: 'info, 'info>(
 
   vault.max_tokens = params.max_tokens;
   vault.min_deposit_amount = params.min_deposit_amount;
-
-  if let Some(vp_key) = vp_key {
-    vault.vault_protocol = vp_key;
-  } else {
-    // clients can determine if [`VaultProtocol`] is none by checking if the pubkey is default.
-    vault.vault_protocol = Pubkey::default();
-  }
 
   if let (Some(mut vp), Some(vp_params)) = (vp, params.vault_protocol) {
     validate!(
@@ -138,6 +124,14 @@ pub struct InitializeVault<'info> {
   bump,
   payer = payer)]
   pub vault: AccountLoader<'info, Vault>,
+
+  // #[account(init,
+  // seeds = [b"vault_protocol", vault.key().as_ref()],
+  // space = VaultProtocol::SIZE,
+  // bump,
+  // payer = payer)]
+  // pub vault_protocol: Option<AccountLoader<'info, VaultProtocol>>,
+  
   #[account(init,
   seeds = [b"vault_token_account".as_ref(), vault.key().as_ref()],
   bump,

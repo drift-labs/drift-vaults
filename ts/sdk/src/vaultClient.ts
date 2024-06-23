@@ -106,7 +106,6 @@ export class VaultClient {
 			vault
 		);
 		return {
-			// todo: this didn't have "as unknown" before it added vaultProtocol
 			vault: vaultAndSlot.data as Vault,
 			slot: vaultAndSlot.context.slot,
 		};
@@ -270,13 +269,7 @@ export class VaultClient {
 		// Old clients will default to undefined, and we can cast to null internally.
 		const _params: VaultParams = {
 			...params,
-			vaultProtocol: params.vaultProtocol
-				? {
-					protocol: params.vaultProtocol.protocol,
-					protocolFee: params.vaultProtocol.protocolFee,
-					protocolProfitShare: params.vaultProtocol.protocolProfitShare,
-				}
-				: null,
+			vaultProtocol: params.vaultProtocol ? params.vaultProtocol : null,
 		};
 
 		const vault = getVaultAddressSync(this.program.programId, params.name);
@@ -460,17 +453,15 @@ export class VaultClient {
 				.remainingAccounts(remainingAccounts)
 				.rpc();
 		} else {
-			const requestWithdrawIx = this.program.instruction.managerRequestWithdraw(
-				amount,
-				withdrawUnit,
-				{
-					accounts: {
-						manager: this.driftClient.wallet.publicKey,
-						...accounts,
-					},
-					remainingAccounts,
-				}
-			);
+			const requestWithdrawIx = await this.program.methods
+				// @ts-ignore, 0.29.0 anchor issues..
+				.managerRequestWithdraw(amount, withdrawUnit)
+				.accounts({
+					manager: this.driftClient.wallet.publicKey,
+					...accounts,
+				})
+				.remainingAccounts(remainingAccounts)
+				.instruction();
 
 			return await this.createAndSendTxn([requestWithdrawIx]);
 		}
@@ -594,12 +585,7 @@ export class VaultClient {
 		// Old clients will default to undefined, and we can cast to null internally.
 		const _params: UpdateVaultParams = {
 			...params,
-			vaultProtocol: params.vaultProtocol
-			? {
-					protocolFee: params.vaultProtocol.protocolFee,
-					protocolProfitShare: params.vaultProtocol.protocolProfitShare,
-				}
-				: null,
+			vaultProtocol: params.vaultProtocol ? params.vaultProtocol : null,
 		};
 		const ix = this.program.instruction.updateVault(_params, {
 			accounts: {
@@ -857,17 +843,15 @@ export class VaultClient {
 				.remainingAccounts(remainingAccounts)
 				.rpc();
 		} else {
-			const requestWithdrawIx = this.program.instruction.requestWithdraw(
-				amount,
-				withdrawUnit,
-				{
-					accounts: {
-						authority: this.driftClient.wallet.publicKey,
-						...accounts,
-					},
-					remainingAccounts,
-				}
-			);
+			const requestWithdrawIx = await this.program.methods
+				// @ts-ignore
+				.requestWithdraw(amount, withdrawUnit)
+				.accounts({
+					authority: this.driftClient.wallet.publicKey,
+					...accounts,
+				})
+				.remainingAccounts(remainingAccounts)
+				.instruction();
 
 			return await this.createAndSendTxn([requestWithdrawIx], txParams);
 		}

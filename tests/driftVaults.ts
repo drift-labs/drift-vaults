@@ -387,6 +387,7 @@ describe('driftVaults', () => {
 
 			const initCompetitorTx = await vaultClient.initializeCompetitor(
 				vault,
+				// @ts-ignore
 				competitionsClient,
 				competitionName
 			);
