@@ -50,7 +50,7 @@ const_assert_eq!(
 );
 
 impl VaultProtocol {
-    pub fn get_vault_protocol_seeds<'a>(&self, vault: &'a [u8], bump: &'a u8) -> [&'a [u8]; 3] {
+    pub fn get_vault_protocol_seeds<'a>(vault: &'a [u8], bump: &'a u8) -> [&'a [u8]; 3] {
         [b"vault_protocol".as_ref(), vault, bytemuck::bytes_of(bump)]
     }
 }
