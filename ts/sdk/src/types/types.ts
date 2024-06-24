@@ -26,7 +26,7 @@ export type VaultParams = {
 	maxTokens: BN;
 	minDepositAmount: BN;
 	managementFee: BN;
-  profitShare: number;
+	profitShare: number;
 	hurdleRate: number;
 	permissioned: boolean;
 	vaultProtocol: VaultProtocolParams | null;

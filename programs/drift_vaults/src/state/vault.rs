@@ -3,11 +3,11 @@ use std::cell::RefMut;
 use anchor_lang::prelude::*;
 use drift::math::casting::Cast;
 use drift::math::constants::{ONE_YEAR, PERCENTAGE_PRECISION, PERCENTAGE_PRECISION_I128};
+use drift::math::insurance::calculate_rebase_info;
 use drift::math::insurance::{
     if_shares_to_vault_amount as depositor_shares_to_vault_amount,
     vault_amount_to_if_shares as vault_amount_to_depositor_shares,
 };
-use drift::math::insurance::calculate_rebase_info;
 use drift::math::margin::calculate_user_equity;
 use drift::math::safe_math::SafeMath;
 use drift::state::oracle_map::OracleMap;
@@ -17,13 +17,13 @@ use drift::state::user::User;
 use drift_macros::assert_no_slop;
 use static_assertions::const_assert_eq;
 
-use crate::{Size, validate, VaultDepositor, WithdrawUnit};
 use crate::constants::TIME_FOR_LIQUIDATION;
 use crate::error::{ErrorCode, VaultResult};
 use crate::events::{VaultDepositorAction, VaultDepositorV1Record};
-use crate::state::{VaultFee, VaultProtocol};
 use crate::state::events::VaultDepositorRecord;
 use crate::state::withdraw_request::WithdrawRequest;
+use crate::state::{VaultFee, VaultProtocol};
+use crate::{validate, Size, VaultDepositor, WithdrawUnit};
 
 #[assert_no_slop]
 #[account(zero_copy(unsafe))]
@@ -105,21 +105,27 @@ pub struct Vault {
     pub padding: [u64; 4],
 }
 
+impl Vault {
+    pub fn get_vault_signer_seeds<'a>(name: &'a [u8], bump: &'a u8) -> [&'a [u8]; 3] {
+        [b"vault".as_ref(), name, bytemuck::bytes_of(bump)]
+    }
+}
+
 impl Size for Vault {
     const SIZE: usize = 528 + 8;
 }
 const_assert_eq!(Vault::SIZE, std::mem::size_of::<Vault>() + 8);
 
 impl Vault {
-  pub fn get_vault_signer_seeds<'a>(name: &'a [u8], bump: &'a u8) -> [&'a [u8]; 3] {
-    [b"vault".as_ref(), name, bytemuck::bytes_of(bump)]
-  }
-}
-
-impl Vault {
-    pub fn apply_fee(&mut self, vault_protocol: &mut Option<RefMut<VaultProtocol>>, vault_equity: u64, now: i64) -> Result<VaultFee> {
-        // calculate management fee
-        let depositor_equity = depositor_shares_to_vault_amount(self.user_shares, self.total_shares, vault_equity)?.cast::<i128>()?;
+    pub fn apply_fee(
+        &mut self,
+        vault_protocol: &mut Option<RefMut<VaultProtocol>>,
+        vault_equity: u64,
+        now: i64,
+    ) -> Result<VaultFee> {
+        let depositor_equity =
+            depositor_shares_to_vault_amount(self.user_shares, self.total_shares, vault_equity)?
+                .cast::<i128>()?;
         let management_fee_payment: i128 = 0;
         let mut management_fee_shares: i128 = 0;
         let protocol_fee_payment: i128 = 0;
@@ -128,85 +134,188 @@ impl Vault {
 
         match vault_protocol {
             None => {
-                let since_last = now.safe_sub(self.last_fee_update_ts)?;
-
-                // default behavior in legacy [`Vault`], manager taxes equity - 1 if tax is >= equity
-                let management_fee_payment = depositor_equity.safe_mul(self.management_fee.cast()?)?.safe_div(PERCENTAGE_PRECISION_I128)?.safe_mul(since_last.cast()?)?.safe_div(ONE_YEAR.cast()?)?.min(depositor_equity.saturating_sub(1));
-
-                let new_total_shares_factor: u128 = depositor_equity.safe_mul(PERCENTAGE_PRECISION_I128)?.safe_div(
-                    depositor_equity.safe_sub(management_fee_payment)?
-                )?.cast()?;
-
-                let new_total_shares = self.total_shares.safe_mul(new_total_shares_factor.cast()?)?.safe_div(PERCENTAGE_PRECISION)?.max(self.user_shares);
-
-                if management_fee_payment == 0 || self.total_shares == new_total_shares {
-                    // time delta wasn't large enough to pay any management/protocol fee
-                    skip_ts_update = true;
-                }
-
-                management_fee_shares = new_total_shares.cast::<i128>()?.safe_sub(self.total_shares.cast()?)?;
-                self.total_shares = new_total_shares;
-                self.manager_total_fee = self.manager_total_fee.saturating_add(management_fee_payment.cast()?);
-
-                // in case total_shares is pushed to level that warrants a rebase
-                self.apply_rebase(&mut None, vault_equity)?;
-            }
-            Some(vp) => {
-                if self.management_fee != 0 && vp.protocol_fee != 0 && depositor_equity > 0 {
+                if self.management_fee != 0 && depositor_equity > 0 {
                     let since_last = now.safe_sub(self.last_fee_update_ts)?;
-                    let total_fee = self.management_fee.safe_add(vp.protocol_fee.cast()?)?.cast::<i128>()?;
 
-                    // if protocol fee is non-zero and total fee would lead to zero equity remaining,
-                    // then tax equity - 1 but only for the protocol, so that the user is left with 1 and the manager retains their full fee.
-                    let total_fee_payment = depositor_equity.safe_mul(total_fee)?.safe_div(PERCENTAGE_PRECISION_I128)?.safe_mul(since_last.cast()?)?.safe_div(ONE_YEAR.cast()?)?;
-                    let management_fee_payment = total_fee_payment.safe_mul(self.management_fee.cast()?)?.safe_div(total_fee)?;
-                    let protocol_fee_payment = total_fee_payment.min(depositor_equity.saturating_sub(1)).safe_mul(vp.protocol_fee.cast()?)?.safe_div(total_fee)?;
+                    // default behavior in legacy [`Vault`], manager taxes equity - 1 if tax is >= equity
+                    let management_fee_payment = depositor_equity
+                        .safe_mul(self.management_fee.cast()?)?
+                        .safe_div(PERCENTAGE_PRECISION_I128)?
+                        .safe_mul(since_last.cast()?)?
+                        .safe_div(ONE_YEAR.cast()?)?
+                        .min(depositor_equity.saturating_sub(1));
 
-                    let new_total_shares_factor: u128 = depositor_equity.safe_mul(PERCENTAGE_PRECISION_I128)?.safe_div(
-                        depositor_equity.safe_sub(management_fee_payment)?.safe_sub(protocol_fee_payment)?
-                    )?.cast()?;
+                    let new_total_shares_factor: u128 = depositor_equity
+                        .safe_mul(PERCENTAGE_PRECISION_I128)?
+                        .safe_div(depositor_equity.safe_sub(management_fee_payment)?)?
+                        .cast()?;
 
-                    let new_total_shares = self.total_shares.safe_mul(new_total_shares_factor.cast()?)?.safe_div(PERCENTAGE_PRECISION)?.max(self.user_shares);
+                    let new_total_shares = self
+                        .total_shares
+                        .safe_mul(new_total_shares_factor.cast()?)?
+                        .safe_div(PERCENTAGE_PRECISION)?
+                        .max(self.user_shares);
 
-                    if (management_fee_payment == 0 && protocol_fee_payment == 0) || self.total_shares == new_total_shares {
+                    if management_fee_payment == 0 || self.total_shares == new_total_shares {
                         // time delta wasn't large enough to pay any management/protocol fee
                         skip_ts_update = true;
                     }
 
-                    management_fee_shares = new_total_shares.cast::<i128>()?.safe_sub(self.total_shares.cast()?)?;
+                    management_fee_shares = new_total_shares
+                        .cast::<i128>()?
+                        .safe_sub(self.total_shares.cast()?)?;
                     self.total_shares = new_total_shares;
-                    self.manager_total_fee = self.manager_total_fee.saturating_add(management_fee_payment.cast()?);
+                    self.manager_total_fee = self
+                        .manager_total_fee
+                        .saturating_add(management_fee_payment.cast()?);
 
-                    protocol_fee_shares = new_total_shares.cast::<i128>()?.safe_sub(self.total_shares.cast()?)?;
-                    vp.protocol_total_fee = vp.protocol_total_fee.saturating_add(protocol_fee_payment.cast()?);
-                    vp.protocol_profit_and_fee_shares = vp.protocol_profit_and_fee_shares.safe_add(protocol_fee_shares.cast()?)?;
+                    // in case total_shares is pushed to level that warrants a rebase
+                    self.apply_rebase(&mut None, vault_equity)?;
+                }
+            }
+            Some(vp) => {
+                if self.management_fee != 0 && vp.protocol_fee != 0 && depositor_equity > 0 {
+                    let since_last = now.safe_sub(self.last_fee_update_ts)?;
+                    let total_fee = self
+                        .management_fee
+                        .safe_add(vp.protocol_fee.cast()?)?
+                        .cast::<i128>()?;
+
+                    // if protocol fee is non-zero and total fee would lead to zero equity remaining,
+                    // so tax equity - 1 but only for the protocol, so that the user is left with 1 and the manager retains their full fee.
+                    let total_fee_payment = depositor_equity
+                        .safe_mul(total_fee)?
+                        .safe_div(PERCENTAGE_PRECISION_I128)?
+                        .safe_mul(since_last.cast()?)?
+                        .safe_div(ONE_YEAR.cast()?)?;
+                    let management_fee_payment = total_fee_payment
+                        .safe_mul(self.management_fee.cast()?)?
+                        .safe_div(total_fee)?;
+                    let protocol_fee_payment = total_fee_payment
+                        .min(depositor_equity.saturating_sub(1))
+                        .safe_mul(vp.protocol_fee.cast()?)?
+                        .safe_div(total_fee)?;
+
+                    let new_total_shares_factor: u128 = depositor_equity
+                        .safe_mul(PERCENTAGE_PRECISION_I128)?
+                        .safe_div(
+                            depositor_equity
+                                .safe_sub(management_fee_payment)?
+                                .safe_sub(protocol_fee_payment)?,
+                        )?
+                        .cast()?;
+
+                    let new_total_shares = self
+                        .total_shares
+                        .safe_mul(new_total_shares_factor.cast()?)?
+                        .safe_div(PERCENTAGE_PRECISION)?
+                        .max(self.user_shares);
+
+                    if (management_fee_payment == 0 && protocol_fee_payment == 0)
+                        || self.total_shares == new_total_shares
+                    {
+                        // time delta wasn't large enough to pay any management/protocol fee
+                        skip_ts_update = true;
+                    }
+
+                    management_fee_shares = new_total_shares
+                        .cast::<i128>()?
+                        .safe_sub(self.total_shares.cast()?)?;
+                    self.total_shares = new_total_shares;
+                    self.manager_total_fee = self
+                        .manager_total_fee
+                        .saturating_add(management_fee_payment.cast()?);
+
+                    protocol_fee_shares = new_total_shares
+                        .cast::<i128>()?
+                        .safe_sub(self.total_shares.cast()?)?;
+                    vp.protocol_total_fee = vp
+                        .protocol_total_fee
+                        .saturating_add(protocol_fee_payment.cast()?);
+                    vp.protocol_profit_and_fee_shares = vp
+                        .protocol_profit_and_fee_shares
+                        .safe_add(protocol_fee_shares.cast()?)?;
 
                     // in case total_shares is pushed to level that warrants a rebase
                     self.apply_rebase(vault_protocol, vault_equity)?;
-                } else if self.management_fee == 0 && vp.protocol_fee != 0 && depositor_equity != 0 {
+                } else if self.management_fee == 0 && vp.protocol_fee != 0 && depositor_equity != 0
+                {
                     let since_last = now.safe_sub(self.last_fee_update_ts)?;
 
                     // default behavior in legacy [`Vault`], manager taxes equity - 1 if tax is >= equity
-                    let protocol_fee_payment = depositor_equity.safe_mul(vp.protocol_fee.cast()?)?.safe_div(PERCENTAGE_PRECISION_I128)?.safe_mul(since_last.cast()?)?.safe_div(ONE_YEAR.cast()?)?.min(depositor_equity.saturating_sub(1));
+                    let protocol_fee_payment = depositor_equity
+                        .safe_mul(vp.protocol_fee.cast()?)?
+                        .safe_div(PERCENTAGE_PRECISION_I128)?
+                        .safe_mul(since_last.cast()?)?
+                        .safe_div(ONE_YEAR.cast()?)?
+                        .min(depositor_equity.saturating_sub(1));
 
-                    let new_total_shares_factor: u128 = depositor_equity.safe_mul(PERCENTAGE_PRECISION_I128)?.safe_div(
-                        depositor_equity.safe_sub(protocol_fee_payment)?
-                    )?.cast()?;
+                    let new_total_shares_factor: u128 = depositor_equity
+                        .safe_mul(PERCENTAGE_PRECISION_I128)?
+                        .safe_div(depositor_equity.safe_sub(protocol_fee_payment)?)?
+                        .cast()?;
 
-                    let new_total_shares = self.total_shares.safe_mul(new_total_shares_factor.cast()?)?.safe_div(PERCENTAGE_PRECISION)?.max(self.user_shares);
+                    let new_total_shares = self
+                        .total_shares
+                        .safe_mul(new_total_shares_factor.cast()?)?
+                        .safe_div(PERCENTAGE_PRECISION)?
+                        .max(self.user_shares);
 
                     if protocol_fee_payment == 0 || self.total_shares == new_total_shares {
                         // time delta wasn't large enough to pay any management/protocol fee
                         skip_ts_update = true;
                     }
 
-                    protocol_fee_shares = new_total_shares.cast::<i128>()?.safe_sub(self.total_shares.cast()?)?;
+                    protocol_fee_shares = new_total_shares
+                        .cast::<i128>()?
+                        .safe_sub(self.total_shares.cast()?)?;
                     self.total_shares = new_total_shares;
-                    vp.protocol_total_fee = vp.protocol_total_fee.saturating_add(protocol_fee_payment.cast()?);
-                    vp.protocol_profit_and_fee_shares = vp.protocol_profit_and_fee_shares.safe_add(protocol_fee_shares.cast()?)?;
+                    vp.protocol_total_fee = vp
+                        .protocol_total_fee
+                        .saturating_add(protocol_fee_payment.cast()?);
+                    vp.protocol_profit_and_fee_shares = vp
+                        .protocol_profit_and_fee_shares
+                        .safe_add(protocol_fee_shares.cast()?)?;
 
                     // in case total_shares is pushed to level that warrants a rebase
                     self.apply_rebase(vault_protocol, vault_equity)?;
+                } else if self.management_fee != 0 && vp.protocol_fee == 0 && depositor_equity > 0 {
+                    let since_last = now.safe_sub(self.last_fee_update_ts)?;
+
+                    // default behavior in legacy [`Vault`], manager taxes equity - 1 if tax is >= equity
+                    let management_fee_payment = depositor_equity
+                        .safe_mul(self.management_fee.cast()?)?
+                        .safe_div(PERCENTAGE_PRECISION_I128)?
+                        .safe_mul(since_last.cast()?)?
+                        .safe_div(ONE_YEAR.cast()?)?
+                        .min(depositor_equity.saturating_sub(1));
+
+                    let new_total_shares_factor: u128 = depositor_equity
+                        .safe_mul(PERCENTAGE_PRECISION_I128)?
+                        .safe_div(depositor_equity.safe_sub(management_fee_payment)?)?
+                        .cast()?;
+
+                    let new_total_shares = self
+                        .total_shares
+                        .safe_mul(new_total_shares_factor.cast()?)?
+                        .safe_div(PERCENTAGE_PRECISION)?
+                        .max(self.user_shares);
+
+                    if management_fee_payment == 0 || self.total_shares == new_total_shares {
+                        // time delta wasn't large enough to pay any management/protocol fee
+                        skip_ts_update = true;
+                    }
+
+                    management_fee_shares = new_total_shares
+                        .cast::<i128>()?
+                        .safe_sub(self.total_shares.cast()?)?;
+                    self.total_shares = new_total_shares;
+                    self.manager_total_fee = self
+                        .manager_total_fee
+                        .saturating_add(management_fee_payment.cast()?);
+
+                    // in case total_shares is pushed to level that warrants a rebase
+                    self.apply_rebase(&mut None, vault_equity)?;
                 }
             }
         }
@@ -223,37 +332,49 @@ impl Vault {
         })
     }
 
-    pub fn get_manager_shares(&self, vault_protocol: &mut Option<RefMut<VaultProtocol>>) -> VaultResult<u128> {
+    pub fn get_manager_shares(
+        &self,
+        vault_protocol: &mut Option<RefMut<VaultProtocol>>,
+    ) -> VaultResult<u128> {
         Ok(match vault_protocol {
             None => self.total_shares.safe_sub(self.user_shares)?,
-            Some(vp) => self.total_shares.safe_sub(self.user_shares)?.safe_sub(vp.protocol_profit_and_fee_shares)?
+            Some(vp) => self
+                .total_shares
+                .safe_sub(self.user_shares)?
+                .safe_sub(vp.protocol_profit_and_fee_shares)?,
         })
     }
 
     pub fn get_protocol_shares(&self, vault_protocol: &mut Option<RefMut<VaultProtocol>>) -> u128 {
         match vault_protocol {
             None => 0,
-            Some(vp) => vp.protocol_profit_and_fee_shares
+            Some(vp) => vp.protocol_profit_and_fee_shares,
         }
     }
 
     pub fn get_profit_share(&self, vault_protocol: &Option<&VaultProtocol>) -> VaultResult<u32> {
         Ok(match vault_protocol {
             None => self.profit_share,
-            Some(vp) => self.profit_share.safe_add(vp.protocol_profit_share)?
+            Some(vp) => self.profit_share.safe_add(vp.protocol_profit_share)?,
         })
     }
 
-    pub fn apply_rebase(&mut self, vault_protocol: &mut Option<RefMut<VaultProtocol>>, vault_equity: u64) -> Result<()> {
+    pub fn apply_rebase(
+        &mut self,
+        vault_protocol: &mut Option<RefMut<VaultProtocol>>,
+        vault_equity: u64,
+    ) -> Result<()> {
         if vault_equity != 0 && vault_equity.cast::<u128>()? < self.total_shares {
-            let (expo_diff, rebase_divisor) = calculate_rebase_info(self.total_shares, vault_equity)?;
+            let (expo_diff, rebase_divisor) =
+                calculate_rebase_info(self.total_shares, vault_equity)?;
 
             if expo_diff != 0 {
                 self.total_shares = self.total_shares.safe_div(rebase_divisor)?;
                 self.user_shares = self.user_shares.safe_div(rebase_divisor)?;
                 self.shares_base = self.shares_base.safe_add(expo_diff)?;
                 if let Some(vp) = vault_protocol {
-                    vp.protocol_profit_and_fee_shares = vp.protocol_profit_and_fee_shares.safe_div(rebase_divisor)?;
+                    vp.protocol_profit_and_fee_shares =
+                        vp.protocol_profit_and_fee_shares.safe_div(rebase_divisor)?;
                 }
                 msg!("rebasing vault: expo_diff={}", expo_diff);
             }
@@ -273,7 +394,8 @@ impl Vault {
         spot_market_map: &SpotMarketMap,
         oracle_map: &mut OracleMap,
     ) -> VaultResult<u64> {
-        let (vault_equity, all_oracles_valid) = calculate_user_equity(user, perp_market_map, spot_market_map, oracle_map)?;
+        let (vault_equity, all_oracles_valid) =
+            calculate_user_equity(user, perp_market_map, spot_market_map, oracle_map)?;
 
         validate!(
             all_oracles_valid,
@@ -288,25 +410,38 @@ impl Vault {
 
         let spot_market = spot_market_map.get_ref(&self.spot_market_index)?;
         let spot_market_precision = spot_market.get_precision().cast::<i128>()?;
-        let oracle_price = oracle_map.get_price_data(&spot_market.oracle)?.price.cast::<i128>()?;
+        let oracle_price = oracle_map
+            .get_price_data(&spot_market.oracle)?
+            .price
+            .cast::<i128>()?;
 
-        Ok(vault_equity.safe_mul(spot_market_precision)?.safe_div(oracle_price)?.cast::<u64>()?)
+        Ok(vault_equity
+            .safe_mul(spot_market_precision)?
+            .safe_div(oracle_price)?
+            .cast::<u64>()?)
     }
 
-    pub fn manager_deposit(&mut self, vault_protocol: &mut Option<RefMut<VaultProtocol>>, amount: u64, vault_equity: u64, now: i64) -> Result<()> {
+    pub fn manager_deposit(
+        &mut self,
+        vault_protocol: &mut Option<RefMut<VaultProtocol>>,
+        amount: u64,
+        vault_equity: u64,
+        now: i64,
+    ) -> Result<()> {
         self.apply_rebase(vault_protocol, vault_equity)?;
         let VaultFee {
             management_fee_payment,
             management_fee_shares,
             protocol_fee_payment,
-            protocol_fee_shares
+            protocol_fee_shares,
         } = self.apply_fee(vault_protocol, vault_equity, now)?;
 
         let user_vault_shares_before = self.user_shares;
         let total_vault_shares_before = self.total_shares;
         let vault_shares_before: u128 = self.get_manager_shares(vault_protocol)?;
 
-        let n_shares = vault_amount_to_depositor_shares(amount, total_vault_shares_before, vault_equity)?;
+        let n_shares =
+            vault_amount_to_depositor_shares(amount, total_vault_shares_before, vault_equity)?;
 
         self.total_deposits = self.total_deposits.saturating_add(amount);
         self.manager_total_deposits = self.manager_total_deposits.saturating_add(amount);
@@ -398,8 +533,10 @@ impl Vault {
             management_fee_payment,
             management_fee_shares,
             protocol_fee_payment,
-            protocol_fee_shares
+            protocol_fee_shares,
         } = self.apply_fee(vault_protocol, vault_equity, now)?;
+        println!("proto fee: {}", protocol_fee_shares);
+        println!("mgmt fee: {}", management_fee_shares);
 
         let vault_shares_before: u128 = self.get_manager_shares(vault_protocol)?;
 
@@ -411,15 +548,17 @@ impl Vault {
         )?;
 
         validate!(
-        n_shares > 0,
-        ErrorCode::InvalidVaultWithdrawSize,
-        "Requested n_shares = 0"
-    )?;
+            n_shares > 0,
+            ErrorCode::InvalidVaultWithdrawSize,
+            "Requested n_shares = 0"
+        )?;
         validate!(
-      vault_shares_before >= n_shares,
-      ErrorCode::InvalidVaultWithdrawSize,
-      "Requested n_shares={} > manager shares={}", n_shares, vault_shares_before,
-    )?;
+            vault_shares_before >= n_shares,
+            ErrorCode::InvalidVaultWithdrawSize,
+            "Requested n_shares={} > manager shares={}",
+            n_shares,
+            vault_shares_before,
+        )?;
 
         let total_vault_shares_before = self.total_shares;
         let user_vault_shares_before = self.user_shares;
@@ -481,7 +620,6 @@ impl Vault {
             }
         }
 
-
         Ok(())
     }
 
@@ -501,10 +639,12 @@ impl Vault {
             management_fee_payment,
             management_fee_shares,
             protocol_fee_payment,
-            protocol_fee_shares
+            protocol_fee_shares,
         } = self.apply_fee(vault_protocol, vault_equity, now)?;
 
-        let vault_shares_lost = self.last_manager_withdraw_request.calculate_shares_lost(self, vault_equity)?;
+        let vault_shares_lost = self
+            .last_manager_withdraw_request
+            .calculate_shares_lost(self, vault_equity)?;
 
         self.total_shares = self.total_shares.safe_sub(vault_shares_lost)?;
 
@@ -558,15 +698,22 @@ impl Vault {
             }
         }
 
-
-        self.total_withdraw_requested = self.total_withdraw_requested.safe_sub(self.last_manager_withdraw_request.value)?;
+        self.total_withdraw_requested = self
+            .total_withdraw_requested
+            .safe_sub(self.last_manager_withdraw_request.value)?;
         self.last_manager_withdraw_request.reset(now)?;
 
         Ok(())
     }
 
-    pub fn manager_withdraw(&mut self, vault_protocol: &mut Option<RefMut<VaultProtocol>>, vault_equity: u64, now: i64) -> Result<u64> {
-        self.last_manager_withdraw_request.check_redeem_period_finished(self, now)?;
+    pub fn manager_withdraw(
+        &mut self,
+        vault_protocol: &mut Option<RefMut<VaultProtocol>>,
+        vault_equity: u64,
+        now: i64,
+    ) -> Result<u64> {
+        self.last_manager_withdraw_request
+            .check_redeem_period_finished(self, now)?;
 
         self.apply_rebase(vault_protocol, vault_equity)?;
 
@@ -574,7 +721,7 @@ impl Vault {
             management_fee_payment,
             management_fee_shares,
             protocol_fee_payment,
-            protocol_fee_shares
+            protocol_fee_shares,
         } = self.apply_fee(vault_protocol, vault_equity, now)?;
 
         let vault_shares_before: u128 = self.get_manager_shares(vault_protocol)?;
@@ -584,20 +731,21 @@ impl Vault {
         let n_shares = self.last_manager_withdraw_request.shares;
 
         validate!(
-        n_shares > 0,
-        ErrorCode::InvalidVaultWithdraw,
-        "Must submit withdraw request and wait the redeem_period ({} seconds)",
-        self.redeem_period
-    )?;
+            n_shares > 0,
+            ErrorCode::InvalidVaultWithdraw,
+            "Must submit withdraw request and wait the redeem_period ({} seconds)",
+            self.redeem_period
+        )?;
 
-        let amount: u64 = depositor_shares_to_vault_amount(n_shares, self.total_shares, vault_equity)?;
+        let amount: u64 =
+            depositor_shares_to_vault_amount(n_shares, self.total_shares, vault_equity)?;
 
         let n_tokens = amount.min(self.last_manager_withdraw_request.value);
 
         validate!(
-        vault_shares_before >= n_shares,
-        ErrorCode::InsufficientVaultShares
-    )?;
+            vault_shares_before >= n_shares,
+            ErrorCode::InsufficientVaultShares
+        )?;
 
         self.total_withdraws = self.total_withdraws.saturating_add(n_tokens);
         self.manager_total_withdraws = self.manager_total_withdraws.saturating_add(n_tokens);
@@ -607,12 +755,12 @@ impl Vault {
         let vault_shares_before = self.get_manager_shares(vault_protocol)?;
 
         validate!(
-        vault_shares_before >= n_shares,
-        ErrorCode::InvalidVaultWithdrawSize,
-        "vault_shares_before={} < n_shares={}",
-        vault_shares_before,
-        n_shares
-    )?;
+            vault_shares_before >= n_shares,
+            ErrorCode::InvalidVaultWithdrawSize,
+            "vault_shares_before={} < n_shares={}",
+            vault_shares_before,
+            n_shares
+        )?;
 
         self.total_shares = self.total_shares.safe_sub(n_shares)?;
         let vault_shares_after = self.get_manager_shares(vault_protocol)?;
@@ -663,8 +811,9 @@ impl Vault {
             }
         }
 
-
-        self.total_withdraw_requested = self.total_withdraw_requested.safe_sub(self.last_manager_withdraw_request.value)?;
+        self.total_withdraw_requested = self
+            .total_withdraw_requested
+            .safe_sub(self.last_manager_withdraw_request.value)?;
         self.last_manager_withdraw_request.reset(now)?;
 
         Ok(n_tokens)
@@ -707,7 +856,7 @@ impl Vault {
             management_fee_payment,
             management_fee_shares,
             protocol_fee_payment,
-            protocol_fee_shares
+            protocol_fee_shares,
         } = self.apply_fee(vault_protocol, vault_equity, now)?;
 
         let vault_shares_before: u128 = self.get_protocol_shares(vault_protocol);
@@ -720,10 +869,10 @@ impl Vault {
         )?;
 
         validate!(
-        n_shares > 0,
-        ErrorCode::InvalidVaultWithdrawSize,
-        "Requested n_shares = 0"
-    )?;
+            n_shares > 0,
+            ErrorCode::InvalidVaultWithdrawSize,
+            "Requested n_shares = 0"
+        )?;
 
         let total_vault_shares_before = self.total_shares;
         let user_vault_shares_before = self.user_shares;
@@ -787,7 +936,6 @@ impl Vault {
             }
         }
 
-
         Ok(())
     }
 
@@ -807,12 +955,14 @@ impl Vault {
             management_fee_payment,
             management_fee_shares,
             protocol_fee_payment,
-            protocol_fee_shares
+            protocol_fee_shares,
         } = self.apply_fee(vault_protocol, vault_equity, now)?;
 
         let vault_shares_lost = match vault_protocol {
             None => 0,
-            Some(vp) => vp.last_protocol_withdraw_request.calculate_shares_lost(self, vault_equity)?
+            Some(vp) => vp
+                .last_protocol_withdraw_request
+                .calculate_shares_lost(self, vault_equity)?,
         };
 
         self.total_shares = self.total_shares.safe_sub(vault_shares_lost)?;
@@ -867,17 +1017,24 @@ impl Vault {
             }
         }
 
-
         if let Some(vp) = vault_protocol {
-            self.total_withdraw_requested = self.total_withdraw_requested.safe_sub(vp.last_protocol_withdraw_request.value)?;
+            self.total_withdraw_requested = self
+                .total_withdraw_requested
+                .safe_sub(vp.last_protocol_withdraw_request.value)?;
             vp.last_protocol_withdraw_request.reset(now)?;
         }
 
         Ok(())
     }
 
-    pub fn protocol_withdraw(&mut self, vault_protocol: &mut Option<RefMut<VaultProtocol>>, vault_equity: u64, now: i64) -> Result<u64> {
-        self.last_manager_withdraw_request.check_redeem_period_finished(self, now)?;
+    pub fn protocol_withdraw(
+        &mut self,
+        vault_protocol: &mut Option<RefMut<VaultProtocol>>,
+        vault_equity: u64,
+        now: i64,
+    ) -> Result<u64> {
+        self.last_manager_withdraw_request
+            .check_redeem_period_finished(self, now)?;
 
         self.apply_rebase(vault_protocol, vault_equity)?;
 
@@ -885,7 +1042,7 @@ impl Vault {
             management_fee_payment,
             management_fee_shares,
             protocol_fee_payment,
-            protocol_fee_shares
+            protocol_fee_shares,
         } = self.apply_fee(vault_protocol, vault_equity, now)?;
 
         let vault_shares_before: u128 = self.get_protocol_shares(vault_protocol);
@@ -894,27 +1051,28 @@ impl Vault {
 
         let n_shares = match vault_protocol {
             None => 0,
-            Some(vp) => vp.last_protocol_withdraw_request.shares
+            Some(vp) => vp.last_protocol_withdraw_request.shares,
         };
 
         validate!(
-        n_shares > 0,
-        ErrorCode::InvalidVaultWithdraw,
-        "Must submit withdraw request and wait the redeem_period ({} seconds)",
-        self.redeem_period
-    )?;
+            n_shares > 0,
+            ErrorCode::InvalidVaultWithdraw,
+            "Must submit withdraw request and wait the redeem_period ({} seconds)",
+            self.redeem_period
+        )?;
 
-        let amount: u64 = depositor_shares_to_vault_amount(n_shares, self.total_shares, vault_equity)?;
+        let amount: u64 =
+            depositor_shares_to_vault_amount(n_shares, self.total_shares, vault_equity)?;
 
         let n_tokens = match vault_protocol {
             None => amount,
-            Some(vp) => amount.min(vp.last_protocol_withdraw_request.value)
+            Some(vp) => amount.min(vp.last_protocol_withdraw_request.value),
         };
 
         validate!(
-        vault_shares_before >= n_shares,
-        ErrorCode::InsufficientVaultShares
-    )?;
+            vault_shares_before >= n_shares,
+            ErrorCode::InsufficientVaultShares
+        )?;
 
         self.total_withdraws = self.total_withdraws.saturating_add(n_tokens);
         if let Some(vp) = vault_protocol {
@@ -925,16 +1083,17 @@ impl Vault {
         let vault_shares_before = self.get_protocol_shares(vault_protocol);
 
         validate!(
-        vault_shares_before >= n_shares,
-        ErrorCode::InvalidVaultWithdrawSize,
-        "vault_shares_before={} < n_shares={}",
-        vault_shares_before,
-        n_shares
-    )?;
+            vault_shares_before >= n_shares,
+            ErrorCode::InvalidVaultWithdrawSize,
+            "vault_shares_before={} < n_shares={}",
+            vault_shares_before,
+            n_shares
+        )?;
 
         self.total_shares = self.total_shares.safe_sub(n_shares)?;
         if let Some(vp) = vault_protocol {
-            vp.protocol_profit_and_fee_shares = vp.protocol_profit_and_fee_shares.safe_sub(n_shares)?;
+            vp.protocol_profit_and_fee_shares =
+                vp.protocol_profit_and_fee_shares.safe_sub(n_shares)?;
         }
         let vault_shares_after = self.get_protocol_shares(vault_protocol);
 
@@ -984,9 +1143,10 @@ impl Vault {
             }
         }
 
-
         if let Some(vp) = vault_protocol {
-            self.total_withdraw_requested = self.total_withdraw_requested.safe_sub(vp.last_protocol_withdraw_request.value)?;
+            self.total_withdraw_requested = self
+                .total_withdraw_requested
+                .safe_sub(vp.last_protocol_withdraw_request.value)?;
             vp.last_protocol_withdraw_request.reset(now)?;
         }
 

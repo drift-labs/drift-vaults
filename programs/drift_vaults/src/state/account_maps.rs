@@ -13,7 +13,9 @@ pub trait AccountMapProvider<'a> {
     ) -> DriftResult<AccountMaps<'a>>;
 }
 
-impl<'a: 'info, 'info, T: anchor_lang::Bumps> AccountMapProvider<'a> for Context<'_, '_, 'a, 'info, T> {
+impl<'a: 'info, 'info, T: anchor_lang::Bumps> AccountMapProvider<'a>
+    for Context<'_, '_, 'a, 'info, T>
+{
     fn load_maps(
         &self,
         slot: u64,
@@ -26,7 +28,9 @@ impl<'a: 'info, 'info, T: anchor_lang::Bumps> AccountMapProvider<'a> for Context
         load_maps(
             remaining_accounts_iter,
             &BTreeSet::new(),
-            &writable_spot_market_index.map(get_writable_spot_market_set).unwrap_or_default(),
+            &writable_spot_market_index
+                .map(get_writable_spot_market_set)
+                .unwrap_or_default(),
             slot,
             None,
         )

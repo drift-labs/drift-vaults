@@ -46,11 +46,6 @@
           "isSigner": true
         },
         {
-          "name": "protocol",
-          "isMut": false,
-          "isSigner": true
-        },
-        {
           "name": "payer",
           "isMut": true,
           "isSigner": true

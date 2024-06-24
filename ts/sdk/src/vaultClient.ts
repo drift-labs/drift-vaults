@@ -43,7 +43,7 @@ import {
 	VaultDepositor,
 	VaultParams,
 	VaultProtocolParams,
-	WithdrawUnit
+	WithdrawUnit,
 } from './types/types';
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
 import { UserMapConfig } from '@drift-labs/sdk/lib/userMap/userMapConfig';
@@ -307,6 +307,16 @@ export class VaultClient {
 			tokenAccount,
 			driftProgram: this.driftClient.program.programId,
 		};
+
+		try {
+			const sim = await this.program.methods
+				.initializeVault(_params)
+				.accounts(accounts)
+				.simulate();
+			console.log(sim);
+		} catch (e) {
+			console.log(e);
+		}
 
 		return await this.program.methods
 			.initializeVault(_params)
