@@ -20,8 +20,10 @@ import {
 	getTokenVaultAddressSync,
 	getVaultAddressSync,
 	getVaultDepositorAddressSync,
+	getVaultProtocolAddressSync,
 } from './addresses';
 import {
+	AccountMeta,
 	AddressLookupTableAccount,
 	ComputeBudgetProgram,
 	PublicKey,
@@ -308,20 +310,42 @@ export class VaultClient {
 			driftProgram: this.driftClient.program.programId,
 		};
 
-		try {
-			const sim = await this.program.methods
+		if (params.vaultProtocol) {
+			const vaultProtocolAddress = getVaultProtocolAddressSync(
+				this.program.programId,
+				getVaultAddressSync(this.program.programId, params.name)
+			);
+			const remainingAccounts: AccountMeta[] = [
+				{
+					pubkey: vaultProtocolAddress,
+					isSigner: false,
+					isWritable: true,
+				},
+			];
+
+			// todo: remove after debugging tests
+			try {
+				const sim = await this.program.methods
+					.initializeVault(_params)
+					.accounts(accounts)
+					.remainingAccounts(remainingAccounts)
+					.simulate();
+				console.log(sim);
+			} catch (e) {
+				console.log(e);
+			}
+
+			return await this.program.methods
 				.initializeVault(_params)
 				.accounts(accounts)
-				.simulate();
-			console.log(sim);
-		} catch (e) {
-			console.log(e);
+				.remainingAccounts(remainingAccounts)
+				.rpc();
+		} else {
+			return await this.program.methods
+				.initializeVault(_params)
+				.accounts(accounts)
+				.rpc();
 		}
-
-		return await this.program.methods
-			.initializeVault(_params)
-			.accounts(accounts)
-			.rpc();
 	}
 
 	/**

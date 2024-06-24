@@ -67,10 +67,12 @@ impl<'a: 'info, 'info, T: anchor_lang::Bumps> VaultProtocolProvider<'a>
             Some(acct) => acct,
             None => return None,
         };
+        msg!("last rem acct exists");
         let vp_loader = match AccountLoader::<'a, VaultProtocol>::try_from(acct) {
             Ok(vp_loader) => vp_loader,
             Err(_) => return None,
         };
+        msg!("deser into vp_loader");
         Some(vp_loader)
     }
 }

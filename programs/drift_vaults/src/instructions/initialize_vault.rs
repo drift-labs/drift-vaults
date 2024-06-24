@@ -28,6 +28,7 @@ pub fn initialize_vault<'c: 'info, 'info>(
     vault.init_ts = Clock::get()?.unix_timestamp;
 
     let mut vp = ctx.vault_protocol();
+    msg!("vp?: {}", vp.is_some());
     let vp = vp.as_mut().map(|vp| vp.load_init()).transpose()?;
 
     validate!(
@@ -94,9 +95,7 @@ pub fn initialize_vault<'c: 'info, 'info>(
     drop(vault);
 
     ctx.drift_initialize_user_stats(params.name, bump)?;
-    msg!("init user stats");
     ctx.drift_initialize_user(params.name, bump)?;
-    msg!("init user");
 
     Ok(())
 }

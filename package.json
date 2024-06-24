@@ -8,7 +8,8 @@
         "prepare": "husky install",
         "update-types": "cp target/types/drift_vaults.ts ts/sdk/src/types/drift_vaults.ts && prettier --write ts/sdk/src/types/drift_vaults.ts",
         "update-idl": "cp target/idl/drift_vaults.json ts/sdk/src/idl/drift_vaults.json",
-        "anchor-tests": "yarn update-types && yarn update-idl && yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts"
+        "anchor-tests": "yarn update-types && yarn update-idl && yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/**/*.ts",
+        "protocol-tests": "yarn update-types && yarn update-idl && yarn run ts-mocha -p ./tsconfig.json -t 1000000 tests/driftProtocolVaults.ts"
     },
     "devDependencies": {
         "@coral-xyz/anchor": "0.28.0",

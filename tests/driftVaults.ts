@@ -27,6 +27,8 @@ import {
 	WithdrawUnit,
 	encodeName,
 	DriftVaults,
+	VaultProtocolParams,
+	getVaultProtocolAddressSync,
 } from '../ts/sdk';
 import {
 	CompetitionsClient,
@@ -67,6 +69,13 @@ describe('driftVaults', () => {
 
 	const vaultName = 'crisp vault';
 	const vault = getVaultAddressSync(program.programId, encodeName(vaultName));
+
+	const vaultProtocol = Keypair.generate().publicKey;
+	const vaultV1Name = 'protocol vault';
+	const vaultV1 = getVaultAddressSync(
+		program.programId,
+		encodeName(vaultV1Name)
+	);
 
 	const usdcAmount = new BN(1000 * 10 ** 6);
 
@@ -281,6 +290,8 @@ describe('driftVaults', () => {
 			permissioned: false,
 			minDepositAmount: ZERO,
 		});
+		assert(adminClient.getStateAccount().numberOfAuthorities.eq(new BN(3)));
+		assert(adminClient.getStateAccount().numberOfSubAccounts.eq(new BN(3)));
 
 		const testInitIFStakeAccount = async (marketIndex: number) => {
 			const ifStakeTx0 = await vaultClient.initializeInsuranceFundStake(
@@ -410,5 +421,33 @@ describe('driftVaults', () => {
 			console.log(err);
 			assert(false, 'Failed to initialize competitor');
 		}
+	});
+
+	it('Initialize Protocol Vault', async () => {
+		const vpParams: VaultProtocolParams = {
+			protocol: vaultProtocol,
+			protocolFee: new BN(0),
+			protocolProfitShare: 0,
+		};
+		console.log('vp params before:', !!vpParams);
+		await vaultClient.initializeVault({
+			name: encodeName(vaultV1Name),
+			spotMarketIndex: 0,
+			redeemPeriod: ZERO,
+			maxTokens: ZERO,
+			managementFee: ZERO,
+			profitShare: 0,
+			hurdleRate: 0,
+			permissioned: false,
+			minDepositAmount: ZERO,
+			vaultProtocol: vpParams,
+		});
+		const vaultAcct = await program.account.vault.fetch(vaultV1);
+		const vp = getVaultProtocolAddressSync(program.programId, vaultV1);
+		assert(vaultAcct.vaultProtocol.equals(vp));
+
+		await adminClient.fetchAccounts();
+		assert(adminClient.getStateAccount().numberOfAuthorities.eq(new BN(6)));
+		assert(adminClient.getStateAccount().numberOfSubAccounts.eq(new BN(6)));
 	});
 });
