@@ -126,21 +126,21 @@ pub struct VaultProtocolParams {
 #[instruction(params: VaultParams)]
 pub struct InitializeVault<'info> {
     #[account(
-    init,
-    seeds = [b"vault", params.name.as_ref()],
-    space = Vault::SIZE,
-    bump,
-    payer = payer
-  )]
+      init,
+      seeds = [b"vault", params.name.as_ref()],
+      space = Vault::SIZE,
+      bump,
+      payer = payer
+    )]
     pub vault: AccountLoader<'info, Vault>,
     #[account(
-    init,
-    seeds = [b"vault_token_account".as_ref(), vault.key().as_ref()],
-    bump,
-    payer = payer,
-    token::mint = drift_spot_market_mint,
-    token::authority = vault
-  )]
+      init,
+      seeds = [b"vault_token_account".as_ref(), vault.key().as_ref()],
+      bump,
+      payer = payer,
+      token::mint = drift_spot_market_mint,
+      token::authority = vault
+    )]
     pub token_account: Box<Account<'info, TokenAccount>>,
     /// CHECK: checked in drift cpi
     #[account(mut)]
@@ -152,12 +152,12 @@ pub struct InitializeVault<'info> {
     #[account(mut)]
     pub drift_state: AccountInfo<'info>,
     #[account(
-    constraint = drift_spot_market.load()?.market_index == params.spot_market_index
-  )]
+      constraint = drift_spot_market.load()?.market_index == params.spot_market_index
+    )]
     pub drift_spot_market: AccountLoader<'info, SpotMarket>,
     #[account(
-    constraint = drift_spot_market.load()?.mint.eq(&drift_spot_market_mint.key())
-  )]
+      constraint = drift_spot_market.load()?.mint.eq(&drift_spot_market_mint.key())
+    )]
     pub drift_spot_market_mint: Box<Account<'info, Mint>>,
     pub manager: Signer<'info>,
     #[account(mut)]
@@ -170,9 +170,7 @@ pub struct InitializeVault<'info> {
 
 impl<'info> InitializeUserCPI for Context<'_, '_, '_, 'info, InitializeVault<'info>> {
     fn drift_initialize_user(&self, name: [u8; 32], bump: u8) -> Result<()> {
-        let vault = self.accounts.vault.load()?;
         let signature_seeds = Vault::get_vault_signer_seeds(&name, &bump);
-        drop(vault);
         let signers = &[&signature_seeds[..]];
 
         let cpi_program = self.accounts.drift_program.to_account_info().clone();
@@ -193,10 +191,7 @@ impl<'info> InitializeUserCPI for Context<'_, '_, '_, 'info, InitializeVault<'in
     }
 
     fn drift_initialize_user_stats(&self, name: [u8; 32], bump: u8) -> Result<()> {
-        let vault = self.accounts.vault.load()?;
-        msg!("vault: {}", vault.pubkey);
         let signature_seeds = Vault::get_vault_signer_seeds(&name, &bump);
-        drop(vault);
         let signers = &[&signature_seeds[..]];
 
         let cpi_program = self.accounts.drift_program.to_account_info().clone();

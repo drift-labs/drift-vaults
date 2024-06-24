@@ -1,5 +1,5 @@
 import * as anchor from '@coral-xyz/anchor';
-import { DriftVaults } from '../target/types/drift_vaults';
+// import { DriftVaults } from '../target/types/drift_vaults';
 import { Program } from '@coral-xyz/anchor';
 import {
 	AdminClient,
@@ -24,9 +24,10 @@ import {
 	VaultClient,
 	getVaultAddressSync,
 	getVaultDepositorAddressSync,
-} from '../ts/sdk/src';
-import { encodeName } from '../ts/sdk/src/name';
-import { WithdrawUnit } from '../ts/sdk/src/types/types';
+	WithdrawUnit,
+	encodeName,
+	DriftVaults,
+} from '../ts/sdk';
 import {
 	CompetitionsClient,
 	getCompetitionAddressSync,
