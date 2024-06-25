@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+use anchor_lang::Discriminator;
 use anchor_spl::token::{Mint, Token, TokenAccount};
 use drift::cpi::accounts::{InitializeUser, InitializeUserStats};
 use drift::math::casting::Cast;
@@ -26,6 +27,11 @@ pub fn initialize_vault<'c: 'info, 'info>(
     vault.token_account = *ctx.accounts.token_account.to_account_info().key;
     vault.spot_market_index = params.spot_market_index;
     vault.init_ts = Clock::get()?.unix_timestamp;
+
+    // let vp = ctx.accounts.vault_protocol
+    //   .as_mut()
+    //   .map(|vp| vp.load_init())
+    //   .transpose()?;
 
     let mut vp_loader = init_vault_protocol(&ctx)?;
     let vp = vp_loader.as_mut().map(|vp| vp.load_init()).transpose()?;
@@ -58,7 +64,6 @@ pub fn initialize_vault<'c: 'info, 'info>(
         )?;
         vault.profit_share = params.profit_share;
         vp.protocol_profit_share = vp_params.protocol_profit_share;
-
         vp.protocol = vp_params.protocol;
 
         let (vault_protocol, vp_bump) = Pubkey::find_program_address(
@@ -96,6 +101,17 @@ pub fn initialize_vault<'c: 'info, 'info>(
     vault.permissioned = params.permissioned;
 
     drop(vault);
+
+    vp_loader.exit(ctx.program_id)?;
+    if let Some(vp_loader) = vp_loader {
+        let vp_acct = vp_loader.as_ref();
+        let vp_discrim = &vp_acct.data.borrow()[..8];
+        msg!(
+            "VP DISCRIM: {:?} == {:?}",
+            vp_discrim,
+            VaultProtocol::discriminator()
+        );
+    }
 
     ctx.drift_initialize_user_stats(params.name, bump)?;
     ctx.drift_initialize_user(params.name, bump)?;
@@ -135,6 +151,7 @@ pub struct InitializeVault<'info> {
       payer = payer
     )]
     pub vault: AccountLoader<'info, Vault>,
+
     #[account(
       init,
       seeds = [b"vault_token_account".as_ref(), vault.key().as_ref()],
@@ -212,6 +229,23 @@ impl<'info> InitializeUserCPI for Context<'_, '_, '_, 'info, InitializeVault<'in
     }
 }
 
+#[derive(Accounts)]
+struct InitializeVaultProtocol<'info> {
+    #[account(
+        init,
+        seeds = [b"vault_protocol", vault.key().as_ref()],
+        space = VaultProtocol::SIZE,
+        bump,
+        payer = payer
+    )]
+    pub vault_protocol: AccountLoader<'info, VaultProtocol>,
+    pub vault: AccountLoader<'info, Vault>,
+    #[account(mut)]
+    pub payer: Signer<'info>,
+    pub rent: Sysvar<'info, Rent>,
+    pub system_program: Program<'info, System>,
+}
+
 // replicates the following macro:
 // #[account(
 //     init,
@@ -257,104 +291,129 @@ fn init_vault_protocol<'c: 'info, 'info>(
     let (__pda_address, __bump) =
         Pubkey::find_program_address(&[b"vault_protocol", vault.key().as_ref()], ctx.program_id);
 
-    if vp_acct_info.key() != __pda_address {
-        return Err(
-            anchor_lang::error::Error::from(error::ErrorCode::ConstraintSeeds)
-                .with_account_name("vault_protocol")
-                .with_pubkeys((vp_acct_info.key(), __pda_address)),
+    let vault_protocol: AccountLoader<VaultProtocol> = {
+        let (__pda_address, __bump) = Pubkey::find_program_address(
+            &[b"vault_protocol", vault.key().as_ref()],
+            ctx.program_id,
         );
-    }
+        if vp_acct_info.key() != __pda_address {
+            return Err(
+                anchor_lang::error::Error::from(error::ErrorCode::ConstraintSeeds)
+                    .with_account_name("vault_protocol")
+                    .with_pubkeys((vp_acct_info.key(), __pda_address)),
+            );
+        }
 
-    let vault_protocol = {
-        let actual_field = AsRef::<AccountInfo>::as_ref(&vp_acct_info);
-        let actual_owner = actual_field.owner;
-        let space = VaultProtocol::SIZE;
-        let pa: AccountLoader<VaultProtocol> = if actual_owner
-            == &anchor_lang::solana_program::system_program::ID
-        {
-            let __current_lamports = vp_acct_info.lamports();
-            if __current_lamports == 0 {
-                let space = space;
-                let lamports = __anchor_rent.minimum_balance(space);
-                let cpi_accounts = anchor_lang::system_program::CreateAccount {
-                    from: payer.to_account_info(),
-                    to: vp_acct_info.to_account_info(),
-                };
-                let cpi_context = CpiContext::new(system_program.to_account_info(), cpi_accounts);
-                anchor_lang::system_program::create_account(
-                    cpi_context.with_signer(&[&[
-                        b"vault_protocol",
-                        vault.key().as_ref(),
-                        &[__bump][..],
-                    ][..]]),
-                    lamports,
-                    space as u64,
-                    ctx.program_id,
-                )?;
-            } else {
-                if payer.key() == vp_acct_info.key() {
-                    return Err(Error::from(AnchorError {
-                        error_name: error::ErrorCode::TryingToInitPayerAsProgramAccount.name(),
-                        error_code_number: error::ErrorCode::TryingToInitPayerAsProgramAccount
-                            .into(),
-                        error_msg: error::ErrorCode::TryingToInitPayerAsProgramAccount.to_string(),
-                        error_origin: Some(ErrorOrigin::Source(Source {
-                            filename: "programs/drift_vaults/src/instructions/initialize_vault.rs",
-                            line: 238u32,
-                        })),
-                        compared_values: None,
-                    })
-                    .with_pubkeys((payer.key(), vp_acct_info.key())));
-                }
-                let required_lamports = __anchor_rent
-                    .minimum_balance(space)
-                    .max(1)
-                    .saturating_sub(__current_lamports);
-                if required_lamports > 0 {
-                    let cpi_accounts = anchor_lang::system_program::Transfer {
+        let vault_protocol = {
+            let actual_field = AsRef::<AccountInfo>::as_ref(vp_acct_info);
+            let actual_owner = actual_field.owner;
+            let space = VaultProtocol::SIZE;
+            let pa: AccountLoader<VaultProtocol> = if actual_owner
+                == &anchor_lang::solana_program::system_program::ID
+            {
+                let __current_lamports = vp_acct_info.lamports();
+                if __current_lamports == 0 {
+                    let space = space;
+                    let lamports = __anchor_rent.minimum_balance(space);
+                    let cpi_accounts = anchor_lang::system_program::CreateAccount {
                         from: payer.to_account_info(),
                         to: vp_acct_info.to_account_info(),
                     };
                     let cpi_context =
                         CpiContext::new(system_program.to_account_info(), cpi_accounts);
-                    anchor_lang::system_program::transfer(cpi_context, required_lamports)?;
+                    anchor_lang::system_program::create_account(
+                        cpi_context.with_signer(&[&[
+                            b"vault_protocol",
+                            vault.key().as_ref(),
+                            &[__bump][..],
+                        ][..]]),
+                        lamports,
+                        space as u64,
+                        ctx.program_id,
+                    )?;
+                } else {
+                    if payer.key() == vp_acct_info.key() {
+                        return Err(error::Error::from(AnchorError {
+                            error_name: error::ErrorCode::TryingToInitPayerAsProgramAccount.name(),
+                            error_code_number: error::ErrorCode::TryingToInitPayerAsProgramAccount
+                                .into(),
+                            error_msg: error::ErrorCode::TryingToInitPayerAsProgramAccount
+                                .to_string(),
+                            error_origin: Some(ErrorOrigin::Source(Source {
+                                filename:
+                                    "programs/drift_vaults/src/instructions/initialize_vault.rs",
+                                line: 131u32,
+                            })),
+                            compared_values: None,
+                        })
+                        .with_pubkeys((payer.key(), vp_acct_info.key())));
+                    }
+                    let required_lamports = __anchor_rent
+                        .minimum_balance(space)
+                        .max(1)
+                        .saturating_sub(__current_lamports);
+                    if required_lamports > 0 {
+                        let cpi_accounts = anchor_lang::system_program::Transfer {
+                            from: payer.to_account_info(),
+                            to: vp_acct_info.to_account_info(),
+                        };
+                        let cpi_context =
+                            CpiContext::new(system_program.to_account_info(), cpi_accounts);
+                        anchor_lang::system_program::transfer(cpi_context, required_lamports)?;
+                    }
+                    let cpi_accounts = anchor_lang::system_program::Allocate {
+                        account_to_allocate: vp_acct_info.to_account_info(),
+                    };
+                    let cpi_context =
+                        CpiContext::new(system_program.to_account_info(), cpi_accounts);
+                    anchor_lang::system_program::allocate(
+                        cpi_context.with_signer(&[&[
+                            b"vault_protocol",
+                            vault.key().as_ref(),
+                            &[__bump][..],
+                        ][..]]),
+                        space as u64,
+                    )?;
+                    let cpi_accounts = anchor_lang::system_program::Assign {
+                        account_to_assign: vp_acct_info.to_account_info(),
+                    };
+                    let cpi_context =
+                        CpiContext::new(system_program.to_account_info(), cpi_accounts);
+                    anchor_lang::system_program::assign(
+                        cpi_context.with_signer(&[&[
+                            b"vault_protocol",
+                            vault.key().as_ref(),
+                            &[__bump][..],
+                        ][..]]),
+                        ctx.program_id,
+                    )?;
                 }
-                let cpi_accounts = anchor_lang::system_program::Allocate {
-                    account_to_allocate: vp_acct_info.to_account_info(),
-                };
-                let cpi_context = CpiContext::new(system_program.to_account_info(), cpi_accounts);
-                anchor_lang::system_program::allocate(
-                    cpi_context.with_signer(&[&[
-                        b"vault_protocol",
-                        vault.key().as_ref(),
-                        &[__bump][..],
-                    ][..]]),
-                    space as u64,
-                )?;
-                let cpi_accounts = anchor_lang::system_program::Assign {
-                    account_to_assign: vp_acct_info.to_account_info(),
-                };
-                let cpi_context = CpiContext::new(system_program.to_account_info(), cpi_accounts);
-                anchor_lang::system_program::assign(
-                    cpi_context.with_signer(&[&[
-                        b"vault_protocol",
-                        vault.key().as_ref(),
-                        &[__bump][..],
-                    ][..]]),
-                    ctx.program_id,
-                )?;
-            }
-            match AccountLoader::try_from_unchecked(ctx.program_id, vp_acct_info) {
-                Ok(val) => val,
-                Err(e) => return Err(e.with_account_name("vault_protocol")),
-            }
-        } else {
-            match AccountLoader::try_from(vp_acct_info) {
-                Ok(val) => val,
-                Err(e) => return Err(e.with_account_name("vault_protocol")),
-            }
+                match AccountLoader::try_from_unchecked(ctx.program_id, vp_acct_info) {
+                    Ok(val) => val,
+                    Err(e) => return Err(e.with_account_name("vault_protocol")),
+                }
+            } else {
+                match AccountLoader::try_from(vp_acct_info) {
+                    Ok(val) => val,
+                    Err(e) => return Err(e.with_account_name("vault_protocol")),
+                }
+            };
+            pa
         };
-        pa
+        if !AsRef::<AccountInfo>::as_ref(&vault_protocol).is_writable {
+            return Err(
+                anchor_lang::error::Error::from(error::ErrorCode::ConstraintMut)
+                    .with_account_name("vault_protocol"),
+            );
+        }
+        if !__anchor_rent.is_exempt(
+            vault_protocol.to_account_info().lamports(),
+            vault_protocol.to_account_info().try_data_len()?,
+        ) {
+            return Err(error::Error::from(error::ErrorCode::ConstraintRentExempt)
+                .with_account_name("vault_protocol"));
+        }
+        vault_protocol
     };
 
     Ok(Some(vault_protocol))

@@ -90,7 +90,8 @@ export type Vault = {
 	bump: number;
 	permissioned: boolean;
 	lastManagerWithdrawRequest: WithdrawRequest;
-	// vaultProtocol: PublicKey;
+	/// If this is the default Pubkey (also equal to the SystemProgram) then it does not exist.
+	vaultProtocol: PublicKey;
 };
 
 export type VaultDepositor = {

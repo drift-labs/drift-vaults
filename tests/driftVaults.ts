@@ -1,5 +1,4 @@
 import * as anchor from '@coral-xyz/anchor';
-// import { DriftVaults } from '../target/types/drift_vaults';
 import { Program } from '@coral-xyz/anchor';
 import {
 	AdminClient,
@@ -70,7 +69,7 @@ describe('driftVaults', () => {
 	const vaultName = 'crisp vault';
 	const vault = getVaultAddressSync(program.programId, encodeName(vaultName));
 
-	const vaultProtocol = Keypair.generate().publicKey;
+	const protocol = Keypair.generate().publicKey;
 	const vaultV1Name = 'protocol vault';
 	const vaultV1 = getVaultAddressSync(
 		program.programId,
@@ -78,6 +77,9 @@ describe('driftVaults', () => {
 	);
 
 	const usdcAmount = new BN(1000 * 10 ** 6);
+
+	const VAULT_DISCRIM: number[] = [211, 8, 232, 43, 2, 152, 117, 119];
+	const VAULT_PROTOCOL_DISCRIM: number[] = [106, 130, 5, 195, 126, 82, 249, 53];
 
 	before(async () => {
 		usdcMint = await mockUSDCMint(provider);
@@ -92,6 +94,49 @@ describe('driftVaults', () => {
 	after(async () => {
 		await adminClient.unsubscribe();
 		bulkAccountLoader.stopPolling();
+	});
+
+	it('Initialize Protocol Vault', async () => {
+		const vpParams: VaultProtocolParams = {
+			protocol,
+			protocolFee: new BN(0),
+			protocolProfitShare: 0,
+		};
+		await vaultClient.initializeVault({
+			name: encodeName(vaultV1Name),
+			spotMarketIndex: 0,
+			redeemPeriod: ZERO,
+			maxTokens: ZERO,
+			managementFee: ZERO,
+			profitShare: 0,
+			hurdleRate: 0,
+			permissioned: false,
+			minDepositAmount: ZERO,
+			vaultProtocol: vpParams,
+		});
+		const vaultAcct = await program.account.vault.fetch(vaultV1);
+		const vaultAcctInfo = await connection.getAccountInfo(vaultV1);
+		console.log(
+			'vault has discrim?',
+			vaultAcctInfo.data.includes(Buffer.from(VAULT_DISCRIM))
+		);
+
+		const vp = getVaultProtocolAddressSync(program.programId, vaultV1);
+		console.log('vp:', vp.toString());
+		const vpAcctInfo = await connection.getAccountInfo(vp);
+		console.log(
+			'vp has discrim?',
+			vpAcctInfo.data.includes(Buffer.from(VAULT_PROTOCOL_DISCRIM))
+		);
+
+		const vpAcct = await program.account.vaultProtocol.fetch(vp);
+		console.log('vpAcct:', vpAcct);
+		assert(vaultAcct.vaultProtocol.equals(vp));
+		assert(vpAcct.protocol.equals(protocol));
+
+		await adminClient.fetchAccounts();
+		assert(adminClient.getStateAccount().numberOfAuthorities.eq(new BN(6)));
+		assert(adminClient.getStateAccount().numberOfSubAccounts.eq(new BN(6)));
 	});
 
 	it('Initialize Vault', async () => {
@@ -421,32 +466,5 @@ describe('driftVaults', () => {
 			console.log(err);
 			assert(false, 'Failed to initialize competitor');
 		}
-	});
-
-	it('Initialize Protocol Vault', async () => {
-		const vpParams: VaultProtocolParams = {
-			protocol: vaultProtocol,
-			protocolFee: new BN(0),
-			protocolProfitShare: 0,
-		};
-		await vaultClient.initializeVault({
-			name: encodeName(vaultV1Name),
-			spotMarketIndex: 0,
-			redeemPeriod: ZERO,
-			maxTokens: ZERO,
-			managementFee: ZERO,
-			profitShare: 0,
-			hurdleRate: 0,
-			permissioned: false,
-			minDepositAmount: ZERO,
-			vaultProtocol: vpParams,
-		});
-		const vaultAcct = await program.account.vault.fetch(vaultV1);
-		const vp = getVaultProtocolAddressSync(program.programId, vaultV1);
-		assert(vaultAcct.vaultProtocol.equals(vp));
-
-		await adminClient.fetchAccounts();
-		assert(adminClient.getStateAccount().numberOfAuthorities.eq(new BN(6)));
-		assert(adminClient.getStateAccount().numberOfSubAccounts.eq(new BN(6)));
 	});
 });

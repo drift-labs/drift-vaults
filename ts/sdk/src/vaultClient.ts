@@ -311,13 +311,14 @@ export class VaultClient {
 		};
 
 		if (params.vaultProtocol) {
-			const vaultProtocolAddress = getVaultProtocolAddressSync(
+			const vaultProtocol = getVaultProtocolAddressSync(
 				this.program.programId,
 				getVaultAddressSync(this.program.programId, params.name)
 			);
+
 			const remainingAccounts: AccountMeta[] = [
 				{
-					pubkey: vaultProtocolAddress,
+					pubkey: vaultProtocol,
 					isSigner: false,
 					isWritable: true,
 				},
