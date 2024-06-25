@@ -341,6 +341,17 @@ export class VaultClient {
 				.remainingAccounts(remainingAccounts)
 				.rpc();
 		} else {
+			// todo: remove after debugging tests
+			try {
+				const sim = await this.program.methods
+					.initializeVault(_params)
+					.accounts(accounts)
+					.simulate();
+				console.log(sim);
+			} catch (e) {
+				console.log(e);
+			}
+
 			return await this.program.methods
 				.initializeVault(_params)
 				.accounts(accounts)

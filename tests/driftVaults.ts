@@ -429,7 +429,6 @@ describe('driftVaults', () => {
 			protocolFee: new BN(0),
 			protocolProfitShare: 0,
 		};
-		console.log('vp params before:', !!vpParams);
 		await vaultClient.initializeVault({
 			name: encodeName(vaultV1Name),
 			spotMarketIndex: 0,
@@ -444,6 +443,8 @@ describe('driftVaults', () => {
 		});
 		const vaultAcct = await program.account.vault.fetch(vaultV1);
 		const vp = getVaultProtocolAddressSync(program.programId, vaultV1);
+		console.log('vp:', vp.toString());
+		console.log('vault vp:', vaultAcct.vaultProtocol.toString());
 		assert(vaultAcct.vaultProtocol.equals(vp));
 
 		await adminClient.fetchAccounts();
