@@ -443,8 +443,6 @@ describe('driftVaults', () => {
 		});
 		const vaultAcct = await program.account.vault.fetch(vaultV1);
 		const vp = getVaultProtocolAddressSync(program.programId, vaultV1);
-		console.log('vp:', vp.toString());
-		console.log('vault vp:', vaultAcct.vaultProtocol.toString());
 		assert(vaultAcct.vaultProtocol.equals(vp));
 
 		await adminClient.fetchAccounts();

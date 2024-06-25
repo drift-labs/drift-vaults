@@ -1,5 +1,4 @@
 use anchor_lang::prelude::*;
-use anchor_lang::Discriminator;
 use anchor_spl::token::{Mint, Token, TokenAccount};
 use drift::cpi::accounts::{InitializeUser, InitializeUserStats};
 use drift::math::casting::Cast;
@@ -9,7 +8,7 @@ use drift::state::spot_market::SpotMarket;
 
 use crate::constants::ONE_DAY;
 use crate::drift_cpi::InitializeUserCPI;
-use crate::state::{Vault, VaultProtocol, VaultProtocolProvider};
+use crate::state::{Vault, VaultProtocol};
 use crate::{error::ErrorCode, validate, Size};
 
 pub fn initialize_vault<'c: 'info, 'info>(
@@ -27,40 +26,8 @@ pub fn initialize_vault<'c: 'info, 'info>(
     vault.token_account = *ctx.accounts.token_account.to_account_info().key;
     vault.spot_market_index = params.spot_market_index;
     vault.init_ts = Clock::get()?.unix_timestamp;
-    msg!("vault: {}", ctx.accounts.vault.to_account_info().key);
 
-    let mut vp_loader = __init_vault_protocol(&ctx)?;
-    msg!("vp loader? {}", vp_loader.is_some());
-    // {
-    //     if let Some(vp_loader) = &vp_loader {
-    //         let acct = vp_loader.to_account_info();
-    //         msg!("vp key: {}", acct.key);
-    //         let _vp_loader = vp_loader.load_init()?;
-    //         msg!("load init");
-    //         drop(_vp_loader);
-    //         let data = acct.data.borrow();
-    //         unsafe fn as_array(slice: &[u8]) -> &[u8; 8] {
-    //             &*(slice.as_ptr() as *const [u8; 8])
-    //         }
-    //         let offset = 0;
-    //         let slice = &data[offset..offset + 8];
-    //         let disc_bytes = unsafe { as_array(slice) };
-    //
-    //         if disc_bytes != &VaultProtocol::discriminator() {
-    //             msg!(
-    //                 "DISCRIM MISMATCH: actual: {:?}, expected: {:?}",
-    //                 disc_bytes,
-    //                 VaultProtocol::discriminator()
-    //             );
-    //         }
-    //         msg!("vp protocol: {}", vp_loader.load()?.protocol);
-    //         msg!("vp owner: {}", acct.owner);
-    //         msg!("vp lamports: {:?}", acct.lamports.as_ref());
-    //
-    //
-    //     }
-    // }
-
+    let mut vp_loader = init_vault_protocol(&ctx)?;
     let vp = vp_loader.as_mut().map(|vp| vp.load_init()).transpose()?;
 
     validate!(
@@ -245,53 +212,36 @@ impl<'info> InitializeUserCPI for Context<'_, '_, '_, 'info, InitializeVault<'in
     }
 }
 
-#[derive(Accounts)]
-struct InitializeVaultProtocol<'info> {
-    #[account(
-        init,
-        seeds = [b"vault_protocol", vault.key().as_ref()],
-        space = VaultProtocol::SIZE,
-        bump,
-        payer = payer
-    )]
-    pub vault_protocol: AccountLoader<'info, VaultProtocol>,
-    pub vault: AccountLoader<'info, Vault>,
-    #[account(mut)]
-    pub payer: Signer<'info>,
-    pub rent: Sysvar<'info, Rent>,
-    pub system_program: Program<'info, System>,
-}
-
-#[allow(dead_code)]
+// replicates the following macro:
+// #[account(
+//     init,
+//     seeds = [b"vault_protocol", vault.key().as_ref()],
+//     space = VaultProtocol::SIZE,
+//     bump,
+//     payer = payer
+// )]
+// this is needed because remaining accounts can't have macro constraints,
+// and we need to init the zero copy VaultProtocol account in the remaining accounts.
+// this code is taken from `cargo expand` of what would be this accounts list used to init VaultProtocol:
+// ```rust
+// #[derive(Accounts)]
+// struct InitializeVaultProtocol<'info> {
+//     #[account(
+//         init,
+//         seeds = [b"vault_protocol", vault.key().as_ref()],
+//         space = VaultProtocol::SIZE,
+//         bump,
+//         payer = payer
+//     )]
+//     pub vault_protocol: AccountLoader<'info, VaultProtocol>,
+//     pub vault: AccountLoader<'info, Vault>,
+//     #[account(mut)]
+//     pub payer: Signer<'info>,
+//     pub rent: Sysvar<'info, Rent>,
+//     pub system_program: Program<'info, System>,
+// }
+// ```
 fn init_vault_protocol<'c: 'info, 'info>(
-    ctx: &Context<'_, '_, 'c, 'info, InitializeVault<'info>>,
-) -> Result<Option<AccountLoader<'c, VaultProtocol>>> {
-    if let Some(vp_acct_info) = ctx.remaining_accounts.last() {
-        // constructing this derives accounts which inits VaultProtocol via the #[account(init, ...)] macro.
-        msg!("try from unchecked with owner: {}", vp_acct_info.owner);
-        let vault_protocol = AccountLoader::try_from_unchecked(
-            // &anchor_lang::solana_program::system_program::ID,
-            ctx.program_id,
-            vp_acct_info,
-        )?;
-        msg!(
-            "unchecked vp owner: {}",
-            vault_protocol.to_account_info().owner
-        );
-        let vp_ctx = InitializeVaultProtocol {
-            vault_protocol,
-            vault: ctx.accounts.vault.clone(),
-            payer: ctx.accounts.payer.clone(),
-            rent: ctx.accounts.rent.clone(),
-            system_program: ctx.accounts.system_program.clone(),
-        };
-        Ok(Some(vp_ctx.vault_protocol))
-    } else {
-        Ok(None)
-    }
-}
-
-fn __init_vault_protocol<'c: 'info, 'info>(
     ctx: &Context<'_, '_, 'c, 'info, InitializeVault<'info>>,
 ) -> Result<Option<AccountLoader<'c, VaultProtocol>>> {
     let vp_acct_info = match ctx.remaining_accounts.last() {
@@ -315,16 +265,6 @@ fn __init_vault_protocol<'c: 'info, 'info>(
         );
     }
 
-    // replicates the following macro:
-    // #[account(
-    //     init,
-    //     seeds = [b"vault_protocol", vault.key().as_ref()],
-    //     space = VaultProtocol::SIZE,
-    //     bump,
-    //     payer = payer
-    // )]
-    // this is needed because remaining accounts can't have macro constraints,
-    // and we need to init the zero copy VaultProtocol account in the remaining accounts
     let vault_protocol = {
         let actual_field = AsRef::<AccountInfo>::as_ref(&vp_acct_info);
         let actual_owner = actual_field.owner;
