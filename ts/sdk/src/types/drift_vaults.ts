@@ -1204,12 +1204,16 @@ export type DriftVaults = {
 						type: 'u8';
 					},
 					{
+						name: 'version';
+						type: 'u8';
+					},
+					{
 						name: 'padding';
 						docs: [
 							'[`VaultProtocol`] is 117 bytes with padding to 120 bytes to make it a multiple of 8.'
 						];
 						type: {
-							array: ['u8', 3];
+							array: ['u8', 2];
 						};
 					}
 				];
@@ -3186,12 +3190,16 @@ export const IDL: DriftVaults = {
 						type: 'u8',
 					},
 					{
+						name: 'version',
+						type: 'u8',
+					},
+					{
 						name: 'padding',
 						docs: [
 							'[`VaultProtocol`] is 117 bytes with padding to 120 bytes to make it a multiple of 8.',
 						],
 						type: {
-							array: ['u8', 3],
+							array: ['u8', 2],
 						},
 					},
 				],

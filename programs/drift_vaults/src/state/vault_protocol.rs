@@ -18,8 +18,6 @@ pub struct VaultFee {
 #[derive(Default, Eq, PartialEq, Debug)]
 #[repr(C)]
 pub struct VaultProtocol {
-    // todo
-    pub version: u8,
     /// The protocol, company, or entity that services the product using this vault.
     /// The protocol is not allowed to deposit into the vault but can profit share and collect annual fees just like the manager.
     pub protocol: Pubkey,
@@ -39,6 +37,7 @@ pub struct VaultProtocol {
     /// Percentage the protocol charges on all profits realized by depositors: PERCENTAGE_PRECISION
     pub protocol_profit_share: u32,
     pub bump: u8,
+    pub version: u8,
     /// [`VaultProtocol`] is 117 bytes with padding to 120 bytes to make it a multiple of 8.
     pub padding: [u8; 2],
 }

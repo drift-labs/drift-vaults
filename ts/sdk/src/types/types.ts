@@ -113,6 +113,18 @@ export type VaultDepositor = {
 	padding: number[];
 };
 
+export type VaultProtocol = {
+	protocol: PublicKey;
+	protocolProfitAndFeeShares: BN;
+	protocolFee: BN;
+	protocolTotalWithdraws: BN;
+	protocolTotalFee: BN;
+	protocolTotalProfitShare: BN;
+	protocolProfitShare: number;
+	bump: number;
+	version: number;
+};
+
 export type VaultsProgramAccountBaseEvents = {
 	update: void;
 	error: (e: Error) => void;

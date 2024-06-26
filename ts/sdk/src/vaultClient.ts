@@ -266,9 +266,10 @@ export class VaultClient {
 		permissioned: boolean;
 		vaultProtocol?: VaultProtocolParams;
 	}): Promise<TransactionSignature> {
-		// this is a workaround to make client backwards compatible.
-		// vaultProtocol is optionally undefined, but the anchor type is optionally null.
-		// Old clients will default to undefined, and we can cast to null internally.
+		// This is a workaround to make client backwards compatible.
+		// VaultProtocol is optionally undefined, but the anchor type is optionally null.
+		// Old clients will default to undefined which prevents old clients from having to pass in a null value.
+		// Instead, we can cast to null internally.
 		const _params: VaultParams = {
 			...params,
 			vaultProtocol: params.vaultProtocol ? params.vaultProtocol : null,
@@ -362,7 +363,7 @@ export class VaultClient {
 	/**
 	 * Updates the vault margin trading status.
 	 * @param vault vault address to update
-	 * @param enabeld whether to enable margin trading
+	 * @param enabled whether to enable margin trading
 	 * @returns
 	 */
 	public async updateMarginTradingEnabled(
