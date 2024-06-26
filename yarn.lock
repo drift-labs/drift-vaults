@@ -137,13 +137,13 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
-"@drift-labs/competitions-sdk@0.2.338":
-  version "0.2.338"
-  resolved "https://registry.yarnpkg.com/@drift-labs/competitions-sdk/-/competitions-sdk-0.2.338.tgz#12b2a266f690da86d295375ad546b62aad8442eb"
-  integrity sha512-zsLpf7ZUFykj3pkScxjMYWF/h9giwfDRBcPJjhaVs6WZLK1RNSh3SUayvE4OSlOUvq62IZsjsNB2qlKyhU3MaQ==
+"@drift-labs/competitions-sdk@0.2.339":
+  version "0.2.339"
+  resolved "https://registry.yarnpkg.com/@drift-labs/competitions-sdk/-/competitions-sdk-0.2.339.tgz#b076260f6c5cd609f954fbea31d7afdaad00b0b0"
+  integrity sha512-KxkSK5w/vOJQR7tCcKKFQgyA6BkIMkms+4QwBnFXMllWxW03L6fyJc80Vzo9SFHj8MBliKI6p3gEXAxQE3Dx7w==
   dependencies:
     "@coral-xyz/anchor" "^0.26.0"
-    "@drift-labs/sdk" "2.85.0-beta.2"
+    "@drift-labs/sdk" "2.85.0-beta.3"
     "@solana/web3.js" "1.73.2"
     "@switchboard-xyz/solana.js" "^2.7.1"
     cerializr "^3.1.4"
@@ -152,10 +152,10 @@
     ts-node "^10.9.1"
     typescript "^5.1.6"
 
-"@drift-labs/sdk@2.85.0-beta.2":
-  version "2.85.0-beta.2"
-  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.85.0-beta.2.tgz#2c2dffdc7f095e95c047b1ed62cb1d898073a879"
-  integrity sha512-HF8nA9+fT9MTu1QdsrW0RVnErUoIi9Co9EVVvTEvs5vzJGp8O2jJi2yv68dP+aizZAvCRnjAUs+erjNxQHbkRA==
+"@drift-labs/sdk@2.85.0-beta.3":
+  version "2.85.0-beta.3"
+  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.85.0-beta.3.tgz#2af0f125bf82f555fc18b9fdb8d34a37a531497e"
+  integrity sha512-ZhImzMiVGiSrOULconkV9Gq7FWAb+i6rS9bAt/Zbhi9s9dA0kwYN3QIFv4YchVpTBXifR+MSp2uZomgzKHwhLA==
   dependencies:
     "@coral-xyz/anchor" "0.28.0"
     "@ellipsis-labs/phoenix-sdk" "^1.4.2"
