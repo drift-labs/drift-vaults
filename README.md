@@ -13,11 +13,18 @@ soon^TM
 * solana 1.16.27
 
 ```shell
-# if you don't have avm, install it here: https://book.anchor-lang.com/getting_started/installation.html
+# if you don't have avm, install it here: 
+# https://book.anchor-lang.com/getting_started/installation.html
 avm use 0.29.0
-# if on Apple Silicon, use 1.70.0-x86_64-apple-darwin
-rustup default 1.70.0
-# if you already have solana run: solana-install init 1.16.27
+
+# if on Apple Silicon:
+# rustup override set 1.70.0-x86_64-apple-darwin
+# else
+rustup override set 1.70.0
+
+# if you already have solana:
+# solana-install init 1.16.27
+# else:
 sh -c "$(curl -sSfL https://release.solana.com/v1.16.27/install)"
 ```
 
@@ -33,12 +40,8 @@ export PATH="/opt/homebrew/opt/gnu-tar/libexec/gnubin:$PATH"
 ```
 
 ## Run tests
-```
-cd ts/sdk
-yarn
-yarn build
+```shell
+yarn && cd ts/sdk && yarn && yarn build && cd ..
 
-cd ..
-export ANCHOR_WALLET=~/.config/solana/id.json
-anchor test
+export ANCHOR_WALLET=~/.config/solana/id.json && anchor test
 ```

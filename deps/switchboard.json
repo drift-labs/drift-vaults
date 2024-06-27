@@ -1,0 +1,489 @@
+{
+  "version": "0.1.0",
+  "name": "switchboard",
+  "instructions": [],
+  "accounts": [
+    {
+      "name": "AggregatorAccountData",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "name",
+            "docs": [
+              "Name of the aggregator to store on-chain."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "metadata",
+            "docs": [
+              "Metadata of the aggregator to store on-chain."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                128
+              ]
+            }
+          },
+          {
+            "name": "reserved1",
+            "docs": [
+              "Reserved."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "queuePubkey",
+            "docs": [
+              "Pubkey of the queue the aggregator belongs to."
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "oracleRequestBatchSize",
+            "docs": [
+              "CONFIGS",
+              "Number of oracles assigned to an update request."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "minOracleResults",
+            "docs": [
+              "Minimum number of oracle responses required before a round is validated."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "minJobResults",
+            "docs": [
+              "Minimum number of job results before an oracle accepts a result."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "minUpdateDelaySeconds",
+            "docs": [
+              "Minimum number of seconds required between aggregator rounds."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "startAfter",
+            "docs": [
+              "Unix timestamp for which no feed update will occur before."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "varianceThreshold",
+            "docs": [
+              "Change percentage required between a previous round and the current round. If variance percentage is not met, reject new oracle responses."
+            ],
+            "type": {
+              "defined": "SwitchboardDecimal"
+            }
+          },
+          {
+            "name": "forceReportPeriod",
+            "docs": [
+              "Number of seconds for which, even if the variance threshold is not passed, accept new responses from oracles."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "expiration",
+            "docs": [
+              "Timestamp when the feed is no longer needed."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "consecutiveFailureCount",
+            "docs": [
+              "Counter for the number of consecutive failures before a feed is removed from a queue. If set to 0, failed feeds will remain on the queue."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "nextAllowedUpdateTime",
+            "docs": [
+              "Timestamp when the next update request will be available."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "isLocked",
+            "docs": [
+              "Flag for whether an aggregators configuration is locked for editing."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "crankPubkey",
+            "docs": [
+              "Optional, public key of the crank the aggregator is currently using. Event based feeds do not need a crank."
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "latestConfirmedRound",
+            "docs": [
+              "Latest confirmed update request result that has been accepted as valid."
+            ],
+            "type": {
+              "defined": "AggregatorRound"
+            }
+          },
+          {
+            "name": "currentRound",
+            "docs": [
+              "Oracle results from the current round of update request that has not been accepted as valid yet."
+            ],
+            "type": {
+              "defined": "AggregatorRound"
+            }
+          },
+          {
+            "name": "jobPubkeysData",
+            "docs": [
+              "List of public keys containing the job definitions for how data is sourced off-chain by oracles."
+            ],
+            "type": {
+              "array": [
+                "publicKey",
+                16
+              ]
+            }
+          },
+          {
+            "name": "jobHashes",
+            "docs": [
+              "Used to protect against malicious RPC nodes providing incorrect task definitions to oracles before fulfillment."
+            ],
+            "type": {
+              "array": [
+                {
+                  "defined": "Hash"
+                },
+                16
+              ]
+            }
+          },
+          {
+            "name": "jobPubkeysSize",
+            "docs": [
+              "Number of jobs assigned to an oracle."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "jobsChecksum",
+            "docs": [
+              "Used to protect against malicious RPC nodes providing incorrect task definitions to oracles before fulfillment."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          },
+          {
+            "name": "authority",
+            "docs": [
+              "The account delegated as the authority for making account changes."
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "historyBuffer",
+            "docs": [
+              "Optional, public key of a history buffer account storing the last N accepted results and their timestamps."
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "previousConfirmedRoundResult",
+            "docs": [
+              "The previous confirmed round result."
+            ],
+            "type": {
+              "defined": "SwitchboardDecimal"
+            }
+          },
+          {
+            "name": "previousConfirmedRoundSlot",
+            "docs": [
+              "The slot when the previous confirmed round was opened."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "disableCrank",
+            "docs": [
+              "Whether an aggregator is permitted to join a crank."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "jobWeights",
+            "docs": [
+              "Job weights used for the weighted median of the aggregator's assigned job accounts."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                16
+              ]
+            }
+          },
+          {
+            "name": "creationTimestamp",
+            "docs": [
+              "Unix timestamp when the feed was created."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "resolutionMode",
+            "docs": [
+              "Use sliding windoe or round based resolution",
+              "NOTE: This changes result propogation in latest_round_result"
+            ],
+            "type": {
+              "defined": "AggregatorResolutionMode"
+            }
+          },
+          {
+            "name": "ebuf",
+            "docs": [
+              "Reserved for future info."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                138
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "types": [
+    {
+      "name": "SwitchboardDecimal",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "mantissa",
+            "docs": [
+              "The part of a floating-point number that represents the significant digits of that number, and that is multiplied by the base, 10, raised to the power of scale to give the actual value of the number."
+            ],
+            "type": "i128"
+          },
+          {
+            "name": "scale",
+            "docs": [
+              "The number of decimal places to move to the left to yield the actual value."
+            ],
+            "type": "u32"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Hash",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "data",
+            "docs": [
+              "The bytes used to derive the hash."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                32
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "AggregatorRound",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "numSuccess",
+            "docs": [
+              "Maintains the number of successful responses received from nodes.",
+              "Nodes can submit one successful response per round."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "numError",
+            "docs": [
+              "Number of error responses."
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "isClosed",
+            "docs": [
+              "Whether an update request round has ended."
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "roundOpenSlot",
+            "docs": [
+              "Maintains the `solana_program::clock::Slot` that the round was opened at."
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "roundOpenTimestamp",
+            "docs": [
+              "Maintains the `solana_program::clock::UnixTimestamp;` the round was opened at."
+            ],
+            "type": "i64"
+          },
+          {
+            "name": "result",
+            "docs": [
+              "Maintains the current median of all successful round responses."
+            ],
+            "type": {
+              "defined": "SwitchboardDecimal"
+            }
+          },
+          {
+            "name": "stdDeviation",
+            "docs": [
+              "Standard deviation of the accepted results in the round."
+            ],
+            "type": {
+              "defined": "SwitchboardDecimal"
+            }
+          },
+          {
+            "name": "minResponse",
+            "docs": [
+              "Maintains the minimum node response this round."
+            ],
+            "type": {
+              "defined": "SwitchboardDecimal"
+            }
+          },
+          {
+            "name": "maxResponse",
+            "docs": [
+              "Maintains the maximum node response this round."
+            ],
+            "type": {
+              "defined": "SwitchboardDecimal"
+            }
+          },
+          {
+            "name": "oraclePubkeysData",
+            "docs": [
+              "Pubkeys of the oracles fulfilling this round."
+            ],
+            "type": {
+              "array": [
+                "publicKey",
+                16
+              ]
+            }
+          },
+          {
+            "name": "mediansData",
+            "docs": [
+              "Represents all successful node responses this round. `NaN` if empty."
+            ],
+            "type": {
+              "array": [
+                {
+                  "defined": "SwitchboardDecimal"
+                },
+                16
+              ]
+            }
+          },
+          {
+            "name": "currentPayout",
+            "docs": [
+              "Current rewards/slashes oracles have received this round."
+            ],
+            "type": {
+              "array": [
+                "i64",
+                16
+              ]
+            }
+          },
+          {
+            "name": "mediansFulfilled",
+            "docs": [
+              "Keep track of which responses are fulfilled here."
+            ],
+            "type": {
+              "array": [
+                "bool",
+                16
+              ]
+            }
+          },
+          {
+            "name": "errorsFulfilled",
+            "docs": [
+              "Keeps track of which errors are fulfilled here."
+            ],
+            "type": {
+              "array": [
+                "bool",
+                16
+              ]
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "AggregatorResolutionMode",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "ModeRoundResolution"
+          },
+          {
+            "name": "ModeSlidingResolution"
+          }
+        ]
+      }
+    }
+  ],
+  "metadata": {
+    "address": "pNSeRSpcFkrEcfZ2wkfJdP2zCHp693SnAh35mpKSzkE"
+  }
+}

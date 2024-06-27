@@ -53,6 +53,7 @@ export async function mockOracle(
 			preflightCommitment: 'confirmed',
 		})
 	);
+
 	const priceFeedAddress = await createPriceFeed({
 		oracleProgram: program,
 		initPrice: price,
@@ -460,6 +461,7 @@ export async function initUserAccounts(
 const empty32Buffer = buffer.Buffer.alloc(32);
 const PKorNull = (data) =>
 	data.equals(empty32Buffer) ? null : new anchor.web3.PublicKey(data);
+
 export const createPriceFeed = async ({
 	oracleProgram,
 	initPrice,
@@ -473,27 +475,44 @@ export const createPriceFeed = async ({
 }): Promise<PublicKey> => {
 	const conf = new BN(confidence) || new BN((initPrice / 10) * 10 ** -expo);
 	const collateralTokenFeed = new anchor.web3.Account();
-	await oracleProgram.rpc.initialize(
-		new BN(initPrice * 10 ** -expo),
-		expo,
-		conf,
-		{
-			accounts: { price: collateralTokenFeed.publicKey },
-			signers: [collateralTokenFeed],
-			instructions: [
-				anchor.web3.SystemProgram.createAccount({
-					fromPubkey: oracleProgram.provider.wallet.publicKey,
-					newAccountPubkey: collateralTokenFeed.publicKey,
-					space: 3312,
-					lamports:
-						await oracleProgram.provider.connection.getMinimumBalanceForRentExemption(
-							3312
-						),
-					programId: oracleProgram.programId,
-				}),
-			],
-		}
-	);
+	await oracleProgram.methods
+		.initialize(new BN(initPrice * 10 ** -expo), expo, conf)
+		.accounts({ price: collateralTokenFeed.publicKey })
+		.signers([collateralTokenFeed])
+		.preInstructions([
+			anchor.web3.SystemProgram.createAccount({
+				fromPubkey: oracleProgram.provider.wallet.publicKey,
+				newAccountPubkey: collateralTokenFeed.publicKey,
+				space: 3312,
+				lamports:
+					await oracleProgram.provider.connection.getMinimumBalanceForRentExemption(
+						3312
+					),
+				programId: oracleProgram.programId,
+			}),
+		])
+		.rpc();
+	// await oracleProgram.rpc.initialize(
+	// 	new BN(initPrice * 10 ** -expo),
+	// 	expo,
+	// 	conf,
+	// 	{
+	// 		accounts: { price: collateralTokenFeed.publicKey },
+	// 		signers: [collateralTokenFeed],
+	// 		instructions: [
+	// 			anchor.web3.SystemProgram.createAccount({
+	// 				fromPubkey: oracleProgram.provider.wallet.publicKey,
+	// 				newAccountPubkey: collateralTokenFeed.publicKey,
+	// 				space: 3312,
+	// 				lamports:
+	// 					await oracleProgram.provider.connection.getMinimumBalanceForRentExemption(
+	// 						3312
+	// 					),
+	// 				programId: oracleProgram.programId,
+	// 			}),
+	// 		],
+	// 	}
+	// );
 	return collateralTokenFeed.publicKey;
 };
 
