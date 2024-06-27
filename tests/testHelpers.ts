@@ -15,7 +15,8 @@ import {
 import {
 	ConfirmOptions,
 	Connection,
-	Keypair, LAMPORTS_PER_SOL,
+	Keypair,
+	LAMPORTS_PER_SOL,
 	PublicKey,
 	sendAndConfirmTransaction,
 	SystemProgram,
@@ -37,9 +38,11 @@ import {
 	QUOTE_PRECISION,
 	User,
 	OracleSource,
-	MarketStatus, DriftClient, DriftClientSubscriptionConfig,
+	MarketStatus,
+	DriftClient,
+	DriftClientSubscriptionConfig,
 } from '@drift-labs/sdk';
-import {IDL, VaultClient} from "../ts/sdk";
+import { IDL, VaultClient } from '../ts/sdk';
 
 export async function mockOracle(
 	price: number = 50 * 10e7,
@@ -114,14 +117,12 @@ export async function mockUserUSDCAccount(
 	provider: Provider,
 	owner?: PublicKey
 ): Promise<Keypair> {
-	console.log('PAYER:', provider.wallet.payer.publicKey.toString());
 	const userUSDCAccount = anchor.web3.Keypair.generate();
 	const fakeUSDCTx = new Transaction();
 
 	if (owner === undefined) {
 		owner = provider.wallet.publicKey;
 	}
-	console.log('OWNER:', owner.toString());
 
 	const createUSDCTokenAccountIx = SystemProgram.createAccount({
 		fromPubkey: provider.wallet.publicKey,
@@ -902,29 +903,31 @@ export async function initializeSolSpotMarket(
 }
 
 export async function bootstrapSignerClientAndUser(params: {
-	payer: AnchorProvider,
-	programId: PublicKey,
-	usdcMint: Keypair,
-	usdcAmount: BN,
-	accountSubscription?: DriftClientSubscriptionConfig,
-	opts?: ConfirmOptions,
-	activeSubAccountId?: number,
-	perpMarketIndexes?: number[],
-	spotMarketIndexes?: number[],
-	oracleInfos?: OracleInfo[],
+	payer: AnchorProvider;
+	programId: PublicKey;
+	usdcMint: Keypair;
+	usdcAmount: BN;
+	depositCollateral: boolean;
+	accountSubscription?: DriftClientSubscriptionConfig;
+	opts?: ConfirmOptions;
+	activeSubAccountId?: number;
+	perpMarketIndexes?: number[];
+	spotMarketIndexes?: number[];
+	oracleInfos?: OracleInfo[];
 }): Promise<{
-	signer: Keypair,
-	user: User,
-	userUSDCAccount: Keypair,
-	driftClient: DriftClient,
-	vaultClient: VaultClient,
-	provider: AnchorProvider
+	signer: Keypair;
+	user: User;
+	userUSDCAccount: Keypair;
+	driftClient: DriftClient;
+	vaultClient: VaultClient;
+	provider: AnchorProvider;
 }> {
 	const {
 		payer,
 		programId,
 		usdcMint,
 		usdcAmount,
+		depositCollateral,
 		accountSubscription,
 		opts,
 		activeSubAccountId,
@@ -954,15 +957,11 @@ export async function bootstrapSignerClientAndUser(params: {
 		new anchor.Wallet(signer),
 		opts
 	);
-	const program = new Program(
-		IDL,
-		programId,
-		provider
-	);
+	const program = new Program(IDL, programId, provider);
 	const vaultClient = new VaultClient({
 		driftClient,
 		program,
-		cliMode: true
+		cliMode: true,
 	});
 	const userUSDCAccount = await mockUserUSDCAccount(
 		usdcMint,
@@ -971,9 +970,16 @@ export async function bootstrapSignerClientAndUser(params: {
 		signer.publicKey
 	);
 	await driftClient.subscribe();
-	await driftClient.initializeUserAccount(
-		activeSubAccountId ?? 0,
-	);
+	if (depositCollateral) {
+		await driftClient.initializeUserAccountAndDepositCollateral(
+			usdcAmount,
+			userUSDCAccount.publicKey,
+			0,
+			activeSubAccountId
+		);
+	} else {
+		await driftClient.initializeUserAccount(activeSubAccountId ?? 0);
+	}
 	const user = new User({
 		driftClient,
 		userAccountPublicKey: await driftClient.getUserAccountPublicKey(),
@@ -985,6 +991,6 @@ export async function bootstrapSignerClientAndUser(params: {
 		userUSDCAccount,
 		driftClient,
 		vaultClient,
-		provider
+		provider,
 	};
 }

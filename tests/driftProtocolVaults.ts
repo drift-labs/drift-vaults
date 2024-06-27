@@ -11,7 +11,6 @@ import {
 	PEG_PRECISION,
 	PublicKey,
 	BASE_PRECISION,
-
 	MarketStatus,
 	calculateReservePrice,
 	getLimitOrderParams,
@@ -24,10 +23,10 @@ import {
 	mockOracle,
 	mockUSDCMint,
 	printTxLogs,
+	setFeedPrice,
+	sleep,
 } from './testHelpers';
-import {
-	Keypair,
-} from '@solana/web3.js';
+import { Keypair } from '@solana/web3.js';
 import { assert } from 'chai';
 import {
 	VaultClient,
@@ -97,10 +96,12 @@ describe('driftProtocolVaults', () => {
 
 	before(async () => {
 		usdcMint = await mockUSDCMint(provider);
-		solPerpOracle = await mockOracle(1);
+		solPerpOracle = await mockOracle(32.821);
 		const perpMarketIndexes = [0];
 		const spotMarketIndexes = [0, 1];
-		const oracleInfos = [{ publicKey: solPerpOracle, source: OracleSource.PYTH }];
+		const oracleInfos = [
+			{ publicKey: solPerpOracle, source: OracleSource.PYTH },
+		];
 
 		const setupClient = new AdminClient({
 			connection,
@@ -140,6 +141,7 @@ describe('driftProtocolVaults', () => {
 			programId: program.programId,
 			usdcMint,
 			usdcAmount,
+			depositCollateral: true,
 			accountSubscription: {
 				type: 'websocket',
 				resubTimeoutMs: 30_000,
@@ -164,6 +166,7 @@ describe('driftProtocolVaults', () => {
 			programId: program.programId,
 			usdcMint,
 			usdcAmount,
+			depositCollateral: true,
 			accountSubscription: {
 				type: 'websocket',
 				resubTimeoutMs: 30_000,
@@ -190,6 +193,7 @@ describe('driftProtocolVaults', () => {
 			programId: program.programId,
 			usdcMint,
 			usdcAmount,
+			depositCollateral: false,
 			accountSubscription: {
 				type: 'websocket',
 				resubTimeoutMs: 30_000,
@@ -250,7 +254,10 @@ describe('driftProtocolVaults', () => {
 		});
 		const vaultAcct = await managerClient.program.account.vault.fetch(vault);
 		assert(vaultAcct.manager.equals(manager.publicKey));
-		const vp = getVaultProtocolAddressSync(managerClient.program.programId, vault);
+		const vp = getVaultProtocolAddressSync(
+			managerClient.program.programId,
+			vault
+		);
 		// asserts "exit" was called on VaultProtocol to define the discriminator
 		const vpAcctInfo = await connection.getAccountInfo(vp);
 		assert(vpAcctInfo.data.includes(Buffer.from(VAULT_PROTOCOL_DISCRIM)));
@@ -268,46 +275,48 @@ describe('driftProtocolVaults', () => {
 			vault,
 			vd.publicKey
 		);
-		const vdAcct = await vdClient.program.account.vaultDepositor.fetch(vaultDepositor);
+		const vdAcct = await vdClient.program.account.vaultDepositor.fetch(
+			vaultDepositor
+		);
 		assert(vdAcct.vault.equals(vault));
 	});
 
 	// vault depositor deposits USDC to the vault's token account
 	it('Vault Depositor Deposit', async () => {
-	  const vaultAccount = await vdClient.program.account.vault.fetch(vault);
-	  const vaultDepositor = getVaultDepositorAddressSync(
-	    vdClient.program.programId,
-	    vault,
-	    vd.publicKey
-	  );
-	  const remainingAccounts = adminClient.getRemainingAccounts({
-	    userAccounts: [],
-	    writableSpotMarketIndexes: [0],
-	  });
+		const vaultAccount = await vdClient.program.account.vault.fetch(vault);
+		const vaultDepositor = getVaultDepositorAddressSync(
+			vdClient.program.programId,
+			vault,
+			vd.publicKey
+		);
+		const remainingAccounts = adminClient.getRemainingAccounts({
+			userAccounts: [],
+			writableSpotMarketIndexes: [0],
+		});
 
-	  await vdClient.program.methods
-	    .deposit(usdcAmount)
-	    .accounts({
-	      vault,
-	      vaultDepositor,
-	      vaultTokenAccount: vaultAccount.tokenAccount,
-	      driftUserStats: vaultAccount.userStats,
-	      driftUser: vaultAccount.user,
-	      driftState: await adminClient.getStatePublicKey(),
-	      userTokenAccount: vdUserUSDCAccount.publicKey,
-	      driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
-	      driftProgram: adminClient.program.programId,
-	    })
-	    .remainingAccounts(remainingAccounts)
-	    .rpc();
+		await vdClient.program.methods
+			.deposit(usdcAmount)
+			.accounts({
+				vault,
+				vaultDepositor,
+				vaultTokenAccount: vaultAccount.tokenAccount,
+				driftUserStats: vaultAccount.userStats,
+				driftUser: vaultAccount.user,
+				driftState: await adminClient.getStatePublicKey(),
+				userTokenAccount: vdUserUSDCAccount.publicKey,
+				driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
+				driftProgram: adminClient.program.programId,
+			})
+			.remainingAccounts(remainingAccounts)
+			.rpc();
 	});
 
-	// todo: manager placeAndTake long order at 1, then maker placeAndMakeOrder short at 1
-	it('Long SOL-PERP at $1', async () => {
+	// manager place long order then maker fills it with a short order
+	it('Long SOL-PERP', async () => {
 		const baseAssetAmount = BASE_PRECISION;
 		const marketIndex = 0;
 
-		// manager places long taker order at 1
+		// manager places long taker order
 		const reservePrice = calculateReservePrice(
 			managerClient.driftClient.getPerpMarketAccount(marketIndex),
 			undefined
@@ -317,69 +326,77 @@ describe('driftProtocolVaults', () => {
 			marketIndex,
 			direction: PositionDirection.LONG,
 			baseAssetAmount,
-			price: reservePrice,
+			price: new BN(34).mul(PRICE_PRECISION),
+			auctionStartPrice: new BN(33).mul(PRICE_PRECISION),
+			auctionEndPrice: new BN(34).mul(PRICE_PRECISION),
+			auctionDuration: 10,
 			userOrderId: 1,
 			postOnly: PostOnlyParams.NONE,
 		});
-		const adminTradeTxSig = await managerClient.driftClient.placePerpOrder(takerOrderParams);
-		await printTxLogs(connection, adminTradeTxSig);
+		await managerClient.driftClient.placePerpOrder(takerOrderParams);
 		await managerUser.fetchAccounts();
 		const order = managerUser.getOrderByUserOrderId(1);
 		assert(!order.postOnly);
+		console.log('manager placed long order at $33');
 
-		// market maker fills long order with short order at $1
+		// market maker fills long order with short order
 		const makerOrderParams = getLimitOrderParams({
 			marketIndex,
 			direction: PositionDirection.SHORT,
 			baseAssetAmount,
-			price: reservePrice,
+			price: new BN(33).mul(PRICE_PRECISION),
 			userOrderId: 1,
 			postOnly: PostOnlyParams.MUST_POST_ONLY,
 			immediateOrCancel: true,
 		});
-		const makerTradeTxSig = await makerClient.driftClient.placeAndMakePerpOrder(
-			makerOrderParams,
-			{
-				taker: await makerClient.driftClient.getUserAccountPublicKey(),
-				order: makerClient.driftClient.getOrderByUserId(1),
-				takerUserAccount: makerClient.driftClient.getUserAccount(),
-				takerStats: makerClient.driftClient.getUserStatsAccountPublicKey(),
-			}
-		);
-		await printTxLogs(connection, makerTradeTxSig);
+		try {
+			const makerTradeTxSig =
+				await makerClient.driftClient.placeAndMakePerpOrder(makerOrderParams, {
+					taker: await managerClient.driftClient.getUserAccountPublicKey(),
+					order,
+					takerUserAccount: managerClient.driftClient.getUserAccount(),
+					takerStats: managerClient.driftClient.getUserStatsAccountPublicKey(),
+				});
+			await printTxLogs(connection, makerTradeTxSig);
+		} catch (e) {
+			console.log('failed to place maker order:', e);
+		}
+		console.log('maker filled manager');
 
 		const makerPosition = makerClient.driftClient.getUser().getPerpPosition(0);
 		assert(makerPosition.baseAssetAmount.eq(BASE_PRECISION.neg()));
 
-		const managerPosition = managerClient.driftClient.getUser().getPerpPosition(0);
+		const managerPosition = managerClient.driftClient
+			.getUser()
+			.getPerpPosition(0);
 		assert(managerPosition.baseAssetAmount.eq(BASE_PRECISION));
 	});
 
-	// // increase price of SOL perp from $100 to $150 to simulate appreciation in vault shares by 50%
+	// // increase price of SOL perp from $1 to $1.5 to simulate appreciation in vault shares by 50%
 	// it('Increase SOL-PERP Price', async () => {
 	//   const preOD = adminClient.getOracleDataForPerpMarket(0);
 	//   const priceBefore = preOD.price.div(PRICE_PRECISION).toNumber();
-	// 	assert(priceBefore == 100);
+	// 	assert(priceBefore == 1);
 	//
 	//   // SOL perp **market** sees 50% price increase
 	//   await adminClient.moveAmmToPrice(
 	//     0,
-	//     new BN(150 * PRICE_PRECISION.toNumber())
+	//     new BN(1.5 * PRICE_PRECISION.toNumber())
 	//   );
 	//
 	// 	// SOL perp **oracle** sees 50% price increase
 	// 	await setFeedPrice(
 	// 	anchor.workspace.Pyth,
-	// 		150,
+	// 		1.5,
 	// 		solPerpOracle
 	// 	);
 	//
 	// 	const postOD = adminClient.getOracleDataForPerpMarket(0);
 	// 	const priceAfter = postOD.price.div(PRICE_PRECISION).toNumber();
-	// 	assert(priceAfter == 150);
+	// 	assert(priceAfter == 1.5);
 	// });
 
-	// todo: manager placeAndTake short order at $150, then maker placeAndMakeOrder long at $150
+	// todo: manager placeAndTake short order at $1.5, then maker placeAndMakeOrder long at $1.5
 	// 	the manager will have effectively longed for a 50% profit
 
 	// it('Withdraw', async () => {
