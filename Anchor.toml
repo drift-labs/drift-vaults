@@ -6,7 +6,6 @@ skip-lint = false
 drift_vaults = "vAuLTsyrvSfZRuRB3XgvkPwNGgYSs9YRYymVebLKoxR"
 drift = "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
 pyth = "FsJ3A3u2vn5cTVofAjvy6y5kwABJAqYWpe4975bi2epH"
-#switchboard = "pNSeRSpcFkrEcfZ2wkfJdP2zCHp693SnAh35mpKSzkE"
 
 [registry]
 url = "https://api.apr.dev"
@@ -26,10 +25,6 @@ program = "./deps/drift_competitions.so"
 [[test.genesis]]
 address = "FsJ3A3u2vn5cTVofAjvy6y5kwABJAqYWpe4975bi2epH"
 program = "./deps/pyth.so"
-
-#[[test.genesis]]
-#address = "pNSeRSpcFkrEcfZ2wkfJdP2zCHp693SnAh35mpKSzkE"
-#program = "./deps/switchboard.so"
 
 [scripts]
 test = "yarn anchor-tests"
