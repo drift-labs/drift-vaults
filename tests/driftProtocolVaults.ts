@@ -94,9 +94,12 @@ describe('driftProtocolVaults', () => {
 
 	const VAULT_PROTOCOL_DISCRIM: number[] = [106, 130, 5, 195, 126, 82, 249, 53];
 
+	const initialSolPerpPrice = 30;
+	const finalSolPerpPrice = initialSolPerpPrice * 1.2;
+
 	before(async () => {
 		usdcMint = await mockUSDCMint(provider);
-		solPerpOracle = await mockOracle(33);
+		solPerpOracle = await mockOracle(initialSolPerpPrice);
 		const perpMarketIndexes = [0];
 		const spotMarketIndexes = [0, 1];
 		const oracleInfos = [
@@ -320,24 +323,21 @@ describe('driftProtocolVaults', () => {
 			.rpc();
 	});
 
-	// manager place long order then maker fills it with a short order
+	// todo: manager client should be trading using Vault user, not generated user
+
+	// manager enters long at oracle price
 	it('Long SOL-PERP', async () => {
 		const baseAssetAmount = BASE_PRECISION;
 		const marketIndex = 0;
 
-		// manager places long taker order
-		const reservePrice = calculateReservePrice(
-			managerClient.driftClient.getPerpMarketAccount(marketIndex),
-			undefined
-		);
-		console.log('reserve price:', reservePrice.div(PRICE_PRECISION).toNumber());
+		// manager places long order and waits to be filled by the maker
 		const takerOrderParams = getLimitOrderParams({
 			marketIndex,
 			direction: PositionDirection.LONG,
 			baseAssetAmount,
-			price: new BN(34).mul(PRICE_PRECISION),
-			auctionStartPrice: new BN(33).mul(PRICE_PRECISION),
-			auctionEndPrice: new BN(34).mul(PRICE_PRECISION),
+			price: new BN(initialSolPerpPrice + 1).mul(PRICE_PRECISION),
+			auctionStartPrice: new BN(initialSolPerpPrice).mul(PRICE_PRECISION),
+			auctionEndPrice: new BN(initialSolPerpPrice + 1).mul(PRICE_PRECISION),
 			auctionDuration: 10,
 			userOrderId: 1,
 			postOnly: PostOnlyParams.NONE,
@@ -346,14 +346,13 @@ describe('driftProtocolVaults', () => {
 		await managerUser.fetchAccounts();
 		const order = managerUser.getOrderByUserOrderId(1);
 		assert(!order.postOnly);
-		console.log('manager placed long order at $33');
 
-		// market maker fills long order with short order
+		// market maker fills manager's long
 		const makerOrderParams = getLimitOrderParams({
 			marketIndex,
 			direction: PositionDirection.SHORT,
 			baseAssetAmount,
-			price: new BN(33).mul(PRICE_PRECISION),
+			price: new BN(initialSolPerpPrice).mul(PRICE_PRECISION),
 			userOrderId: 1,
 			postOnly: PostOnlyParams.MUST_POST_ONLY,
 			immediateOrCancel: true,
@@ -364,7 +363,6 @@ describe('driftProtocolVaults', () => {
 			takerUserAccount: managerClient.driftClient.getUserAccount(),
 			takerStats: managerClient.driftClient.getUserStatsAccountPublicKey(),
 		});
-		console.log('maker filled manager');
 
 		const makerPosition = makerClient.driftClient.getUser().getPerpPosition(0);
 		assert(makerPosition.baseAssetAmount.eq(BASE_PRECISION.neg()));
@@ -375,118 +373,163 @@ describe('driftProtocolVaults', () => {
 		assert(managerPosition.baseAssetAmount.eq(BASE_PRECISION));
 	});
 
-	// // increase price of SOL perp from $32.821 to $50 to simulate appreciation in vault shares by 50%
-	// it('Increase SOL-PERP Price', async () => {
-	//   const preOD = adminClient.getOracleDataForPerpMarket(0);
-	//   const priceBefore = preOD.price.div(PRICE_PRECISION).toNumber();
-	// 	assert(priceBefore == 1);
-	//
-	//   // SOL perp **market** sees 50% price increase
-	//   await adminClient.moveAmmToPrice(
-	//     0,
-	//     new BN(1.5 * PRICE_PRECISION.toNumber())
-	//   );
-	//
-	// 	// SOL perp **oracle** sees 50% price increase
-	// 	await setFeedPrice(
-	// 	anchor.workspace.Pyth,
-	// 		1.5,
-	// 		solPerpOracle
-	// 	);
-	//
-	// 	const postOD = adminClient.getOracleDataForPerpMarket(0);
-	// 	const priceAfter = postOD.price.div(PRICE_PRECISION).toNumber();
-	// 	assert(priceAfter == 1.5);
-	// });
+	// increase price of SOL perp by 20%
+	it('Increase SOL-PERP Price by 20%', async () => {
+	  const preOD = adminClient.getOracleDataForPerpMarket(0);
+	  const priceBefore = preOD.price.div(PRICE_PRECISION).toNumber();
+		assert(priceBefore == initialSolPerpPrice);
 
-	// todo: manager placeAndTake short order at $1.5, then maker placeAndMakeOrder long at $1.5
-	// 	the manager will have effectively longed for a 50% profit
+	  // increase AMM by 20%
+	  await adminClient.moveAmmToPrice(
+	    0,
+	    new BN(finalSolPerpPrice * PRICE_PRECISION.toNumber())
+	  );
 
-	// it('Withdraw', async () => {
-	//   const vaultAccount = await program.account.vault.fetch(vault);
-	//   const vaultDepositor = getVaultDepositorAddressSync(
-	//     program.programId,
-	//     vault,
-	//     provider.wallet.publicKey
-	//   );
-	//   const remainingAccounts = adminClient.getRemainingAccounts({
-	//     userAccounts: [],
-	//     writableSpotMarketIndexes: [0],
-	//   });
-	//
-	//   const vaultDepositorAccount = await program.account.vaultDepositor.fetch(
-	//     vaultDepositor
-	//   );
-	//   assert(vaultDepositorAccount.lastWithdrawRequest.value.eq(new BN(0)));
-	// 	// $100 initial deposit = 100_000_000 shares
-	//   assert(vaultDepositorAccount.vaultShares.eq(new BN(100_000_000)));
-	//
-	//
-	// 	const vaultEquity = (await vaultClient.calculateVaultEquityInDepositAsset({
-	// 		address: vault
-	// 	})).toNumber();
-	// 	console.log('vaultEquity:', vaultEquity);
-	// 	const vaultTotalShares = vaultAccount.totalShares.toNumber();
-	// 	console.log('vaultTotalShares:', vaultTotalShares);
-	// 	const vdShares = vaultDepositorAccount.vaultShares.toNumber();
-	// 	console.log('vdShares:', vdShares);
-	// 	const vdEquity = (vdShares / vaultTotalShares) * vaultEquity;
-	// 	console.log('vdEquity:', vdEquity);
-	//
-	//   // request withdraw
-	//   const requestTxSig = await program.methods
-	//     .requestWithdraw(usdcAmount, WithdrawUnit.TOKEN)
-	//     .accounts({
-	//       // userTokenAccount: userUSDCAccount.publicKey,
-	//       vault,
-	//       vaultDepositor,
-	//       driftUser: vaultAccount.user,
-	//       driftUserStats: vaultAccount.userStats,
-	//       driftState: await adminClient.getStatePublicKey(),
-	//       // driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
-	//       // driftSigner: adminClient.getStateAccount().signer,
-	//       // driftProgram: adminClient.program.programId,
-	//       // tokenProgram: TOKEN_PROGRAM_ID,
-	//     })
-	//     .remainingAccounts(remainingAccounts)
-	//     .rpc();
-	//   await printTxLogs(provider.connection, requestTxSig);
-	//
-	//   const vaultDepositorAccountAfter =
-	//     await program.account.vaultDepositor.fetch(vaultDepositor);
-	//   assert(vaultDepositorAccountAfter.vaultShares.eq(new BN(100_000_000)));
-	// 	console.log('withdraw shares:', vaultDepositorAccountAfter.lastWithdrawRequest.shares.toNumber());
-	// 	console.log('withdraw value:', vaultDepositorAccountAfter.lastWithdrawRequest.value.toNumber());
-	//
-	// 	assert(
-	//     !vaultDepositorAccountAfter.lastWithdrawRequest.shares.eq(new BN(0))
-	//   );
-	//   assert(!vaultDepositorAccountAfter.lastWithdrawRequest.value.eq(new BN(0)));
-	//
-	//   // do withdraw
-	//   console.log('do withdraw');
-	//   try {
-	//     const txSig = await program.methods
-	//       .withdraw()
-	//       .accounts({
-	//         userTokenAccount: vdUserUSDCAccount.publicKey,
-	//         vault,
-	//         vaultDepositor,
-	//         vaultTokenAccount: vaultAccount.tokenAccount,
-	//         driftUser: vaultAccount.user,
-	//         driftUserStats: vaultAccount.userStats,
-	//         driftState: await adminClient.getStatePublicKey(),
-	//         driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
-	//         driftSigner: adminClient.getStateAccount().signer,
-	//         driftProgram: adminClient.program.programId,
-	//       })
-	//       .remainingAccounts(remainingAccounts)
-	//       .rpc();
-	//
-	//     await printTxLogs(provider.connection, txSig);
-	//   } catch (e) {
-	//     console.error(e);
-	//     assert(false);
-	//   }
-	// });
+		// increase oracle by 20%
+		await setFeedPrice(
+		anchor.workspace.Pyth,
+			finalSolPerpPrice,
+			solPerpOracle
+		);
+
+		const postOD = adminClient.getOracleDataForPerpMarket(0);
+		const priceAfter = postOD.price.div(PRICE_PRECISION).toNumber();
+		assert(priceAfter == finalSolPerpPrice);
+	});
+
+	// manager exits long for a 20% profit
+	it('Short SOL-PERP', async () => {
+		const baseAssetAmount = BASE_PRECISION;
+		const marketIndex = 0;
+
+		// manager places long order and waits to be filled by the maker
+		const takerOrderParams = getLimitOrderParams({
+			marketIndex,
+			direction: PositionDirection.SHORT,
+			baseAssetAmount,
+			price: new BN(finalSolPerpPrice - 1).mul(PRICE_PRECISION),
+			auctionStartPrice: new BN(finalSolPerpPrice).mul(PRICE_PRECISION),
+			auctionEndPrice: new BN(finalSolPerpPrice - 1).mul(PRICE_PRECISION),
+			auctionDuration: 10,
+			userOrderId: 1,
+			postOnly: PostOnlyParams.NONE,
+		});
+		await managerClient.driftClient.placePerpOrder(takerOrderParams);
+		await managerUser.fetchAccounts();
+		const order = managerUser.getOrderByUserOrderId(1);
+		assert(!order.postOnly);
+
+		// market maker fills manager's long
+		const makerOrderParams = getLimitOrderParams({
+			marketIndex,
+			direction: PositionDirection.LONG,
+			baseAssetAmount,
+			price: new BN(finalSolPerpPrice).mul(PRICE_PRECISION),
+			userOrderId: 1,
+			postOnly: PostOnlyParams.MUST_POST_ONLY,
+			immediateOrCancel: true,
+		});
+		await makerClient.driftClient.placeAndMakePerpOrder(makerOrderParams, {
+			taker: await managerClient.driftClient.getUserAccountPublicKey(),
+			order,
+			takerUserAccount: managerClient.driftClient.getUserAccount(),
+			takerStats: managerClient.driftClient.getUserStatsAccountPublicKey(),
+		});
+
+		const makerPosition = makerClient.driftClient.getUser().getPerpPosition(0);
+		assert(makerPosition.baseAssetAmount.eq(ZERO));
+
+		const managerPosition = managerClient.driftClient
+			.getUser()
+			.getPerpPosition(0);
+		assert(managerPosition.baseAssetAmount.eq(ZERO));
+	});
+
+	it('Withdraw', async () => {
+	  const vaultAccount = await program.account.vault.fetch(vault);
+	  const vaultDepositor = getVaultDepositorAddressSync(
+	    program.programId,
+	    vault,
+	    vd.publicKey
+	  );
+	  const remainingAccounts = adminClient.getRemainingAccounts({
+	    userAccounts: [],
+	    writableSpotMarketIndexes: [0],
+	  });
+
+	  const vaultDepositorAccount = await program.account.vaultDepositor.fetch(
+	    vaultDepositor
+	  );
+	  assert(vaultDepositorAccount.lastWithdrawRequest.value.eq(new BN(0)));
+		// $100 initial deposit = 100_000_000 shares
+	  assert(vaultDepositorAccount.vaultShares.eq(new BN(100_000_000)));
+
+
+		const vaultEquity = (await vdClient.calculateVaultEquityInDepositAsset({
+			address: vault
+		})).toNumber();
+		console.log('vaultEquity:', vaultEquity);
+		const vaultTotalShares = vaultAccount.totalShares.toNumber();
+		console.log('vaultTotalShares:', vaultTotalShares);
+		const vdShares = vaultDepositorAccount.vaultShares.toNumber();
+		console.log('vdShares:', vdShares);
+		const vdEquity = (vdShares / vaultTotalShares) * vaultEquity;
+		console.log('vdEquity:', vdEquity);
+
+	  // // request withdraw
+	  // const requestTxSig = await program.methods
+	  //   .requestWithdraw(usdcAmount, WithdrawUnit.TOKEN)
+	  //   .accounts({
+	  //     // userTokenAccount: userUSDCAccount.publicKey,
+	  //     vault,
+	  //     vaultDepositor,
+	  //     driftUser: vaultAccount.user,
+	  //     driftUserStats: vaultAccount.userStats,
+	  //     driftState: await adminClient.getStatePublicKey(),
+	  //     // driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
+	  //     // driftSigner: adminClient.getStateAccount().signer,
+	  //     // driftProgram: adminClient.program.programId,
+	  //     // tokenProgram: TOKEN_PROGRAM_ID,
+	  //   })
+	  //   .remainingAccounts(remainingAccounts)
+	  //   .rpc();
+	  // await printTxLogs(provider.connection, requestTxSig);
+		//
+	  // const vaultDepositorAccountAfter =
+	  //   await program.account.vaultDepositor.fetch(vaultDepositor);
+	  // assert(vaultDepositorAccountAfter.vaultShares.eq(new BN(100_000_000)));
+		// console.log('withdraw shares:', vaultDepositorAccountAfter.lastWithdrawRequest.shares.toNumber());
+		// console.log('withdraw value:', vaultDepositorAccountAfter.lastWithdrawRequest.value.toNumber());
+		//
+		// assert(
+	  //   !vaultDepositorAccountAfter.lastWithdrawRequest.shares.eq(new BN(0))
+	  // );
+	  // assert(!vaultDepositorAccountAfter.lastWithdrawRequest.value.eq(new BN(0)));
+		//
+	  // // do withdraw
+	  // console.log('do withdraw');
+	  // try {
+	  //   const txSig = await program.methods
+	  //     .withdraw()
+	  //     .accounts({
+	  //       userTokenAccount: vdUserUSDCAccount.publicKey,
+	  //       vault,
+	  //       vaultDepositor,
+	  //       vaultTokenAccount: vaultAccount.tokenAccount,
+	  //       driftUser: vaultAccount.user,
+	  //       driftUserStats: vaultAccount.userStats,
+	  //       driftState: await adminClient.getStatePublicKey(),
+	  //       driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
+	  //       driftSigner: adminClient.getStateAccount().signer,
+	  //       driftProgram: adminClient.program.programId,
+	  //     })
+	  //     .remainingAccounts(remainingAccounts)
+	  //     .rpc();
+		//
+	  //   await printTxLogs(provider.connection, txSig);
+	  // } catch (e) {
+	  //   console.error(e);
+	  //   assert(false);
+	  // }
+	});
 });
