@@ -28,7 +28,7 @@ import {
 	mockOracle,
 	mockUSDCMint,
 	mockUserUSDCAccount,
-	printTxLogs,
+	printTxLogs, setFeedPrice,
 	sleep,
 } from './testHelpers';
 import {
@@ -107,6 +107,7 @@ describe('driftProtocolVaults', () => {
 	);
 
 	let usdcMint: Keypair;
+	let solPerpOracle: PublicKey;
 
 	const protocol = Keypair.generate().publicKey;
 	const vaultName = 'protocol vault';
@@ -121,10 +122,10 @@ describe('driftProtocolVaults', () => {
 		usdcMint = await mockUSDCMint(provider);
 
 		// define oracle for SOL perp market
-		const solUsd = await mockOracle(32.821);
+		solPerpOracle = await mockOracle(100.0);
 		const marketIndexes = [0];
 		const spotMarketIndexes = [0, 1];
-		const oracleInfos = [{ publicKey: solUsd, source: OracleSource.PYTH }];
+		const oracleInfos = [{ publicKey: solPerpOracle, source: OracleSource.PYTH }];
 
 		const setupClient = new AdminClient({
 			connection,
@@ -148,11 +149,31 @@ describe('driftProtocolVaults', () => {
 
 		await setupClient.initializePerpMarket(
 			0,
-			solUsd,
+			solPerpOracle,
 			ammInitialBaseAssetReserve,
 			ammInitialQuoteAssetReserve,
 			new BN(0),
-			new BN(32 * PEG_PRECISION.toNumber())
+			new BN(32 * PEG_PRECISION.toNumber()),
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+		undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			undefined,
+			"SOL-PERP"
 		);
 		await setupClient.unsubscribe();
 
@@ -313,7 +334,7 @@ describe('driftProtocolVaults', () => {
 	    writableSpotMarketIndexes: [0],
 	  });
 
-	  const txSig = await program.methods
+	  await program.methods
 	    .deposit(usdcAmount)
 	    .accounts({
 	      vault,
@@ -328,26 +349,33 @@ describe('driftProtocolVaults', () => {
 	    })
 	    .remainingAccounts(remainingAccounts)
 	    .rpc();
-	  await printTxLogs(provider.connection, txSig);
 	});
 
-	// // todo: increase price of SOL perp market to simulate profitable trade
-	// //  use adminClient.moveAmmToPrice to simulate profitable trade to test the ability of the user, manager, and
-	// //  protocol to withdraw profit shares.
-	// it('Increase SOL-PERP Price', async () => {
-	//   const sm = adminClient.getSpotMarketAccount(0);
-	//   const od = adminClient.getOracleDataForSpotMarket(0);
-	//   const priceBefore = od.price.div(PRICE_PRECISION).toNumber();
-	//   const name = decodeName(sm.name);
-	//   console.log(`${name} price before: ${priceBefore}`);
-	//   // SOL perp market sees 50% price increase
-	//   const txSig = await adminClient.moveAmmToPrice(
-	//     0,
-	//     new BN(150.0 * PRICE_PRECISION.toNumber())
-	//   );
-	//   await printTxLogs(provider.connection, txSig);
-	// });
-	//
+	// increase price of SOL perp from $100 to $150 to simulate appreciation in vault shares by 50%
+	it('Increase SOL-PERP Price', async () => {
+	  const preOD = adminClient.getOracleDataForPerpMarket(0);
+	  const priceBefore = preOD.price.div(PRICE_PRECISION).toNumber();
+		assert(priceBefore == 100);
+
+	  // SOL perp **market** sees 50% price increase
+	  const txSig = await adminClient.moveAmmToPrice(
+	    0,
+	    new BN(150.0 * PRICE_PRECISION.toNumber())
+	  );
+	  await printTxLogs(provider.connection, txSig);
+
+		// SOL perp **oracle** sees 50% price increase
+		await setFeedPrice(
+		anchor.workspace.Pyth,
+			150.0,
+			solPerpOracle
+		);
+
+		const postOD = adminClient.getOracleDataForPerpMarket(0);
+		const priceAfter = postOD.price.div(PRICE_PRECISION).toNumber();
+		assert(priceAfter == 150);
+	});
+
 	// it('Withdraw', async () => {
 	//   const vaultAccount = await program.account.vault.fetch(vault);
 	//   const vaultDepositor = getVaultDepositorAddressSync(
