@@ -96,7 +96,7 @@ describe('driftProtocolVaults', () => {
 
 	before(async () => {
 		usdcMint = await mockUSDCMint(provider);
-		solPerpOracle = await mockOracle(32.821);
+		solPerpOracle = await mockOracle(33);
 		const perpMarketIndexes = [0];
 		const spotMarketIndexes = [0, 1];
 		const oracleInfos = [
@@ -293,6 +293,15 @@ describe('driftProtocolVaults', () => {
 			userAccounts: [],
 			writableSpotMarketIndexes: [0],
 		});
+		const vaultProtocol = getVaultProtocolAddressSync(
+			managerClient.program.programId,
+			vault
+		);
+		remainingAccounts.push({
+			pubkey: vaultProtocol,
+			isSigner: false,
+			isWritable: true,
+		});
 
 		await vdClient.program.methods
 			.deposit(usdcAmount)
@@ -349,18 +358,12 @@ describe('driftProtocolVaults', () => {
 			postOnly: PostOnlyParams.MUST_POST_ONLY,
 			immediateOrCancel: true,
 		});
-		try {
-			const makerTradeTxSig =
-				await makerClient.driftClient.placeAndMakePerpOrder(makerOrderParams, {
-					taker: await managerClient.driftClient.getUserAccountPublicKey(),
-					order,
-					takerUserAccount: managerClient.driftClient.getUserAccount(),
-					takerStats: managerClient.driftClient.getUserStatsAccountPublicKey(),
-				});
-			await printTxLogs(connection, makerTradeTxSig);
-		} catch (e) {
-			console.log('failed to place maker order:', e);
-		}
+		await makerClient.driftClient.placeAndMakePerpOrder(makerOrderParams, {
+			taker: await managerClient.driftClient.getUserAccountPublicKey(),
+			order,
+			takerUserAccount: managerClient.driftClient.getUserAccount(),
+			takerStats: managerClient.driftClient.getUserStatsAccountPublicKey(),
+		});
 		console.log('maker filled manager');
 
 		const makerPosition = makerClient.driftClient.getUser().getPerpPosition(0);
@@ -372,7 +375,7 @@ describe('driftProtocolVaults', () => {
 		assert(managerPosition.baseAssetAmount.eq(BASE_PRECISION));
 	});
 
-	// // increase price of SOL perp from $1 to $1.5 to simulate appreciation in vault shares by 50%
+	// // increase price of SOL perp from $32.821 to $50 to simulate appreciation in vault shares by 50%
 	// it('Increase SOL-PERP Price', async () => {
 	//   const preOD = adminClient.getOracleDataForPerpMarket(0);
 	//   const priceBefore = preOD.price.div(PRICE_PRECISION).toNumber();

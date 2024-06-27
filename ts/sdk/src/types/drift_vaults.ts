@@ -1982,6 +1982,11 @@ export type DriftVaults = {
 			code: 6021;
 			name: 'OngoingLiquidation';
 			msg: 'OngoingLiquidation';
+		},
+		{
+			code: 6022;
+			name: 'VaultProtocolMissing';
+			msg: 'VaultProtocolMissing';
 		}
 	];
 };
@@ -3970,6 +3975,11 @@ export const IDL: DriftVaults = {
 			code: 6021,
 			name: 'OngoingLiquidation',
 			msg: 'OngoingLiquidation',
+		},
+		{
+			code: 6022,
+			name: 'VaultProtocolMissing',
+			msg: 'VaultProtocolMissing',
 		},
 	],
 };

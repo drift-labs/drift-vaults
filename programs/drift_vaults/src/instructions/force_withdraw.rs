@@ -8,9 +8,10 @@ use drift::state::user::User;
 
 use crate::constraints::*;
 use crate::drift_cpi::{TokenTransferCPI, WithdrawCPI};
+use crate::error::ErrorCode;
 use crate::state::{Vault, VaultProtocolProvider};
-use crate::VaultDepositor;
 use crate::{declare_vault_seeds, AccountMapProvider};
+use crate::{validate, VaultDepositor};
 
 pub fn force_withdraw<'c: 'info, 'info>(
     ctx: Context<'_, '_, 'c, 'info, ForceWithdraw<'info>>,
@@ -22,6 +23,13 @@ pub fn force_withdraw<'c: 'info, 'info>(
     // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
     let mut vp = ctx.vault_protocol();
     let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
+
+    validate!(
+        (vault.vault_protocol == Pubkey::default() && vp.is_none())
+            || (vault.vault_protocol != Pubkey::default() && vp.is_some()),
+        ErrorCode::VaultProtocolMissing,
+        "vault protocol missing in remaining accounts"
+    )?;
 
     let user = ctx.accounts.drift_user.load()?;
     let spot_market_index = vault.spot_market_index;

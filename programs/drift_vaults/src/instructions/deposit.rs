@@ -28,6 +28,13 @@ pub fn deposit<'c: 'info, 'info>(
     let mut vp = ctx.vault_protocol();
     let vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
 
+    validate!(
+        (vault.vault_protocol == Pubkey::default() && vp.is_none())
+            || (vault.vault_protocol != Pubkey::default() && vp.is_some()),
+        ErrorCode::VaultProtocolMissing,
+        "vault protocol missing in remaining accounts"
+    )?;
+
     let user = ctx.accounts.drift_user.load()?;
     let spot_market_index = vault.spot_market_index;
 

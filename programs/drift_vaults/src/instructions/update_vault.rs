@@ -14,6 +14,13 @@ pub fn update_vault<'c: 'info, 'info>(
     let mut vp = ctx.vault_protocol();
     let vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
 
+    validate!(
+        (vault.vault_protocol == Pubkey::default() && vp.is_none())
+            || (vault.vault_protocol != Pubkey::default() && vp.is_some()),
+        ErrorCode::VaultProtocolMissing,
+        "vault protocol missing in remaining accounts"
+    )?;
+
     validate!(!vault.in_liquidation(), ErrorCode::OngoingLiquidation)?;
 
     if let Some(redeem_period) = params.redeem_period {

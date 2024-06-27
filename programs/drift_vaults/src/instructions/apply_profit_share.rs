@@ -7,9 +7,10 @@ use crate::constraints::{
     is_delegate_for_vault, is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault,
     is_vault_for_vault_depositor,
 };
+use crate::error::ErrorCode;
 use crate::state::{Vault, VaultProtocolProvider};
-use crate::AccountMapProvider;
 use crate::VaultDepositor;
+use crate::{validate, AccountMapProvider};
 
 pub fn apply_profit_share<'c: 'info, 'info>(
     ctx: Context<'_, '_, 'c, 'info, ApplyProfitShare<'info>>,
@@ -23,6 +24,13 @@ pub fn apply_profit_share<'c: 'info, 'info>(
     // let mut vp = ctx.vault_protocol().map(|vp| vp.load_mut()).transpose()?;
     let mut vp = ctx.vault_protocol();
     let vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
+
+    validate!(
+        (vault.vault_protocol == Pubkey::default() && vp.is_none())
+            || (vault.vault_protocol != Pubkey::default() && vp.is_some()),
+        ErrorCode::VaultProtocolMissing,
+        "vault protocol missing in remaining accounts"
+    )?;
 
     let user = ctx.accounts.drift_user.load()?;
     let spot_market_index = vault.spot_market_index;

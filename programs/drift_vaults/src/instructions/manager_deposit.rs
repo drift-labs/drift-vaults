@@ -7,8 +7,9 @@ use drift::state::user::User;
 
 use crate::constraints::{is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault};
 use crate::drift_cpi::{DepositCPI, TokenTransferCPI};
+use crate::error::ErrorCode;
 use crate::state::{Vault, VaultProtocolProvider};
-use crate::{declare_vault_seeds, AccountMapProvider};
+use crate::{declare_vault_seeds, validate, AccountMapProvider};
 
 pub fn manager_deposit<'c: 'info, 'info>(
     ctx: Context<'_, '_, 'c, 'info, ManagerDeposit<'info>>,
@@ -21,6 +22,13 @@ pub fn manager_deposit<'c: 'info, 'info>(
     // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
     let mut vp = ctx.vault_protocol();
     let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
+
+    validate!(
+        (vault.vault_protocol == Pubkey::default() && vp.is_none())
+            || (vault.vault_protocol != Pubkey::default() && vp.is_some()),
+        ErrorCode::VaultProtocolMissing,
+        "vault protocol missing in remaining accounts"
+    )?;
 
     let user = ctx.accounts.drift_user.load()?;
     let spot_market_index = vault.spot_market_index;
