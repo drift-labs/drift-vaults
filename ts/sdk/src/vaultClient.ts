@@ -316,7 +316,6 @@ export class VaultClient {
 				this.program.programId,
 				getVaultAddressSync(this.program.programId, params.name)
 			);
-
 			const remainingAccounts: AccountMeta[] = [
 				{
 					pubkey: vaultProtocol,
@@ -324,7 +323,6 @@ export class VaultClient {
 					isWritable: true,
 				},
 			];
-
 			return await this.program.methods
 				.initializeVault(_params)
 				.accounts(accounts)

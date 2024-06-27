@@ -63,7 +63,8 @@ pub struct Vault {
     pub total_withdraw_requested: u64,
     /// Max token capacity, once hit/passed vault will reject new deposits (updatable)
     pub max_tokens: u64,
-    /// The annual fee charged on deposits by the manager (traditional hedge funds typically charge 2% per year on assets under management)
+    /// The annual fee charged on deposits by the manager.
+    /// Traditional funds typically charge 2% per year on assets under management.
     pub management_fee: i64,
     /// Timestamp vault initialized
     pub init_ts: i64,
@@ -79,9 +80,9 @@ pub struct Vault {
     pub manager_total_deposits: u64,
     /// Total withdraws for the manager
     pub manager_total_withdraws: u64,
-    /// Total management fee charged by the manager (annual management fee + profit share)
+    /// Total management fee accrued by the manager
     pub manager_total_fee: i64,
-    /// Total profit share charged by the manager
+    /// Total profit share accrued by the manager
     pub manager_total_profit_share: u64,
     /// The minimum deposit amount
     pub min_deposit_amount: u64,
@@ -98,10 +99,9 @@ pub struct Vault {
     pub bump: u8,
     /// Whether anybody can be a depositor
     pub permissioned: bool,
-
-    /// The [`VaultProtocol`] account
+    /// The optional [`VaultProtocol`] account.
+    /// If this is the default Pubkey (system program id) then it is "none".
     pub vault_protocol: Pubkey,
-
     pub padding: [u64; 4],
 }
 

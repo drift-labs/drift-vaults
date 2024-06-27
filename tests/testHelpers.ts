@@ -13,8 +13,9 @@ import {
 	createWrappedNativeAccount,
 } from '@solana/spl-token';
 import {
+	ConfirmOptions,
 	Connection,
-	Keypair,
+	Keypair, LAMPORTS_PER_SOL,
 	PublicKey,
 	sendAndConfirmTransaction,
 	SystemProgram,
@@ -36,8 +37,9 @@ import {
 	QUOTE_PRECISION,
 	User,
 	OracleSource,
-	MarketStatus,
+	MarketStatus, DriftClient, DriftClientSubscriptionConfig,
 } from '@drift-labs/sdk';
+import {IDL, VaultClient} from "../ts/sdk";
 
 export async function mockOracle(
 	price: number = 50 * 10e7,
@@ -112,12 +114,14 @@ export async function mockUserUSDCAccount(
 	provider: Provider,
 	owner?: PublicKey
 ): Promise<Keypair> {
+	console.log('PAYER:', provider.wallet.payer.publicKey.toString());
 	const userUSDCAccount = anchor.web3.Keypair.generate();
 	const fakeUSDCTx = new Transaction();
 
 	if (owner === undefined) {
 		owner = provider.wallet.publicKey;
 	}
+	console.log('OWNER:', owner.toString());
 
 	const createUSDCTokenAccountIx = SystemProgram.createAccount({
 		fromPubkey: provider.wallet.publicKey,
@@ -135,7 +139,7 @@ export async function mockUserUSDCAccount(
 	);
 	fakeUSDCTx.add(initUSDCTokenAccountIx);
 
-	const mintToUserAccountTx = await createMintToInstruction(
+	const mintToUserAccountTx = createMintToInstruction(
 		fakeUSDCMint.publicKey,
 		userUSDCAccount.publicKey,
 		// @ts-ignore
@@ -144,18 +148,22 @@ export async function mockUserUSDCAccount(
 	);
 	fakeUSDCTx.add(mintToUserAccountTx);
 
-	const _fakeUSDCTxResult = await sendAndConfirmTransaction(
-		provider.connection,
-		fakeUSDCTx,
-		// @ts-ignore
-		[provider.wallet.payer, userUSDCAccount],
-		{
-			skipPreflight: false,
-			commitment: 'recent',
-			preflightCommitment: 'recent',
-		}
-	);
-	return userUSDCAccount;
+	try {
+		const _fakeUSDCTxResult = await sendAndConfirmTransaction(
+			provider.connection,
+			fakeUSDCTx,
+			// @ts-ignore
+			[provider.wallet.payer, userUSDCAccount],
+			{
+				skipPreflight: false,
+				commitment: 'recent',
+				preflightCommitment: 'recent',
+			}
+		);
+		return userUSDCAccount;
+	} catch (e) {
+		console.log('FAILED:', e);
+	}
 }
 
 export async function mintUSDCToUser(
@@ -891,4 +899,92 @@ export async function initializeSolSpotMarket(
 	);
 	await admin.updateSpotMarketStatus(marketIndex, MarketStatus.ACTIVE);
 	return txSig;
+}
+
+export async function bootstrapSignerClientAndUser(params: {
+	payer: AnchorProvider,
+	programId: PublicKey,
+	usdcMint: Keypair,
+	usdcAmount: BN,
+	accountSubscription?: DriftClientSubscriptionConfig,
+	opts?: ConfirmOptions,
+	activeSubAccountId?: number,
+	perpMarketIndexes?: number[],
+	spotMarketIndexes?: number[],
+	oracleInfos?: OracleInfo[],
+}): Promise<{
+	signer: Keypair,
+	user: User,
+	userUSDCAccount: Keypair,
+	driftClient: DriftClient,
+	vaultClient: VaultClient,
+	provider: AnchorProvider
+}> {
+	const {
+		payer,
+		programId,
+		usdcMint,
+		usdcAmount,
+		accountSubscription,
+		opts,
+		activeSubAccountId,
+		perpMarketIndexes,
+		spotMarketIndexes,
+		oracleInfos,
+	} = params;
+
+	const signer = Keypair.generate();
+	await payer.connection.requestAirdrop(signer.publicKey, LAMPORTS_PER_SOL);
+	await sleep(1000);
+
+	const driftClient = new DriftClient({
+		connection: payer.connection,
+		wallet: new Wallet(signer),
+		opts: {
+			commitment: 'confirmed',
+		},
+		activeSubAccountId,
+		perpMarketIndexes,
+		spotMarketIndexes,
+		oracleInfos,
+		accountSubscription,
+	});
+	const provider = new anchor.AnchorProvider(
+		payer.connection,
+		new anchor.Wallet(signer),
+		opts
+	);
+	const program = new Program(
+		IDL,
+		programId,
+		provider
+	);
+	const vaultClient = new VaultClient({
+		driftClient,
+		program,
+		cliMode: true
+	});
+	const userUSDCAccount = await mockUserUSDCAccount(
+		usdcMint,
+		usdcAmount,
+		payer,
+		signer.publicKey
+	);
+	await driftClient.subscribe();
+	await driftClient.initializeUserAccount(
+		activeSubAccountId ?? 0,
+	);
+	const user = new User({
+		driftClient,
+		userAccountPublicKey: await driftClient.getUserAccountPublicKey(),
+	});
+	await user.subscribe();
+	return {
+		signer,
+		user,
+		userUSDCAccount,
+		driftClient,
+		vaultClient,
+		provider
+	};
 }

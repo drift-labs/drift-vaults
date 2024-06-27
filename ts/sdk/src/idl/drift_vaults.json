@@ -1364,7 +1364,8 @@
           {
             "name": "managementFee",
             "docs": [
-              "The annual fee charged on deposits by the manager (traditional hedge funds typically charge 2% per year on assets under management)"
+              "The annual fee charged on deposits by the manager.",
+              "Traditional funds typically charge 2% per year on assets under management."
             ],
             "type": "i64"
           },
@@ -1420,14 +1421,14 @@
           {
             "name": "managerTotalFee",
             "docs": [
-              "Total management fee charged by the manager (annual management fee + profit share)"
+              "Total management fee accrued by the manager"
             ],
             "type": "i64"
           },
           {
             "name": "managerTotalProfitShare",
             "docs": [
-              "Total profit share charged by the manager"
+              "Total profit share accrued by the manager"
             ],
             "type": "u64"
           },
@@ -1489,7 +1490,8 @@
           {
             "name": "vaultProtocol",
             "docs": [
-              "The [`VaultProtocol`] account"
+              "The optional [`VaultProtocol`] account.",
+              "If this is the default Pubkey (system program id) then it is \"none\"."
             ],
             "type": "publicKey"
           },

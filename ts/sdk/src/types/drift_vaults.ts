@@ -1325,7 +1325,8 @@ export type DriftVaults = {
 					{
 						name: 'managementFee';
 						docs: [
-							'The annual fee charged on deposits by the manager (traditional hedge funds typically charge 2% per year on assets under management)'
+							'The annual fee charged on deposits by the manager.',
+							'Traditional funds typically charge 2% per year on assets under management.'
 						];
 						type: 'i64';
 					},
@@ -1366,14 +1367,12 @@ export type DriftVaults = {
 					},
 					{
 						name: 'managerTotalFee';
-						docs: [
-							'Total management fee charged by the manager (annual management fee + profit share)'
-						];
+						docs: ['Total management fee accrued by the manager'];
 						type: 'i64';
 					},
 					{
 						name: 'managerTotalProfitShare';
-						docs: ['Total profit share charged by the manager'];
+						docs: ['Total profit share accrued by the manager'];
 						type: 'u64';
 					},
 					{
@@ -1427,7 +1426,10 @@ export type DriftVaults = {
 					},
 					{
 						name: 'vaultProtocol';
-						docs: ['The [`VaultProtocol`] account'];
+						docs: [
+							'The optional [`VaultProtocol`] account.',
+							'If this is the default Pubkey (system program id) then it is "none".'
+						];
 						type: 'publicKey';
 					},
 					{
@@ -3311,7 +3313,8 @@ export const IDL: DriftVaults = {
 					{
 						name: 'managementFee',
 						docs: [
-							'The annual fee charged on deposits by the manager (traditional hedge funds typically charge 2% per year on assets under management)',
+							'The annual fee charged on deposits by the manager.',
+							'Traditional funds typically charge 2% per year on assets under management.',
 						],
 						type: 'i64',
 					},
@@ -3352,14 +3355,12 @@ export const IDL: DriftVaults = {
 					},
 					{
 						name: 'managerTotalFee',
-						docs: [
-							'Total management fee charged by the manager (annual management fee + profit share)',
-						],
+						docs: ['Total management fee accrued by the manager'],
 						type: 'i64',
 					},
 					{
 						name: 'managerTotalProfitShare',
-						docs: ['Total profit share charged by the manager'],
+						docs: ['Total profit share accrued by the manager'],
 						type: 'u64',
 					},
 					{
@@ -3413,7 +3414,10 @@ export const IDL: DriftVaults = {
 					},
 					{
 						name: 'vaultProtocol',
-						docs: ['The [`VaultProtocol`] account'],
+						docs: [
+							'The optional [`VaultProtocol`] account.',
+							'If this is the default Pubkey (system program id) then it is "none".',
+						],
 						type: 'publicKey',
 					},
 					{

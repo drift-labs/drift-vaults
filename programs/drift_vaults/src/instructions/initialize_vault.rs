@@ -27,11 +27,6 @@ pub fn initialize_vault<'c: 'info, 'info>(
     vault.spot_market_index = params.spot_market_index;
     vault.init_ts = Clock::get()?.unix_timestamp;
 
-    // let vp = ctx.accounts.vault_protocol
-    //   .as_mut()
-    //   .map(|vp| vp.load_init())
-    //   .transpose()?;
-
     let mut vp_loader = init_vault_protocol(&ctx)?;
     let vp = vp_loader.as_mut().map(|vp| vp.load_init()).transpose()?;
 
@@ -144,7 +139,6 @@ pub struct InitializeVault<'info> {
       payer = payer
     )]
     pub vault: AccountLoader<'info, Vault>,
-
     #[account(
       init,
       seeds = [b"vault_token_account".as_ref(), vault.key().as_ref()],
