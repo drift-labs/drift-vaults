@@ -20,7 +20,7 @@ import {
 	DEFAULT_MARKET_NAME,
 	getDriftStateAccountPublicKeyAndNonce,
 	DRIFT_PROGRAM_ID,
-	TestClient,
+	TestClient, getDriftStateAccountPublicKey,
 } from '@drift-labs/sdk';
 import {
 	createUserWithUSDCAccount,
@@ -80,7 +80,7 @@ describe('driftProtocolVaults', () => {
 
 	const vaultClient = new VaultClient({
 		driftClient: adminClient,
-		program: program,
+		program,
 		cliMode: true,
 	});
 
@@ -94,11 +94,8 @@ describe('driftProtocolVaults', () => {
 	let makerUser: User;
 	let makerUSDCAccount: Keypair;
 
-	const vd = Keypair.generate();
-	let vdDriftClient: DriftClient;
 	let vdUser: User;
-	let vdUSDCAccount: Keypair;
-	let vdVaultClient: VaultClient;
+	let vdUserUSDCAccount: Keypair;
 
 	// ammInvariant == k == x * y
 	const mantissaSqrtScale = new BN(Math.sqrt(PRICE_PRECISION.toNumber()));
@@ -146,10 +143,8 @@ describe('driftProtocolVaults', () => {
 		});
 
 		await setupClient.initialize(usdcMint.publicKey, true);
-		console.log('init admin client');
 		await setupClient.subscribe();
 		await initializeQuoteSpotMarket(setupClient, usdcMint.publicKey);
-		console.log('init USDC spot market');
 
 		await setupClient.initializePerpMarket(
 			0,
@@ -159,7 +154,6 @@ describe('driftProtocolVaults', () => {
 			new BN(0),
 			new BN(32 * PEG_PRECISION.toNumber())
 		);
-		console.log('init SOL perp market');
 		await setupClient.unsubscribe();
 
 		// init manager user to trade SOL perp market
@@ -234,74 +228,33 @@ describe('driftProtocolVaults', () => {
 		await makerUser.subscribe();
 
 		// init VaultDepositor for manager to trade on behalf of
-		await provider.connection.requestAirdrop(vd.publicKey, 10 ** 9);
+		await adminClient.subscribe();
 		await sleep(1000);
-		vdUSDCAccount = await mockUserUSDCAccount(
+		vdUserUSDCAccount = await mockUserUSDCAccount(
 			usdcMint,
 			usdcAmount,
-			provider,
-			vd.publicKey
+			provider
 		);
-		vdDriftClient = new DriftClient({
-			connection,
-			wallet: new Wallet(vd),
-			opts: {
-				commitment: 'confirmed',
-			},
-			activeSubAccountId: 0,
-			perpMarketIndexes: marketIndexes,
-			spotMarketIndexes: spotMarketIndexes,
-			oracleInfos,
-			userStats: true,
-			accountSubscription: {
-				type: 'websocket',
-				resubTimeoutMs: 30_000,
-			},
-		});
-		await vdDriftClient.subscribe();
-		await vdDriftClient.initializeUserAccountAndDepositCollateral(
-			usdcAmount,
-			vdUSDCAccount.publicKey
-		);
+		await vaultClient.driftClient.initializeUserAccount(0);
 		vdUser = new User({
-			driftClient: vdDriftClient,
-			userAccountPublicKey: await vdDriftClient.getUserAccountPublicKey(),
+			driftClient: vaultClient.driftClient,
+			userAccountPublicKey: await vaultClient.driftClient.getUserAccountPublicKey(),
 		});
 		await vdUser.subscribe();
-
-		// authority of VaultDepositor must be payer,
-		// so we need a new VaultClient made with the VaultDepositor's DriftClient
-		const vdWallet = new anchor.Wallet(vd);
-		const vdProvider = new anchor.AnchorProvider(
-			provider.connection,
-			vdWallet,
-			{
-				preflightCommitment: 'confirmed',
-				skipPreflight: false,
-				commitment: 'confirmed',
-			}
-		);
-		vdVaultClient = new VaultClient({
-			driftClient: vdDriftClient,
-			program: new Program(IDL, program.programId, vdProvider),
-			cliMode: true,
-		});
 
 		// start account loader
 		bulkAccountLoader.startPolling();
 		await bulkAccountLoader.load();
-		await adminClient.subscribe();
 	});
 
 	after(async () => {
 		await managerDriftClient.unsubscribe();
 		await makerDriftClient.unsubscribe();
-		await vdDriftClient.unsubscribe();
 		await adminClient.unsubscribe();
 
 		await managerUser.unsubscribe();
-		await vdUser.unsubscribe();
 		await makerUser.unsubscribe();
+    await vdUser.unsubscribe();
 
 		bulkAccountLoader.stopPolling();
 	});
@@ -337,48 +290,47 @@ describe('driftProtocolVaults', () => {
 	});
 
 	it('Initialize Vault Depositor', async () => {
-		await vdVaultClient.initializeVaultDepositor(vault, vd.publicKey);
-		const vdKey = getVaultDepositorAddressSync(
+		await vaultClient.initializeVaultDepositor(vault, provider.wallet.publicKey);
+		const vd = getVaultDepositorAddressSync(
 			program.programId,
 			vault,
-			vd.publicKey
+			provider.wallet.publicKey
 		);
-		const vdAcct = await program.account.vaultDepositor.fetch(vdKey);
+		const vdAcct = await program.account.vaultDepositor.fetch(vd);
 		assert(vdAcct.vault.equals(vault));
 	});
 
-	// // vault depositor deposits USDC to the vault's token account
-	// it('Vault Depositor Deposit', async () => {
-	//   const vaultAccount = await program.account.vault.fetch(vault);
-	//   const vaultDepositor = getVaultDepositorAddressSync(
-	//     program.programId,
-	//     vault,
-	//     vd.publicKey
-	//   );
-	//   const remainingAccounts = adminClient.getRemainingAccounts({
-	//     userAccounts: [],
-	//     writableSpotMarketIndexes: [0],
-	//   });
-	//
-	//   const txSig = await program.methods
-	//     .deposit(usdcAmount)
-	//     .accounts({
-	//       userTokenAccount: vdUSDCAccount.publicKey,
-	//       vault,
-	//       vaultDepositor,
-	//       vaultTokenAccount: vaultAccount.tokenAccount,
-	//       driftUser: vaultAccount.user,
-	//       driftUserStats: vaultAccount.userStats,
-	//       driftState: await adminClient.getStatePublicKey(),
-	//       driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
-	//       driftProgram: adminClient.program.programId,
-	//     })
-	//     .remainingAccounts(remainingAccounts)
-	//     .rpc();
-	//
-	//   await printTxLogs(provider.connection, txSig);
-	// });
-	//
+	// vault depositor deposits USDC to the vault's token account
+	it('Vault Depositor Deposit', async () => {
+	  const vaultAccount = await program.account.vault.fetch(vault);
+	  const vaultDepositor = getVaultDepositorAddressSync(
+	    program.programId,
+	    vault,
+	    provider.wallet.publicKey
+	  );
+	  const remainingAccounts = adminClient.getRemainingAccounts({
+	    userAccounts: [],
+	    writableSpotMarketIndexes: [0],
+	  });
+
+	  const txSig = await program.methods
+	    .deposit(usdcAmount)
+	    .accounts({
+	      vault,
+	      vaultDepositor,
+	      vaultTokenAccount: vaultAccount.tokenAccount,
+	      driftUserStats: vaultAccount.userStats,
+	      driftUser: vaultAccount.user,
+	      driftState: await adminClient.getStatePublicKey(),
+	      userTokenAccount: vdUserUSDCAccount.publicKey,
+	      driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
+	      driftProgram: adminClient.program.programId,
+	    })
+	    .remainingAccounts(remainingAccounts)
+	    .rpc();
+	  await printTxLogs(provider.connection, txSig);
+	});
+
 	// // todo: increase price of SOL perp market to simulate profitable trade
 	// //  use adminClient.moveAmmToPrice to simulate profitable trade to test the ability of the user, manager, and
 	// //  protocol to withdraw profit shares.
