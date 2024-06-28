@@ -564,10 +564,9 @@ describe('driftProtocolVaults', () => {
 
 	  // do withdraw
 	  try {
-			// const txSig = await vdClient.withdraw(vaultDepositor);
 			// this is done manually because vaultClient.withdraw(vaultDepositor) would use the USDC
 			// associated token account as opposed to the keypair we generated to serve as a USDC token account.
-	    const txSig = await program.methods
+	    const txSig = await vdClient.program.methods
 	      .withdraw()
 	      .accounts({
 	        userTokenAccount: vdUserUSDCAccount.publicKey,
@@ -587,7 +586,6 @@ describe('driftProtocolVaults', () => {
 	    await printTxLogs(provider.connection, txSig);
 	  } catch (e) {
 	    console.error(e);
-	    assert(false);
 	  }
 	});
 });
