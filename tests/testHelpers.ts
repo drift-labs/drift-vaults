@@ -907,7 +907,7 @@ export async function bootstrapSignerClientAndUser(params: {
 	programId: PublicKey;
 	usdcMint: Keypair;
 	usdcAmount: BN;
-	depositCollateral: boolean;
+	depositCollateral?: boolean;
 	accountSubscription?: DriftClientSubscriptionConfig;
 	opts?: ConfirmOptions;
 	activeSubAccountId?: number;

@@ -43,7 +43,7 @@ import {
 	UpdateVaultProtocolParams,
 	Vault,
 	VaultDepositor,
-	VaultParams,
+	VaultParams, VaultProtocol,
 	VaultProtocolParams,
 	WithdrawUnit,
 } from './types/types';
@@ -125,6 +125,28 @@ export class VaultClient {
 		return {
 			vaultDepositor: vaultDepositorAndSlot.data,
 			slot: vaultDepositorAndSlot.context.slot,
+		};
+	}
+
+	public getVaultProtocolAddress(vault: PublicKey): PublicKey {
+		return getVaultProtocolAddressSync(
+			this.program.programId,
+			vault
+		);
+	}
+
+	public async getVaultProtocol(vaultProtocol: PublicKey): Promise<VaultProtocol> {
+		return await this.program.account.vaultProtocol.fetch(vaultProtocol);
+	}
+
+	public async getVaultProtocolAndSlot(
+		vaultProtocol: PublicKey
+	): Promise<{ vaultProtocol: VaultProtocol; slot: number }> {
+		const vaultProtocolAndSlot =
+			await this.program.account.vaultProtocol.fetchAndContext(vaultProtocol);
+		return {
+			vaultProtocol: vaultProtocolAndSlot.data as VaultProtocol,
+			slot: vaultProtocolAndSlot.context.slot,
 		};
 	}
 
@@ -312,8 +334,7 @@ export class VaultClient {
 		};
 
 		if (params.vaultProtocol) {
-			const vaultProtocol = getVaultProtocolAddressSync(
-				this.program.programId,
+			const vaultProtocol = this.getVaultProtocolAddress(
 				getVaultAddressSync(this.program.programId, params.name)
 			);
 			const remainingAccounts: AccountMeta[] = [
@@ -841,6 +862,14 @@ export class VaultClient {
 		const remainingAccounts = this.driftClient.getRemainingAccounts({
 			userAccounts: [user.getUserAccount()],
 		});
+		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+			const vaultProtocol = this.getVaultProtocolAddress(vaultDepositorAccount.vault);
+			remainingAccounts.push({
+				pubkey: vaultProtocol,
+				isSigner: false,
+				isWritable: true,
+			});
+		}
 
 		const userStatsKey = getUserStatsAccountPublicKey(
 			this.driftClient.program.programId,
@@ -881,7 +910,7 @@ export class VaultClient {
 
 	public async withdraw(
 		vaultDepositor: PublicKey,
-		txParams?: TxParams
+		txParams?: TxParams,
 	): Promise<TransactionSignature> {
 		const vaultDepositorAccount =
 			await this.program.account.vaultDepositor.fetch(vaultDepositor);
@@ -894,6 +923,14 @@ export class VaultClient {
 			userAccounts: [user.getUserAccount()],
 			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
 		});
+		const vaultProtocol = this.getVaultProtocolAddress(vaultDepositorAccount.vault);
+		if (!vaultProtocol.equals(SystemProgram.programId)) {
+			remainingAccounts.push({
+				pubkey: vaultProtocol,
+				isSigner: false,
+				isWritable: true
+			});
+		}
 
 		const userStatsKey = getUserStatsAccountPublicKey(
 			this.driftClient.program.programId,
@@ -945,22 +982,32 @@ export class VaultClient {
 		};
 
 		if (this.cliMode) {
-			return await this.program.methods
-				.withdraw()
-				.accounts(accounts)
-				.remainingAccounts(remainingAccounts)
-				.rpc();
+			if (createAtaIx) {
+				return await this.program.methods
+					.withdraw()
+					.accounts(accounts)
+					.remainingAccounts(remainingAccounts)
+					.preInstructions([createAtaIx])
+					.rpc();
+			} else {
+				return await this.program.methods
+					.withdraw()
+					.accounts(accounts)
+					.remainingAccounts(remainingAccounts)
+					.rpc();
+			}
 		} else {
 			const ixs = [
-				this.program.instruction.withdraw({
-					accounts: {
+				await this.program.methods.withdraw()
+					.accounts({
 						authority: this.driftClient.wallet.publicKey,
 						...accounts,
-					},
-					remainingAccounts,
-				}),
+					})
+					.remainingAccounts(remainingAccounts)
+					.instruction()
 			];
 			if (createAtaIx) {
+				console.log('add create ata ix');
 				ixs.unshift(createAtaIx);
 			}
 
