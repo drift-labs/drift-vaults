@@ -43,7 +43,8 @@ import {
 	UpdateVaultProtocolParams,
 	Vault,
 	VaultDepositor,
-	VaultParams, VaultProtocol,
+	VaultParams,
+	VaultProtocol,
 	VaultProtocolParams,
 	WithdrawUnit,
 } from './types/types';
@@ -129,13 +130,12 @@ export class VaultClient {
 	}
 
 	public getVaultProtocolAddress(vault: PublicKey): PublicKey {
-		return getVaultProtocolAddressSync(
-			this.program.programId,
-			vault
-		);
+		return getVaultProtocolAddressSync(this.program.programId, vault);
 	}
 
-	public async getVaultProtocol(vaultProtocol: PublicKey): Promise<VaultProtocol> {
+	public async getVaultProtocol(
+		vaultProtocol: PublicKey
+	): Promise<VaultProtocol> {
 		return await this.program.account.vaultProtocol.fetch(vaultProtocol);
 	}
 
@@ -863,7 +863,9 @@ export class VaultClient {
 			userAccounts: [user.getUserAccount()],
 		});
 		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
-			const vaultProtocol = this.getVaultProtocolAddress(vaultDepositorAccount.vault);
+			const vaultProtocol = this.getVaultProtocolAddress(
+				vaultDepositorAccount.vault
+			);
 			remainingAccounts.push({
 				pubkey: vaultProtocol,
 				isSigner: false,
@@ -910,7 +912,7 @@ export class VaultClient {
 
 	public async withdraw(
 		vaultDepositor: PublicKey,
-		txParams?: TxParams,
+		txParams?: TxParams
 	): Promise<TransactionSignature> {
 		const vaultDepositorAccount =
 			await this.program.account.vaultDepositor.fetch(vaultDepositor);
@@ -923,12 +925,14 @@ export class VaultClient {
 			userAccounts: [user.getUserAccount()],
 			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
 		});
-		const vaultProtocol = this.getVaultProtocolAddress(vaultDepositorAccount.vault);
+		const vaultProtocol = this.getVaultProtocolAddress(
+			vaultDepositorAccount.vault
+		);
 		if (!vaultProtocol.equals(SystemProgram.programId)) {
 			remainingAccounts.push({
 				pubkey: vaultProtocol,
 				isSigner: false,
-				isWritable: true
+				isWritable: true,
 			});
 		}
 
@@ -998,13 +1002,14 @@ export class VaultClient {
 			}
 		} else {
 			const ixs = [
-				await this.program.methods.withdraw()
+				await this.program.methods
+					.withdraw()
 					.accounts({
 						authority: this.driftClient.wallet.publicKey,
 						...accounts,
 					})
 					.remainingAccounts(remainingAccounts)
-					.instruction()
+					.instruction(),
 			];
 			if (createAtaIx) {
 				console.log('add create ata ix');

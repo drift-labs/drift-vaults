@@ -41,6 +41,7 @@ import {
 	MarketStatus,
 	DriftClient,
 	DriftClientSubscriptionConfig,
+	DriftClientConfig,
 } from '@drift-labs/sdk';
 import { IDL, VaultClient } from '../ts/sdk';
 
@@ -908,12 +909,8 @@ export async function bootstrapSignerClientAndUser(params: {
 	usdcMint: Keypair;
 	usdcAmount: BN;
 	depositCollateral?: boolean;
-	accountSubscription?: DriftClientSubscriptionConfig;
-	opts?: ConfirmOptions;
-	activeSubAccountId?: number;
-	perpMarketIndexes?: number[];
-	spotMarketIndexes?: number[];
-	oracleInfos?: OracleInfo[];
+	vaultClientCliMode?: boolean;
+	driftClientConfig?: Omit<DriftClientConfig, 'connection' | 'wallet'>;
 }): Promise<{
 	signer: Keypair;
 	user: User;
@@ -928,13 +925,17 @@ export async function bootstrapSignerClientAndUser(params: {
 		usdcMint,
 		usdcAmount,
 		depositCollateral,
+		vaultClientCliMode,
+		driftClientConfig,
+	} = params;
+	const {
 		accountSubscription,
 		opts,
 		activeSubAccountId,
 		perpMarketIndexes,
 		spotMarketIndexes,
 		oracleInfos,
-	} = params;
+	} = driftClientConfig;
 
 	const signer = Keypair.generate();
 	await payer.connection.requestAirdrop(signer.publicKey, LAMPORTS_PER_SOL);
@@ -961,7 +962,7 @@ export async function bootstrapSignerClientAndUser(params: {
 	const vaultClient = new VaultClient({
 		driftClient,
 		program,
-		cliMode: true,
+		cliMode: vaultClientCliMode ?? true,
 	});
 	const userUSDCAccount = await mockUserUSDCAccount(
 		usdcMint,
