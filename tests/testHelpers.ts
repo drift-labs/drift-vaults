@@ -13,7 +13,6 @@ import {
 	createWrappedNativeAccount,
 } from '@solana/spl-token';
 import {
-	ConfirmOptions,
 	Connection,
 	Keypair,
 	LAMPORTS_PER_SOL,
@@ -40,7 +39,6 @@ import {
 	OracleSource,
 	MarketStatus,
 	DriftClient,
-	DriftClientSubscriptionConfig,
 	DriftClientConfig,
 } from '@drift-labs/sdk';
 import { IDL, VaultClient } from '../ts/sdk';
@@ -79,6 +77,7 @@ export async function mockOracle(
 export async function mockUSDCMint(provider: Provider): Promise<Keypair> {
 	const fakeUSDCMint = anchor.web3.Keypair.generate();
 	const createUSDCMintAccountIx = SystemProgram.createAccount({
+		// @ts-ignore
 		fromPubkey: provider.wallet.publicKey,
 		newAccountPubkey: fakeUSDCMint.publicKey,
 		lamports: await getMinimumBalanceForRentExemptMint(provider.connection),
@@ -122,10 +121,12 @@ export async function mockUserUSDCAccount(
 	const fakeUSDCTx = new Transaction();
 
 	if (owner === undefined) {
+		// @ts-ignore
 		owner = provider.wallet.publicKey;
 	}
 
 	const createUSDCTokenAccountIx = SystemProgram.createAccount({
+		// @ts-ignore
 		fromPubkey: provider.wallet.publicKey,
 		newAccountPubkey: userUSDCAccount.publicKey,
 		lamports: await getMinimumBalanceForRentExemptAccount(provider.connection),
@@ -491,6 +492,7 @@ export const createPriceFeed = async ({
 		.signers([collateralTokenFeed])
 		.preInstructions([
 			anchor.web3.SystemProgram.createAccount({
+				// @ts-ignore
 				fromPubkey: oracleProgram.provider.wallet.publicKey,
 				newAccountPubkey: collateralTokenFeed.publicKey,
 				space: 3312,
