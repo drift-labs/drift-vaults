@@ -17,13 +17,13 @@ import {
 	QUOTE_PRECISION,
 	getOrderParams, MarketType,
 	PEG_PRECISION,
-	BASE_PRECISION,
+	BASE_PRECISION, calculatePositionPNL,
 } from '@drift-labs/sdk';
 import {
 	bootstrapSignerClientAndUser,
 	initializeQuoteSpotMarket,
 	mockOracle,
-	mockUSDCMint,
+	mockUSDCMint, printTxLogs,
 	setFeedPrice,
 } from './testHelpers';
 import { Keypair } from '@solana/web3.js';
@@ -94,7 +94,7 @@ describe('driftProtocolVaults', () => {
 
 	const VAULT_PROTOCOL_DISCRIM: number[] = [106, 130, 5, 195, 126, 82, 249, 53];
 
-	const initialSolPerpPrice = 100;
+	const initialSolPerpPrice = 1_000;
 	const finalSolPerpPrice = initialSolPerpPrice + 1;
 	const usdcAmount = new BN(1000).mul(QUOTE_PRECISION);
 	const baseAssetAmount = new BN(1).mul(BASE_PRECISION);
@@ -128,7 +128,7 @@ describe('driftProtocolVaults', () => {
 		await setupClient.subscribe();
 		await initializeQuoteSpotMarket(setupClient, usdcMint.publicKey);
 
-		const periodicity = new BN(60 * 60); // 1 HOUR
+		const periodicity = new BN(0); // 1 HOUR
 		await setupClient.initializePerpMarket(
 			0,
 			solPerpOracle,
@@ -605,83 +605,81 @@ describe('driftProtocolVaults', () => {
 		// await vaultUser.fetchAccounts();
 
 		const makerPosition = makerUser.getPerpPosition(0);
-		console.log('maker position:', makerPosition.baseAssetAmount.toNumber() / BASE_PRECISION.toNumber());
 		const vaultPosition = vaultUser.getPerpPosition(0);
-		console.log('vault position:', vaultPosition.baseAssetAmount.toNumber() / BASE_PRECISION.toNumber());
 
 		assert(makerPosition.baseAssetAmount.eq(ZERO));
 		assert(vaultPosition.baseAssetAmount.eq(ZERO));
 	});
 
-	// it('Settle Pnl', async () => {
-	// 	const vaultUser = delegateClient.driftClient.getUser(0, vault);
-	// 	const uA = vaultUser.getUserAccount();
-	// 	assert(uA.idle == false);
-	// 	const activePerps = vaultUser.getActivePerpPositions();
-	// 	assert(activePerps.length == 1);
-	// 	const solPerpPos = vaultUser.getPerpPosition(0);
-	// 	console.log(
-	// 		'sol perp quote:',
-	// 		solPerpPos.quoteAssetAmount.toNumber() / QUOTE_PRECISION.toNumber()
-	// 	);
-	// 	// assert(14.841723 == solPerpPos.quoteAssetAmount.toNumber() / QUOTE_PRECISION.toNumber());
-	// 	console.log(
-	// 		'sol perp base:',
-	// 		solPerpPos.baseAssetAmount.toNumber() / BASE_PRECISION.toNumber()
-	// 	);
-	// 	assert(solPerpPos.baseAssetAmount.eq(ZERO));
-	// 	console.log(
-	// 		'free collateral:',
-	// 		vaultUser.getFreeCollateral().toNumber() / QUOTE_PRECISION.toNumber()
-	// 	);
-	// 	// $30 initial usdc deposit to account not including ~$15 unsettled pnl from trade
-	// 	assert(usdcAmount.eq(vaultUser.getFreeCollateral()));
-	//
-	// 	const quotePrice =
-	// 		vaultUser.driftClient.getOracleDataForSpotMarket(0).price;
-	// 	console.log(
-	// 		'USDC price:',
-	// 		quotePrice.toNumber() / PRICE_PRECISION.toNumber()
-	// 	);
-	// 	const solPrice = vaultUser.driftClient.getOracleDataForPerpMarket(0);
-	// 	console.log(
-	// 		'SOL price:',
-	// 		solPrice.price.toNumber() / PRICE_PRECISION.toNumber()
-	// 	);
-	// 	assert(
-	// 		finalSolPerpPrice ==
-	// 			solPrice.price.toNumber() / PRICE_PRECISION.toNumber()
-	// 	);
-	//
-	// 	const solPerpMarket = delegateClient.driftClient.getPerpMarketAccount(0);
-	// 	const pnl =
-	// 		calculatePositionPNL(
-	// 			solPerpMarket,
-	// 			solPerpPos,
-	// 			false,
-	// 			solPrice
-	// 		).toNumber() / QUOTE_PRECISION.toNumber();
-	// 	console.log('pos pnl:', pnl.toString());
-	//
-	// 	const upnl =
-	// 		vaultUser.getUnrealizedPNL().toNumber() / QUOTE_PRECISION.toNumber();
-	// 	console.log('upnl:', upnl.toString());
-	// 	assert(pnl == upnl);
-	//
-	// 	await vaultUser.fetchAccounts();
-	// 	try {
-	// 		const txSig = await delegateClient.driftClient.settlePNL(
-	// 			vaultUser.userAccountPublicKey,
-	// 			vaultUser.getUserAccount(),
-	// 			0
-	// 		);
-	// 		await printTxLogs(connection, txSig);
-	// 	} catch (e) {
-	// 		console.log(e);
-	// 		assert(false);
-	// 	}
-	// });
-	//
+	it('Settle Pnl', async () => {
+		const vaultUser = delegateClient.driftClient.getUser(0, vault);
+		const uA = vaultUser.getUserAccount();
+		assert(uA.idle == false);
+		const activePerps = vaultUser.getActivePerpPositions();
+		assert(activePerps.length == 1);
+		const solPerpPos = vaultUser.getPerpPosition(0);
+		console.log(
+			'sol perp quote:',
+			solPerpPos.quoteAssetAmount.toNumber() / QUOTE_PRECISION.toNumber()
+		);
+		// assert(14.841723 == solPerpPos.quoteAssetAmount.toNumber() / QUOTE_PRECISION.toNumber());
+		console.log(
+			'sol perp base:',
+			solPerpPos.baseAssetAmount.toNumber() / BASE_PRECISION.toNumber()
+		);
+		// assert(solPerpPos.baseAssetAmount.eq(ZERO));
+		console.log(
+			'free collateral:',
+			vaultUser.getFreeCollateral().toNumber() / QUOTE_PRECISION.toNumber()
+		);
+		// $30 initial usdc deposit to account not including ~$15 unsettled pnl from trade
+		// assert(usdcAmount.eq(vaultUser.getFreeCollateral()));
+
+		const quotePrice =
+			vaultUser.driftClient.getOracleDataForSpotMarket(0).price;
+		console.log(
+			'USDC price:',
+			quotePrice.toNumber() / PRICE_PRECISION.toNumber()
+		);
+		const solPrice = vaultUser.driftClient.getOracleDataForPerpMarket(0);
+		console.log(
+			'SOL price:',
+			solPrice.price.toNumber() / PRICE_PRECISION.toNumber()
+		);
+		// assert(
+		// 	finalSolPerpPrice ==
+		// 		solPrice.price.toNumber() / PRICE_PRECISION.toNumber()
+		// );
+
+		const solPerpMarket = delegateClient.driftClient.getPerpMarketAccount(0);
+		const pnl =
+			calculatePositionPNL(
+				solPerpMarket,
+				solPerpPos,
+				false,
+				solPrice
+			).toNumber() / QUOTE_PRECISION.toNumber();
+		console.log('pos pnl:', pnl.toString());
+
+		const upnl =
+			vaultUser.getUnrealizedPNL().toNumber() / QUOTE_PRECISION.toNumber();
+		console.log('upnl:', upnl.toString());
+		// assert(pnl == upnl);
+
+		await vaultUser.fetchAccounts();
+		try {
+			const txSig = await delegateClient.driftClient.settlePNL(
+				vaultUser.userAccountPublicKey,
+				vaultUser.getUserAccount(),
+				0
+			);
+			await printTxLogs(connection, txSig);
+		} catch (e) {
+			console.log(e);
+			assert(false);
+		}
+	});
+
 	// it('Withdraw', async () => {
 	//   const vaultAccount = await program.account.vault.fetch(vault);
 	//   const vaultDepositor = getVaultDepositorAddressSync(
