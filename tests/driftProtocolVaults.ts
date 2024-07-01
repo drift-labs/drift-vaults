@@ -120,8 +120,6 @@ describe('driftProtocolVaults', () => {
 			accountSubscription: {
 				type: 'websocket',
 				resubTimeoutMs: 30_000,
-				// type: 'polling',
-				// accountLoader: bulkAccountLoader,
 			},
 		});
 
@@ -326,15 +324,17 @@ describe('driftProtocolVaults', () => {
 			userAccounts: [],
 			writableSpotMarketIndexes: [0],
 		});
-		// const vaultProtocol = getVaultProtocolAddressSync(
-		// 	managerClient.program.programId,
-		// 	vault
-		// );
-		// remainingAccounts.push({
-		// 	pubkey: vaultProtocol,
-		// 	isSigner: false,
-		// 	isWritable: true,
-		// });
+		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+			const vaultProtocol = getVaultProtocolAddressSync(
+				managerClient.program.programId,
+				vault
+			);
+			remainingAccounts.push({
+				pubkey: vaultProtocol,
+				isSigner: false,
+				isWritable: true,
+			});
+		}
 
 		await vdClient.program.methods
 			.deposit(usdcAmount)
@@ -603,7 +603,6 @@ describe('driftProtocolVaults', () => {
 			'sol perp quote:',
 			solPerpQuote
 		);
-		// assert(1.039367 === solPerpPos.quoteAssetAmount.toNumber() / QUOTE_PRECISION.toNumber());
 		console.log(
 			'sol perp base:',
 			solPerpPos.baseAssetAmount.toNumber() / BASE_PRECISION.toNumber()
@@ -694,16 +693,16 @@ describe('driftProtocolVaults', () => {
 
 		try {
 			const _remainingAccounts = remainingAccounts;
-			// if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
-			// 	const vaultProtocol = vdClient.getVaultProtocolAddress(
-			// 		vaultDepositorAccount.vault
-			// 	);
-			// 	_remainingAccounts.push({
-			// 		pubkey: vaultProtocol,
-			// 		isSigner: false,
-			// 		isWritable: true,
-			// 	});
-			// }
+			if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+				const vaultProtocol = vdClient.getVaultProtocolAddress(
+					vaultDepositorAccount.vault
+				);
+				_remainingAccounts.push({
+					pubkey: vaultProtocol,
+					isSigner: false,
+					isWritable: true,
+				});
+			}
       const withdrawAmount = baseAssetAmount.div(BASE_PRECISION).mul(QUOTE_PRECISION);
 			await vdClient.program.methods
 				.requestWithdraw(withdrawAmount, WithdrawUnit.TOKEN)
@@ -735,17 +734,16 @@ describe('driftProtocolVaults', () => {
 
 		try {
 			const vaultAccount = await program.account.vault.fetch(vault);
-			const _remainingAccounts = remainingAccounts;
-			// if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
-			// 	const vaultProtocol = vdClient.getVaultProtocolAddress(
-			// 		vaultDepositorAccount.vault
-			// 	);
-			// 	_remainingAccounts.push({
-			// 		pubkey: vaultProtocol,
-			// 		isSigner: false,
-			// 		isWritable: true,
-			// 	});
-			// }
+			if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+				const vaultProtocol = vdClient.getVaultProtocolAddress(
+					vaultDepositorAccount.vault
+				);
+				remainingAccounts.push({
+					pubkey: vaultProtocol,
+					isSigner: false,
+					isWritable: true,
+				});
+			}
 			await vdClient.program.methods
 				.withdraw()
 				.accounts({
