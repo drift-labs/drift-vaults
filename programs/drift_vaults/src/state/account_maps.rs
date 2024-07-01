@@ -1,4 +1,4 @@
-use anchor_lang::prelude::{msg, Context};
+use anchor_lang::prelude::Context;
 use drift::error::DriftResult;
 use drift::instructions::optional_accounts::{load_maps, AccountMaps};
 use drift::state::spot_market_map::get_writable_spot_market_set;
