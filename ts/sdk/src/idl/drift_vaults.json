@@ -916,7 +916,7 @@
           "isSigner": false
         },
         {
-          "name": "manager",
+          "name": "protocol",
           "isMut": false,
           "isSigner": true
         },
@@ -963,7 +963,7 @@
           "isSigner": false
         },
         {
-          "name": "manager",
+          "name": "protocol",
           "isMut": false,
           "isSigner": true
         },
@@ -999,7 +999,7 @@
           "isSigner": false
         },
         {
-          "name": "manager",
+          "name": "protocol",
           "isMut": false,
           "isSigner": true
         },

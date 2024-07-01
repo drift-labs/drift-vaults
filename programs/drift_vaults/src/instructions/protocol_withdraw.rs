@@ -7,7 +7,7 @@ use drift::program::Drift;
 use drift::state::user::User;
 
 use crate::constraints::{
-    is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault, is_vault_protocol_for_vault,
+    is_protocol_for_vault, is_user_for_vault, is_user_stats_for_vault, is_vault_protocol_for_vault,
 };
 use crate::drift_cpi::{TokenTransferCPI, WithdrawCPI};
 use crate::error::ErrorCode;
@@ -59,12 +59,12 @@ pub fn protocol_withdraw<'c: 'info, 'info>(
 #[derive(Accounts)]
 pub struct ProtocolWithdraw<'info> {
     #[account(mut,
-  constraint = is_manager_for_vault(& vault, & manager) ?)]
+  constraint = is_protocol_for_vault(& vault, & vault_protocol, & protocol) ?)]
     pub vault: AccountLoader<'info, Vault>,
     #[account(mut,
   constraint = is_vault_protocol_for_vault(& vault_protocol, & vault) ?)]
     pub vault_protocol: AccountLoader<'info, VaultProtocol>,
-    pub manager: Signer<'info>,
+    pub protocol: Signer<'info>,
     #[account(mut,
   seeds = [b"vault_token_account".as_ref(), vault.key().as_ref()],
   bump,)]
@@ -85,7 +85,7 @@ pub struct ProtocolWithdraw<'info> {
     /// CHECK: checked in drift cpi
     pub drift_signer: AccountInfo<'info>,
     #[account(mut,
-  token::authority = manager,
+  token::authority = protocol,
   token::mint = vault_token_account.mint)]
     pub user_token_account: Box<Account<'info, TokenAccount>>,
     pub drift_program: Program<'info, Drift>,

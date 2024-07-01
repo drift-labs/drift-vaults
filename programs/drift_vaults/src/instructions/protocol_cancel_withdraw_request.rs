@@ -4,7 +4,7 @@ use drift::math::casting::Cast;
 use drift::state::user::User;
 
 use crate::constraints::{
-    is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault, is_vault_protocol_for_vault,
+    is_protocol_for_vault, is_user_for_vault, is_user_stats_for_vault, is_vault_protocol_for_vault,
 };
 use crate::error::ErrorCode;
 use crate::state::{Vault, VaultProtocol, VaultProtocolProvider};
@@ -46,12 +46,12 @@ pub fn protocol_cancel_withdraw_request<'c: 'info, 'info>(
 #[derive(Accounts)]
 pub struct ProtocolCancelWithdrawRequest<'info> {
     #[account(mut,
-  constraint = is_manager_for_vault(& vault, & manager) ?)]
+  constraint = is_protocol_for_vault(& vault, & vault_protocol, & protocol) ?)]
     pub vault: AccountLoader<'info, Vault>,
     #[account(mut,
   constraint = is_vault_protocol_for_vault(& vault_protocol, & vault) ?)]
     pub vault_protocol: AccountLoader<'info, VaultProtocol>,
-    pub manager: Signer<'info>,
+    pub protocol: Signer<'info>,
     #[account(constraint = is_user_stats_for_vault(& vault, & drift_user_stats) ?)]
     /// CHECK: checked in drift cpi
     pub drift_user_stats: AccountInfo<'info>,

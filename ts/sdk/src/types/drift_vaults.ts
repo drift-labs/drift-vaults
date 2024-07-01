@@ -916,7 +916,7 @@ export type DriftVaults = {
 					isSigner: false;
 				},
 				{
-					name: 'manager';
+					name: 'protocol';
 					isMut: false;
 					isSigner: true;
 				},
@@ -963,7 +963,7 @@ export type DriftVaults = {
 					isSigner: false;
 				},
 				{
-					name: 'manager';
+					name: 'protocol';
 					isMut: false;
 					isSigner: true;
 				},
@@ -999,7 +999,7 @@ export type DriftVaults = {
 					isSigner: false;
 				},
 				{
-					name: 'manager';
+					name: 'protocol';
 					isMut: false;
 					isSigner: true;
 				},
@@ -2909,7 +2909,7 @@ export const IDL: DriftVaults = {
 					isSigner: false,
 				},
 				{
-					name: 'manager',
+					name: 'protocol',
 					isMut: false,
 					isSigner: true,
 				},
@@ -2956,7 +2956,7 @@ export const IDL: DriftVaults = {
 					isSigner: false,
 				},
 				{
-					name: 'manager',
+					name: 'protocol',
 					isMut: false,
 					isSigner: true,
 				},
@@ -2992,7 +2992,7 @@ export const IDL: DriftVaults = {
 					isSigner: false,
 				},
 				{
-					name: 'manager',
+					name: 'protocol',
 					isMut: false,
 					isSigner: true,
 				},

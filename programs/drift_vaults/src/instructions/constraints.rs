@@ -25,6 +25,15 @@ pub fn is_manager_for_vault(
     Ok(vault.load()?.manager.eq(signer.key))
 }
 
+pub fn is_protocol_for_vault(
+    vault: &AccountLoader<Vault>,
+    vault_protocol: &AccountLoader<VaultProtocol>,
+    signer: &Signer,
+) -> anchor_lang::Result<bool> {
+    Ok(vault_protocol.load()?.protocol.eq(signer.key)
+      && vault.load()?.vault_protocol.eq(&vault_protocol.key()))
+}
+
 pub fn is_delegate_for_vault(
     vault: &AccountLoader<Vault>,
     signer: &Signer,
