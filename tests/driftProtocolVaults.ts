@@ -19,16 +19,18 @@ import {
 	MarketType,
 	PEG_PRECISION,
 	BASE_PRECISION,
-	calculatePositionPNL, getUserStatsAccountPublicKey,
+	calculatePositionPNL,
+	getUserStatsAccountPublicKey,
 } from '@drift-labs/sdk';
 import {
 	bootstrapSignerClientAndUser,
 	initializeQuoteSpotMarket,
 	mockOracle,
-	mockUSDCMint, printTxLogs,
+	mockUSDCMint,
+	printTxLogs,
 	setFeedPrice,
 } from './testHelpers';
-import {ConfirmOptions, Keypair, SystemProgram} from '@solana/web3.js';
+import { ConfirmOptions, Keypair, SystemProgram } from '@solana/web3.js';
 import { assert } from 'chai';
 import {
 	VaultClient,
@@ -37,9 +39,10 @@ import {
 	encodeName,
 	DriftVaults,
 	VaultProtocolParams,
-	getVaultProtocolAddressSync, WithdrawUnit,
+	getVaultProtocolAddressSync,
+	WithdrawUnit,
 } from '../ts/sdk';
-import {TOKEN_PROGRAM_ID} from "@solana/spl-token";
+import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
 
 describe('driftProtocolVaults', () => {
 	const opts: ConfirmOptions = {
@@ -56,7 +59,7 @@ describe('driftProtocolVaults', () => {
 
 	const bulkAccountLoader = new BulkAccountLoader(connection, 'confirmed', 1);
 
-  let adminClient: AdminClient;
+	let adminClient: AdminClient;
 
 	let manager: Keypair;
 	let managerClient: VaultClient;
@@ -134,7 +137,7 @@ describe('driftProtocolVaults', () => {
 			ammInitialBaseAssetReserve,
 			ammInitialQuoteAssetReserve,
 			periodicity,
-			new BN(initialSolPerpPrice).mul(PEG_PRECISION),
+			new BN(initialSolPerpPrice).mul(PEG_PRECISION)
 		);
 		await adminClient.updatePerpAuctionDuration(new BN(0));
 		await adminClient.updatePerpMarketCurveUpdateIntensity(0, 100);
@@ -264,7 +267,7 @@ describe('driftProtocolVaults', () => {
 			hurdleRate: 0,
 			permissioned: false,
 			minDepositAmount: ZERO,
-			// vaultProtocol: vpParams,
+			vaultProtocol: vpParams,
 		});
 		// const vaultAcct = await program.account.vault.fetch(vault);
 		// assert(vaultAcct.manager.equals(manager.publicKey));
@@ -306,9 +309,7 @@ describe('driftProtocolVaults', () => {
 			vault,
 			vd.publicKey
 		);
-		const vdAcct = await program.account.vaultDepositor.fetch(
-			vaultDepositor
-		);
+		const vdAcct = await program.account.vaultDepositor.fetch(vaultDepositor);
 		assert(vdAcct.vault.equals(vault));
 	});
 
@@ -382,7 +383,10 @@ describe('driftProtocolVaults', () => {
 			vault,
 			0
 		);
-		assert(delegateActiveUser.userAccountPublicKey.equals(vaultUserKey), "delegate active user is not vault user");
+		assert(
+			delegateActiveUser.userAccountPublicKey.equals(vaultUserKey),
+			'delegate active user is not vault user'
+		);
 
 		const fillerUser = fillerClient.driftClient.getUser();
 
@@ -393,8 +397,12 @@ describe('driftProtocolVaults', () => {
 				direction: PositionDirection.SHORT,
 				baseAssetAmount,
 				price: new BN((initialSolPerpPrice - 1) * PRICE_PRECISION.toNumber()),
-				auctionStartPrice: new BN(initialSolPerpPrice * PRICE_PRECISION.toNumber()),
-				auctionEndPrice: new BN((initialSolPerpPrice - 1) * PRICE_PRECISION.toNumber()),
+				auctionStartPrice: new BN(
+					initialSolPerpPrice * PRICE_PRECISION.toNumber()
+				),
+				auctionEndPrice: new BN(
+					(initialSolPerpPrice - 1) * PRICE_PRECISION.toNumber()
+				),
 				auctionDuration: 10,
 				userOrderId: 1,
 				postOnly: PostOnlyParams.NONE,
@@ -418,31 +426,37 @@ describe('driftProtocolVaults', () => {
 				postOnly: PostOnlyParams.MUST_POST_ONLY,
 				immediateOrCancel: true,
 			});
-			const orderParams = getOrderParams(makerOrderParams, { marketType: MarketType.PERP });
-			const userStatsPublicKey = delegateClient.driftClient.getUserStatsAccountPublicKey();
-
-			const remainingAccounts = delegateClient.driftClient.getRemainingAccounts({
-				userAccounts: [
-					delegateActiveUser.getUserAccount(),
-					fillerUser.getUserAccount(),
-				],
-				useMarketLastSlotCache: true,
-				writablePerpMarketIndexes: [orderParams.marketIndex],
+			const orderParams = getOrderParams(makerOrderParams, {
+				marketType: MarketType.PERP,
 			});
+			const userStatsPublicKey =
+				delegateClient.driftClient.getUserStatsAccountPublicKey();
+
+			const remainingAccounts = delegateClient.driftClient.getRemainingAccounts(
+				{
+					userAccounts: [
+						delegateActiveUser.getUserAccount(),
+						fillerUser.getUserAccount(),
+					],
+					useMarketLastSlotCache: true,
+					writablePerpMarketIndexes: [orderParams.marketIndex],
+				}
+			);
 
 			const takerOrderId = order.orderId;
-			const placeAndMakeOrderIx = await delegateClient.driftClient.program.methods
-				.placeAndMakePerpOrder(orderParams, takerOrderId)
-				.accounts({
-					state: await delegateClient.driftClient.getStatePublicKey(),
-					user: delegateActiveUser.userAccountPublicKey,
-					userStats: userStatsPublicKey,
-					taker: fillerUser.userAccountPublicKey,
-					takerStats: fillerClient.driftClient.getUserStatsAccountPublicKey(),
-					authority: delegateClient.driftClient.wallet.publicKey,
-				})
-				.remainingAccounts(remainingAccounts)
-				.instruction();
+			const placeAndMakeOrderIx =
+				await delegateClient.driftClient.program.methods
+					.placeAndMakePerpOrder(orderParams, takerOrderId)
+					.accounts({
+						state: await delegateClient.driftClient.getStatePublicKey(),
+						user: delegateActiveUser.userAccountPublicKey,
+						userStats: userStatsPublicKey,
+						taker: fillerUser.userAccountPublicKey,
+						takerStats: fillerClient.driftClient.getUserStatsAccountPublicKey(),
+						authority: delegateClient.driftClient.wallet.publicKey,
+					})
+					.remainingAccounts(remainingAccounts)
+					.instruction();
 
 			const { slot } = await delegateClient.driftClient.sendTransaction(
 				await delegateClient.driftClient.buildTransaction(
@@ -453,7 +467,10 @@ describe('driftProtocolVaults', () => {
 				delegateClient.driftClient.opts
 			);
 
-			delegateClient.driftClient.perpMarketLastSlotCache.set(orderParams.marketIndex, slot);
+			delegateClient.driftClient.perpMarketLastSlotCache.set(
+				orderParams.marketIndex,
+				slot
+			);
 		} catch (e) {
 			console.log('vault failed to long:', e);
 		}
@@ -461,10 +478,16 @@ describe('driftProtocolVaults', () => {
 		// check positions from vault and filler are accurate
 		await fillerUser.fetchAccounts();
 		const fillerPosition = fillerUser.getPerpPosition(0);
-		assert(fillerPosition.baseAssetAmount.eq(baseAssetAmount.neg()), "filler position is not baseAssetAmount");
+		assert(
+			fillerPosition.baseAssetAmount.eq(baseAssetAmount.neg()),
+			'filler position is not baseAssetAmount'
+		);
 		await delegateActiveUser.fetchAccounts();
 		const vaultPosition = delegateActiveUser.getPerpPosition(0);
-		assert(vaultPosition.baseAssetAmount.eq(baseAssetAmount), "vault position is not baseAssetAmount");
+		assert(
+			vaultPosition.baseAssetAmount.eq(baseAssetAmount),
+			'vault position is not baseAssetAmount'
+		);
 	});
 
 	// increase price of SOL perp by 5%
@@ -519,8 +542,12 @@ describe('driftProtocolVaults', () => {
 				direction: PositionDirection.LONG,
 				baseAssetAmount,
 				price: new BN((finalSolPerpPrice + 1) * PRICE_PRECISION.toNumber()),
-				auctionStartPrice: new BN(finalSolPerpPrice * PRICE_PRECISION.toNumber()),
-				auctionEndPrice: new BN((finalSolPerpPrice + 1) * PRICE_PRECISION.toNumber()),
+				auctionStartPrice: new BN(
+					finalSolPerpPrice * PRICE_PRECISION.toNumber()
+				),
+				auctionEndPrice: new BN(
+					(finalSolPerpPrice + 1) * PRICE_PRECISION.toNumber()
+				),
 				auctionDuration: 10,
 				userOrderId: 1,
 				postOnly: PostOnlyParams.NONE,
@@ -544,31 +571,37 @@ describe('driftProtocolVaults', () => {
 				postOnly: PostOnlyParams.MUST_POST_ONLY,
 				immediateOrCancel: true,
 			});
-			const orderParams = getOrderParams(makerOrderParams, { marketType: MarketType.PERP });
-			const userStatsPublicKey = delegateClient.driftClient.getUserStatsAccountPublicKey();
-
-			const remainingAccounts = delegateClient.driftClient.getRemainingAccounts({
-				userAccounts: [
-					delegateActiveUser.getUserAccount(),
-					fillerUser.getUserAccount(),
-				],
-				useMarketLastSlotCache: true,
-				writablePerpMarketIndexes: [orderParams.marketIndex],
+			const orderParams = getOrderParams(makerOrderParams, {
+				marketType: MarketType.PERP,
 			});
+			const userStatsPublicKey =
+				delegateClient.driftClient.getUserStatsAccountPublicKey();
+
+			const remainingAccounts = delegateClient.driftClient.getRemainingAccounts(
+				{
+					userAccounts: [
+						delegateActiveUser.getUserAccount(),
+						fillerUser.getUserAccount(),
+					],
+					useMarketLastSlotCache: true,
+					writablePerpMarketIndexes: [orderParams.marketIndex],
+				}
+			);
 
 			const takerOrderId = order.orderId;
-			const placeAndMakeOrderIx = await delegateClient.driftClient.program.methods
-				.placeAndMakePerpOrder(orderParams, takerOrderId)
-				.accounts({
-					state: await delegateClient.driftClient.getStatePublicKey(),
-					user: delegateActiveUser.userAccountPublicKey,
-					userStats: userStatsPublicKey,
-					taker: fillerUser.userAccountPublicKey,
-					takerStats: fillerClient.driftClient.getUserStatsAccountPublicKey(),
-					authority: delegateClient.driftClient.wallet.publicKey,
-				})
-				.remainingAccounts(remainingAccounts)
-				.instruction();
+			const placeAndMakeOrderIx =
+				await delegateClient.driftClient.program.methods
+					.placeAndMakePerpOrder(orderParams, takerOrderId)
+					.accounts({
+						state: await delegateClient.driftClient.getStatePublicKey(),
+						user: delegateActiveUser.userAccountPublicKey,
+						userStats: userStatsPublicKey,
+						taker: fillerUser.userAccountPublicKey,
+						takerStats: fillerClient.driftClient.getUserStatsAccountPublicKey(),
+						authority: delegateClient.driftClient.wallet.publicKey,
+					})
+					.remainingAccounts(remainingAccounts)
+					.instruction();
 
 			const { slot } = await delegateClient.driftClient.sendTransaction(
 				await delegateClient.driftClient.buildTransaction(
@@ -579,7 +612,10 @@ describe('driftProtocolVaults', () => {
 				delegateClient.driftClient.opts
 			);
 
-			delegateClient.driftClient.perpMarketLastSlotCache.set(orderParams.marketIndex, slot);
+			delegateClient.driftClient.perpMarketLastSlotCache.set(
+				orderParams.marketIndex,
+				slot
+			);
 		} catch (e) {
 			console.log('vault failed to short:', e);
 		}
@@ -598,11 +634,9 @@ describe('driftProtocolVaults', () => {
 		const uA = vaultUser.getUserAccount();
 		assert(uA.idle === false);
 		const solPerpPos = vaultUser.getPerpPosition(0);
-		const solPerpQuote = solPerpPos.quoteAssetAmount.toNumber() / QUOTE_PRECISION.toNumber();
-		console.log(
-			'sol perp quote:',
-			solPerpQuote
-		);
+		const solPerpQuote =
+			solPerpPos.quoteAssetAmount.toNumber() / QUOTE_PRECISION.toNumber();
+		console.log('sol perp quote:', solPerpQuote);
 		console.log(
 			'sol perp base:',
 			solPerpPos.baseAssetAmount.toNumber() / BASE_PRECISION.toNumber()
@@ -637,7 +671,10 @@ describe('driftProtocolVaults', () => {
 			vaultUser.getUnrealizedPNL().toNumber() / QUOTE_PRECISION.toNumber();
 		console.log('upnl:', upnl.toString());
 		assert(pnl === upnl);
-		assert(solPerpPos.quoteAssetAmount.toNumber() / QUOTE_PRECISION.toNumber() == upnl);
+		assert(
+			solPerpPos.quoteAssetAmount.toNumber() / QUOTE_PRECISION.toNumber() ==
+				upnl
+		);
 		assert(solPerpQuote === pnl);
 
 		await vaultUser.fetchAccounts();
@@ -659,10 +696,12 @@ describe('driftProtocolVaults', () => {
 			assert(false);
 		}
 
-
 		// vault user account is delegated to "delegate"
-		const vaultUserAcct = delegateClient.driftClient.getUser(0, vault).getUserAccount();
-		const settledPnl = vaultUserAcct.settledPerpPnl.toNumber() / QUOTE_PRECISION.toNumber();
+		const vaultUserAcct = delegateClient.driftClient
+			.getUser(0, vault)
+			.getUserAccount();
+		const settledPnl =
+			vaultUserAcct.settledPerpPnl.toNumber() / QUOTE_PRECISION.toNumber();
 		console.log('vault settled pnl:', settledPnl);
 		assert(settledPnl === pnl);
 
@@ -673,37 +712,40 @@ describe('driftProtocolVaults', () => {
 	});
 
 	it('Withdraw', async () => {
-	  const vaultDepositor = getVaultDepositorAddressSync(
-	    program.programId,
-	    vault,
-	    vd.publicKey
-	  );
+		const vaultDepositor = getVaultDepositorAddressSync(
+			program.programId,
+			vault,
+			vd.publicKey
+		);
 
-	  const vaultDepositorAccount = await program.account.vaultDepositor.fetch(vaultDepositor);
-	  assert(vaultDepositorAccount.lastWithdrawRequest.value.eq(new BN(0)));
+		const vaultDepositorAccount = await program.account.vaultDepositor.fetch(
+			vaultDepositor
+		);
+		assert(vaultDepositorAccount.lastWithdrawRequest.value.eq(new BN(0)));
 		console.log('shares:', vaultDepositorAccount.vaultShares.toNumber());
 		// $300 initial deposit = 300_000_000 shares
-	  assert(vaultDepositorAccount.vaultShares.eq(new BN(300_000_000)));
+		assert(vaultDepositorAccount.vaultShares.eq(new BN(300_000_000)));
 
 		const vaultAccount = await program.account.vault.fetch(vault);
 		const remainingAccounts = vdClient.driftClient.getRemainingAccounts({
 			userAccounts: [],
 			writableSpotMarketIndexes: [0],
 		});
+		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+			const vaultProtocol = vdClient.getVaultProtocolAddress(
+				vaultDepositorAccount.vault
+			);
+			remainingAccounts.push({
+				pubkey: vaultProtocol,
+				isSigner: false,
+				isWritable: true,
+			});
+		}
 
 		try {
-			const _remainingAccounts = remainingAccounts;
-			if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
-				const vaultProtocol = vdClient.getVaultProtocolAddress(
-					vaultDepositorAccount.vault
-				);
-				_remainingAccounts.push({
-					pubkey: vaultProtocol,
-					isSigner: false,
-					isWritable: true,
-				});
-			}
-      const withdrawAmount = baseAssetAmount.div(BASE_PRECISION).mul(QUOTE_PRECISION);
+			const withdrawAmount = baseAssetAmount
+				.div(BASE_PRECISION)
+				.mul(QUOTE_PRECISION);
 			await vdClient.program.methods
 				.requestWithdraw(withdrawAmount, WithdrawUnit.TOKEN)
 				.accounts({
@@ -713,38 +755,34 @@ describe('driftProtocolVaults', () => {
 					driftUserStats: vaultAccount.userStats,
 					driftState: await adminClient.getStatePublicKey(),
 				})
-				.remainingAccounts(_remainingAccounts)
+				.remainingAccounts(remainingAccounts)
 				.rpc();
 		} catch (e) {
 			console.log('failed to request withdraw:', e);
 			assert(false);
 		}
 
-	  const vaultDepositorAccountAfter =
-	    await program.account.vaultDepositor.fetch(vaultDepositor);
-	  // assert(vaultDepositorAccountAfter.vaultShares.eq(new BN(100_000_000)));
-		console.log('withdraw shares:', vaultDepositorAccountAfter.lastWithdrawRequest.shares.toNumber());
-		console.log('withdraw value:', vaultDepositorAccountAfter.lastWithdrawRequest.value.toNumber());
-		// assert(vaultDepositorAccountAfter.lastWithdrawRequest.shares.eq(new BN(290_284_031)));
-	  // assert(vaultDepositorAccountAfter.lastWithdrawRequest.value.eq(new BN(300_000_000)));
-
-		const vdAcct =
+		const vaultDepositorAccountAfter =
 			await program.account.vaultDepositor.fetch(vaultDepositor);
+		// assert(vaultDepositorAccountAfter.vaultShares.eq(new BN(100_000_000)));
+		console.log(
+			'withdraw shares:',
+			vaultDepositorAccountAfter.lastWithdrawRequest.shares.toNumber()
+		);
+		console.log(
+			'withdraw value:',
+			vaultDepositorAccountAfter.lastWithdrawRequest.value.toNumber()
+		);
+		// assert(vaultDepositorAccountAfter.lastWithdrawRequest.shares.eq(new BN(290_284_031)));
+		// assert(vaultDepositorAccountAfter.lastWithdrawRequest.value.eq(new BN(300_000_000)));
+
+		const vdAcct = await program.account.vaultDepositor.fetch(vaultDepositor);
 		assert(vdAcct.vault.equals(vault));
 
 		try {
 			const vaultAccount = await program.account.vault.fetch(vault);
-			if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
-				const vaultProtocol = vdClient.getVaultProtocolAddress(
-					vaultDepositorAccount.vault
-				);
-				remainingAccounts.push({
-					pubkey: vaultProtocol,
-					isSigner: false,
-					isWritable: true,
-				});
-			}
-			await vdClient.program.methods
+
+			const txSig = await vdClient.program.methods
 				.withdraw()
 				.accounts({
 					userTokenAccount: vdUserUSDCAccount.publicKey,
@@ -760,9 +798,9 @@ describe('driftProtocolVaults', () => {
 				})
 				.remainingAccounts(remainingAccounts)
 				.rpc();
-
+			await printTxLogs(connection, txSig);
 		} catch (e) {
-			console.log("failed to withdraw:", e);
+			console.log('failed to withdraw:', e);
 			assert(false);
 		}
 	});

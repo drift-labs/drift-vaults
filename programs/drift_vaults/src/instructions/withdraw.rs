@@ -37,7 +37,7 @@ pub fn withdraw<'c: 'info, 'info>(ctx: Context<'_, '_, 'c, 'info, Withdraw<'info
 
     let user = ctx.accounts.drift_user.load()?;
     let spot_market_index = vault.spot_market_index;
-  
+
     let AccountMaps {
         perp_market_map,
         spot_market_map,
@@ -54,6 +54,7 @@ pub fn withdraw<'c: 'info, 'info>(ctx: Context<'_, '_, 'c, 'info, Withdraw<'info
 
     drop(vault);
     drop(user);
+    drop(vp);
 
     ctx.drift_withdraw(user_withdraw_amount)?;
 
