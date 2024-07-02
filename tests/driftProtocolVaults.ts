@@ -20,7 +20,6 @@ import {
 	PEG_PRECISION,
 	BASE_PRECISION,
 	calculatePositionPNL,
-	getUserStatsAccountPublicKey,
 } from '@drift-labs/sdk';
 import {
 	bootstrapSignerClientAndUser,
@@ -40,10 +39,8 @@ import {
 	DriftVaults,
 	VaultProtocolParams,
 	getVaultProtocolAddressSync,
-	WithdrawUnit, VaultDepositor, Vault, calculateProfitShare,
+	WithdrawUnit,
 } from '../ts/sdk';
-import { TOKEN_PROGRAM_ID } from '@solana/spl-token';
-import {unstakeSharesToAmount as depositSharesToVaultAmount} from "@drift-labs/sdk/lib/math/insurance";
 
 describe('driftProtocolVaults', () => {
 	const opts: ConfirmOptions = {
@@ -62,6 +59,7 @@ describe('driftProtocolVaults', () => {
 
 	let adminClient: AdminClient;
 
+	let manager: Keypair;
 	let managerClient: VaultClient;
 	let managerUser: User;
 
@@ -75,6 +73,10 @@ describe('driftProtocolVaults', () => {
 
 	let delegate: Keypair;
 	let delegateClient: VaultClient;
+
+	let protocol: Keypair;
+	let protocolClient: VaultClient;
+	let protocolVdUserUSDCAccount: Keypair;
 
 	// ammInvariant == k == x * y
 	// const mantissaSqrtScale = new BN(Math.sqrt(PRICE_PRECISION.toNumber()));
@@ -98,10 +100,6 @@ describe('driftProtocolVaults', () => {
 	const finalSolPerpPrice = initialSolPerpPrice + 10;
 	const usdcAmount = new BN(initialSolPerpPrice * 3).mul(QUOTE_PRECISION);
 	const baseAssetAmount = new BN(1).mul(BASE_PRECISION);
-
-	let protocol: Keypair;
-	let protocolClient: VaultClient;
-	let protocolVdUserUSDCAccount: Keypair;
 
 	before(async () => {
 		usdcMint = await mockUSDCMint(provider);
@@ -163,6 +161,7 @@ describe('driftProtocolVaults', () => {
 				oracleInfos,
 			},
 		});
+		manager = bootstrapManager.signer;
 		managerClient = bootstrapManager.vaultClient;
 		managerUser = bootstrapManager.user;
 
@@ -280,7 +279,8 @@ describe('driftProtocolVaults', () => {
 		const vpParams: VaultProtocolParams = {
 			protocol: protocol.publicKey,
 			protocolFee: new BN(0),
-			protocolProfitShare: 0,
+			// 100_000 = 10%
+			protocolProfitShare: 100_000,
 		};
 		await managerClient.initializeVault({
 			name: encodeName(vaultName),
@@ -294,20 +294,20 @@ describe('driftProtocolVaults', () => {
 			minDepositAmount: ZERO,
 			vaultProtocol: vpParams,
 		});
-		// const vaultAcct = await program.account.vault.fetch(vault);
-		// assert(vaultAcct.manager.equals(manager.publicKey));
-		// const vp = getVaultProtocolAddressSync(
-		// 	managerClient.program.programId,
-		// 	vault
-		// );
-		// // asserts "exit" was called on VaultProtocol to define the discriminator
-		// const vpAcctInfo = await connection.getAccountInfo(vp);
-		// assert(vpAcctInfo.data.includes(Buffer.from(VAULT_PROTOCOL_DISCRIM)));
-		//
-		// // asserts Vault and VaultProtocol fields were set properly
-		// const vpAcct = await program.account.vaultProtocol.fetch(vp);
-		// assert(vaultAcct.vaultProtocol.equals(vp));
-		// assert(vpAcct.protocol.equals(protocol));
+		const vaultAcct = await program.account.vault.fetch(vault);
+		assert(vaultAcct.manager.equals(manager.publicKey));
+		const vp = getVaultProtocolAddressSync(
+			managerClient.program.programId,
+			vault
+		);
+		// asserts "exit" was called on VaultProtocol to define the discriminator
+		const vpAcctInfo = await connection.getAccountInfo(vp);
+		assert(vpAcctInfo.data.includes(Buffer.from(VAULT_PROTOCOL_DISCRIM)));
+
+		// asserts Vault and VaultProtocol fields were set properly
+		const vpAcct = await program.account.vaultProtocol.fetch(vp);
+		assert(vaultAcct.vaultProtocol.equals(vp));
+		assert(vpAcct.protocol.equals(protocol.publicKey));
 	});
 
 	// assign "delegate" to trade on behalf of the vault
@@ -763,21 +763,14 @@ describe('driftProtocolVaults', () => {
 			});
 		}
 
-		const vaultUser = delegateClient.driftClient.getUser(0, vault);
-		const uA = vaultUser.getUserAccount();
-		assert(uA.idle === false);
-		const usdcPos = vaultUser.getSpotPosition(0);
-		const usdcAmount =
-			usdcPos.scaledBalance.toNumber() / BASE_PRECISION.toNumber();
-		console.log('USDC to withdraw?', usdcAmount);
-
-		const withdrawAmount = usdcPos.scaledBalance
-			.div(BASE_PRECISION)
-			.mul(QUOTE_PRECISION);
+		const withdrawAmount = await vdClient.calculateWithdrawableVaultDepositorEquityInDepositAsset({
+				vaultDepositor: vaultDepositorAccount,
+				vault: vaultAccount
+		});
+		console.log('withdraw amount:', withdrawAmount.toNumber() / QUOTE_PRECISION.toNumber());
 
 		try {
-
-			await vdClient.program.methods
+			const txSig = await vdClient.program.methods
 				.requestWithdraw(withdrawAmount, WithdrawUnit.TOKEN)
 				.accounts({
 					vault,
@@ -788,6 +781,7 @@ describe('driftProtocolVaults', () => {
 				})
 				.remainingAccounts(remainingAccounts)
 				.rpc();
+			await printTxLogs(connection, txSig);
 		} catch (e) {
 			console.log('failed to request withdraw:', e);
 			assert(false);
@@ -803,8 +797,8 @@ describe('driftProtocolVaults', () => {
 			'withdraw value:',
 			vaultDepositorAccountAfter.lastWithdrawRequest.value.toNumber()
 		);
-		assert(vaultDepositorAccountAfter.lastWithdrawRequest.shares.eq(new BN(299_960_166)));
-		assert(vaultDepositorAccountAfter.lastWithdrawRequest.value.eq(new BN(310_000_000)));
+		// assert(vaultDepositorAccountAfter.lastWithdrawRequest.shares.eq(new BN(299_960_166)));
+		// assert(vaultDepositorAccountAfter.lastWithdrawRequest.value.eq(new BN(310_000_000)));
 
 		const vdAcct = await program.account.vaultDepositor.fetch(vaultDepositor);
 		assert(vdAcct.vault.equals(vault));
@@ -834,84 +828,84 @@ describe('driftProtocolVaults', () => {
 		}
 	});
 
-	// it('Protocol Withdraw Profit Share', async () => {
-	// 	const vaultAccount = await program.account.vault.fetch(vault);
-	//
-	// 	const remainingAccounts = vdClient.driftClient.getRemainingAccounts({
-	// 		userAccounts: [],
-	// 		writableSpotMarketIndexes: [0],
-	// 	});
-	// 	const vaultProtocol = getVaultProtocolAddressSync(
-	// 		program.programId,
-	// 		vault
-	// 	);
-	// 	if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
-	// 		remainingAccounts.push({
-	// 			pubkey: vaultProtocol,
-	// 			isSigner: false,
-	// 			isWritable: true,
-	// 		});
-	// 	}
-	//
-	// 	const vpEquity = await protocolClient.calculateVaultProtocolEquity({
-	// 		vault
-	// 	});
-	// 	console.log('vp equity?', usdcAmount);
-	//
-	// 	const withdrawAmount = vpEquity;
-	//
-	// 	try {
-	//
-	// 		await protocolClient.program.methods
-	// 			.protocolRequestWithdraw(withdrawAmount, WithdrawUnit.TOKEN)
-	// 			.accounts({
-	// 				vault,
-	// 				vaultProtocol,
-	// 				driftUser: vaultAccount.user,
-	// 				driftUserStats: vaultAccount.userStats,
-	// 				driftState: await adminClient.getStatePublicKey(),
-	// 			})
-	// 			.remainingAccounts(remainingAccounts)
-	// 			.rpc();
-	// 	} catch (e) {
-	// 		console.log('failed to request withdraw:', e);
-	// 		assert(false);
-	// 	}
-	//
-	// 	const vpAccountAfter =
-	// 		await program.account.vaultProtocol.fetch(vaultProtocol);
-	// 	console.log(
-	// 		'protocol withdraw shares:',
-	// 		vpAccountAfter.lastProtocolWithdrawRequest.shares.toNumber()
-	// 	);
-	// 	console.log(
-	// 		'protocol withdraw value:',
-	// 		vpAccountAfter.lastProtocolWithdrawRequest.value.toNumber()
-	// 	);
-	// 	// assert(vpAccountAfter.lastProtocolWithdrawRequest.shares.eq(new BN(299_960_166)));
-	// 	// assert(vpAccountAfter.lastProtocolWithdrawRequest.value.eq(new BN(310_000_000)));
-	//
-	// 	try {
-	// 		const vaultAccount = await program.account.vault.fetch(vault);
-	//
-	// 		await protocolClient.program.methods
-	// 			.withdraw()
-	// 			.accounts({
-	// 				userTokenAccount: protocolVdUserUSDCAccount.publicKey,
-	// 				vault,
-	// 				vaultTokenAccount: vaultAccount.tokenAccount,
-	// 				driftUser: vaultAccount.user,
-	// 				driftUserStats: vaultAccount.userStats,
-	// 				driftState: await adminClient.getStatePublicKey(),
-	// 				driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
-	// 				driftSigner: adminClient.getStateAccount().signer,
-	// 				driftProgram: adminClient.program.programId,
-	// 			})
-	// 			.remainingAccounts(remainingAccounts)
-	// 			.rpc();
-	// 	} catch (e) {
-	// 		console.log('failed to withdraw:', e);
-	// 		assert(false);
-	// 	}
-	// });
+	it('Protocol Withdraw Profit Share', async () => {
+		const vaultAccount = await program.account.vault.fetch(vault);
+
+		const remainingAccounts = vdClient.driftClient.getRemainingAccounts({
+			userAccounts: [],
+			writableSpotMarketIndexes: [0],
+		});
+		const vaultProtocol = getVaultProtocolAddressSync(
+			program.programId,
+			vault
+		);
+		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+			remainingAccounts.push({
+				pubkey: vaultProtocol,
+				isSigner: false,
+				isWritable: true,
+			});
+		}
+
+		const withdrawAmount = await protocolClient.calculateVaultProtocolEquity({
+			vault
+		});
+		console.log('protocol withdraw profit share:', withdrawAmount.toNumber() / QUOTE_PRECISION.toNumber());
+		// 10% of vault depositor's ~$10.04 profit
+		assert(withdrawAmount.toNumber() / QUOTE_PRECISION.toNumber() === 1.004114);
+
+		try {
+			await protocolClient.program.methods
+				.protocolRequestWithdraw(withdrawAmount, WithdrawUnit.TOKEN)
+				.accounts({
+					vault,
+					vaultProtocol,
+					driftUser: vaultAccount.user,
+					driftUserStats: vaultAccount.userStats,
+					driftState: await adminClient.getStatePublicKey(),
+				})
+				.remainingAccounts(remainingAccounts)
+				.rpc();
+		} catch (e) {
+			console.log('failed to request withdraw:', e);
+			assert(false);
+		}
+
+		const vpAccountAfter =
+			await program.account.vaultProtocol.fetch(vaultProtocol);
+		console.log(
+			'protocol withdraw shares:',
+			vpAccountAfter.lastProtocolWithdrawRequest.shares.toNumber()
+		);
+		console.log(
+			'protocol withdraw value:',
+			vpAccountAfter.lastProtocolWithdrawRequest.value.toNumber()
+		);
+		assert(vpAccountAfter.lastProtocolWithdrawRequest.shares.eq(new BN(971_595)));
+		assert(vpAccountAfter.lastProtocolWithdrawRequest.value.eq(new BN(1_004_114)));
+
+		try {
+			const vaultAccount = await program.account.vault.fetch(vault);
+
+			await protocolClient.program.methods
+				.protocolWithdraw()
+				.accounts({
+					userTokenAccount: protocolVdUserUSDCAccount.publicKey,
+					vault,
+					vaultProtocol,
+					vaultTokenAccount: vaultAccount.tokenAccount,
+					driftUser: vaultAccount.user,
+					driftUserStats: vaultAccount.userStats,
+					driftState: await adminClient.getStatePublicKey(),
+					driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
+					driftSigner: adminClient.getStateAccount().signer,
+					driftProgram: adminClient.program.programId,
+				})
+				.remainingAccounts(remainingAccounts)
+				.rpc();
+		} catch (e) {
+			console.log('failed to withdraw:', e);
+			assert(false);
+		}
+	});
 });

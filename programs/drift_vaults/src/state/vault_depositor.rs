@@ -344,6 +344,8 @@ impl VaultDepositor {
         } = vault.apply_fee(vault_protocol, vault_equity, now)?;
         let (manager_profit_share, protocol_profit_share) =
             self.apply_profit_share(vault_equity, vault, vault_protocol)?;
+        msg!("manager profit share: {}", manager_profit_share);
+        msg!("protocol profit share: {}", protocol_profit_share);
 
         let (withdraw_value, n_shares) = withdraw_unit.get_withdraw_value_and_shares(
             withdraw_amount,
@@ -670,9 +672,11 @@ impl VaultDepositor {
                 vault.total_shares,
                 vault_equity,
             )?;
+            msg!("protocol profit share shares: {}", protocol_profit_share_shares);
             vp.protocol_profit_and_fee_shares = vp
                 .protocol_profit_and_fee_shares
                 .saturating_add(protocol_profit_share_shares);
+            msg!("vp shares after: {}", vp.protocol_profit_and_fee_shares);
         }
 
         Ok((manager_profit_share, protocol_profit_share))

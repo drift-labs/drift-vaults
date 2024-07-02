@@ -8,7 +8,7 @@ import {
 	getUserStatsAccountPublicKey,
 	TEN,
 	UserMap,
-	unstakeSharesToAmount as depositSharesToVaultAmount,
+	unstakeSharesToAmount as depositSharesToVaultAmount, User,
 } from '@drift-labs/sdk';
 import { BorshAccountsCoder, Program, ProgramAccount } from '@coral-xyz/anchor';
 import { DriftVaults } from './types/drift_vaults';
@@ -51,6 +51,7 @@ import {
 } from './types/types';
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
 import { UserMapConfig } from '@drift-labs/sdk/lib/userMap/userMapConfig';
+import {calculateApplyProfitShare, calculateRealizedVaultDepositorEquity} from "./math";
 
 export type TxParams = {
 	cuLimit?: number;
@@ -99,7 +100,6 @@ export class VaultClient {
 	}
 
 	public async getVault(vault: PublicKey): Promise<Vault> {
-		// @ts-ignore
 		return await this.program.account.vault.fetch(vault);
 	}
 
@@ -219,14 +219,20 @@ export class VaultClient {
 	}
 
 	/**
-	 *
-	 * @param vault pubkey
-	 * @returns vault equity, in USDC
+	 * @returns total vault equity, in spot market value (which is usually USDC)
+	 * @param params
 	 */
 	public async calculateVaultEquity(params: {
 		address?: PublicKey;
 		vault?: Vault;
+		factorUnrealizedPNL?: boolean;
 	}): Promise<BN> {
+		// defaults to true if undefined
+		let factorUnrealizedPNL = true;
+		if (params.factorUnrealizedPNL !== undefined) {
+			factorUnrealizedPNL = params.factorUnrealizedPNL;
+		}
+
 		let vaultAccount: Vault;
 		if (params.address !== undefined) {
 			// @ts-ignore
@@ -240,9 +246,139 @@ export class VaultClient {
 		const user = await this.getSubscribedVaultUser(vaultAccount.user);
 
 		const netSpotValue = user.getNetSpotMarketValue();
-		const unrealizedPnl = user.getUnrealizedPNL(true, undefined, undefined);
 
-		return netSpotValue.add(unrealizedPnl);
+		if (factorUnrealizedPNL) {
+			const unrealizedPnl = user.getUnrealizedPNL(true, undefined, undefined);
+			return netSpotValue.add(unrealizedPnl);
+		} else {
+			return netSpotValue;
+		}
+	}
+
+	/**
+	 *
+	 * @param vault pubkey
+	 * @param factorUnrealizedPNL add unrealized pnl to existing equity
+	 * @returns total vault equity, in spot deposit asset
+	 */
+	public async calculateVaultEquityInDepositAsset(params: {
+		address?: PublicKey;
+		vault?: Vault;
+		factorUnrealizedPNL?: boolean;
+	}): Promise<BN> {
+		let vaultAccount: Vault;
+		if (params.address !== undefined) {
+			// @ts-ignore
+			vaultAccount = await this.program.account.vault.fetch(params.address);
+		} else if (params.vault !== undefined) {
+			vaultAccount = params.vault;
+		} else {
+			throw new Error('Must supply address or vault');
+		}
+		const vaultEquity = await this.calculateVaultEquity({
+			vault: vaultAccount,
+			factorUnrealizedPNL: params.factorUnrealizedPNL,
+		});
+
+		const spotMarket = this.driftClient.getSpotMarketAccount(
+			vaultAccount.spotMarketIndex
+		);
+		const spotOracle = this.driftClient.getOracleDataForSpotMarket(
+			vaultAccount.spotMarketIndex
+		);
+		const spotPrecision = TEN.pow(new BN(spotMarket!.decimals));
+
+		return vaultEquity.mul(spotPrecision).div(spotOracle.price);
+	}
+
+	/**
+	 * @param params
+	 * @returns vault depositor equity, in spot market value (which is usually USDC)
+	 */
+	public async calculateWithdrawableVaultDepositorEquity(params: {
+		vaultDepositorAddress?: PublicKey;
+		vaultDepositor?: VaultDepositor;
+		vaultAddress?: PublicKey;
+		vault?: Vault;
+	}): Promise<BN> {
+		let vaultAccount: Vault;
+		if (params.vaultAddress !== undefined) {
+			vaultAccount = await this.program.account.vault.fetch(params.vaultAddress);
+		} else if (params.vault !== undefined) {
+			vaultAccount = params.vault;
+		} else {
+			throw new Error('Must supply vaultAddress or vault');
+		}
+
+		let vaultDepositorAccount: VaultDepositor;
+		if (params.vaultDepositorAddress !== undefined) {
+			vaultDepositorAccount = await this.program.account.vaultDepositor.fetch(params.vaultDepositorAddress);
+		} else if (params.vaultDepositor !== undefined) {
+			vaultDepositorAccount = params.vaultDepositor;
+		} else {
+			throw new Error('Must supply vaultDepositorAddress or vaultDepositor');
+		}
+
+		const vaultEquity = await this.calculateVaultEquity({
+			vault: vaultAccount,
+			factorUnrealizedPNL: false
+		});
+		return calculateRealizedVaultDepositorEquity(
+			vaultDepositorAccount,
+			vaultEquity,
+			vaultAccount
+		);
+	}
+
+	public async calculateWithdrawableVaultDepositorEquityInDepositAsset(params: {
+		vaultDepositorAddress?: PublicKey;
+		vaultDepositor?: VaultDepositor;
+		vaultAddress?: PublicKey;
+		vault?: Vault;
+	}): Promise<BN> {
+		let vaultAccount: Vault;
+		if (params.vaultAddress !== undefined) {
+			vaultAccount = await this.program.account.vault.fetch(params.vaultAddress);
+		} else if (params.vault !== undefined) {
+			vaultAccount = params.vault;
+		} else {
+			throw new Error('Must supply vaultAddress or vault');
+		}
+
+		let vaultDepositorAccount: VaultDepositor;
+		if (params.vaultDepositorAddress !== undefined) {
+			vaultDepositorAccount = await this.program.account.vaultDepositor.fetch(params.vaultDepositorAddress);
+		} else if (params.vaultDepositor !== undefined) {
+			vaultDepositorAccount = params.vaultDepositor;
+		} else {
+			throw new Error('Must supply vaultDepositorAddress or vaultDepositor');
+		}
+
+		let vaultProtocol: VaultProtocol | undefined = undefined;
+		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+			vaultProtocol = await this.program.account.vaultProtocol.fetch(vaultAccount.vaultProtocol);
+		}
+
+		const vaultEquity = await this.calculateVaultEquity({
+			vault: vaultAccount,
+			factorUnrealizedPNL: false
+		});
+		const vdEquity = calculateRealizedVaultDepositorEquity(
+			vaultDepositorAccount,
+			vaultEquity,
+			vaultAccount,
+			vaultProtocol
+		);
+
+		const spotMarket = this.driftClient.getSpotMarketAccount(
+			vaultAccount.spotMarketIndex
+		);
+		const spotOracle = this.driftClient.getOracleDataForSpotMarket(
+			vaultAccount.spotMarketIndex
+		);
+		const spotPrecision = TEN.pow(new BN(spotMarket!.decimals));
+
+		return vdEquity.mul(spotPrecision).div(spotOracle.price);
 	}
 
 	public async calculateVaultProtocolEquity(params: {
@@ -259,38 +395,6 @@ export class VaultClient {
 			vaultAccount.totalShares,
 			vaultTotalEquity
 		);
-	}
-
-	/**
-	 *
-	 * @param vault pubkey
-	 * @returns vault equity, in spot deposit asset
-	 */
-	public async calculateVaultEquityInDepositAsset(params: {
-		address?: PublicKey;
-		vault?: Vault;
-	}): Promise<BN> {
-		let vaultAccount: Vault;
-		if (params.address !== undefined) {
-			// @ts-ignore
-			vaultAccount = await this.program.account.vault.fetch(params.address);
-		} else if (params.vault !== undefined) {
-			vaultAccount = params.vault;
-		} else {
-			throw new Error('Must supply address or vault');
-		}
-		const vaultEquity = await this.calculateVaultEquity({
-			vault: vaultAccount,
-		});
-		const spotMarket = this.driftClient.getSpotMarketAccount(
-			vaultAccount.spotMarketIndex
-		);
-		const spotOracle = this.driftClient.getOracleDataForSpotMarket(
-			vaultAccount.spotMarketIndex
-		);
-		const spotPrecision = TEN.pow(new BN(spotMarket!.decimals));
-
-		return vaultEquity.mul(spotPrecision).div(spotOracle.price);
 	}
 
 	public async initializeVault(params: {
