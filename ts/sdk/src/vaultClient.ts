@@ -741,7 +741,9 @@ export class VaultClient {
 		};
 
 		return {
-			vaultAccount, accounts, remainingAccounts
+			vaultAccount,
+			accounts,
+			remainingAccounts,
 		};
 	}
 
@@ -754,11 +756,8 @@ export class VaultClient {
 		},
 		txParams?: TxParams
 	): Promise<VersionedTransaction> {
-		const { vaultAccount, accounts, remainingAccounts } = await this.prepDepositTx(
-			vaultDepositor,
-			amount,
-			initVaultDepositor
-		);
+		const { vaultAccount, accounts, remainingAccounts } =
+			await this.prepDepositTx(vaultDepositor, amount, initVaultDepositor);
 
 		const depositIx = this.program.instruction.deposit(amount, {
 			accounts: {
@@ -796,11 +795,8 @@ export class VaultClient {
 		txParams?: TxParams
 	): Promise<TransactionSignature> {
 		if (this.cliMode) {
-			const { vaultAccount, accounts, remainingAccounts } = await this.prepDepositTx(
-				vaultDepositor,
-				amount,
-				initVaultDepositor
-			);
+			const { vaultAccount, accounts, remainingAccounts } =
+				await this.prepDepositTx(vaultDepositor, amount, initVaultDepositor);
 
 			if (initVaultDepositor) {
 				await this.initializeVaultDepositor(
@@ -816,9 +812,9 @@ export class VaultClient {
 		} else {
 			const depositTxn = await this.createDepositTx(
 				vaultDepositor,
-			amount,
-			initVaultDepositor,
-			txParams
+				amount,
+				initVaultDepositor,
+				txParams
 			);
 
 			return this.sendTxn(depositTxn, txParams?.simulateTransaction);
@@ -1185,15 +1181,18 @@ export class VaultClient {
 
 	public async sendTxn(
 		transaction: VersionedTransaction,
-		simulateTransaction?: boolean,
+		simulateTransaction?: boolean
 	): Promise<TransactionSignature> {
 		let txSig = bs58.encode(transaction.signatures[0]);
 		if (simulateTransaction) {
 			try {
-				const resp = await this.driftClient.connection.simulateTransaction(transaction, {
-					sigVerify: false,
-					commitment: this.driftClient.connection.commitment,
-				});
+				const resp = await this.driftClient.connection.simulateTransaction(
+					transaction,
+					{
+						sigVerify: false,
+						commitment: this.driftClient.connection.commitment,
+					}
+				);
 				console.log(`Simulated transaction:\n${JSON.stringify(resp, null, 2)}`);
 			} catch (e) {
 				const err = e as Error;
@@ -1216,7 +1215,6 @@ export class VaultClient {
 		}
 
 		return txSig!;
-	
 	}
 
 	/**
