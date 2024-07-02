@@ -43,10 +43,14 @@ import {
 } from '@drift-labs/sdk';
 import { IDL, VaultClient } from '../ts/sdk';
 
+export const MOCK_USDC_MINT = anchor.web3.Keypair.generate();
+export const MOCK_ORACLE = anchor.web3.Keypair.generate();
+
 export async function mockOracle(
 	price: number = 50 * 10e7,
 	expo = -7,
-	confidence?: number
+	confidence?: number,
+	tokenFeed?: Keypair
 ): Promise<PublicKey> {
 	// default: create a $50 coin oracle
 	const program = anchor.workspace.Pyth;
@@ -63,6 +67,7 @@ export async function mockOracle(
 		initPrice: price,
 		expo: expo,
 		confidence,
+		tokenFeed,
 	});
 
 	const feedData = await getFeedData(program, priceFeedAddress);
@@ -74,8 +79,16 @@ export async function mockOracle(
 	return priceFeedAddress;
 }
 
-export async function mockUSDCMint(provider: Provider): Promise<Keypair> {
-	const fakeUSDCMint = anchor.web3.Keypair.generate();
+export async function mockUSDCMint(
+	provider: Provider,
+	mint?: Keypair
+): Promise<Keypair> {
+	let fakeUSDCMint: Keypair;
+	if (mint) {
+		fakeUSDCMint = mint;
+	} else {
+		fakeUSDCMint = anchor.web3.Keypair.generate();
+	}
 	const createUSDCMintAccountIx = SystemProgram.createAccount({
 		// @ts-ignore
 		fromPubkey: provider.wallet.publicKey,
@@ -478,14 +491,21 @@ export const createPriceFeed = async ({
 	initPrice,
 	confidence = undefined,
 	expo = -4,
+	tokenFeed,
 }: {
 	oracleProgram: Program;
 	initPrice: number;
 	confidence?: number;
 	expo?: number;
+	tokenFeed?: Keypair;
 }): Promise<PublicKey> => {
 	const conf = new BN(confidence) || new BN((initPrice / 10) * 10 ** -expo);
-	const collateralTokenFeed = new anchor.web3.Account();
+	let collateralTokenFeed: Keypair;
+	if (tokenFeed) {
+		collateralTokenFeed = tokenFeed;
+	} else {
+		collateralTokenFeed = Keypair.generate();
+	}
 	await oracleProgram.methods
 		.initialize(new BN(initPrice * 10 ** -expo), expo, conf)
 		.accounts({ price: collateralTokenFeed.publicKey })
@@ -504,27 +524,6 @@ export const createPriceFeed = async ({
 			}),
 		])
 		.rpc();
-	// await oracleProgram.rpc.initialize(
-	// 	new BN(initPrice * 10 ** -expo),
-	// 	expo,
-	// 	conf,
-	// 	{
-	// 		accounts: { price: collateralTokenFeed.publicKey },
-	// 		signers: [collateralTokenFeed],
-	// 		instructions: [
-	// 			anchor.web3.SystemProgram.createAccount({
-	// 				fromPubkey: oracleProgram.provider.wallet.publicKey,
-	// 				newAccountPubkey: collateralTokenFeed.publicKey,
-	// 				space: 3312,
-	// 				lamports:
-	// 					await oracleProgram.provider.connection.getMinimumBalanceForRentExemption(
-	// 						3312
-	// 					),
-	// 				programId: oracleProgram.programId,
-	// 			}),
-	// 		],
-	// 	}
-	// );
 	return collateralTokenFeed.publicKey;
 };
 
