@@ -3,7 +3,7 @@ use drift::instructions::optional_accounts::AccountMaps;
 use drift::state::user::User;
 
 use crate::constraints::{
-  is_protocol_for_vault, is_user_for_vault, is_user_stats_for_vault, is_vault_protocol_for_vault,
+    is_protocol_for_vault, is_user_for_vault, is_user_stats_for_vault, is_vault_protocol_for_vault,
 };
 use crate::error::ErrorCode;
 use crate::state::VaultProtocolProvider;

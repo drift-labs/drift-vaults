@@ -763,11 +763,15 @@ describe('driftProtocolVaults', () => {
 			});
 		}
 
-		const withdrawAmount = await vdClient.calculateWithdrawableVaultDepositorEquityInDepositAsset({
+		const withdrawAmount =
+			await vdClient.calculateWithdrawableVaultDepositorEquityInDepositAsset({
 				vaultDepositor: vaultDepositorAccount,
-				vault: vaultAccount
-		});
-		console.log('withdraw amount:', withdrawAmount.toNumber() / QUOTE_PRECISION.toNumber());
+				vault: vaultAccount,
+			});
+		console.log(
+			'withdraw amount:',
+			withdrawAmount.toNumber() / QUOTE_PRECISION.toNumber()
+		);
 
 		try {
 			const txSig = await vdClient.program.methods
@@ -835,10 +839,7 @@ describe('driftProtocolVaults', () => {
 			userAccounts: [],
 			writableSpotMarketIndexes: [0],
 		});
-		const vaultProtocol = getVaultProtocolAddressSync(
-			program.programId,
-			vault
-		);
+		const vaultProtocol = getVaultProtocolAddressSync(program.programId, vault);
 		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
 			remainingAccounts.push({
 				pubkey: vaultProtocol,
@@ -848,9 +849,12 @@ describe('driftProtocolVaults', () => {
 		}
 
 		const withdrawAmount = await protocolClient.calculateVaultProtocolEquity({
-			vault
+			vault,
 		});
-		console.log('protocol withdraw profit share:', withdrawAmount.toNumber() / QUOTE_PRECISION.toNumber());
+		console.log(
+			'protocol withdraw profit share:',
+			withdrawAmount.toNumber() / QUOTE_PRECISION.toNumber()
+		);
 		// 10% of vault depositor's ~$10.04 profit
 		assert(withdrawAmount.toNumber() / QUOTE_PRECISION.toNumber() === 1.004114);
 
@@ -871,8 +875,9 @@ describe('driftProtocolVaults', () => {
 			assert(false);
 		}
 
-		const vpAccountAfter =
-			await program.account.vaultProtocol.fetch(vaultProtocol);
+		const vpAccountAfter = await program.account.vaultProtocol.fetch(
+			vaultProtocol
+		);
 		console.log(
 			'protocol withdraw shares:',
 			vpAccountAfter.lastProtocolWithdrawRequest.shares.toNumber()
@@ -881,8 +886,12 @@ describe('driftProtocolVaults', () => {
 			'protocol withdraw value:',
 			vpAccountAfter.lastProtocolWithdrawRequest.value.toNumber()
 		);
-		assert(vpAccountAfter.lastProtocolWithdrawRequest.shares.eq(new BN(971_595)));
-		assert(vpAccountAfter.lastProtocolWithdrawRequest.value.eq(new BN(1_004_114)));
+		assert(
+			vpAccountAfter.lastProtocolWithdrawRequest.shares.eq(new BN(971_595))
+		);
+		assert(
+			vpAccountAfter.lastProtocolWithdrawRequest.value.eq(new BN(1_004_114))
+		);
 
 		try {
 			const vaultAccount = await program.account.vault.fetch(vault);

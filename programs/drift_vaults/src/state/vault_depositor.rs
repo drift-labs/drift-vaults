@@ -672,7 +672,10 @@ impl VaultDepositor {
                 vault.total_shares,
                 vault_equity,
             )?;
-            msg!("protocol profit share shares: {}", protocol_profit_share_shares);
+            msg!(
+                "protocol profit share shares: {}",
+                protocol_profit_share_shares
+            );
             vp.protocol_profit_and_fee_shares = vp
                 .protocol_profit_and_fee_shares
                 .saturating_add(protocol_profit_share_shares);

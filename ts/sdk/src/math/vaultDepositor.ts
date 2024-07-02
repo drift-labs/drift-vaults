@@ -3,10 +3,11 @@ import {
 	PERCENTAGE_PRECISION,
 	ZERO,
 	unstakeSharesToAmount as depositSharesToVaultAmount,
-	stakeAmountToShares as vaultAmountToDepositorShares, QUOTE_PRECISION,
+	stakeAmountToShares as vaultAmountToDepositorShares,
+	QUOTE_PRECISION,
 } from '@drift-labs/sdk';
-import {Vault, VaultDepositor, VaultProtocol} from '../types/types';
-import {getVaultProtocolAddressSync} from "../addresses";
+import { Vault, VaultDepositor, VaultProtocol } from '../types/types';
+import { getVaultProtocolAddressSync } from '../addresses';
 
 /**
  * Calculates the unrealized profitShare for a vaultDepositor
@@ -74,7 +75,7 @@ export function calculateRealizedVaultDepositorEquity(
 	vaultDepositor: VaultDepositor,
 	vaultEquity: BN,
 	vault: Vault,
-	vaultProtocol?: VaultProtocol,
+	vaultProtocol?: VaultProtocol
 ): BN {
 	const vdAmount = depositSharesToVaultAmount(
 		vaultDepositor.vaultShares,

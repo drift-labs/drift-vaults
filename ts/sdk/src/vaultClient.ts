@@ -8,7 +8,8 @@ import {
 	getUserStatsAccountPublicKey,
 	TEN,
 	UserMap,
-	unstakeSharesToAmount as depositSharesToVaultAmount, User,
+	unstakeSharesToAmount as depositSharesToVaultAmount,
+	User,
 } from '@drift-labs/sdk';
 import { BorshAccountsCoder, Program, ProgramAccount } from '@coral-xyz/anchor';
 import { DriftVaults } from './types/drift_vaults';
@@ -51,7 +52,10 @@ import {
 } from './types/types';
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
 import { UserMapConfig } from '@drift-labs/sdk/lib/userMap/userMapConfig';
-import {calculateApplyProfitShare, calculateRealizedVaultDepositorEquity} from "./math";
+import {
+	calculateApplyProfitShare,
+	calculateRealizedVaultDepositorEquity,
+} from './math';
 
 export type TxParams = {
 	cuLimit?: number;
@@ -303,7 +307,9 @@ export class VaultClient {
 	}): Promise<BN> {
 		let vaultAccount: Vault;
 		if (params.vaultAddress !== undefined) {
-			vaultAccount = await this.program.account.vault.fetch(params.vaultAddress);
+			vaultAccount = await this.program.account.vault.fetch(
+				params.vaultAddress
+			);
 		} else if (params.vault !== undefined) {
 			vaultAccount = params.vault;
 		} else {
@@ -312,7 +318,9 @@ export class VaultClient {
 
 		let vaultDepositorAccount: VaultDepositor;
 		if (params.vaultDepositorAddress !== undefined) {
-			vaultDepositorAccount = await this.program.account.vaultDepositor.fetch(params.vaultDepositorAddress);
+			vaultDepositorAccount = await this.program.account.vaultDepositor.fetch(
+				params.vaultDepositorAddress
+			);
 		} else if (params.vaultDepositor !== undefined) {
 			vaultDepositorAccount = params.vaultDepositor;
 		} else {
@@ -321,7 +329,7 @@ export class VaultClient {
 
 		const vaultEquity = await this.calculateVaultEquity({
 			vault: vaultAccount,
-			factorUnrealizedPNL: false
+			factorUnrealizedPNL: false,
 		});
 		return calculateRealizedVaultDepositorEquity(
 			vaultDepositorAccount,
@@ -338,7 +346,9 @@ export class VaultClient {
 	}): Promise<BN> {
 		let vaultAccount: Vault;
 		if (params.vaultAddress !== undefined) {
-			vaultAccount = await this.program.account.vault.fetch(params.vaultAddress);
+			vaultAccount = await this.program.account.vault.fetch(
+				params.vaultAddress
+			);
 		} else if (params.vault !== undefined) {
 			vaultAccount = params.vault;
 		} else {
@@ -347,7 +357,9 @@ export class VaultClient {
 
 		let vaultDepositorAccount: VaultDepositor;
 		if (params.vaultDepositorAddress !== undefined) {
-			vaultDepositorAccount = await this.program.account.vaultDepositor.fetch(params.vaultDepositorAddress);
+			vaultDepositorAccount = await this.program.account.vaultDepositor.fetch(
+				params.vaultDepositorAddress
+			);
 		} else if (params.vaultDepositor !== undefined) {
 			vaultDepositorAccount = params.vaultDepositor;
 		} else {
@@ -356,12 +368,14 @@ export class VaultClient {
 
 		let vaultProtocol: VaultProtocol | undefined = undefined;
 		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
-			vaultProtocol = await this.program.account.vaultProtocol.fetch(vaultAccount.vaultProtocol);
+			vaultProtocol = await this.program.account.vaultProtocol.fetch(
+				vaultAccount.vaultProtocol
+			);
 		}
 
 		const vaultEquity = await this.calculateVaultEquity({
 			vault: vaultAccount,
-			factorUnrealizedPNL: false
+			factorUnrealizedPNL: false,
 		});
 		const vdEquity = calculateRealizedVaultDepositorEquity(
 			vaultDepositorAccount,
@@ -382,14 +396,16 @@ export class VaultClient {
 	}
 
 	public async calculateVaultProtocolEquity(params: {
-		vault: PublicKey
+		vault: PublicKey;
 	}): Promise<BN> {
 		const vaultAccount = await this.program.account.vault.fetch(params.vault);
 		const vaultTotalEquity = await this.calculateVaultEquity({
-			vault: vaultAccount
+			vault: vaultAccount,
 		});
 		const vaultProtocol = this.getVaultProtocolAddress(params.vault);
-		const vpAccount = await this.program.account.vaultProtocol.fetch(vaultProtocol);
+		const vpAccount = await this.program.account.vaultProtocol.fetch(
+			vaultProtocol
+		);
 		return depositSharesToVaultAmount(
 			vpAccount.protocolProfitAndFeeShares,
 			vaultAccount.totalShares,
