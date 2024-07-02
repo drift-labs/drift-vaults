@@ -26,7 +26,6 @@ import {
 	initializeQuoteSpotMarket,
 	mockOracle,
 	mockUSDCMint,
-	printTxLogs,
 	setFeedPrice,
 } from './testHelpers';
 import { ConfirmOptions, Keypair, SystemProgram } from '@solana/web3.js';
@@ -774,7 +773,7 @@ describe('driftProtocolVaults', () => {
 		);
 
 		try {
-			const txSig = await vdClient.program.methods
+			await vdClient.program.methods
 				.requestWithdraw(withdrawAmount, WithdrawUnit.TOKEN)
 				.accounts({
 					vault,
@@ -785,7 +784,6 @@ describe('driftProtocolVaults', () => {
 				})
 				.remainingAccounts(remainingAccounts)
 				.rpc();
-			await printTxLogs(connection, txSig);
 		} catch (e) {
 			console.log('failed to request withdraw:', e);
 			assert(false);
