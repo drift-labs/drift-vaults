@@ -48,6 +48,7 @@ pub fn protocol_withdraw<'c: 'info, 'info>(
 
     drop(vault);
     drop(user);
+    drop(vp);
 
     ctx.drift_withdraw(protocol_withdraw_amount)?;
 

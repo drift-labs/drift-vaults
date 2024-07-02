@@ -46,6 +46,7 @@ pub fn manager_deposit<'c: 'info, 'info>(
 
     drop(vault);
     drop(user);
+    drop(vp);
 
     ctx.token_transfer(amount)?;
 

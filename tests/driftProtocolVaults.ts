@@ -831,7 +831,7 @@ describe('driftProtocolVaults', () => {
 	it('Protocol Withdraw Profit Share', async () => {
 		const vaultAccount = await program.account.vault.fetch(vault);
 
-		const remainingAccounts = vdClient.driftClient.getRemainingAccounts({
+		const remainingAccounts = protocolClient.driftClient.getRemainingAccounts({
 			userAccounts: [],
 			writableSpotMarketIndexes: [0],
 		});

@@ -62,6 +62,7 @@ pub fn liquidate<'c: 'info, 'info>(
 
     drop(user);
     drop(vault);
+    drop(vp);
 
     ctx.drift_update_user_delegate(vault_depositor.authority)?;
     ctx.drift_update_user_reduce_only(true)?;

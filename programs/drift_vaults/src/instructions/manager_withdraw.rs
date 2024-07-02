@@ -46,6 +46,7 @@ pub fn manager_withdraw<'c: 'info, 'info>(
 
     drop(vault);
     drop(user);
+    drop(vp);
 
     ctx.drift_withdraw(manager_withdraw_amount)?;
 
