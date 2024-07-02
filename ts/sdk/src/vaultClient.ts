@@ -8,6 +8,7 @@ import {
 	getUserStatsAccountPublicKey,
 	TEN,
 	UserMap,
+	unstakeSharesToAmount as depositSharesToVaultAmount,
 } from '@drift-labs/sdk';
 import { BorshAccountsCoder, Program, ProgramAccount } from '@coral-xyz/anchor';
 import { DriftVaults } from './types/drift_vaults';
@@ -242,6 +243,22 @@ export class VaultClient {
 		const unrealizedPnl = user.getUnrealizedPNL(true, undefined, undefined);
 
 		return netSpotValue.add(unrealizedPnl);
+	}
+
+	public async calculateVaultProtocolEquity(params: {
+		vault: PublicKey
+	}): Promise<BN> {
+		const vaultAccount = await this.program.account.vault.fetch(params.vault);
+		const vaultTotalEquity = await this.calculateVaultEquity({
+			vault: vaultAccount
+		});
+		const vaultProtocol = this.getVaultProtocolAddress(params.vault);
+		const vpAccount = await this.program.account.vaultProtocol.fetch(vaultProtocol);
+		return depositSharesToVaultAmount(
+			vpAccount.protocolProfitAndFeeShares,
+			vaultAccount.totalShares,
+			vaultTotalEquity
+		);
 	}
 
 	/**
