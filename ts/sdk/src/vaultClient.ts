@@ -9,7 +9,6 @@ import {
 	TEN,
 	UserMap,
 	unstakeSharesToAmount as depositSharesToVaultAmount,
-	User,
 } from '@drift-labs/sdk';
 import { BorshAccountsCoder, Program, ProgramAccount } from '@coral-xyz/anchor';
 import { DriftVaults } from './types/drift_vaults';
@@ -52,10 +51,7 @@ import {
 } from './types/types';
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
 import { UserMapConfig } from '@drift-labs/sdk/lib/userMap/userMapConfig';
-import {
-	calculateApplyProfitShare,
-	calculateRealizedVaultDepositorEquity,
-} from './math';
+import { calculateRealizedVaultDepositorEquity } from './math';
 
 export type TxParams = {
 	cuLimit?: number;

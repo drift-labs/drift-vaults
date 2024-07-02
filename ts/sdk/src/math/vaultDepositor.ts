@@ -4,10 +4,8 @@ import {
 	ZERO,
 	unstakeSharesToAmount as depositSharesToVaultAmount,
 	stakeAmountToShares as vaultAmountToDepositorShares,
-	QUOTE_PRECISION,
 } from '@drift-labs/sdk';
 import { Vault, VaultDepositor, VaultProtocol } from '../types/types';
-import { getVaultProtocolAddressSync } from '../addresses';
 
 /**
  * Calculates the unrealized profitShare for a vaultDepositor
