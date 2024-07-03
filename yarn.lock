@@ -137,13 +137,13 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
-"@drift-labs/competitions-sdk@0.2.347":
-  version "0.2.347"
-  resolved "https://registry.yarnpkg.com/@drift-labs/competitions-sdk/-/competitions-sdk-0.2.347.tgz#611395975f4d668a26452878120f798be0f7bf86"
-  integrity sha512-Ugmc1wh9gFckLgJTyZ6XUGW9zj/tj1MhWvZ1o7NLOL2og6AqZePqCuJSOa7YSc+OzUhNDc/pjUQdVlkwk4Wg6w==
+"@drift-labs/competitions-sdk@0.2.348":
+  version "0.2.348"
+  resolved "https://registry.yarnpkg.com/@drift-labs/competitions-sdk/-/competitions-sdk-0.2.348.tgz#353a2c039274a6a9189e7c6050d83779f04d860f"
+  integrity sha512-qbHEAfV78bXG08ayjKoICFaeiJFtRRyDsaiNr8o3CYWn6jLEM8phkJ6Hp49E5qPJvlJHhTcj2hGjEnV4x6rPvA==
   dependencies:
     "@coral-xyz/anchor" "^0.26.0"
-    "@drift-labs/sdk" "2.85.0-beta.11"
+    "@drift-labs/sdk" "2.85.0-beta.12"
     "@solana/web3.js" "1.73.2"
     "@switchboard-xyz/solana.js" "^2.7.1"
     cerializr "^3.1.4"
@@ -152,15 +152,16 @@
     ts-node "^10.9.1"
     typescript "^5.1.6"
 
-"@drift-labs/sdk@2.85.0-beta.11":
-  version "2.85.0-beta.11"
-  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.85.0-beta.11.tgz#5a644ee0289d711c5406a8edb3da04c1230ae20d"
-  integrity sha512-f6eFE5yBVVe+ah6cqnnxAh9qe60oQ6Wb/LVy6yzaQ4hoHh7dPOr/2xUfTWxRDAEKsot4SY1KyYPaCqgepOmzfg==
+"@drift-labs/sdk@2.85.0-beta.12":
+  version "2.85.0-beta.12"
+  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.85.0-beta.12.tgz#f9b35f186ce19ce752bfa508ac19e56021f0610b"
+  integrity sha512-sXl3lyrjlPdQv2NBGA9GEZ+fGTjuQWZraOi7+BTdw9XB5fcTI41wdcDux+0NleEiotamOLp9UP5JHVU/DK3DeA==
   dependencies:
     "@coral-xyz/anchor" "0.28.0"
     "@ellipsis-labs/phoenix-sdk" "^1.4.2"
     "@project-serum/serum" "^0.13.38"
     "@pythnetwork/client" "2.5.3"
+    "@pythnetwork/price-service-sdk" "^1.7.1"
     "@pythnetwork/pyth-solana-receiver" "^0.7.0"
     "@solana/spl-token" "0.3.7"
     "@solana/web3.js" "1.92.3"
@@ -477,7 +478,7 @@
     assert "^2.0.0"
     buffer "^6.0.1"
 
-"@pythnetwork/price-service-sdk@>=1.6.0":
+"@pythnetwork/price-service-sdk@>=1.6.0", "@pythnetwork/price-service-sdk@^1.7.1":
   version "1.7.1"
   resolved "https://registry.yarnpkg.com/@pythnetwork/price-service-sdk/-/price-service-sdk-1.7.1.tgz#dbfc8a8c2189f526346c1f79ec3995e89b690700"
   integrity sha512-xr2boVXTyv1KUt/c6llUTfbv2jpud99pWlMJbFaHGUBoygQsByuy7WbjIJKZ+0Blg1itLZl0Lp/pJGGg8SdJoQ==
