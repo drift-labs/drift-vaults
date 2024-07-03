@@ -1279,12 +1279,12 @@ describe('driftProtocolVaults', () => {
 			'protocol withdraw value:',
 			vpAccountAfter.lastProtocolWithdrawRequest.value.toNumber()
 		);
-		// assert(
-		// 	vpAccountAfter.lastProtocolWithdrawRequest.shares.eq(new BN(971_595))
-		// );
-		// assert(
-		// 	vpAccountAfter.lastProtocolWithdrawRequest.value.eq(new BN(1_004_114))
-		// );
+		assert(
+			vpAccountAfter.lastProtocolWithdrawRequest.shares.eq(new BN(994_132))
+		);
+		assert(
+			vpAccountAfter.lastProtocolWithdrawRequest.value.eq(new BN(1_004_114))
+		);
 
 		try {
 			const vaultAccount = await program.account.vault.fetch(protocolVault);
