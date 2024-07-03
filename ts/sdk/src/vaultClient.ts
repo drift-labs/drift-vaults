@@ -221,7 +221,7 @@ export class VaultClient {
 	/**
 	 *
 	 * @param vault pubkey
-   * @param factorUnrealizedPNL add unrealized pnl to net balance
+	 * @param factorUnrealizedPNL add unrealized pnl to net balance
 	 * @returns vault equity, in USDC
 	 */
 	public async calculateVaultEquity(params: {

@@ -500,7 +500,7 @@ describe('driftProtocolVaults', () => {
 			bulkAccountLoader
 		);
 		const vaultClient = new VaultClient({
-			driftClient: driftClient,
+			driftClient,
 			program: program,
 		});
 		const vaultName = 'if stake vault';
@@ -578,7 +578,7 @@ describe('driftProtocolVaults', () => {
 			bulkAccountLoader
 		);
 		const vaultClient = new VaultClient({
-			driftClient: driftClient,
+			driftClient,
 			program: program,
 		});
 		const vaultName = 'competition vault';
