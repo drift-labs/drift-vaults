@@ -28,8 +28,6 @@ import {
 	bootstrapSignerClientAndUser,
 	createUserWithUSDCAccount,
 	initializeQuoteSpotMarket,
-	MOCK_ORACLE,
-	MOCK_USDC_MINT,
 	mockOracle,
 	mockUSDCMint,
 	printTxLogs,
@@ -103,7 +101,7 @@ describe('driftProtocolVaults', () => {
 		mantissaSqrtScale
 	);
 
-	const usdcMint = MOCK_USDC_MINT;
+	let usdcMint: Keypair;
 	let solPerpOracle: PublicKey;
 
 	const vaultName = 'crisp vault';
@@ -123,13 +121,8 @@ describe('driftProtocolVaults', () => {
 	const baseAssetAmount = new BN(1).mul(BASE_PRECISION);
 
 	before(async () => {
-		await mockUSDCMint(provider, MOCK_USDC_MINT);
-		solPerpOracle = await mockOracle(
-			initialSolPerpPrice,
-			undefined,
-			undefined,
-			MOCK_ORACLE
-		);
+		usdcMint = await mockUSDCMint(provider);
+		solPerpOracle = await mockOracle(initialSolPerpPrice, undefined, undefined);
 
 		const perpMarketIndexes = [0];
 		const spotMarketIndexes = [0];

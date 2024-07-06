@@ -175,7 +175,7 @@ export async function mockUserUSDCAccount(
 		);
 		return userUSDCAccount;
 	} catch (e) {
-		console.log('FAILED:', e);
+		console.log('failed to create mock user USDC account:', e);
 	}
 }
 
@@ -960,7 +960,7 @@ export async function bootstrapSignerClientAndUser(params: {
 	const vaultClient = new VaultClient({
 		driftClient,
 		program,
-		cliMode: vaultClientCliMode ?? false,
+		cliMode: vaultClientCliMode ?? true,
 	});
 	const userUSDCAccount = await mockUserUSDCAccount(
 		usdcMint,
