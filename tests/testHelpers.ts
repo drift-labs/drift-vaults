@@ -43,9 +43,6 @@ import {
 } from '@drift-labs/sdk';
 import { IDL, VaultClient } from '../ts/sdk';
 
-export const MOCK_USDC_MINT = anchor.web3.Keypair.generate();
-export const MOCK_ORACLE = anchor.web3.Keypair.generate();
-
 export async function mockOracle(
 	price: number = 50 * 10e7,
 	expo = -7,
@@ -963,7 +960,7 @@ export async function bootstrapSignerClientAndUser(params: {
 	const vaultClient = new VaultClient({
 		driftClient,
 		program,
-		cliMode: vaultClientCliMode ?? true,
+		cliMode: vaultClientCliMode ?? false,
 	});
 	const userUSDCAccount = await mockUserUSDCAccount(
 		usdcMint,
