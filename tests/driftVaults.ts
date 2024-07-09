@@ -51,7 +51,7 @@ import {
 	getCompetitorAddressSync,
 } from '@drift-labs/competitions-sdk';
 
-describe('driftProtocolVaults', () => {
+describe('driftVaults', () => {
 	const opts: ConfirmOptions = {
 		preflightCommitment: 'confirmed',
 		skipPreflight: false,
