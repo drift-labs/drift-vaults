@@ -1,6 +1,6 @@
 {
   "name": "@drift-labs/vaults-sdk",
-  "version": "0.1.346",
+  "version": "0.1.347",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "directories": {
@@ -9,7 +9,7 @@
   "dependencies": {
     "@coral-xyz/anchor": "0.28.0",
     "@drift-labs/competitions-sdk": "0.2.334",
-    "@drift-labs/sdk": "2.86.0-beta.8",
+    "@drift-labs/sdk": "2.86.0-beta.9",
     "@solana/web3.js": "1.73.2",
     "commander": "^11.0.0",
     "dotenv": "^16.3.1",
