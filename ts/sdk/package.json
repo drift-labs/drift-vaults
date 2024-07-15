@@ -1,6 +1,6 @@
 {
   "name": "@drift-labs/vaults-sdk",
-  "version": "0.1.357",
+  "version": "0.1.358",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "directories": {
