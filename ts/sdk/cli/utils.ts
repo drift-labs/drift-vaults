@@ -2,7 +2,7 @@ import { BASE_PRECISION, BN, DriftClient, OraclePriceData, PRICE_PRECISION, QUOT
 import { VAULT_PROGRAM_ID, Vault, VaultClient, VaultDepositor, decodeName } from "../src";
 import { Command } from "commander";
 import { Connection, Keypair } from "@solana/web3.js";
-import { AnchorProvider } from "@coral-xyz/anchor";
+import { AnchorProvider, Wallet as AnchorWallet } from "@coral-xyz/anchor";
 import * as anchor from '@coral-xyz/anchor';
 import { IDL } from "../src/types/drift_vaults";
 
@@ -159,7 +159,7 @@ export async function getCommandContext(program: Command, needToSign: boolean): 
     });
     await driftClient.subscribe();
 
-    const provider = new AnchorProvider(connection, wallet, {});
+    const provider = new AnchorProvider(connection, wallet as AnchorWallet, {});
     anchor.setProvider(provider);
     const vaultProgramId = VAULT_PROGRAM_ID;
     const vaultProgram = new anchor.Program(IDL, vaultProgramId, provider);

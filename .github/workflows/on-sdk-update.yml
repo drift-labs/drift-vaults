@@ -8,12 +8,12 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  RUST_TOOLCHAIN: 1.67.0
-  SOLANA_VERSION: "1.14.16"
+  RUST_TOOLCHAIN: 1.70.0
+  SOLANA_VERSION: "1.16.27"
 
 jobs:
   update-sdk:
-    runs-on: ubuntu-latest
+    runs-on: ubicloud
     steps:
       - name: Checkout code
         uses: actions/checkout@v2

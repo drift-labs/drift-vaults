@@ -64,5 +64,3 @@ export function getTokenizedVaultMintAddressSync(
 		programId
 	)[0];
 }
-
-export function getTokenizedVaultMetadataAddressSync();

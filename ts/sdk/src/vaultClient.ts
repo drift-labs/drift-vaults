@@ -301,6 +301,14 @@ export class VaultClient {
 
 		return await this.program.methods
 			.initializeVault(params)
+			.preInstructions([
+				ComputeBudgetProgram.setComputeUnitLimit({
+					units: 400_000,
+				}),
+				ComputeBudgetProgram.setComputeUnitPrice({
+					microLamports: 300_000,
+				}),
+			])
 			.accounts(accounts)
 			.rpc();
 	}
@@ -319,6 +327,14 @@ export class VaultClient {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
 		return await this.program.methods
 			.updateDelegate(delegate)
+			.preInstructions([
+				ComputeBudgetProgram.setComputeUnitLimit({
+					units: 400_000,
+				}),
+				ComputeBudgetProgram.setComputeUnitPrice({
+					microLamports: 300_000,
+				}),
+			])
 			.accounts({
 				vault: vault,
 				driftUser: vaultAccount.user,
@@ -438,12 +454,14 @@ export class VaultClient {
 
 		if (this.cliMode) {
 			return await this.program.methods
+				// @ts-ignore, 0.29.0 anchor issues..
 				.managerRequestWithdraw(amount, withdrawUnit)
 				.accounts(accounts)
 				.remainingAccounts(remainingAccounts)
 				.rpc();
 		} else {
 			const requestWithdrawIx = this.program.instruction.managerRequestWithdraw(
+				// @ts-ignore
 				amount,
 				withdrawUnit,
 				{
@@ -812,6 +830,8 @@ export class VaultClient {
 
 		ixs.push(
 			await this.program.methods
+				// anchor idl bug: https://github.com/coral-xyz/anchor/issues/2914
+				// @ts-ignore
 				.tokenizeShares(amount, unit)
 				.accounts({
 					authority: this.driftClient.wallet.publicKey,
@@ -937,23 +957,15 @@ export class VaultClient {
 		}
 	}
 
-	/**
-	 * Depositor funds into the specified vault.
-	 * @param vaultDepositor
-	 * @param amount
-	 * @param initVaultDepositor If true, will initialize the vault depositor account
-	 * @returns
-	 */
-	public async deposit(
+	public async prepDepositTx(
 		vaultDepositor: PublicKey,
 		amount: BN,
 		initVaultDepositor?: {
 			authority: PublicKey;
 			vault: PublicKey;
 		},
-		txParams?: TxParams,
 		userTokenAccount?: PublicKey
-	): Promise<TransactionSignature> {
+	) {
 		let vaultPubKey: PublicKey;
 		if (initVaultDepositor) {
 			vaultPubKey = initVaultDepositor.vault;
@@ -1006,7 +1018,70 @@ export class VaultClient {
 			tokenProgram: TOKEN_PROGRAM_ID,
 		};
 
+		return {
+			vaultAccount,
+			accounts,
+			remainingAccounts,
+		};
+	}
+
+	public async createDepositTx(
+		vaultDepositor: PublicKey,
+		amount: BN,
+		initVaultDepositor?: {
+			authority: PublicKey;
+			vault: PublicKey;
+		},
+		txParams?: TxParams
+	): Promise<VersionedTransaction> {
+		const { vaultAccount, accounts, remainingAccounts } =
+			await this.prepDepositTx(vaultDepositor, amount, initVaultDepositor);
+
+		const depositIx = this.program.instruction.deposit(amount, {
+			accounts: {
+				authority: this.driftClient.wallet.publicKey,
+				...accounts,
+			},
+			remainingAccounts,
+		});
+
+		if (initVaultDepositor) {
+			const initIx = this.createInitVaultDepositorIx(
+				vaultAccount.pubkey,
+				initVaultDepositor.authority
+			);
+			return await this.createTxn([initIx, depositIx], txParams);
+		} else {
+			return await this.createTxn([depositIx], txParams);
+		}
+	}
+
+	/**
+	 * Depositor funds into the specified vault.
+	 * @param vaultDepositor
+	 * @param amount
+	 * @param initVaultDepositor If true, will initialize the vault depositor account
+	 * @returns
+	 */
+	public async deposit(
+		vaultDepositor: PublicKey,
+		amount: BN,
+		initVaultDepositor?: {
+			authority: PublicKey;
+			vault: PublicKey;
+		},
+		txParams?: TxParams,
+		userTokenAccount?: PublicKey
+	): Promise<TransactionSignature> {
 		if (this.cliMode) {
+			const { vaultAccount, accounts, remainingAccounts } =
+				await this.prepDepositTx(
+					vaultDepositor,
+					amount,
+					initVaultDepositor,
+					userTokenAccount
+				);
+
 			if (initVaultDepositor) {
 				await this.initializeVaultDepositor(
 					vaultAccount.pubkey,
@@ -1019,23 +1094,14 @@ export class VaultClient {
 				.remainingAccounts(remainingAccounts)
 				.rpc();
 		} else {
-			const depositIx = this.program.instruction.deposit(amount, {
-				accounts: {
-					authority: this.driftClient.wallet.publicKey,
-					...accounts,
-				},
-				remainingAccounts,
-			});
+			const depositTxn = await this.createDepositTx(
+				vaultDepositor,
+				amount,
+				initVaultDepositor,
+				txParams
+			);
 
-			if (initVaultDepositor) {
-				const initIx = this.createInitVaultDepositorIx(
-					vaultAccount.pubkey,
-					initVaultDepositor.authority
-				);
-				return await this.createAndSendTxn([initIx, depositIx], txParams);
-			} else {
-				return await this.createAndSendTxn([depositIx], txParams);
-			}
+			return this.sendTxn(depositTxn, txParams?.simulateTransaction);
 		}
 	}
 
@@ -1073,12 +1139,14 @@ export class VaultClient {
 
 		if (this.cliMode) {
 			return await this.program.methods
+				// @ts-ignore
 				.requestWithdraw(amount, withdrawUnit)
 				.accounts(accounts)
 				.remainingAccounts(remainingAccounts)
 				.rpc();
 		} else {
 			const requestWithdrawIx = this.program.instruction.requestWithdraw(
+				// @ts-ignore
 				amount,
 				withdrawUnit,
 				{
@@ -1369,13 +1437,10 @@ export class VaultClient {
 		}
 	}
 
-	/**
-	 * Used for UI wallet adapters compatibility
-	 */
-	public async createAndSendTxn(
+	public async createTxn(
 		vaultIxs: TransactionInstruction[],
 		txParams?: TxParams
-	): Promise<TransactionSignature> {
+	): Promise<VersionedTransaction> {
 		const ixs = [
 			ComputeBudgetProgram.setComputeUnitLimit({
 				units: txParams?.cuLimit ?? 400_000,
@@ -1386,7 +1451,7 @@ export class VaultClient {
 			...vaultIxs,
 		];
 
-		const tx = (await this.driftClient.txHandler.buildTransaction({
+		return (await this.driftClient.txHandler.buildTransaction({
 			connection: this.driftClient.connection,
 			instructions: ixs,
 			lookupTables: txParams?.lookupTables ?? [],
@@ -1396,13 +1461,22 @@ export class VaultClient {
 			fetchMarketLookupTableAccount:
 				this.driftClient.fetchMarketLookupTableAccount.bind(this.driftClient),
 		})) as VersionedTransaction;
-		let txSig = bs58.encode(tx.signatures[0]);
-		if (txParams?.simulateTransaction) {
+	}
+
+	public async sendTxn(
+		transaction: VersionedTransaction,
+		simulateTransaction?: boolean
+	): Promise<TransactionSignature> {
+		let txSig = bs58.encode(transaction.signatures[0]);
+		if (simulateTransaction) {
 			try {
-				const resp = await this.driftClient.connection.simulateTransaction(tx, {
-					sigVerify: false,
-					commitment: this.driftClient.connection.commitment,
-				});
+				const resp = await this.driftClient.connection.simulateTransaction(
+					transaction,
+					{
+						sigVerify: false,
+						commitment: this.driftClient.connection.commitment,
+					}
+				);
 				console.log(`Simulated transaction:\n${JSON.stringify(resp, null, 2)}`);
 			} catch (e) {
 				const err = e as Error;
@@ -1412,7 +1486,7 @@ export class VaultClient {
 			}
 		} else {
 			const resp = await this.driftClient.sendTransaction(
-				tx,
+				transaction,
 				[],
 				this.driftClient.opts
 			);
@@ -1425,6 +1499,19 @@ export class VaultClient {
 		}
 
 		return txSig!;
+	}
+
+	/**
+	 * Used for UI wallet adapters compatibility
+	 */
+	public async createAndSendTxn(
+		vaultIxs: TransactionInstruction[],
+		txParams?: TxParams
+	): Promise<TransactionSignature> {
+		const tx = await this.createTxn(vaultIxs, txParams);
+		const txSig = await this.sendTxn(tx, txParams?.simulateTransaction);
+
+		return txSig;
 	}
 
 	/**
