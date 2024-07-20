@@ -7,21 +7,25 @@ import {
 	BulkAccountLoader,
 	DriftClient,
 	InsuranceFundStake,
+	TWO,
 	UserAccount,
 	ZERO,
 	getInsuranceFundStakeAccountPublicKey,
 } from '@drift-labs/sdk';
 import {
+	calculateAllPdas,
 	createUserWithUSDCAccount,
 	initializeQuoteSpotMarket,
 	mockUSDCMint,
 	mockUserUSDCAccount,
 	printTxLogs,
+	validateTotalUserShares,
 } from './testHelpers';
 import { Keypair } from '@solana/web3.js';
 import { assert } from 'chai';
 import {
 	VaultClient,
+	getTokenizedVaultMintAddressSync,
 	getVaultAddressSync,
 	getVaultDepositorAddressSync,
 } from '../ts/sdk/src';
@@ -32,6 +36,9 @@ import {
 	getCompetitionAddressSync,
 	getCompetitorAddressSync,
 } from '@drift-labs/competitions-sdk/lib';
+
+import { getMint } from '@solana/spl-token';
+import { Metaplex } from '@metaplex-foundation/js';
 
 describe('driftVaults', () => {
 	// Configure the client to use the local cluster.
@@ -55,9 +62,11 @@ describe('driftVaults', () => {
 		},
 	});
 
+	const metaplex = Metaplex.make(connection);
 	const vaultClient = new VaultClient({
 		driftClient: adminClient,
 		program: program,
+		metaplex: metaplex,
 		cliMode: true,
 	});
 
@@ -121,23 +130,30 @@ describe('driftVaults', () => {
 			writableSpotMarketIndexes: [0],
 		});
 
-		const txSig = await program.methods
-			.deposit(usdcAmount)
-			.accounts({
-				userTokenAccount: userUSDCAccount.publicKey,
-				vault,
-				vaultDepositor,
-				vaultTokenAccount: vaultAccount.tokenAccount,
-				driftUser: vaultAccount.user,
-				driftUserStats: vaultAccount.userStats,
-				driftState: await adminClient.getStatePublicKey(),
-				driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
-				driftProgram: adminClient.program.programId,
-			})
-			.remainingAccounts(remainingAccounts)
-			.rpc();
+		try {
+			const txSig = await program.methods
+				.deposit(usdcAmount)
+				.accounts({
+					userTokenAccount: userUSDCAccount.publicKey,
+					vault,
+					vaultDepositor,
+					vaultTokenAccount: vaultAccount.tokenAccount,
+					driftUser: vaultAccount.user,
+					driftUserStats: vaultAccount.userStats,
+					driftState: await adminClient.getStatePublicKey(),
+					driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
+					driftProgram: adminClient.program.programId,
+				})
+				.remainingAccounts(remainingAccounts)
+				.rpc();
+			await printTxLogs(provider.connection, txSig);
 
-		await printTxLogs(provider.connection, txSig);
+			const vd = await program.account.vaultDepositor.fetch(vaultDepositor);
+			assert(vd.totalDeposits.eq(usdcAmount));
+		} catch (e) {
+			console.error(e);
+			assert(false);
+		}
 	});
 
 	it('Withdraw', async () => {
@@ -408,5 +424,286 @@ describe('driftVaults', () => {
 			console.log(err);
 			assert(false, 'Failed to initialize competitor');
 		}
+	});
+
+	it('Initialize TokenizedVaultDepositor', async () => {
+		try {
+			await vaultClient.initializeTokenizedVaultDepositor({
+				vault,
+				tokenName: 'Tokenized Vault',
+				tokenSymbol: 'TV',
+				tokenUri: '',
+				decimals: 6,
+			});
+		} catch (e) {
+			console.error(e);
+			assert(false);
+		}
+
+		const tokenMint = getTokenizedVaultMintAddressSync(
+			program.programId,
+			vault
+		);
+		const metadataAccount = metaplex.nfts().pdas().metadata({
+			mint: tokenMint,
+		});
+
+		const mintAccount = await getMint(connection, tokenMint);
+		assert(mintAccount.mintAuthority.equals(vault));
+		assert(mintAccount.decimals === 6);
+		assert(mintAccount.isInitialized === true);
+
+		assert((await connection.getAccountInfo(metadataAccount)) !== null);
+		const metadata = await metaplex
+			.nfts()
+			.findByMint({ mintAddress: tokenMint });
+		assert(metadata.mint.address.equals(tokenMint));
+		assert(metadata.name === 'Tokenized Vault');
+		assert(metadata.symbol === 'TV');
+		assert(metadata.uri === '');
+	});
+
+	it('Initialize another TokenizedVaultDepositor', async () => {
+		const { tokenizedVaultDepositor } = calculateAllPdas(
+			program.programId,
+			vault,
+			provider.wallet.publicKey
+		);
+		const tvdAccount = await connection.getAccountInfo(tokenizedVaultDepositor);
+		assert(tvdAccount !== null, 'TokenizedVaultDepositor account should exist');
+		try {
+			const initTx = await vaultClient.initializeTokenizedVaultDepositor({
+				vault,
+				tokenName: 'Tokenized Vault',
+				tokenSymbol: 'TV',
+				tokenUri: '',
+				decimals: 6,
+			});
+			await printTxLogs(provider.connection, initTx);
+		} catch (e) {
+			return;
+		}
+		assert(
+			false,
+			'Should not have been able to initialize a second TokenizedVaultDepositor'
+		);
+	});
+
+	it('Tokenize vault shares', async () => {
+		const {
+			vaultDepositor,
+			tokenizedVaultDepositor,
+			mintAddress,
+			userVaultTokenAta,
+			vaultTokenizedTokenAta,
+		} = calculateAllPdas(program.programId, vault, provider.wallet.publicKey);
+
+		await vaultClient.deposit(
+			vaultDepositor,
+			usdcAmount,
+			undefined,
+			undefined,
+			userUSDCAccount.publicKey
+		);
+
+		await validateTotalUserShares(program, vault);
+
+		const vdBefore = await program.account.vaultDepositor.fetch(vaultDepositor);
+		const vdtBefore = await program.account.tokenizedVaultDepositor.fetch(
+			tokenizedVaultDepositor
+		);
+		const vaultBefore = await program.account.vault.fetch(vault);
+		const mintAccountBefore = await getMint(connection, mintAddress);
+		const tvdTokenBalanceBefore = await connection.getTokenAccountBalance(
+			vaultTokenizedTokenAta
+		);
+
+		assert(
+			(await connection.getAccountInfo(userVaultTokenAta)) === null,
+			'User vault token account should not exist'
+		);
+		assert(
+			tvdTokenBalanceBefore.value.uiAmount === 0,
+			'TokenizedVaultDepositor token account has tokens'
+		);
+		assert(Number(mintAccountBefore.supply) === 0, 'Mint supply !== 0');
+
+		assert(
+			Number(vdBefore.vaultShares) === Number(usdcAmount),
+			`VaultDepositor has no shares`
+		);
+
+		try {
+			const txSig = await vaultClient.tokenizeShares(
+				vaultDepositor,
+				vdBefore.vaultShares,
+				WithdrawUnit.SHARES
+			);
+			await printTxLogs(provider.connection, txSig);
+		} catch (e) {
+			console.error(e);
+			assert(false, 'tokenizeShares threw');
+		}
+
+		const vdAfter = await program.account.vaultDepositor.fetch(vaultDepositor);
+		const vdtAfter = await program.account.tokenizedVaultDepositor.fetch(
+			tokenizedVaultDepositor
+		);
+		const vaultAfter = await program.account.vault.fetch(vault);
+		const mintAccountAfter = await getMint(connection, mintAddress);
+		const userTokenBalanceAfter = await connection.getTokenAccountBalance(
+			userVaultTokenAta
+		);
+		const tvdTokenBalanceAfter = await connection.getTokenAccountBalance(
+			vaultTokenizedTokenAta
+		);
+
+		assert(
+			tvdTokenBalanceAfter.value.uiAmount === 0,
+			'TokenizedVaultDepositor token account has tokens'
+		);
+
+		const vdSharesDelta = vdAfter.vaultShares.sub(vdBefore.vaultShares);
+		const vdtSharesDelta = vdtAfter.vaultShares.sub(vdtBefore.vaultShares);
+		const tokenBalanceDelta = new BN(userTokenBalanceAfter.value.amount).sub(
+			ZERO
+		);
+		const mintSupplyDelta = new BN(String(mintAccountAfter.supply)).sub(
+			new BN(String(mintAccountBefore.supply))
+		);
+
+		assert(
+			vdAfter.vaultSharesBase === vdBefore.vaultSharesBase,
+			'VaultDepositor shares base changed'
+		);
+		assert(
+			vdtAfter.vaultSharesBase === vdtBefore.vaultSharesBase,
+			'TokenizedVaultDepositor shares base changed'
+		);
+
+		assert(
+			vdSharesDelta.neg().eq(vdtSharesDelta),
+			'VaultDepositor and TokenizedVaultDepositor shares delta should be equal and opposite'
+		);
+		assert(
+			tokenBalanceDelta.eq(mintSupplyDelta),
+			'Token balance delta should equal mint supply delta'
+		);
+
+		assert(
+			vaultBefore.totalShares.eq(vaultAfter.totalShares),
+			'Vault total shares should not have changed'
+		);
+		assert(
+			vaultBefore.userShares.eq(vaultAfter.userShares),
+			'Vault user shares should not have changed'
+		);
+
+		await validateTotalUserShares(program, vault);
+	});
+
+	it('Redeem vault tokens', async () => {
+		const {
+			vaultDepositor,
+			tokenizedVaultDepositor,
+			mintAddress,
+			userVaultTokenAta,
+			vaultTokenizedTokenAta,
+		} = calculateAllPdas(program.programId, vault, provider.wallet.publicKey);
+
+		await validateTotalUserShares(program, vault);
+
+		const vdBefore = await program.account.vaultDepositor.fetch(vaultDepositor);
+		const vdtBefore = await program.account.tokenizedVaultDepositor.fetch(
+			tokenizedVaultDepositor
+		);
+		const vaultBefore = await program.account.vault.fetch(vault);
+		const mintAccountBefore = await getMint(connection, mintAddress);
+		const userTokenBalanceBefore = await connection.getTokenAccountBalance(
+			userVaultTokenAta
+		);
+		const tvdTokenBalanceBefore = await connection.getTokenAccountBalance(
+			vaultTokenizedTokenAta
+		);
+
+		assert(
+			tvdTokenBalanceBefore.value.uiAmount === 0,
+			'TokenizedVaultDepositor token account has tokens'
+		);
+		assert(
+			userTokenBalanceBefore.value.uiAmount > 0,
+			'User vault token balance is 0, redeem vault tokens test will fail'
+		);
+		assert(
+			Number(mintAccountBefore.supply) > 0,
+			'Mint supply is 0, redeem vault tokens test will fail'
+		);
+
+		try {
+			const txSig = await vaultClient.redeemTokens(
+				vaultDepositor,
+				new BN(userTokenBalanceBefore.value.amount).div(TWO)
+			);
+			await printTxLogs(provider.connection, txSig);
+		} catch (e) {
+			console.error(e);
+			assert(false, 'redeemTokens threw');
+		}
+
+		const vdAfter = await program.account.vaultDepositor.fetch(vaultDepositor);
+		const vdtAfter = await program.account.tokenizedVaultDepositor.fetch(
+			tokenizedVaultDepositor
+		);
+		const vaultAfter = await program.account.vault.fetch(vault);
+		const mintAccountAfter = await getMint(connection, mintAddress);
+		const userTokenBalanceAfter = await connection.getTokenAccountBalance(
+			userVaultTokenAta
+		);
+		const tvdTokenBalanceAfter = await connection.getTokenAccountBalance(
+			vaultTokenizedTokenAta
+		);
+
+		assert(
+			tvdTokenBalanceAfter.value.uiAmount === 0,
+			'TokenizedVaultDepositor token account has tokens'
+		);
+
+		const vdSharesDelta = vdAfter.vaultShares.sub(vdBefore.vaultShares);
+		const vdtSharesDelta = vdtAfter.vaultShares.sub(vdtBefore.vaultShares);
+		const tokenBalanceDelta = new BN(userTokenBalanceAfter.value.amount).sub(
+			new BN(userTokenBalanceBefore.value.amount)
+		);
+		const mintSupplyDelta = new BN(String(mintAccountAfter.supply)).sub(
+			new BN(String(mintAccountBefore.supply))
+		);
+
+		assert(
+			vdAfter.vaultSharesBase === vdBefore.vaultSharesBase,
+			'VaultDepositor shares base changed'
+		);
+		assert(
+			vdtAfter.vaultSharesBase === vdtBefore.vaultSharesBase,
+			'TokenizedVaultDepositor shares base changed'
+		);
+
+		assert(
+			vdSharesDelta.neg().eq(vdtSharesDelta),
+			'VaultDepositor and TokenizedVaultDepositor shares delta should be equal and opposite'
+		);
+		assert(
+			tokenBalanceDelta.eq(mintSupplyDelta),
+			'Token balance delta should equal mint supply delta'
+		);
+
+		assert(
+			vaultBefore.totalShares.eq(vaultAfter.totalShares),
+			'Vault total shares should not have changed'
+		);
+		assert(
+			vaultBefore.userShares.eq(vaultAfter.userShares),
+			'Vault user shares should not have changed'
+		);
+
+		await validateTotalUserShares(program, vault);
 	});
 });
