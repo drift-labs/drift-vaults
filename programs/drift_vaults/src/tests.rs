@@ -643,4 +643,65 @@ mod vault_fcn {
         );
         assert!(!finishing_liquidation);
     }
+
+    #[test]
+    fn test_vd_withdraw_on_drawdown() {
+        let mut now = 123456789;
+        let vault = &mut Vault::default();
+
+        let mut vault_equity: u64 = 0;
+        let deposit_amount: u64 = 100 * QUOTE_PRECISION_U64;
+
+        assert_eq!(vault.user_shares, 0);
+        assert_eq!(vault.total_shares, 0);
+        assert_eq!(vault.shares_base, 0);
+
+        let vd = &mut VaultDepositor::new(
+            Pubkey::default(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            now,
+        );
+        vd.deposit(deposit_amount, vault_equity, vault, now)
+            .unwrap(); // new user deposits $2000
+        let vd_shares = vd.get_vault_shares();
+        now += 100;
+        assert_eq!(vault.user_shares, deposit_amount as u128);
+        assert_eq!(vault.total_shares, deposit_amount as u128);
+        assert_eq!(vd.get_vault_shares(), vault.user_shares);
+        assert_eq!(vd.get_vault_shares_base(), vault.shares_base);
+        vault_equity += deposit_amount;
+
+        // down 50%
+        vault_equity /= 2;
+        now += 100;
+
+        // user withdraws
+        vd.request_withdraw(
+            vd_shares.clone() as u64,
+            WithdrawUnit::Shares,
+            vault_equity,
+            vault,
+            now,
+        )
+        .expect("request withdraw");
+
+        assert_eq!(
+            vd.last_withdraw_request,
+            WithdrawRequest {
+                shares: vd_shares,
+                value: vault_equity,
+                ts: now,
+            }
+        );
+
+        // down another 50%
+        vault_equity /= 2;
+        now += 100;
+
+        let (withdraw_amount, finishing_liquidation) =
+            vd.withdraw(vault_equity, vault, now).expect("withdraw");
+        assert_eq!(withdraw_amount, vault_equity);
+        assert_eq!(finishing_liquidation, false);
+    }
 }
