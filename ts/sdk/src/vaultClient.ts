@@ -23,7 +23,6 @@ import {
 } from './addresses';
 import {
 	AddressLookupTableAccount,
-	ComputeBudgetInstruction,
 	ComputeBudgetProgram,
 	PublicKey,
 	SystemProgram,

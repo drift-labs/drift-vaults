@@ -102,13 +102,13 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
-"@drift-labs/competitions-sdk@0.2.334":
-  version "0.2.334"
-  resolved "https://registry.yarnpkg.com/@drift-labs/competitions-sdk/-/competitions-sdk-0.2.334.tgz#b2950ac25296d2a945ceac5ce95045393a4fca8e"
-  integrity sha512-oSBlPHdKULwvX1qPBxdUFWYgV9kusXH9iWt/kZTrAqvNjuXYyDUDQl0t8Bf54Odc7nQcyGJnXbmiBCDuWV/y/g==
+"@drift-labs/competitions-sdk@0.2.386":
+  version "0.2.386"
+  resolved "https://registry.yarnpkg.com/@drift-labs/competitions-sdk/-/competitions-sdk-0.2.386.tgz#5aab51a8f68d3548d452c7c1fab12af46c44f2f4"
+  integrity sha512-Yu3U/BOmCDsUVAYPwAjN30MITkNbANvuqNpNok3HW3LamEpZMP2Y61qWig5FaoxScSHIHg1yWRNxp/XaMRxJJw==
   dependencies:
     "@coral-xyz/anchor" "^0.26.0"
-    "@drift-labs/sdk" "2.84.0-beta.6"
+    "@drift-labs/sdk" "2.87.0-beta.1"
     "@solana/web3.js" "1.73.2"
     "@switchboard-xyz/solana.js" "^2.7.1"
     cerializr "^3.1.4"
@@ -117,26 +117,10 @@
     ts-node "^10.9.1"
     typescript "^5.1.6"
 
-"@drift-labs/sdk@2.84.0-beta.6":
-  version "2.84.0-beta.6"
-  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.84.0-beta.6.tgz#74117e5fd07d5d19f5dae79b1bdb1a8e4facc4ad"
-  integrity sha512-T42Mvx7D0w8f/eZcVijhZ4U+/D4oZ3S5nM5BRYqEKJHztCFL6Y0d3HvTpMFxc6MNbozSOq8djyjyJg1Zx0Nk9Q==
-  dependencies:
-    "@coral-xyz/anchor" "0.28.0"
-    "@ellipsis-labs/phoenix-sdk" "^1.4.2"
-    "@project-serum/serum" "^0.13.38"
-    "@pythnetwork/client" "2.5.3"
-    "@pythnetwork/pyth-solana-receiver" "^0.7.0"
-    "@solana/spl-token" "^0.3.7"
-    "@solana/web3.js" "1.92.3"
-    strict-event-emitter-types "^2.0.0"
-    uuid "^8.3.2"
-    zstddec "^0.1.0"
-
-"@drift-labs/sdk@2.86.0-beta.33":
-  version "2.86.0-beta.33"
-  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.86.0-beta.33.tgz#1d42cdfed9576737634f6418cbc340c0a810a868"
-  integrity sha512-9J8ZaobNhevsRxPSgQr5RfKTkiawxEuDXL7F9eM9tp5pUqE/ln+bbfTiuQrAi9Y8wIwyJNDrGS4iOPjFGk3tXA==
+"@drift-labs/sdk@2.87.0-beta.1":
+  version "2.87.0-beta.1"
+  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.87.0-beta.1.tgz#3cd28998cb462eb5e391e84f45b8e21aa4e5e688"
+  integrity sha512-cfxUuylV58v9t35DjCY4FaUITPgl5iZj1yd81OC+DrpuU4oBSCVEQ2OOXsFg+Q7+nbMRBLd52EFUHT/obKYFiA==
   dependencies:
     "@coral-xyz/anchor" "0.28.0"
     "@ellipsis-labs/phoenix-sdk" "^1.4.2"
