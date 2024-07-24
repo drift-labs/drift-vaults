@@ -293,16 +293,14 @@ export class VaultClient {
 
 		return await this.program.methods
 			.initializeVault(params)
-			.preInstructions(
-				[
-					ComputeBudgetProgram.setComputeUnitLimit({
-						units: 400_000
-					}),
-					ComputeBudgetProgram.setComputeUnitPrice({
-						microLamports: 300_000
-					})
-				]
-			)
+			.preInstructions([
+				ComputeBudgetProgram.setComputeUnitLimit({
+					units: 400_000,
+				}),
+				ComputeBudgetProgram.setComputeUnitPrice({
+					microLamports: 300_000,
+				}),
+			])
 			.accounts(accounts)
 			.rpc();
 	}
@@ -321,16 +319,14 @@ export class VaultClient {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
 		return await this.program.methods
 			.updateDelegate(delegate)
-			.preInstructions(
-				[
-					ComputeBudgetProgram.setComputeUnitLimit({
-						units: 400_000
-					}),
-					ComputeBudgetProgram.setComputeUnitPrice({
-						microLamports: 300_000
-					})
-				]
-			)
+			.preInstructions([
+				ComputeBudgetProgram.setComputeUnitLimit({
+					units: 400_000,
+				}),
+				ComputeBudgetProgram.setComputeUnitPrice({
+					microLamports: 300_000,
+				}),
+			])
 			.accounts({
 				vault: vault,
 				driftUser: vaultAccount.user,
