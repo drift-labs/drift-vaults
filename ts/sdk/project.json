@@ -4,11 +4,21 @@
 		"build": {
 			"executor": "nx:run-commands",
 			"options": {
-				"command": "bun i && bun run build && bun link",
+				"command": "bun i && bun run build",
 				"cwd": "drift-vaults/ts/sdk"
 			},
 			"outputs": [
 				"{workspaceRoot}/dist"
+			]
+		},
+		"link": {
+			"executor": "nx:run-commands",
+			"options": {
+				"command": "bun link",
+				"cwd": "drift-vaults/ts/sdk"
+			},
+			"dependsOn": [
+				"build"
 			]
 		}
 	}
