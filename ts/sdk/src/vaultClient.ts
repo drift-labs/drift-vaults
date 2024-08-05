@@ -196,7 +196,6 @@ export class VaultClient {
 		vault?: Vault;
 	}): Promise<BN> {
 		try {
-
 			let vaultAccount: Vault;
 			if (params.address !== undefined) {
 				// @ts-ignore
@@ -206,15 +205,15 @@ export class VaultClient {
 			} else {
 				throw new Error('Must supply address or vault');
 			}
-			
+
 			const user = await this.getSubscribedVaultUser(vaultAccount.user);
-			
+
 			const netSpotValue = user.getNetSpotMarketValue();
 			const unrealizedPnl = user.getUnrealizedPNL(true, undefined, undefined);
-			
+
 			return netSpotValue.add(unrealizedPnl);
 		} catch (err) {
-			console.error("VaultClient ~ err:", err);
+			console.error('VaultClient ~ err:', err);
 			return ZERO;
 		}
 	}
