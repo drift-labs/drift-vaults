@@ -8,6 +8,7 @@ import {
 	getUserStatsAccountPublicKey,
 	TEN,
 	UserMap,
+	ZERO,
 } from '@drift-labs/sdk';
 import { BorshAccountsCoder, Program, ProgramAccount } from '@coral-xyz/anchor';
 import { DriftVaults } from './types/drift_vaults';
@@ -194,22 +195,28 @@ export class VaultClient {
 		address?: PublicKey;
 		vault?: Vault;
 	}): Promise<BN> {
-		let vaultAccount: Vault;
-		if (params.address !== undefined) {
-			// @ts-ignore
-			vaultAccount = await this.program.account.vault.fetch(params.address);
-		} else if (params.vault !== undefined) {
-			vaultAccount = params.vault;
-		} else {
-			throw new Error('Must supply address or vault');
+		try {
+
+			let vaultAccount: Vault;
+			if (params.address !== undefined) {
+				// @ts-ignore
+				vaultAccount = await this.program.account.vault.fetch(params.address);
+			} else if (params.vault !== undefined) {
+				vaultAccount = params.vault;
+			} else {
+				throw new Error('Must supply address or vault');
+			}
+			
+			const user = await this.getSubscribedVaultUser(vaultAccount.user);
+			
+			const netSpotValue = user.getNetSpotMarketValue();
+			const unrealizedPnl = user.getUnrealizedPNL(true, undefined, undefined);
+			
+			return netSpotValue.add(unrealizedPnl);
+		} catch (err) {
+			console.error("VaultClient ~ err:", err);
+			return ZERO;
 		}
-
-		const user = await this.getSubscribedVaultUser(vaultAccount.user);
-
-		const netSpotValue = user.getNetSpotMarketValue();
-		const unrealizedPnl = user.getUnrealizedPNL(true, undefined, undefined);
-
-		return netSpotValue.add(unrealizedPnl);
 	}
 
 	/**
