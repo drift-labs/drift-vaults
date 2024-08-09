@@ -19,13 +19,13 @@ export const calcModifiedDietz = (
 		marketIndex: number;
 		amount: string;
 		direction: 'deposit' | 'withdraw';
-	}[]
+	}[],
+	startingMarketValue = 0
 ): { apy: number; returns: number } => {
 	if (vaultDeposits.length === 0) {
 		return DEFAULT_MODIFIED_DIETZ_RESULT;
 	}
 
-	const startingMarketValue = 0;
 	const endingMarkeValue = currentVaultEquityBaseValue.toNum();
 	const firstDepositTs = parseInt(vaultDeposits[vaultDeposits.length - 1].ts);
 	const lastDepositTs = parseInt(vaultDeposits[0].ts);

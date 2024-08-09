@@ -9,6 +9,7 @@ import {
 	TEN,
 	UserMap,
 	unstakeSharesToAmount as depositSharesToVaultAmount,
+	ZERO,
 } from '@drift-labs/sdk';
 import { BorshAccountsCoder, Program, ProgramAccount } from '@coral-xyz/anchor';
 import { DriftVaults } from './types/drift_vaults';
@@ -227,31 +228,36 @@ export class VaultClient {
 		vault?: Vault;
 		factorUnrealizedPNL?: boolean;
 	}): Promise<BN> {
-		// defaults to true if undefined
-		let factorUnrealizedPNL = true;
-		if (params.factorUnrealizedPNL !== undefined) {
-			factorUnrealizedPNL = params.factorUnrealizedPNL;
-		}
+		try {
+			// defaults to true if undefined
+			let factorUnrealizedPNL = true;
+			if (params.factorUnrealizedPNL !== undefined) {
+				factorUnrealizedPNL = params.factorUnrealizedPNL;
+			}
 
-		let vaultAccount: Vault;
-		if (params.address !== undefined) {
-			// @ts-ignore
-			vaultAccount = await this.program.account.vault.fetch(params.address);
-		} else if (params.vault !== undefined) {
-			vaultAccount = params.vault;
-		} else {
-			throw new Error('Must supply address or vault');
-		}
+			let vaultAccount: Vault;
+			if (params.address !== undefined) {
+				// @ts-ignore
+				vaultAccount = await this.program.account.vault.fetch(params.address);
+			} else if (params.vault !== undefined) {
+				vaultAccount = params.vault;
+			} else {
+				throw new Error('Must supply address or vault');
+			}
 
-		const user = await this.getSubscribedVaultUser(vaultAccount.user);
+			const user = await this.getSubscribedVaultUser(vaultAccount.user);
 
-		const netSpotValue = user.getNetSpotMarketValue();
+			const netSpotValue = user.getNetSpotMarketValue();
 
-		if (factorUnrealizedPNL) {
-			const unrealizedPnl = user.getUnrealizedPNL(true, undefined, undefined);
-			return netSpotValue.add(unrealizedPnl);
-		} else {
-			return netSpotValue;
+			if (factorUnrealizedPNL) {
+				const unrealizedPnl = user.getUnrealizedPNL(true, undefined, undefined);
+				return netSpotValue.add(unrealizedPnl);
+			} else {
+				return netSpotValue;
+			}
+		} catch (err) {
+			console.error('VaultClient ~ err:', err);
+			return ZERO;
 		}
 	}
 
@@ -477,12 +483,28 @@ export class VaultClient {
 			];
 			return await this.program.methods
 				.initializeVault(_params)
+				.preInstructions([
+					ComputeBudgetProgram.setComputeUnitLimit({
+						units: 400_000,
+					}),
+					ComputeBudgetProgram.setComputeUnitPrice({
+						microLamports: 300_000,
+					}),
+				])
 				.accounts(accounts)
 				.remainingAccounts(remainingAccounts)
 				.rpc();
 		} else {
 			return await this.program.methods
 				.initializeVault(_params)
+				.preInstructions([
+					ComputeBudgetProgram.setComputeUnitLimit({
+						units: 400_000,
+					}),
+					ComputeBudgetProgram.setComputeUnitPrice({
+						microLamports: 300_000,
+					}),
+				])
 				.accounts(accounts)
 				.rpc();
 		}
@@ -502,6 +524,14 @@ export class VaultClient {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
 		return await this.program.methods
 			.updateDelegate(delegate)
+			.preInstructions([
+				ComputeBudgetProgram.setComputeUnitLimit({
+					units: 400_000,
+				}),
+				ComputeBudgetProgram.setComputeUnitPrice({
+					microLamports: 300_000,
+				}),
+			])
 			.accounts({
 				vault: vault,
 				driftUser: vaultAccount.user,

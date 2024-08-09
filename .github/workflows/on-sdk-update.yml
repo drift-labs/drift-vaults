@@ -13,7 +13,7 @@ env:
 
 jobs:
   update-sdk:
-    runs-on: ubuntu-latest
+    runs-on: ubicloud
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
