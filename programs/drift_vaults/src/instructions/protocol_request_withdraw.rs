@@ -2,14 +2,15 @@ use anchor_lang::prelude::*;
 use drift::instructions::optional_accounts::AccountMaps;
 use drift::state::user::User;
 
-use crate::constraints::{is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault};
+use crate::constraints::{
+    is_protocol_for_vault, is_user_for_vault, is_user_stats_for_vault, is_vault_protocol_for_vault,
+};
 use crate::error::ErrorCode;
-use crate::state::VaultProtocolProvider;
 use crate::{validate, AccountMapProvider};
-use crate::{Vault, WithdrawUnit};
+use crate::{Vault, VaultProtocol, WithdrawUnit};
 
-pub fn manager_request_withdraw<'c: 'info, 'info>(
-    ctx: Context<'_, '_, 'c, 'info, ManagerRequestWithdraw<'info>>,
+pub fn protocol_request_withdraw<'c: 'info, 'info>(
+    ctx: Context<'_, '_, 'c, 'info, ProtocolRequestWithdraw<'info>>,
     withdraw_amount: u64,
     withdraw_unit: WithdrawUnit,
 ) -> Result<()> {
@@ -18,15 +19,14 @@ pub fn manager_request_withdraw<'c: 'info, 'info>(
     let now = clock.unix_timestamp;
 
     // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
-    let mut vp = ctx.vault_protocol();
-    let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
-
-    validate!(
-        (vault.vault_protocol == Pubkey::default() && vp.is_none())
-            || (vault.vault_protocol != Pubkey::default() && vp.is_some()),
-        ErrorCode::VaultProtocolMissing,
-        "vault protocol missing in remaining accounts"
-    )?;
+    let mut vp = Some(ctx.accounts.vault_protocol.load_mut()?);
+    if vp.is_none() {
+        validate!(
+            false,
+            ErrorCode::VaultProtocolMissing,
+            "Protocol cannot request withdraw from a non-protocol vault"
+        )?;
+    }
 
     let user = ctx.accounts.drift_user.load()?;
     let spot_market_index = vault.spot_market_index;
@@ -40,17 +40,20 @@ pub fn manager_request_withdraw<'c: 'info, 'info>(
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
-    vault.manager_request_withdraw(&mut vp, withdraw_amount, withdraw_unit, vault_equity, now)?;
+    vault.protocol_request_withdraw(&mut vp, withdraw_amount, withdraw_unit, vault_equity, now)?;
 
     Ok(())
 }
 
 #[derive(Accounts)]
-pub struct ManagerRequestWithdraw<'info> {
+pub struct ProtocolRequestWithdraw<'info> {
     #[account(mut,
-  constraint = is_manager_for_vault(& vault, & manager) ?)]
+  constraint = is_protocol_for_vault(& vault, & vault_protocol, & protocol) ?)]
     pub vault: AccountLoader<'info, Vault>,
-    pub manager: Signer<'info>,
+    #[account(mut,
+  constraint = is_vault_protocol_for_vault(& vault_protocol, & vault) ?)]
+    pub vault_protocol: AccountLoader<'info, VaultProtocol>,
+    pub protocol: Signer<'info>,
     #[account(constraint = is_user_stats_for_vault(& vault, & drift_user_stats) ?)]
     /// CHECK: checked in drift cpi
     pub drift_user_stats: AccountInfo<'info>,
