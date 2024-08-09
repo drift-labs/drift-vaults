@@ -873,7 +873,7 @@ impl Vault {
             validate!(
                 false,
                 ErrorCode::VaultProtocolMissing,
-                "Protocol cannot request withdraw from a non-protocol vault"
+                "Protocol cannot request withdraw for a non-protocol vault"
             )?;
         }
 
@@ -976,7 +976,7 @@ impl Vault {
             validate!(
                 false,
                 ErrorCode::VaultProtocolMissing,
-                "Protocol cannot cancel withdraw request from a non-protocol vault"
+                "Protocol cannot cancel withdraw request for a non-protocol vault"
             )?;
         }
 
@@ -1072,7 +1072,7 @@ impl Vault {
             validate!(
                 false,
                 ErrorCode::VaultProtocolMissing,
-                "Protocol cannot withdraw from a non-protocol vault"
+                "Protocol cannot withdraw for a non-protocol vault"
             )?;
         }
 

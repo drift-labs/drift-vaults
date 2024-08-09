@@ -19,6 +19,7 @@ pub use reset_delegate::*;
 pub use update_delegate::*;
 pub use update_margin_trading_enabled::*;
 pub use update_vault::*;
+pub use update_vault_protocol::*;
 pub use withdraw::*;
 
 mod apply_profit_share;
@@ -43,4 +44,5 @@ mod reset_delegate;
 mod update_delegate;
 mod update_margin_trading_enabled;
 mod update_vault;
+pub mod update_vault_protocol;
 mod withdraw;

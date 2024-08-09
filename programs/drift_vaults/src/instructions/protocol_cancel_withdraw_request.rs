@@ -7,7 +7,7 @@ use crate::constraints::{
     is_protocol_for_vault, is_user_for_vault, is_user_stats_for_vault, is_vault_protocol_for_vault,
 };
 use crate::error::ErrorCode;
-use crate::state::{Vault, VaultProtocol, VaultProtocolProvider};
+use crate::state::{Vault, VaultProtocol};
 use crate::{validate, AccountMapProvider};
 
 pub fn protocol_cancel_withdraw_request<'c: 'info, 'info>(
@@ -16,16 +16,14 @@ pub fn protocol_cancel_withdraw_request<'c: 'info, 'info>(
     let clock = &Clock::get()?;
     let vault = &mut ctx.accounts.vault.load_mut()?;
 
-    // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
-    let mut vp = ctx.vault_protocol();
-    let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
-
-    validate!(
-        (vault.vault_protocol == Pubkey::default() && vp.is_none())
-            || (vault.vault_protocol != Pubkey::default() && vp.is_some()),
-        ErrorCode::VaultProtocolMissing,
-        "vault protocol missing in remaining accounts"
-    )?;
+    let mut vp = Some(ctx.accounts.vault_protocol.load_mut()?);
+    if vp.is_none() {
+        validate!(
+            false,
+            ErrorCode::VaultProtocolMissing,
+            "Protocol cannot cancel with withdraw request for a non-protocol vault"
+        )?;
+    }
 
     let user = ctx.accounts.drift_user.load()?;
 

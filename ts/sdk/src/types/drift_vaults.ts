@@ -143,6 +143,34 @@ export type DriftVaults = {
 			];
 		},
 		{
+			name: 'updateVaultProtocol';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'protocol';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'vaultProtocol';
+					isMut: true;
+					isSigner: false;
+				}
+			];
+			args: [
+				{
+					name: 'params';
+					type: {
+						defined: 'UpdateVaultProtocolParams';
+					};
+				}
+			];
+		},
+		{
 			name: 'updateVault';
 			accounts: [
 				{
@@ -1518,6 +1546,26 @@ export type DriftVaults = {
 			};
 		},
 		{
+			name: 'UpdateVaultProtocolParams';
+			type: {
+				kind: 'struct';
+				fields: [
+					{
+						name: 'protocolFee';
+						type: {
+							option: 'u64';
+						};
+					},
+					{
+						name: 'protocolProfitShare';
+						type: {
+							option: 'u32';
+						};
+					}
+				];
+			};
+		},
+		{
 			name: 'UpdateVaultParams';
 			type: {
 				kind: 'struct';
@@ -1562,34 +1610,6 @@ export type DriftVaults = {
 						name: 'permissioned';
 						type: {
 							option: 'bool';
-						};
-					},
-					{
-						name: 'vaultProtocol';
-						type: {
-							option: {
-								defined: 'UpdateVaultProtocolParams';
-							};
-						};
-					}
-				];
-			};
-		},
-		{
-			name: 'UpdateVaultProtocolParams';
-			type: {
-				kind: 'struct';
-				fields: [
-					{
-						name: 'protocolFee';
-						type: {
-							option: 'u64';
-						};
-					},
-					{
-						name: 'protocolProfitShare';
-						type: {
-							option: 'u32';
 						};
 					}
 				];
@@ -2132,6 +2152,34 @@ export const IDL: DriftVaults = {
 				{
 					name: 'enabled',
 					type: 'bool',
+				},
+			],
+		},
+		{
+			name: 'updateVaultProtocol',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'protocol',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'vaultProtocol',
+					isMut: true,
+					isSigner: false,
+				},
+			],
+			args: [
+				{
+					name: 'params',
+					type: {
+						defined: 'UpdateVaultProtocolParams',
+					},
 				},
 			],
 		},
@@ -3511,6 +3559,26 @@ export const IDL: DriftVaults = {
 			},
 		},
 		{
+			name: 'UpdateVaultProtocolParams',
+			type: {
+				kind: 'struct',
+				fields: [
+					{
+						name: 'protocolFee',
+						type: {
+							option: 'u64',
+						},
+					},
+					{
+						name: 'protocolProfitShare',
+						type: {
+							option: 'u32',
+						},
+					},
+				],
+			},
+		},
+		{
 			name: 'UpdateVaultParams',
 			type: {
 				kind: 'struct',
@@ -3555,34 +3623,6 @@ export const IDL: DriftVaults = {
 						name: 'permissioned',
 						type: {
 							option: 'bool',
-						},
-					},
-					{
-						name: 'vaultProtocol',
-						type: {
-							option: {
-								defined: 'UpdateVaultProtocolParams',
-							},
-						},
-					},
-				],
-			},
-		},
-		{
-			name: 'UpdateVaultProtocolParams',
-			type: {
-				kind: 'struct',
-				fields: [
-					{
-						name: 'protocolFee',
-						type: {
-							option: 'u64',
-						},
-					},
-					{
-						name: 'protocolProfitShare',
-						type: {
-							option: 'u32',
 						},
 					},
 				],

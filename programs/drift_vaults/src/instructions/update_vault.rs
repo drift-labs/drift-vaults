@@ -1,25 +1,12 @@
+use crate::constraints::is_manager_for_vault;
+use crate::{error::ErrorCode, validate, Vault};
 use anchor_lang::prelude::*;
 
-use crate::constraints::is_manager_for_vault;
-use crate::state::{Vault, VaultProtocolProvider};
-use crate::{error::ErrorCode, validate};
-
-pub fn update_vault<'c: 'info, 'info>(
-    ctx: Context<'_, '_, 'c, 'info, UpdateVault<'info>>,
+pub fn update_vault<'info>(
+    ctx: Context<'_, '_, '_, 'info, UpdateVault<'info>>,
     params: UpdateVaultParams,
 ) -> Result<()> {
     let mut vault = ctx.accounts.vault.load_mut()?;
-
-    // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
-    let mut vp = ctx.vault_protocol();
-    let vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
-
-    validate!(
-        (vault.vault_protocol == Pubkey::default() && vp.is_none())
-            || (vault.vault_protocol != Pubkey::default() && vp.is_some()),
-        ErrorCode::VaultProtocolMissing,
-        "vault protocol missing in remaining accounts"
-    )?;
 
     validate!(!vault.in_liquidation(), ErrorCode::OngoingLiquidation)?;
 
@@ -49,33 +36,13 @@ pub fn update_vault<'c: 'info, 'info>(
         vault.management_fee = management_fee;
     }
 
-    if let (Some(mut vp), Some(vp_params)) = (vp, params.vault_protocol) {
-        if let Some(new_protocol_fee) = vp_params.protocol_fee {
-            validate!(
-                new_protocol_fee < vp.protocol_fee,
-                ErrorCode::InvalidVaultUpdate,
-                "new protocol fee must be less than existing protocol fee"
-            )?;
-            vp.protocol_fee = new_protocol_fee;
-        }
-
-        if let Some(new_protocol_profit_share) = vp_params.protocol_profit_share {
-            validate!(
-                new_protocol_profit_share < vp.protocol_profit_share,
-                ErrorCode::InvalidVaultUpdate,
-                "new protocol profit share must be less than existing protocol profit share"
-            )?;
-            vp.protocol_profit_share = new_protocol_profit_share;
-        }
-    }
-
-    if let Some(manager_profit_share) = params.profit_share {
+    if let Some(profit_share) = params.profit_share {
         validate!(
-            manager_profit_share < vault.profit_share,
+            profit_share < vault.profit_share,
             ErrorCode::InvalidVaultUpdate,
-            "new manager profit share must be less than existing manager profit share"
+            "new profit share must be less than existing profit share"
         )?;
-        vault.profit_share = manager_profit_share;
+        vault.profit_share = profit_share;
     }
 
     if let Some(hurdle_rate) = params.hurdle_rate {
@@ -105,19 +72,14 @@ pub struct UpdateVaultParams {
     pub profit_share: Option<u32>,
     pub hurdle_rate: Option<u32>,
     pub permissioned: Option<bool>,
-    pub vault_protocol: Option<UpdateVaultProtocolParams>,
-}
-
-#[derive(Debug, Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
-pub struct UpdateVaultProtocolParams {
-    pub protocol_fee: Option<u64>,
-    pub protocol_profit_share: Option<u32>,
 }
 
 #[derive(Accounts)]
 pub struct UpdateVault<'info> {
-    #[account(mut,
-  constraint = is_manager_for_vault(& vault, & manager) ?,)]
+    #[account(
+        mut,
+        constraint = is_manager_for_vault(&vault, &manager)?,
+    )]
     pub vault: AccountLoader<'info, Vault>,
     pub manager: Signer<'info>,
 }

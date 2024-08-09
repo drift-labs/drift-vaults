@@ -46,7 +46,6 @@ export type UpdateVaultParams = {
 	profitShare: number | null;
 	hurdleRate: number | null;
 	permissioned: boolean | null;
-	vaultProtocol: UpdateVaultProtocolParams | null;
 };
 
 export type UpdateVaultProtocolParams = {

@@ -143,6 +143,34 @@
       ]
     },
     {
+      "name": "updateVaultProtocol",
+      "accounts": [
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "protocol",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "vaultProtocol",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "params",
+          "type": {
+            "defined": "UpdateVaultProtocolParams"
+          }
+        }
+      ]
+    },
+    {
       "name": "updateVault",
       "accounts": [
         {
@@ -1587,6 +1615,26 @@
       }
     },
     {
+      "name": "UpdateVaultProtocolParams",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "protocolFee",
+            "type": {
+              "option": "u64"
+            }
+          },
+          {
+            "name": "protocolProfitShare",
+            "type": {
+              "option": "u32"
+            }
+          }
+        ]
+      }
+    },
+    {
       "name": "UpdateVaultParams",
       "type": {
         "kind": "struct",
@@ -1631,34 +1679,6 @@
             "name": "permissioned",
             "type": {
               "option": "bool"
-            }
-          },
-          {
-            "name": "vaultProtocol",
-            "type": {
-              "option": {
-                "defined": "UpdateVaultProtocolParams"
-              }
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "UpdateVaultProtocolParams",
-      "type": {
-        "kind": "struct",
-        "fields": [
-          {
-            "name": "protocolFee",
-            "type": {
-              "option": "u64"
-            }
-          },
-          {
-            "name": "protocolProfitShare",
-            "type": {
-              "option": "u32"
             }
           }
         ]

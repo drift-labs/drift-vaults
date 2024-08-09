@@ -40,8 +40,6 @@ import {
 	TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
 import {
-	UpdateVaultParams,
-	UpdateVaultProtocolParams,
 	Vault,
 	VaultDepositor,
 	VaultParams,
@@ -788,48 +786,14 @@ export class VaultClient {
 			profitShare: number | null;
 			hurdleRate: number | null;
 			permissioned: boolean | null;
-			vaultProtocol?: UpdateVaultProtocolParams;
 		}
 	): Promise<TransactionSignature> {
-		// this is a workaround to make client backwards compatible.
-		// vaultProtocol is optionally undefined, but the anchor type is optionally null.
-		// Old clients will default to undefined, and we can cast to null internally.
-		const _params: UpdateVaultParams = {
-			...params,
-			vaultProtocol: params.vaultProtocol ? params.vaultProtocol : null,
-		};
-
-		let ix: TransactionInstruction;
-		const vaultAccount = (await this.program.account.vault.fetch(
-			vault
-		)) as Vault;
-		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
-			const vaultProtocol = this.getVaultProtocolAddress(vault);
-			const remainingAccounts: AccountMeta[] = [
-				{
-					pubkey: vaultProtocol,
-					isSigner: false,
-					isWritable: true,
-				},
-			];
-			ix = await this.program.methods
-				.updateVault(_params)
-				.accounts({
-					vault,
-					manager: this.driftClient.wallet.publicKey,
-				})
-				.remainingAccounts(remainingAccounts)
-				.instruction();
-		} else {
-			ix = await this.program.methods
-				.updateVault(_params)
-				.accounts({
-					vault,
-					manager: this.driftClient.wallet.publicKey,
-				})
-				.instruction();
-		}
-
+		const ix = this.program.instruction.updateVault(params, {
+			accounts: {
+				vault,
+				manager: this.driftClient.wallet.publicKey,
+			},
+		});
 		return this.createAndSendTxn([ix], {
 			cuLimit: 600_000,
 			cuPriceMicroLamports: 10_000,
