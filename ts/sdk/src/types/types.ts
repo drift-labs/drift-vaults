@@ -121,6 +121,7 @@ export type VaultProtocol = {
 	protocolTotalWithdraws: BN;
 	protocolTotalFee: BN;
 	protocolTotalProfitShare: BN;
+	lastProtocolWithdrawRequest: WithdrawRequest;
 	protocolProfitShare: number;
 	bump: number;
 	version: number;

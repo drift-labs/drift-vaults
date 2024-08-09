@@ -18,8 +18,10 @@ pub fn initialize_insurance_fund_stake<'info>(
 #[derive(Accounts)]
 #[instruction(market_index: u16)]
 pub struct InitializeInsuranceFundStake<'info> {
-    #[account(mut,
-  constraint = is_manager_for_vault(& vault, & manager) ?,)]
+    #[account(
+        mut,
+        constraint = is_manager_for_vault(&vault, &manager)?,
+    )]
     pub vault: AccountLoader<'info, Vault>,
     pub manager: Signer<'info>,
     #[account(mut)]
@@ -27,16 +29,22 @@ pub struct InitializeInsuranceFundStake<'info> {
     pub rent: Sysvar<'info, Rent>,
     pub system_program: Program<'info, System>,
 
-    #[account(constraint = is_spot_market_for_vault(& vault, & drift_spot_market, market_index) ?,)]
+    #[account(
+        constraint = is_spot_market_for_vault(&vault, &drift_spot_market, market_index)?,
+    )]
     pub drift_spot_market: AccountLoader<'info, SpotMarket>,
     /// CHECK: checked in drift cpi
-    #[account(mut,
-  seeds = [b"insurance_fund_stake", vault.key().as_ref(), market_index.to_le_bytes().as_ref()],
-  bump,
-  seeds::program = drift_program.key(),)]
+    #[account(
+        mut,
+        seeds = [b"insurance_fund_stake", vault.key().as_ref(), market_index.to_le_bytes().as_ref()],
+        bump,
+        seeds::program = drift_program.key(),
+    )]
     pub insurance_fund_stake: AccountInfo<'info>,
-    #[account(mut,
-  constraint = is_user_stats_for_vault(& vault, & drift_user_stats) ?)]
+    #[account(
+        mut,
+        constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?
+    )]
     /// CHECK: checked in drift cpi
     pub drift_user_stats: AccountInfo<'info>,
     /// CHECK: checked in drift cpi

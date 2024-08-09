@@ -204,12 +204,36 @@ impl Vault {
                                 .safe_sub(protocol_fee_payment)?,
                         )?
                         .cast()?;
+                    let mgmt_fee_shares_factor: u128 = depositor_equity
+                        .safe_mul(PERCENTAGE_PRECISION_I128)?
+                        .safe_div(depositor_equity.safe_sub(management_fee_payment)?)?
+                        .cast()?;
+                    let protocol_fee_shares_factor: u128 = depositor_equity
+                        .safe_mul(PERCENTAGE_PRECISION_I128)?
+                        .safe_div(depositor_equity.safe_sub(protocol_fee_payment)?)?
+                        .cast()?;
 
                     let new_total_shares = self
                         .total_shares
                         .safe_mul(new_total_shares_factor.cast()?)?
                         .safe_div(PERCENTAGE_PRECISION)?
                         .max(self.user_shares);
+
+                    management_fee_shares = self
+                        .total_shares
+                        .safe_mul(mgmt_fee_shares_factor.cast()?)?
+                        .safe_div(PERCENTAGE_PRECISION)?
+                        .max(self.user_shares)
+                        .cast::<i128>()?
+                        .safe_sub(self.total_shares.cast()?)?;
+
+                    protocol_fee_shares = self
+                        .total_shares
+                        .safe_mul(protocol_fee_shares_factor.cast()?)?
+                        .safe_div(PERCENTAGE_PRECISION)?
+                        .max(self.user_shares)
+                        .cast::<i128>()?
+                        .safe_sub(self.total_shares.cast()?)?;
 
                     if (management_fee_payment == 0 && protocol_fee_payment == 0)
                         || self.total_shares == new_total_shares
@@ -218,17 +242,11 @@ impl Vault {
                         skip_ts_update = true;
                     }
 
-                    management_fee_shares = new_total_shares
-                        .cast::<i128>()?
-                        .safe_sub(self.total_shares.cast()?)?;
                     self.total_shares = new_total_shares;
                     self.manager_total_fee = self
                         .manager_total_fee
                         .saturating_add(management_fee_payment.cast()?);
 
-                    protocol_fee_shares = new_total_shares
-                        .cast::<i128>()?
-                        .safe_sub(self.total_shares.cast()?)?;
                     vp.protocol_total_fee = vp
                         .protocol_total_fee
                         .saturating_add(protocol_fee_payment.cast()?);
@@ -851,6 +869,14 @@ impl Vault {
         vault_equity: u64,
         now: i64,
     ) -> Result<()> {
+        if vault_protocol.is_none() {
+            validate!(
+                false,
+                ErrorCode::VaultProtocolMissing,
+                "Protocol cannot request withdraw from a non-protocol vault"
+            )?;
+        }
+
         self.apply_rebase(vault_protocol, vault_equity)?;
         let VaultFee {
             management_fee_payment,
@@ -885,8 +911,9 @@ impl Vault {
                 vault_equity,
                 now,
             )?;
+            self.total_withdraw_requested =
+                self.total_withdraw_requested.safe_add(withdraw_value)?;
         }
-        self.total_withdraw_requested = self.total_withdraw_requested.safe_add(withdraw_value)?;
 
         let vault_shares_after: u128 = self.get_protocol_shares(vault_protocol);
 
@@ -945,6 +972,14 @@ impl Vault {
         vault_equity: u64,
         now: i64,
     ) -> Result<()> {
+        if vault_protocol.is_none() {
+            validate!(
+                false,
+                ErrorCode::VaultProtocolMissing,
+                "Protocol cannot cancel withdraw request from a non-protocol vault"
+            )?;
+        }
+
         self.apply_rebase(vault_protocol, vault_equity)?;
 
         let vault_shares_before: u128 = self.get_protocol_shares(vault_protocol);
@@ -970,6 +1005,13 @@ impl Vault {
         self.user_shares = self.user_shares.safe_sub(vault_shares_lost)?;
 
         let vault_shares_after = self.get_protocol_shares(vault_protocol);
+
+        if let Some(vp) = vault_protocol {
+            self.total_withdraw_requested = self
+                .total_withdraw_requested
+                .safe_sub(vp.last_protocol_withdraw_request.value)?;
+            vp.last_protocol_withdraw_request.reset(now)?;
+        }
 
         match vault_protocol {
             None => {
@@ -1017,13 +1059,6 @@ impl Vault {
             }
         }
 
-        if let Some(vp) = vault_protocol {
-            self.total_withdraw_requested = self
-                .total_withdraw_requested
-                .safe_sub(vp.last_protocol_withdraw_request.value)?;
-            vp.last_protocol_withdraw_request.reset(now)?;
-        }
-
         Ok(())
     }
 
@@ -1033,6 +1068,14 @@ impl Vault {
         vault_equity: u64,
         now: i64,
     ) -> Result<u64> {
+        if vault_protocol.is_none() {
+            validate!(
+                false,
+                ErrorCode::VaultProtocolMissing,
+                "Protocol cannot withdraw from a non-protocol vault"
+            )?;
+        }
+
         self.last_manager_withdraw_request
             .check_redeem_period_finished(self, now)?;
 

@@ -42,7 +42,9 @@ pub fn initialize_vault<'c: 'info, 'info>(
 
     if let (Some(mut vp), Some(vp_params)) = (vp, params.vault_protocol) {
         validate!(
-            params.management_fee + vp_params.protocol_fee.cast::<i64>()?
+            params
+                .management_fee
+                .saturating_add(vp_params.protocol_fee.cast::<i64>()?)
                 < PERCENTAGE_PRECISION_U64.cast()?,
             ErrorCode::InvalidVaultInitialization,
             "management fee plus protocol fee must be < 100%"
@@ -51,7 +53,9 @@ pub fn initialize_vault<'c: 'info, 'info>(
         vp.protocol_fee = vp_params.protocol_fee;
 
         validate!(
-            params.profit_share + vp_params.protocol_profit_share
+            params
+                .profit_share
+                .saturating_add(vp_params.protocol_profit_share)
                 < PERCENTAGE_PRECISION_U64.cast()?,
             ErrorCode::InvalidVaultInitialization,
             "manager profit share protocol profit share must be < 100%"

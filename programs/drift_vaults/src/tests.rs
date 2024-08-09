@@ -609,7 +609,7 @@ mod vault_v1_fcn {
     }
 
     #[test]
-    fn test_smol_management_fee_v1() {
+    fn test_management_and_protocol_fee_v1() {
         let now = 0;
         let mut vault = Vault::default();
         let vp = RefCell::new(VaultProtocol::default());
@@ -639,7 +639,7 @@ mod vault_v1_fcn {
         let user_eq_before =
             depositor_shares_to_vault_amount(vault.user_shares, vault.total_shares, vault_equity)
                 .unwrap();
-        assert_eq!(user_eq_before, 100000000);
+        assert_eq!(user_eq_before, 100_000_000);
 
         vault
             .apply_fee(
@@ -648,24 +648,88 @@ mod vault_v1_fcn {
                 now + ONE_YEAR as i64,
             )
             .unwrap();
-        assert_eq!(vault.user_shares, 100000000);
-        assert_eq!(vault.total_shares, 200300400);
+        assert_eq!(vault.user_shares, 100_000_000);
+
+        let manager_shares = vault
+            .get_manager_shares(&mut Some(vp.borrow_mut()))
+            .unwrap();
+        println!("manager shares: {}", manager_shares);
+        assert_eq!(manager_shares, 100_000_000 + 200_400);
+
+        let protocol_shares = vault.get_protocol_shares(&mut Some(vp.borrow_mut()));
+        println!("protocol shares: {}", protocol_shares);
+        assert_eq!(protocol_shares, 100_000);
+
+        assert_eq!(vault.total_shares, 200_000_000 + 200_400 + 100_000);
         println!("total shares: {}", vault.total_shares);
-        println!(
-            "manager shares: {}",
-            vault
-                .get_manager_shares(&mut Some(vp.borrow_mut()))
-                .unwrap()
-        );
-        println!(
-            "protocol shares: {}",
-            vault.get_protocol_shares(&mut Some(vp.borrow_mut()))
-        );
 
         let oo =
             depositor_shares_to_vault_amount(vault.user_shares, vault.total_shares, vault_equity)
                 .unwrap();
         assert_eq!(oo, 99850025);
+
+        assert_eq!(vault.last_fee_update_ts, now + ONE_YEAR as i64);
+    }
+
+    #[test]
+    fn test_protocol_fee_alone_v1() {
+        let now = 0;
+        let mut vault = Vault::default();
+        let vp = RefCell::new(VaultProtocol::default());
+        vault.management_fee = 0; // 0 bps
+        vp.borrow_mut().protocol_fee = 500; // 5 bps
+
+        let vd =
+            &mut VaultDepositor::new(Pubkey::default(), Pubkey::default(), Pubkey::default(), now);
+        assert_eq!(vault.total_shares, 0);
+        assert_eq!(vault.last_fee_update_ts, 0);
+
+        let mut vault_equity: u64 = 100 * QUOTE_PRECISION_U64;
+        let amount: u64 = 100 * QUOTE_PRECISION_U64;
+        vd.deposit(
+            amount,
+            vault_equity,
+            &mut vault,
+            &mut Some(vp.borrow_mut()),
+            now,
+        )
+        .unwrap();
+        assert_eq!(vault.user_shares, 100000000);
+        assert_eq!(vault.total_shares, 200000000);
+        assert_eq!(vault.last_fee_update_ts, 0);
+        vault_equity += amount;
+
+        let user_eq_before =
+            depositor_shares_to_vault_amount(vault.user_shares, vault.total_shares, vault_equity)
+                .unwrap();
+        assert_eq!(user_eq_before, 100_000_000);
+
+        vault
+            .apply_fee(
+                &mut Some(vp.borrow_mut()),
+                vault_equity,
+                now + ONE_YEAR as i64,
+            )
+            .unwrap();
+        assert_eq!(vault.user_shares, 100_000_000);
+
+        let manager_shares = vault
+            .get_manager_shares(&mut Some(vp.borrow_mut()))
+            .unwrap();
+        println!("manager shares: {}", manager_shares);
+        assert_eq!(manager_shares, 100_000_000);
+
+        let protocol_shares = vault.get_protocol_shares(&mut Some(vp.borrow_mut()));
+        println!("protocol shares: {}", protocol_shares);
+        assert_eq!(protocol_shares, 100_000);
+
+        assert_eq!(vault.total_shares, 200_000_000 + 100_000);
+        println!("total shares: {}", vault.total_shares);
+
+        let oo =
+            depositor_shares_to_vault_amount(vault.user_shares, vault.total_shares, vault_equity)
+                .unwrap();
+        assert_eq!(oo, 99950024);
 
         assert_eq!(vault.last_fee_update_ts, now + ONE_YEAR as i64);
     }
