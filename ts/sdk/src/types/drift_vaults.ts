@@ -1624,6 +1624,12 @@ export type DriftVaults = {
 					},
 					{
 						name: 'FeePayment';
+					},
+					{
+						name: 'TokenizeShares';
+					},
+					{
+						name: 'RedeemTokens';
 					}
 				];
 			};
@@ -3555,6 +3561,12 @@ export const IDL: DriftVaults = {
 					},
 					{
 						name: 'FeePayment',
+					},
+					{
+						name: 'TokenizeShares',
+					},
+					{
+						name: 'RedeemTokens',
 					},
 				],
 			},

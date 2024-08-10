@@ -1,5 +1,5 @@
-use crate::error::ErrorCode;
-use crate::{validate, Size, TokenizedVaultDepositor, Vault};
+use crate::constraints::is_manager_for_vault;
+use crate::{Size, TokenizedVaultDepositor, Vault};
 use anchor_lang::prelude::*;
 use anchor_spl::{
     metadata::{
@@ -18,13 +18,8 @@ pub fn initialize_tokenized_vault_depositor(
     tokenized_vault_depositor.pubkey = ctx.accounts.vault_depositor.key();
     tokenized_vault_depositor.mint = ctx.accounts.mint_account.key();
     tokenized_vault_depositor.bump = ctx.bumps.vault_depositor;
-    let vault = ctx.accounts.vault.load()?;
-    validate!(
-        vault.manager == *ctx.accounts.payer.key,
-        ErrorCode::PermissionedVault,
-        "Tokenized vault depositor can only be created by vault manager"
-    )?;
 
+    let vault = ctx.accounts.vault.load()?;
     let signature_seeds = Vault::get_vault_signer_seeds(vault.name.as_ref(), &vault.bump);
     let signers = &[&signature_seeds[..]];
 
@@ -89,7 +84,10 @@ pub struct InitializeTokenizedVaultDepositor<'info> {
 		seeds::program = token_metadata_program.key(),
 	)]
     pub metadata_account: UncheckedAccount<'info>,
-    #[account(mut)]
+    #[account(
+        mut,
+        constraint = is_manager_for_vault(&vault, &payer)?,
+    )]
     pub payer: Signer<'info>,
     pub token_program: Program<'info, Token>,
     pub token_metadata_program: Program<'info, Metadata>,

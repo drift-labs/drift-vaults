@@ -185,10 +185,13 @@ pub trait VaultDepositorBase {
         now: i64,
     ) -> Result<u128> {
         self.apply_rebase(vault, vault_equity)?;
+        to.apply_rebase(vault, vault_equity)?;
+
         let (management_fee, management_fee_shares) =
             vault.apply_management_fee(vault_equity, now)?;
 
-        let profit_share: u64 = self.apply_profit_share(vault_equity, vault)?;
+        let from_profit_share: u64 = self.apply_profit_share(vault_equity, vault)?;
+        let to_profit_share: u64 = to.apply_profit_share(vault_equity, vault)?;
 
         let (withdraw_value, n_shares) = withdraw_unit.get_withdraw_value_and_shares(
             withdraw_amount,
@@ -203,7 +206,8 @@ pub trait VaultDepositorBase {
             "Requested n_shares = 0"
         )?;
 
-        let vault_shares_before: u128 = self.checked_vault_shares(vault)?;
+        let from_vault_shares_before: u128 = self.checked_vault_shares(vault)?;
+        let to_vault_shares_before: u128 = to.checked_vault_shares(vault)?;
         let total_vault_shares_before = vault.total_shares;
         let user_vault_shares_before = vault.user_shares;
 
@@ -245,13 +249,32 @@ pub trait VaultDepositorBase {
             amount: withdraw_amount,
             spot_market_index: vault.spot_market_index,
             vault_equity_before: vault_equity,
-            vault_shares_before,
+            vault_shares_before: from_vault_shares_before,
             user_vault_shares_before,
             total_vault_shares_before,
             vault_shares_after: self.checked_vault_shares(vault)?,
             total_vault_shares_after: vault.total_shares,
             user_vault_shares_after: vault.user_shares,
-            profit_share,
+            profit_share: from_profit_share,
+            management_fee,
+            management_fee_shares,
+        });
+
+        emit!(VaultDepositorRecord {
+            ts: now,
+            vault: vault.pubkey,
+            depositor_authority: to.get_authority(),
+            action: VaultDepositorAction::Deposit,
+            amount: withdraw_amount,
+            spot_market_index: vault.spot_market_index,
+            vault_equity_before: vault_equity,
+            vault_shares_before: to_vault_shares_before,
+            user_vault_shares_before,
+            total_vault_shares_before,
+            vault_shares_after: to.checked_vault_shares(vault)?,
+            total_vault_shares_after: vault.total_shares,
+            user_vault_shares_after: vault.user_shares,
+            profit_share: to_profit_share,
             management_fee,
             management_fee_shares,
         });

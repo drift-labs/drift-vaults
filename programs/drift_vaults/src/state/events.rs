@@ -43,6 +43,8 @@ pub enum VaultDepositorAction {
     CancelWithdrawRequest,
     Withdraw,
     FeePayment,
+    TokenizeShares,
+    RedeemTokens,
 }
 
 #[event]

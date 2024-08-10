@@ -1711,6 +1711,12 @@
           },
           {
             "name": "FeePayment"
+          },
+          {
+            "name": "TokenizeShares"
+          },
+          {
+            "name": "RedeemTokens"
           }
         ]
       }
