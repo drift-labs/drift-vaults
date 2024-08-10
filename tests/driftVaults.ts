@@ -84,13 +84,12 @@ describe('driftVaults', () => {
 		await adminClient.initialize(usdcMint.publicKey, false);
 		await adminClient.subscribe();
 		await initializeQuoteSpotMarket(adminClient, usdcMint.publicKey);
-		bulkAccountLoader.startPolling();
-		await bulkAccountLoader.load();
 	});
 
 	after(async () => {
 		await adminClient.unsubscribe();
 		bulkAccountLoader.stopPolling();
+		await vaultClient.unsubscribe();
 	});
 
 	it('Initialize Vault', async () => {
@@ -332,6 +331,7 @@ describe('driftVaults', () => {
 		};
 
 		await testInitIFStakeAccount(0);
+		await driftClient.unsubscribe();
 	});
 
 	it('Test initializeCompetitor', async () => {
@@ -424,6 +424,8 @@ describe('driftVaults', () => {
 			console.log(err);
 			assert(false, 'Failed to initialize competitor');
 		}
+
+		await driftClient.unsubscribe();
 	});
 
 	it('Initialize TokenizedVaultDepositor', async () => {
