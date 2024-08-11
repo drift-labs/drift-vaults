@@ -198,6 +198,7 @@ pub trait VaultDepositorBase {
             vault_equity,
             self.get_vault_shares(),
             vault.total_shares,
+            None,
         )?;
 
         validate!(

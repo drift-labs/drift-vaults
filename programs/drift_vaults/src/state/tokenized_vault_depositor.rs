@@ -276,19 +276,6 @@ mod tests {
     use crate::{TokenizedVaultDepositor, Vault};
     use anchor_lang::prelude::Pubkey;
 
-    fn base_init() {
-        let now = 1337;
-        let mut vd = TokenizedVaultDepositor::new(
-            Pubkey::default(),
-            Pubkey::default(),
-            Pubkey::default(),
-            now,
-        );
-        vd.vault_shares = 123;
-        assert_eq!(vd.vault_shares_base, 0);
-        assert_eq!(vd.vault_shares, 123);
-    }
-
     #[test]
     fn test_tokenize_shares() {
         let now = 1337;
