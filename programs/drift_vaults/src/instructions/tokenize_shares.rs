@@ -27,6 +27,14 @@ pub fn tokenize_shares<'info>(
     let mut vault_depositor = ctx.accounts.vault_depositor.load_mut()?;
     let mut tokenized_vault_depositor = ctx.accounts.tokenized_vault_depositor.load_mut()?;
 
+    validate!(
+        vault.shares_base == tokenized_vault_depositor.vault_shares_base,
+        ErrorCode::InvalidVaultRebase,
+        "Cannot tokenize shares after a rebase, must manually trigger TokenizedVaultDepositor::rebase() ({:?} vs. {:?})",
+        vault.shares_base,
+        tokenized_vault_depositor.vault_shares_base
+    )?;
+
     let total_shares_before = vault_depositor
         .get_vault_shares()
         .safe_add(tokenized_vault_depositor.get_vault_shares())?;

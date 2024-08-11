@@ -69,6 +69,59 @@ const_assert_eq!(
 );
 
 impl VaultDepositorBase for VaultDepositor {
+    fn apply_rebase(
+        self: &mut VaultDepositor,
+        vault: &mut Vault,
+        vault_equity: u64,
+    ) -> Result<Option<u128>> {
+        vault.apply_rebase(vault_equity)?;
+
+        let mut rebase_divisor = None;
+
+        if vault.shares_base != self.vault_shares_base {
+            validate!(
+                vault.shares_base > self.vault_shares_base,
+                ErrorCode::InvalidVaultRebase,
+                "Rebase expo out of bounds"
+            )?;
+
+            let expo_diff = (vault.shares_base - self.vault_shares_base).cast::<u32>()?;
+
+            let _rebase_divisor = 10_u128.pow(expo_diff);
+
+            msg!(
+                "rebasing vault depositor: base: {} -> {} ",
+                self.vault_shares_base,
+                vault.shares_base,
+            );
+
+            self.vault_shares_base = vault.shares_base;
+
+            let old_vault_shares = self.unchecked_vault_shares();
+            let new_vault_shares = old_vault_shares.safe_div(_rebase_divisor)?;
+
+            msg!(
+                "rebasing vault depositor: shares {} -> {} ",
+                old_vault_shares,
+                new_vault_shares
+            );
+
+            self.update_vault_shares(new_vault_shares, vault)?;
+
+            self.last_withdraw_request.rebase(_rebase_divisor)?;
+
+            rebase_divisor = Some(_rebase_divisor);
+        }
+
+        validate!(
+            self.vault_shares_base == vault.shares_base,
+            ErrorCode::InvalidVaultRebase,
+            "vault depositor shares_base != vault shares_base"
+        )?;
+
+        Ok(rebase_divisor)
+    }
+
     fn get_authority(&self) -> Pubkey {
         self.authority
     }
@@ -130,55 +183,6 @@ impl VaultDepositor {
             profit_share_fee_paid: 0,
             padding: [0u64; 8],
         }
-    }
-
-    pub fn apply_rebase(
-        self: &mut VaultDepositor,
-        vault: &mut Vault,
-        vault_equity: u64,
-    ) -> Result<Option<u128>> {
-        vault.apply_rebase(vault_equity)?;
-
-        let mut rebase_divisor = None;
-
-        if vault.shares_base != self.vault_shares_base {
-            validate!(
-                vault.shares_base > self.vault_shares_base,
-                ErrorCode::InvalidVaultRebase,
-                "Rebase expo out of bounds"
-            )?;
-
-            let expo_diff = (vault.shares_base - self.vault_shares_base).cast::<u32>()?;
-
-            let _rebase_divisor = 10_u128.pow(expo_diff);
-
-            msg!(
-                "rebasing vault depositor: base: {} -> {} ",
-                self.vault_shares_base,
-                vault.shares_base,
-            );
-
-            self.vault_shares_base = vault.shares_base;
-
-            let old_vault_shares = self.unchecked_vault_shares();
-            let new_vault_shares = old_vault_shares.safe_div(_rebase_divisor)?;
-
-            msg!("rebasing vault depositor: shares -> {} ", new_vault_shares);
-
-            self.update_vault_shares(new_vault_shares, vault)?;
-
-            self.last_withdraw_request.rebase(_rebase_divisor)?;
-
-            rebase_divisor = Some(_rebase_divisor);
-        }
-
-        validate!(
-            self.vault_shares_base == vault.shares_base,
-            ErrorCode::InvalidVaultRebase,
-            "vault depositor shares_base != vault shares_base"
-        )?;
-
-        Ok(rebase_divisor)
     }
 
     pub fn deposit(

@@ -17,6 +17,8 @@ pub trait Size {
 }
 
 pub trait VaultDepositorBase {
+    fn apply_rebase(&mut self, vault: &mut Vault, vault_equity: u64) -> Result<Option<u128>>;
+
     fn get_authority(&self) -> Pubkey;
     fn get_pubkey(&self) -> Pubkey;
 
@@ -131,47 +133,6 @@ pub trait VaultDepositorBase {
         Ok(profit_share)
     }
 
-    fn apply_rebase(&mut self, vault: &mut Vault, vault_equity: u64) -> Result<Option<u128>> {
-        vault.apply_rebase(vault_equity)?;
-
-        let mut rebase_divisor: Option<u128> = None;
-
-        if vault.shares_base != self.get_vault_shares_base() {
-            validate!(
-                vault.shares_base > self.get_vault_shares_base(),
-                ErrorCode::InvalidVaultRebase,
-                "Rebase expo out of bounds"
-            )?;
-
-            let expo_diff = (vault.shares_base - self.get_vault_shares_base()).cast::<u32>()?;
-
-            rebase_divisor = Some(10_u128.pow(expo_diff));
-
-            msg!(
-                "rebasing vault depositor: base: {} -> {} ",
-                self.get_vault_shares_base(),
-                vault.shares_base,
-            );
-
-            self.set_vault_shares_base(vault.shares_base);
-
-            let old_vault_shares = self.unchecked_vault_shares();
-            let new_vault_shares = old_vault_shares.safe_div(rebase_divisor.unwrap())?;
-
-            msg!("rebasing vault depositor: shares -> {} ", new_vault_shares);
-
-            self.update_vault_shares(new_vault_shares, vault)?;
-        }
-
-        validate!(
-            self.get_vault_shares_base() == vault.shares_base,
-            ErrorCode::InvalidVaultRebase,
-            "vault depositor shares_base != vault shares_base"
-        )?;
-
-        Ok(rebase_divisor)
-    }
-
     /// Transfer shares from `self` to `to`
     ///
     /// Returns the number of shares transferred
@@ -184,8 +145,14 @@ pub trait VaultDepositorBase {
         vault_equity: u64,
         now: i64,
     ) -> Result<u128> {
-        self.apply_rebase(vault, vault_equity)?;
-        to.apply_rebase(vault, vault_equity)?;
+        let from_rebase_divisor = self.apply_rebase(vault, vault_equity)?;
+        let to_rebase_divisor = to.apply_rebase(vault, vault_equity)?;
+
+        validate!(
+            from_rebase_divisor == to_rebase_divisor,
+            ErrorCode::InvalidVaultRebase,
+            "from and to vault depositors rebase divisors mismatch"
+        )?;
 
         let (management_fee, management_fee_shares) =
             vault.apply_management_fee(vault_equity, now)?;
@@ -198,7 +165,7 @@ pub trait VaultDepositorBase {
             vault_equity,
             self.get_vault_shares(),
             vault.total_shares,
-            None,
+            from_rebase_divisor,
         )?;
 
         validate!(
@@ -217,6 +184,9 @@ pub trait VaultDepositorBase {
 
         self.decrease_vault_shares(n_shares, vault)?;
         to.increase_vault_shares(n_shares, vault)?;
+
+        self.set_net_deposits(self.get_net_deposits().safe_sub(withdraw_value.cast()?)?);
+        to.set_net_deposits(to.get_net_deposits().safe_add(withdraw_value.cast()?)?);
 
         let from_depositor_shares_after = self.checked_vault_shares(vault)?;
         let to_depositor_shares_after = to.checked_vault_shares(vault)?;

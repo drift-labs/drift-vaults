@@ -1110,7 +1110,7 @@ export type DriftVaults = {
 						name: 'lastVaultShares';
 						docs: [
 							'stores the vault_shares from the most recent liquidity event (redeem or issuance) before a spl token',
-							'CPI is done, used track invariants'
+							'CPI is done, used to track invariants'
 						];
 						type: 'u128';
 					},
@@ -3047,7 +3047,7 @@ export const IDL: DriftVaults = {
 						name: 'lastVaultShares',
 						docs: [
 							'stores the vault_shares from the most recent liquidity event (redeem or issuance) before a spl token',
-							'CPI is done, used track invariants',
+							'CPI is done, used to track invariants',
 						],
 						type: 'u128',
 					},
