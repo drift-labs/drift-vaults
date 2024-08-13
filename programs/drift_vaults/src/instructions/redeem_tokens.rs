@@ -14,7 +14,7 @@ use drift::math::safe_math::SafeMath;
 use drift::state::user::User;
 
 pub fn redeem_tokens<'info>(
-    ctx: Context<'_, '_, 'info, 'info, RedeemShares<'info>>,
+    ctx: Context<'_, '_, 'info, 'info, RedeemTokens<'info>>,
     tokens_to_burn: u64,
 ) -> Result<()> {
     let clock = &Clock::get()?;
@@ -26,9 +26,11 @@ pub fn redeem_tokens<'info>(
     let mut vault_depositor = ctx.accounts.vault_depositor.load_mut()?;
     let mut tokenized_vault_depositor = ctx.accounts.tokenized_vault_depositor.load_mut()?;
 
+    let manager_shares_before = vault.total_shares.safe_sub(vault.user_shares)?;
     let total_shares_before = vault_depositor
         .get_vault_shares()
-        .safe_add(tokenized_vault_depositor.get_vault_shares())?;
+        .safe_add(tokenized_vault_depositor.get_vault_shares())?
+        .safe_add(manager_shares_before)?;
 
     let user = ctx.accounts.drift_user.load()?;
     let spot_market_index = vault.spot_market_index;
@@ -44,7 +46,7 @@ pub fn redeem_tokens<'info>(
     validate!(
         !vault_depositor.last_withdraw_request.pending(),
         ErrorCode::InvalidVaultDeposit,
-        "Cannot redeem shares with a pending withdraw request"
+        "Cannot redeem tokens with a pending withdraw request"
     )?;
 
     let total_supply_before = ctx.accounts.mint.supply;
@@ -66,9 +68,11 @@ pub fn redeem_tokens<'info>(
         clock.unix_timestamp,
     )?;
 
+    let manager_shares_after = vault.total_shares.safe_sub(vault.user_shares)?;
     let total_shares_after = vault_depositor
         .get_vault_shares()
-        .safe_add(tokenized_vault_depositor.get_vault_shares())?;
+        .safe_add(tokenized_vault_depositor.get_vault_shares())?
+        .safe_add(manager_shares_after)?;
 
     validate!(
         total_shares_after.eq(&total_shares_before),
@@ -119,7 +123,7 @@ pub fn redeem_tokens<'info>(
 }
 
 #[derive(Accounts)]
-pub struct RedeemShares<'info> {
+pub struct RedeemTokens<'info> {
     #[account(mut)]
     pub vault: AccountLoader<'info, Vault>,
     #[account(
@@ -164,7 +168,7 @@ pub struct RedeemShares<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, RedeemShares<'info>> {
+impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, RedeemTokens<'info>> {
     fn token_transfer(&self, amount: u64) -> Result<()> {
         let cpi_accounts = Transfer {
             from: self.accounts.user_token_account.to_account_info(),
@@ -180,7 +184,7 @@ impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, RedeemShares<'info>>
     }
 }
 
-impl<'info> BurnTokensCPI for Context<'_, '_, '_, 'info, RedeemShares<'info>> {
+impl<'info> BurnTokensCPI for Context<'_, '_, '_, 'info, RedeemTokens<'info>> {
     fn burn(&self, vault_name: [u8; 32], vault_bump: u8, amount: u64) -> Result<()> {
         let signature_seeds = Vault::get_vault_signer_seeds(&vault_name, &vault_bump);
         let signers = &[&signature_seeds[..]];

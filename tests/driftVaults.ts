@@ -3,25 +3,43 @@ import { DriftVaults } from '../target/types/drift_vaults';
 import { Program } from '@coral-xyz/anchor';
 import {
 	AdminClient,
+	BASE_PRECISION,
 	BN,
 	BulkAccountLoader,
+	DRIFT_PROGRAM_ID,
 	DriftClient,
 	InsuranceFundStake,
+	OracleSource,
+	OrderType,
+	PERCENTAGE_PRECISION,
+	PRICE_PRECISION,
+	PositionDirection,
+	TEN,
 	TWO,
+	TestClient,
 	UserAccount,
 	ZERO,
 	getInsuranceFundStakeAccountPublicKey,
+	getTokenAmount,
+	getUserAccountPublicKeySync,
+	getUserStatsAccountPublicKey,
+	isVariant,
 } from '@drift-labs/sdk';
 import {
 	calculateAllPdas,
 	createUserWithUSDCAccount,
+	getTokenAmountAsBN,
 	initializeQuoteSpotMarket,
+	initializeSolSpotMarket,
+	initializeSolSpotMarketMaker,
+	mockOracle,
 	mockUSDCMint,
 	mockUserUSDCAccount,
 	printTxLogs,
+	setFeedPrice,
 	validateTotalUserShares,
 } from './testHelpers';
-import { Keypair } from '@solana/web3.js';
+import { Keypair, PublicKey } from '@solana/web3.js';
 import { assert } from 'chai';
 import {
 	VaultClient,
@@ -39,6 +57,7 @@ import {
 
 import { getMint } from '@solana/spl-token';
 import { Metaplex } from '@metaplex-foundation/js';
+import { Test } from 'mocha';
 
 describe('driftVaults', () => {
 	// Configure the client to use the local cluster.
@@ -72,6 +91,7 @@ describe('driftVaults', () => {
 
 	let usdcMint: Keypair;
 	let userUSDCAccount: Keypair;
+	let solOracle: PublicKey;
 
 	const vaultName = 'crisp vault';
 	const vault = getVaultAddressSync(program.programId, encodeName(vaultName));
@@ -81,9 +101,13 @@ describe('driftVaults', () => {
 	before(async () => {
 		usdcMint = await mockUSDCMint(provider);
 		userUSDCAccount = await mockUserUSDCAccount(usdcMint, usdcAmount, provider);
+		solOracle = await mockOracle(100);
 		await adminClient.initialize(usdcMint.publicKey, false);
 		await adminClient.subscribe();
 		await initializeQuoteSpotMarket(adminClient, usdcMint.publicKey);
+		await initializeSolSpotMarket(adminClient, solOracle);
+		await adminClient.updateSpotMarketOrdersEnabled(0, true);
+		await adminClient.updateSpotMarketOrdersEnabled(1, true);
 	});
 
 	after(async () => {
@@ -707,5 +731,331 @@ describe('driftVaults', () => {
 		);
 
 		await validateTotalUserShares(program, vault);
+	});
+
+	/**
+	 * Initializes a new vault (with TokenizedVaultDepositor) and 10% profit share, SOL spot market maker, and a non-manager depositor.
+	 *
+	 * Vault buys SOL spot with 99% of USDC deposits, and then the price changes from solStartPrice to solEndPrice.
+	 * Depositor tokenizes shares and redeems after manager buys SOL and price changes.
+	 */
+	async function testRedeemVaultTokensWithProfitShare(
+		solStartPrice: number,
+		solEndPrice: number,
+		profitable: boolean
+	) {
+		console.log(`Initializing SOL price to ${solStartPrice}`);
+		await setFeedPrice(anchor.workspace.Pyth, solStartPrice, solOracle);
+
+		const usdcDepositAmount = new BN(10000 * 10 ** 6);
+		const usdcSpotMarket = adminClient.getSpotMarketAccount(0);
+		const solSpotMarket = adminClient.getSpotMarketAccount(1);
+		const [driftClient, usdcAccount, kp] = await createUserWithUSDCAccount(
+			provider,
+			usdcMint,
+			new anchor.Program(
+				adminClient.program.idl,
+				adminClient.program.programId,
+				provider
+			),
+			usdcDepositAmount,
+			[],
+			[0, 1],
+			[
+				{
+					publicKey: solSpotMarket.oracle,
+					source: solSpotMarket.oracleSource,
+				},
+			],
+			bulkAccountLoader
+		);
+		const [mmDriftClient] = await initializeSolSpotMarketMaker(
+			provider,
+			usdcMint,
+			new anchor.Program(
+				adminClient.program.idl,
+				adminClient.program.programId,
+				provider
+			),
+			[
+				{
+					publicKey: solOracle,
+					source: OracleSource.PYTH,
+				},
+			],
+			undefined,
+			undefined,
+			bulkAccountLoader
+		);
+
+		const managerVaultClient = new VaultClient({
+			// @ts-ignore
+			driftClient: adminClient,
+			program: program,
+			metaplex: metaplex,
+			cliMode: true,
+		});
+		const depositorVaultClient = new VaultClient({
+			// @ts-ignore
+			driftClient: driftClient,
+			program: new anchor.Program(
+				program.idl,
+				program.programId,
+				new anchor.AnchorProvider(provider.connection, new anchor.Wallet(kp), {
+					preflightCommitment: 'confirmed',
+					skipPreflight: false,
+					commitment: 'confirmed',
+				})
+			),
+			metaplex: metaplex,
+			cliMode: true,
+		});
+
+		const vaultName = `vault (${solStartPrice} -> ${solEndPrice})`;
+		const vault = getVaultAddressSync(program.programId, encodeName(vaultName));
+
+		await managerVaultClient.initializeVault({
+			name: encodeName(vaultName),
+			spotMarketIndex: 0,
+			redeemPeriod: ZERO,
+			maxTokens: ZERO,
+			managementFee: PERCENTAGE_PRECISION.div(TEN),
+			profitShare: PERCENTAGE_PRECISION.toNumber() / 10, // 10%
+			hurdleRate: 0,
+			permissioned: false,
+			minDepositAmount: ZERO,
+		});
+		await managerVaultClient.updateDelegate(vault, provider.wallet.publicKey);
+		await managerVaultClient.updateMarginTradingEnabled(vault, true);
+
+		const { vaultDepositor, tokenizedVaultDepositor, userVaultTokenAta } =
+			calculateAllPdas(program.programId, vault, driftClient.wallet.publicKey);
+
+		await managerVaultClient.initializeTokenizedVaultDepositor({
+			vault,
+			tokenName: 'Tokenized Vault 2',
+			tokenSymbol: 'TV2',
+			tokenUri: '',
+			decimals: 6,
+		});
+
+		try {
+			const _tx1 = await depositorVaultClient.initializeVaultDepositor(
+				vault,
+				driftClient.wallet.publicKey
+			);
+			// await printTxLogs(provider.connection, _tx1);
+
+			const _tx2 = await depositorVaultClient.deposit(
+				vaultDepositor,
+				usdcDepositAmount.div(TWO),
+				undefined,
+				undefined,
+				usdcAccount
+			);
+			// await printTxLogs(provider.connection, _tx2);
+		} catch (e) {
+			console.error(e);
+			throw e;
+		}
+		await validateTotalUserShares(program, vault);
+
+		const vdBefore = await program.account.vaultDepositor.fetch(vaultDepositor);
+		const vdtBefore = await program.account.tokenizedVaultDepositor.fetch(
+			tokenizedVaultDepositor
+		);
+		await depositorVaultClient.tokenizeShares(
+			vaultDepositor,
+			vdBefore.vaultShares,
+			WithdrawUnit.SHARES
+		);
+
+		const vdAfter = await program.account.vaultDepositor.fetch(vaultDepositor);
+		const vdtAfter = await program.account.tokenizedVaultDepositor.fetch(
+			tokenizedVaultDepositor
+		);
+
+		const userTokenBalance = await connection.getTokenAccountBalance(
+			userVaultTokenAta
+		);
+
+		console.log(`User token balance: ${userTokenBalance.value.uiAmountString}`);
+		console.log(
+			`VaultDepositor shares: ${vdBefore.vaultShares.toString()} -> ${vdAfter.vaultShares.toString()}`
+		);
+		console.log(
+			`TokenizedVaultDepositor shares: ${vdtBefore.vaultShares.toString()} -> ${vdtAfter.vaultShares.toString()}`
+		);
+
+		const vaultEquity =
+			await depositorVaultClient.calculateVaultEquityInDepositAsset({
+				address: vault,
+			});
+		console.log(
+			`Vault equity (${vault.toString()}): ${vaultEquity.toString()}`
+		);
+
+		const delegateDriftClient = new DriftClient({
+			connection: driftClient.connection,
+			wallet: provider.wallet,
+			opts: {
+				commitment: 'confirmed',
+			},
+			perpMarketIndexes: [],
+			spotMarketIndexes: [0, 1],
+			oracleInfos: [
+				{
+					publicKey: solOracle,
+					source: OracleSource.PYTH,
+				},
+			],
+			accountSubscription: {
+				type: 'websocket',
+			},
+			authority: vault,
+			activeSubAccountId: 0,
+			subAccountIds: [0],
+		});
+
+		await delegateDriftClient.subscribe();
+
+		const user = delegateDriftClient.getUser(0, vault);
+		const s00 = user.getSpotPosition(0);
+		const vaultUsdcBalance = getTokenAmount(
+			s00.scaledBalance,
+			usdcSpotMarket,
+			s00.balanceType
+		)
+			.mul(new BN(99))
+			.div(new BN(100));
+
+		const mmUser = mmDriftClient.getUser();
+		const mmOffer = mmUser
+			.getOpenOrders()
+			.find((o) => o.marketIndex === 1 && isVariant(o.direction, 'short'));
+		if (!mmOffer) {
+			throw new Error('mmOffer not found');
+		}
+
+		try {
+			const tx = await delegateDriftClient.placeAndTakeSpotOrder(
+				{
+					orderType: OrderType.LIMIT,
+					marketIndex: 1,
+					baseAssetAmount: vaultUsdcBalance
+						.mul(BASE_PRECISION)
+						.div(mmOffer.price),
+					price: mmOffer.price,
+					direction: PositionDirection.LONG,
+					immediateOrCancel: true,
+					auctionDuration: 0,
+				},
+				undefined,
+				{
+					maker: mmUser.getUserAccountPublicKey(),
+					makerStats: getUserStatsAccountPublicKey(
+						new PublicKey(DRIFT_PROGRAM_ID),
+						mmDriftClient.authority
+					),
+					makerUserAccount: mmUser.getUserAccount(),
+					order: mmOffer,
+				}
+			);
+			// await printTxLogs(provider.connection, tx, true, mmDriftClient.program);
+			await printTxLogs(provider.connection, tx);
+		} catch (e) {
+			console.error(e);
+			throw e;
+		}
+
+		await delegateDriftClient.fetchAccounts();
+		await user.fetchAccounts();
+
+		console.log(`Updating price to ${solEndPrice}`);
+		await setFeedPrice(anchor.workspace.Pyth, solEndPrice, solOracle);
+		await driftClient.fetchAccounts();
+
+		const solPrice1 = delegateDriftClient.getOracleDataForSpotMarket(1).price;
+		const vaultEquity2 =
+			await depositorVaultClient.calculateVaultEquityInDepositAsset({
+				address: vault,
+			});
+		console.log(
+			`Vault equity (solprice: ${solPrice1.toString()}): ${vaultEquity2.toString()} (${
+				(vaultEquity2.toNumber() / vaultEquity.toNumber() - 1) * 100
+			}% return)`
+		);
+
+		const vdBefore1 = await program.account.vaultDepositor.fetch(
+			vaultDepositor
+		);
+		const vdtBefore1 = await program.account.tokenizedVaultDepositor.fetch(
+			tokenizedVaultDepositor
+		);
+
+		const tx3 = await depositorVaultClient.redeemTokens(
+			vaultDepositor,
+			new BN(userTokenBalance.value.amount)
+		);
+		await printTxLogs(provider.connection, tx3);
+
+		const vdAfter1 = await program.account.vaultDepositor.fetch(vaultDepositor);
+		const vdtAfter1 = await program.account.tokenizedVaultDepositor.fetch(
+			tokenizedVaultDepositor
+		);
+
+		const userTokenBalance1 = await connection.getTokenAccountBalance(
+			userVaultTokenAta
+		);
+
+		console.log('Shares after redeeming tokens:');
+		console.log(
+			`User token balance: ${userTokenBalance1.value.uiAmountString}`
+		);
+		console.log(
+			`VaultDepositor shares: ${vdBefore1.vaultShares.toString()} -> ${vdAfter1.vaultShares.toString()}`
+		);
+		console.log(
+			`TokenizedVaultDepositor shares: ${vdtBefore1.vaultShares.toString()} -> ${vdtAfter1.vaultShares.toString()}`
+		);
+
+		assert(
+			userTokenBalance1.value.uiAmountString === '0',
+			'User token balance should be 0'
+		);
+		assert(
+			vdtAfter1.vaultShares.eq(ZERO),
+			'TokenizedVaultDepositor shares should be 0'
+		);
+
+		if (profitable) {
+			assert(
+				vdAfter1.vaultShares.lt(vdBefore.vaultShares),
+				'VaultDepositor shares should decrease due to profit share'
+			);
+		} else {
+			assert(
+				vdAfter1.vaultShares.eq(vdBefore.vaultShares),
+				'VaultDepositor shares should stay same due to no profit share'
+			);
+		}
+
+		await validateTotalUserShares(program, vault);
+
+		await mmDriftClient.unsubscribe();
+		await driftClient.unsubscribe();
+		await delegateDriftClient.unsubscribe();
+		await managerVaultClient.unsubscribe();
+		await depositorVaultClient.unsubscribe();
+	}
+
+	it('Redeem vault tokens with profit share, profitable', async () => {
+		// 10% gain
+		await testRedeemVaultTokensWithProfitShare(100, 110, true);
+	});
+
+	it('Redeem vault tokens with profit share, not profitable', async () => {
+		// 10% loss
+		await testRedeemVaultTokensWithProfitShare(100, 90, false);
 	});
 });

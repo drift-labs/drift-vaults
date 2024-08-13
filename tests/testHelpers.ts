@@ -16,6 +16,7 @@ import {
 import {
 	Connection,
 	Keypair,
+	LAMPORTS_PER_SOL,
 	PublicKey,
 	sendAndConfirmTransaction,
 	SystemProgram,
@@ -38,6 +39,13 @@ import {
 	User,
 	OracleSource,
 	MarketStatus,
+	getOrderParams,
+	OrderType,
+	MarketType,
+	PositionDirection,
+	convertToNumber,
+	BASE_PRECISION,
+	parseLogs,
 } from '@drift-labs/sdk';
 import {
 	getTokenizedVaultAddressSync,
@@ -335,15 +343,97 @@ export async function createUserWithUSDCAndWSOLAccount(
 	return [driftClient, solAccount, usdcAccount, userKeyPair];
 }
 
+export async function initializeSolSpotMarketMaker(
+	provider: AnchorProvider,
+	usdcMint: Keypair,
+	chProgram: Program,
+	oracleInfos: OracleInfo[] = [],
+	solAmount?: BN,
+	usdcAmount?: BN,
+	accountLoader?: BulkAccountLoader
+): Promise<[TestClient, PublicKey, PublicKey, Keypair]> {
+	const solDepositAmount = solAmount ?? new BN(1000 * LAMPORTS_PER_SOL);
+	const usdcDepositAmount = usdcAmount ?? new BN(100_000 * 1e6);
+
+	const [driftClient, solAccount, usdcAccount, userKeyPair] =
+		await createUserWithUSDCAndWSOLAccount(
+			provider,
+			usdcMint,
+			chProgram,
+			solDepositAmount,
+			usdcDepositAmount,
+			[],
+			[0, 1],
+			oracleInfos,
+			accountLoader
+		);
+	await driftClient.updateUserMarginTradingEnabled([
+		{
+			marginTradingEnabled: true,
+			subAccountId: 0,
+		},
+	]);
+
+	const usdcMarket = driftClient.getSpotMarketAccount(0);
+	assert(usdcMarket !== undefined, 'usdcMarket was not initialized');
+	const solMarket = driftClient.getSpotMarketAccount(1);
+	assert(solMarket !== undefined, 'solMarket was not initialized');
+
+	const solOracle = driftClient.getOracleDataForSpotMarket(1);
+
+	await driftClient.deposit(usdcDepositAmount, 0, usdcAccount);
+	await driftClient.deposit(solDepositAmount, 1, solAccount);
+
+	const bidPrice = solOracle.price.sub(
+		new BN(100).mul(solMarket.orderTickSize)
+	);
+	const askPrice = solOracle.price.add(
+		new BN(100).mul(solMarket.orderTickSize)
+	);
+
+	try {
+		await driftClient.placeOrders([
+			getOrderParams({
+				orderType: OrderType.LIMIT,
+				marketType: MarketType.SPOT,
+				marketIndex: 1,
+				direction: PositionDirection.LONG,
+				price: bidPrice,
+				baseAssetAmount: usdcDepositAmount.mul(BASE_PRECISION).div(bidPrice),
+			}),
+			getOrderParams({
+				orderType: OrderType.LIMIT,
+				marketType: MarketType.SPOT,
+				marketIndex: 1,
+				direction: PositionDirection.SHORT,
+				price: askPrice,
+				baseAssetAmount: solDepositAmount,
+			}),
+		]);
+	} catch (e) {
+		console.error(e);
+	}
+
+	await driftClient.fetchAccounts();
+
+	return [driftClient, solAccount, usdcAccount, userKeyPair];
+}
+
 export async function printTxLogs(
 	connection: Connection,
-	txSig: TransactionSignature
+	txSig: TransactionSignature,
+	dumpEvents: boolean = false,
+	driftProgram?: Program
 ): Promise<void> {
-	console.log(
-		'tx logs',
-		(await connection.getTransaction(txSig, { commitment: 'confirmed' })).meta
-			.logMessages
-	);
+	const tx = await connection.getTransaction(txSig, {
+		commitment: 'confirmed',
+	});
+	console.log('tx logs', tx.meta.logMessages);
+	if (dumpEvents) {
+		for (const e of parseLogs(driftProgram, tx.meta.logMessages)) {
+			console.log(JSON.stringify(e));
+		}
+	}
 }
 
 export async function mintToInsuranceFund(
@@ -923,8 +1013,22 @@ export async function validateTotalUserShares(
 	vault: PublicKey
 ) {
 	const vaultAccount = await program.account.vault.fetch(vault);
-	const allVds = await program.account.vaultDepositor.all();
-	const allTvds = await program.account.tokenizedVaultDepositor.all();
+	const allVds = await program.account.vaultDepositor.all([
+		{
+			memcmp: {
+				offset: 8,
+				bytes: vault.toBase58(),
+			},
+		},
+	]);
+	const allTvds = await program.account.tokenizedVaultDepositor.all([
+		{
+			memcmp: {
+				offset: 8,
+				bytes: vault.toBase58(),
+			},
+		},
+	]);
 	const vdSharesTotal = allVds.reduce(
 		(acc, vd) => acc.add(vd.account.vaultShares),
 		new BN(0)

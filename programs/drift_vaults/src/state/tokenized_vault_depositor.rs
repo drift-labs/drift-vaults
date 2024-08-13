@@ -295,6 +295,8 @@ impl TokenizedVaultDepositor {
         let total_vault_shares_before = vault.total_shares;
         let user_vault_shares_before = vault.user_shares;
 
+        self.last_vault_shares = self.checked_vault_shares(vault)?;
+
         let shares_to_redeem = depositor_shares_to_vault_amount(
             tokens_to_burn.cast()?,
             mint_supply.cast()?,
@@ -302,14 +304,12 @@ impl TokenizedVaultDepositor {
         )?;
 
         msg!(
-            "tokens_to_burn: {}, tokenized_vd.last_vault_shares: {}, token_supply_before: {}, shares_to_redeem: {}",
+            "tokens_to_burn: {}, tokenized_vd.vault_shares: {}, token_supply_before: {}, shares_to_redeem: {}",
             tokens_to_burn,
             self.last_vault_shares,
             mint_supply,
-           shares_to_redeem
+            shares_to_redeem
         );
-
-        self.last_vault_shares = self.checked_vault_shares(vault)?;
 
         emit!(VaultDepositorRecord {
             ts: now,

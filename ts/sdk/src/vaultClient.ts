@@ -28,6 +28,7 @@ import {
 	AddressLookupTableAccount,
 	ComputeBudgetProgram,
 	PublicKey,
+	Signer,
 	SystemProgram,
 	SYSVAR_RENT_PUBKEY,
 	Transaction,
@@ -709,9 +710,14 @@ export class VaultClient {
 		};
 
 		if (this.cliMode) {
-			return await this.program.methods
+			return this.program.methods
 				.initializeVaultDepositor()
-				.accounts(accounts)
+				.accounts({
+					...accounts,
+					payer: authority || this.driftClient.wallet.publicKey,
+					rent: SYSVAR_RENT_PUBKEY,
+					systemProgram: SystemProgram.programId,
+				})
 				.rpc();
 		} else {
 			const initIx = this.createInitVaultDepositorIx(vault, authority);
@@ -1096,12 +1102,14 @@ export class VaultClient {
 				);
 
 			if (initVaultDepositor) {
+				console.log('1');
 				await this.initializeVaultDepositor(
 					vaultAccount.pubkey,
 					initVaultDepositor.authority
 				);
+				console.log('2');
 			}
-			return await this.program.methods
+			return this.program.methods
 				.deposit(amount)
 				.accounts(accounts)
 				.remainingAccounts(remainingAccounts)

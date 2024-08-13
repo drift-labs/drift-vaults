@@ -64,7 +64,7 @@ pub mod drift_vaults {
     }
 
     pub fn redeem_tokens<'info>(
-        ctx: Context<'_, '_, 'info, 'info, RedeemShares<'info>>,
+        ctx: Context<'_, '_, 'info, 'info, RedeemTokens<'info>>,
         tokens_to_burn: u64,
     ) -> Result<()> {
         instructions::redeem_tokens(ctx, tokens_to_burn)
