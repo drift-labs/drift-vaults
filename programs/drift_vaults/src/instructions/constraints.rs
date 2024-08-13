@@ -1,6 +1,7 @@
 use crate::{TokenizedVaultDepositor, Vault, VaultDepositor};
 
 use anchor_lang::prelude::*;
+use anchor_spl::associated_token::get_associated_token_address;
 use drift::state::spot_market::SpotMarket;
 
 pub fn is_vault_for_vault_depositor(
@@ -68,4 +69,8 @@ pub fn is_mint_for_tokenized_depositor(
     tokenized_vault_depositor: &AccountLoader<TokenizedVaultDepositor>,
 ) -> anchor_lang::Result<bool> {
     Ok(tokenized_vault_depositor.load()?.mint.eq(mint))
+}
+
+pub fn is_ata(token_account: &Pubkey, owner: &Pubkey, mint: &Pubkey) -> anchor_lang::Result<bool> {
+    Ok(get_associated_token_address(owner, mint).eq(token_account))
 }

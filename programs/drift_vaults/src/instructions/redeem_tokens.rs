@@ -1,5 +1,5 @@
 use crate::constraints::{
-    is_authority_for_vault_depositor, is_mint_for_tokenized_depositor,
+    is_ata, is_authority_for_vault_depositor, is_mint_for_tokenized_depositor,
     is_tokenized_depositor_for_vault, is_user_for_vault,
 };
 use crate::cpi::{BurnTokensCPI, TokenTransferCPI};
@@ -156,7 +156,8 @@ pub struct RedeemTokens<'info> {
     #[account(
         mut,
         token::authority = vault.key(),
-        token::mint = tokenized_vault_depositor.load()?.mint
+        token::mint = tokenized_vault_depositor.load()?.mint,
+        constraint = is_ata(&vault_token_account.key(), &vault.key(), &mint.key())?
     )]
     pub vault_token_account: Account<'info, TokenAccount>,
     #[account(

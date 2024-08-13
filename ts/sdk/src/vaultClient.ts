@@ -27,6 +27,7 @@ import {
 import {
 	AddressLookupTableAccount,
 	ComputeBudgetProgram,
+	Keypair,
 	PublicKey,
 	Signer,
 	SystemProgram,
