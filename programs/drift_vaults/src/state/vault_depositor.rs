@@ -134,8 +134,9 @@ impl VaultDepositor {
         vault: &mut Vault,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
         vault_equity: u64,
-    ) -> Result<()> {
+    ) -> Result<Option<u128>> {
         vault.apply_rebase(vault_protocol, vault_equity)?;
+        let mut rebase_divisor = None;
 
         if vault.shares_base != self.vault_shares_base {
             validate!(
@@ -146,7 +147,7 @@ impl VaultDepositor {
 
             let expo_diff = (vault.shares_base - self.vault_shares_base).cast::<u32>()?;
 
-            let rebase_divisor = 10_u128.pow(expo_diff);
+            let _rebase_divisor = 10_u128.pow(expo_diff);
 
             msg!(
                 "rebasing vault depositor: base: {} -> {} ",
@@ -157,13 +158,15 @@ impl VaultDepositor {
             self.vault_shares_base = vault.shares_base;
 
             let old_vault_shares = self.unchecked_vault_shares();
-            let new_vault_shares = old_vault_shares.safe_div(rebase_divisor)?;
+            let new_vault_shares = old_vault_shares.safe_div(_rebase_divisor)?;
 
             msg!("rebasing vault depositor: shares -> {} ", new_vault_shares);
 
             self.update_vault_shares(new_vault_shares, vault)?;
 
-            self.last_withdraw_request.rebase(rebase_divisor)?;
+            self.last_withdraw_request.rebase(_rebase_divisor)?;
+
+            rebase_divisor = Some(_rebase_divisor);
         }
 
         validate!(
@@ -172,7 +175,7 @@ impl VaultDepositor {
             "vault depositor shares_base != vault shares_base"
         )?;
 
-        Ok(())
+        Ok(rebase_divisor)
     }
 
     pub fn calculate_profit_share_and_update(
@@ -335,7 +338,7 @@ impl VaultDepositor {
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
         now: i64,
     ) -> Result<()> {
-        self.apply_rebase(vault, vault_protocol, vault_equity)?;
+        let rebase_divisor = self.apply_rebase(vault, vault_protocol, vault_equity)?;
         let VaultFee {
             management_fee_payment,
             management_fee_shares,
@@ -344,14 +347,13 @@ impl VaultDepositor {
         } = vault.apply_fee(vault_protocol, vault_equity, now)?;
         let (manager_profit_share, protocol_profit_share) =
             self.apply_profit_share(vault_equity, vault, vault_protocol)?;
-        msg!("manager profit share: {}", manager_profit_share);
-        msg!("protocol profit share: {}", protocol_profit_share);
 
         let (withdraw_value, n_shares) = withdraw_unit.get_withdraw_value_and_shares(
             withdraw_amount,
             vault_equity,
             self.vault_shares,
             vault.total_shares,
+            rebase_divisor,
         )?;
 
         validate!(

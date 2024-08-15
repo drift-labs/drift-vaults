@@ -381,19 +381,24 @@ impl Vault {
         &mut self,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
         vault_equity: u64,
-    ) -> Result<()> {
+    ) -> Result<Option<u128>> {
+        let mut rebase_divisor = None;
         if vault_equity != 0 && vault_equity.cast::<u128>()? < self.total_shares {
-            let (expo_diff, rebase_divisor) =
+            let (expo_diff, _rebase_divisor) =
                 calculate_rebase_info(self.total_shares, vault_equity)?;
 
             if expo_diff != 0 {
-                self.total_shares = self.total_shares.safe_div(rebase_divisor)?;
-                self.user_shares = self.user_shares.safe_div(rebase_divisor)?;
+                self.total_shares = self.total_shares.safe_div(_rebase_divisor)?;
+                self.user_shares = self.user_shares.safe_div(_rebase_divisor)?;
                 self.shares_base = self.shares_base.safe_add(expo_diff)?;
                 if let Some(vp) = vault_protocol {
-                    vp.protocol_profit_and_fee_shares =
-                        vp.protocol_profit_and_fee_shares.safe_div(rebase_divisor)?;
+                    vp.protocol_profit_and_fee_shares = vp
+                        .protocol_profit_and_fee_shares
+                        .safe_div(_rebase_divisor)?;
                 }
+
+                rebase_divisor = Some(_rebase_divisor);
+
                 msg!("rebasing vault: expo_diff={}", expo_diff);
             }
         }
@@ -402,7 +407,7 @@ impl Vault {
             self.total_shares = vault_equity.cast::<u128>()?;
         }
 
-        Ok(())
+        Ok(rebase_divisor)
     }
 
     pub fn calculate_equity(
@@ -546,15 +551,13 @@ impl Vault {
         vault_equity: u64,
         now: i64,
     ) -> Result<()> {
-        self.apply_rebase(vault_protocol, vault_equity)?;
+        let rebase_divisor = self.apply_rebase(vault_protocol, vault_equity)?;
         let VaultFee {
             management_fee_payment,
             management_fee_shares,
             protocol_fee_payment,
             protocol_fee_shares,
         } = self.apply_fee(vault_protocol, vault_equity, now)?;
-        println!("proto fee: {}", protocol_fee_shares);
-        println!("mgmt fee: {}", management_fee_shares);
 
         let vault_shares_before: u128 = self.get_manager_shares(vault_protocol)?;
 
@@ -563,6 +566,7 @@ impl Vault {
             vault_equity,
             self.get_manager_shares(vault_protocol)?,
             self.total_shares,
+            rebase_divisor,
         )?;
 
         validate!(
@@ -877,7 +881,7 @@ impl Vault {
             )?;
         }
 
-        self.apply_rebase(vault_protocol, vault_equity)?;
+        let rebase_divisor = self.apply_rebase(vault_protocol, vault_equity)?;
         let VaultFee {
             management_fee_payment,
             management_fee_shares,
@@ -892,6 +896,7 @@ impl Vault {
             vault_equity,
             self.get_protocol_shares(vault_protocol),
             self.total_shares,
+            rebase_divisor,
         )?;
 
         validate!(

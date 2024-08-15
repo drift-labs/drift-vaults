@@ -1,10 +1,10 @@
 #[cfg(test)]
 mod vault_fcn {
+    use crate::withdraw_request::WithdrawRequest;
+    use crate::{Vault, VaultDepositor, WithdrawUnit};
     use anchor_lang::prelude::Pubkey;
     use drift::math::constants::{ONE_YEAR, QUOTE_PRECISION_U64};
     use drift::math::insurance::if_shares_to_vault_amount as depositor_shares_to_vault_amount;
-
-    use crate::{Vault, VaultDepositor, WithdrawUnit};
 
     #[test]
     fn test_manager_withdraw() {
@@ -539,6 +539,149 @@ mod vault_fcn {
         assert_eq!(vd_amount, 2_849_997_150); // gainz
 
         assert_eq!(vd_amount + vault_manager_amount_after, vault_equity - 1);
+    }
+
+    #[test]
+    fn test_vd_request_withdraw_after_rebase() {
+        let mut now = 123456789;
+        let vault = &mut Vault::default();
+        let mut vp = None;
+
+        let mut vault_equity: u64 = 0;
+        let deposit_amount: u64 = 100 * QUOTE_PRECISION_U64;
+
+        assert_eq!(vault.user_shares, 0);
+        assert_eq!(vault.total_shares, 0);
+        assert_eq!(vault.shares_base, 0);
+
+        let vd = &mut VaultDepositor::new(
+            Pubkey::default(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            now,
+        );
+        vd.deposit(deposit_amount, vault_equity, vault, &mut vp, now)
+            .unwrap(); // new user deposits $2000
+        let vd_shares = vd.checked_vault_shares(vault).unwrap();
+        now += 100;
+        assert_eq!(vault.user_shares, deposit_amount as u128);
+        assert_eq!(vault.total_shares, deposit_amount as u128);
+        assert_eq!(vault.shares_base, 0);
+        assert_eq!(vd.checked_vault_shares(vault).unwrap(), vault.user_shares);
+        assert_eq!(vd.vault_shares_base, vault.shares_base);
+        vault_equity += deposit_amount;
+
+        // down 99.9%
+        vault_equity /= 1000;
+        now += 100;
+
+        // request_withdraw triggers rebase
+        vd.request_withdraw(
+            vd_shares as u64,
+            WithdrawUnit::Shares,
+            vault_equity,
+            vault,
+            &mut vp,
+            now,
+        )
+        .expect("request withdraw");
+
+        assert_eq!(
+            vd.last_withdraw_request,
+            WithdrawRequest {
+                shares: vd_shares / 100, // expected rebase by expo_diff 2
+                value: vault_equity,
+                ts: now,
+            }
+        );
+
+        println!(
+            "last_withdraw_request 1: {:?}, vault eq: {}",
+            vd.last_withdraw_request, vault_equity
+        );
+
+        // // down another 50%
+        // vault_equity /= 2;
+        now += 100;
+
+        let (withdraw_amount, finishing_liquidation) = vd
+            .withdraw(vault_equity, vault, &mut vp, now)
+            .expect("withdraw");
+        assert_eq!(withdraw_amount, vault_equity);
+        println!(
+            "final withdraw_amount 1: {}, vault eq: {}",
+            withdraw_amount, vault_equity
+        );
+        assert!(!finishing_liquidation);
+    }
+
+    #[test]
+    fn test_vd_request_withdraw_before_rebase() {
+        let mut now = 123456789;
+        let vault = &mut Vault::default();
+        let mut vp = None;
+
+        let mut vault_equity: u64 = 0;
+        let deposit_amount: u64 = 100 * QUOTE_PRECISION_U64;
+
+        assert_eq!(vault.user_shares, 0);
+        assert_eq!(vault.total_shares, 0);
+        assert_eq!(vault.shares_base, 0);
+
+        let vd = &mut VaultDepositor::new(
+            Pubkey::default(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            now,
+        );
+        vd.deposit(deposit_amount, vault_equity, vault, &mut vp, now)
+            .unwrap(); // new user deposits $2000
+        let vd_shares = vd.checked_vault_shares(vault).unwrap();
+        now += 100;
+        assert_eq!(vault.user_shares, deposit_amount as u128);
+        assert_eq!(vault.total_shares, deposit_amount as u128);
+        assert_eq!(vault.shares_base, 0);
+        assert_eq!(vd.checked_vault_shares(vault).unwrap(), vault.user_shares);
+        assert_eq!(vd.vault_shares_base, vault.shares_base);
+        vault_equity += deposit_amount;
+
+        vd.request_withdraw(
+            vd_shares as u64,
+            WithdrawUnit::Shares,
+            vault_equity,
+            vault,
+            &mut vp,
+            now,
+        )
+        .expect("request withdraw");
+
+        assert_eq!(
+            vd.last_withdraw_request,
+            WithdrawRequest {
+                shares: vd_shares,
+                value: vault_equity,
+                ts: now,
+            }
+        );
+        println!(
+            "last_withdraw_request 2: {:?}, vault equity: {}",
+            vd.last_withdraw_request, vault_equity
+        );
+
+        // down 99.9%
+        vault_equity /= 1000;
+        now += 100;
+
+        // withdraw will trigger a rebase
+        let (withdraw_amount, finishing_liquidation) = vd
+            .withdraw(vault_equity, vault, &mut None, now)
+            .expect("withdraw");
+        assert_eq!(withdraw_amount, vault_equity);
+        println!(
+            "final withdraw_amount 2: {}, vault eq: {}",
+            withdraw_amount, vault_equity
+        );
+        assert!(!finishing_liquidation);
     }
 }
 
