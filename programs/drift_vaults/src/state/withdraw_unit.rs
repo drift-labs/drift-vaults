@@ -26,6 +26,7 @@ impl WithdrawUnit {
         vault_equity: u64,
         shares: u128,
         total_shares: u128,
+        rebase_divisor: Option<u128>,
     ) -> VaultResult<(u64, u128)> {
         match self {
             WithdrawUnit::Token => {
@@ -35,7 +36,10 @@ impl WithdrawUnit {
                 Ok((withdraw_value, n_shares))
             }
             WithdrawUnit::Shares => {
-                let n_shares = withdraw_amount.cast::<u128>()?;
+                let mut n_shares = withdraw_amount.cast::<u128>()?;
+                if let Some(rebase_divisor) = rebase_divisor {
+                    n_shares = n_shares.safe_div(rebase_divisor)?;
+                }
                 let withdraw_value =
                     depositor_shares_to_vault_amount(n_shares, total_shares, vault_equity)?
                         .min(vault_equity);

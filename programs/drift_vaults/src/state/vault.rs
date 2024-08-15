@@ -168,15 +168,18 @@ impl Vault {
         Ok(manager_shares)
     }
 
-    pub fn apply_rebase(&mut self, vault_equity: u64) -> Result<()> {
+    pub fn apply_rebase(&mut self, vault_equity: u64) -> Result<Option<u128>> {
+        let mut rebase_divisor = None;
         if vault_equity != 0 && vault_equity.cast::<u128>()? < self.total_shares {
-            let (expo_diff, rebase_divisor) =
+            let (expo_diff, _rebase_divisor) =
                 calculate_rebase_info(self.total_shares, vault_equity)?;
 
             if expo_diff != 0 {
-                self.total_shares = self.total_shares.safe_div(rebase_divisor)?;
-                self.user_shares = self.user_shares.safe_div(rebase_divisor)?;
+                self.total_shares = self.total_shares.safe_div(_rebase_divisor)?;
+                self.user_shares = self.user_shares.safe_div(_rebase_divisor)?;
                 self.shares_base = self.shares_base.safe_add(expo_diff)?;
+
+                rebase_divisor = Some(_rebase_divisor);
 
                 msg!("rebasing vault: expo_diff={}", expo_diff);
             }
@@ -186,7 +189,7 @@ impl Vault {
             self.total_shares = vault_equity.cast::<u128>()?;
         }
 
-        Ok(())
+        Ok(rebase_divisor)
     }
 
     /// Returns the equity value of the vault, in the vault's spot market token min precision
@@ -293,7 +296,7 @@ impl Vault {
         vault_equity: u64,
         now: i64,
     ) -> Result<()> {
-        self.apply_rebase(vault_equity)?;
+        let rebase_divisor = self.apply_rebase(vault_equity)?;
         let (management_fee, management_fee_shares) =
             self.apply_management_fee(vault_equity, now)?;
 
@@ -304,6 +307,7 @@ impl Vault {
             vault_equity,
             self.get_manager_shares()?,
             self.total_shares,
+            rebase_divisor,
         )?;
 
         validate!(
