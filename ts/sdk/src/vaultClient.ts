@@ -98,6 +98,13 @@ export class VaultClient {
 		}
 	}
 
+	/**
+	 * Unsubscribes from the vault users map. Call this to clean up any dangling promises.
+	 */
+	public async unsubscribe() {
+		await this.vaultUsers.unsubscribe();
+	}
+
 	public async getVault(vault: PublicKey): Promise<Vault> {
 		return await this.program.account.vault.fetch(vault);
 	}

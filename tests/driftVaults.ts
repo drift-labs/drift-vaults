@@ -311,6 +311,8 @@ describe('driftVaults', () => {
 	});
 
 	after(async () => {
+		bulkAccountLoader.stopPolling();
+
 		await managerClient.driftClient.unsubscribe();
 		await fillerClient.driftClient.unsubscribe();
 		await vdClient.driftClient.unsubscribe();
@@ -326,7 +328,12 @@ describe('driftVaults', () => {
 		await _delegateUser.unsubscribe();
 		await _protocolUser.unsubscribe();
 
-		bulkAccountLoader.stopPolling();
+		await managerClient.unsubscribe();
+		await fillerClient.unsubscribe();
+		await vdClient.unsubscribe();
+		await vd2Client.unsubscribe();
+		await delegateClient.unsubscribe();
+		await protocolClient.unsubscribe();
 	});
 
 	//
