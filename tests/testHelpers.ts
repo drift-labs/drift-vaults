@@ -908,6 +908,7 @@ export async function bootstrapSignerClientAndUser(params: {
 	usdcAmount: BN;
 	depositCollateral?: boolean;
 	vaultClientCliMode?: boolean;
+	skipUser?: boolean;
 	driftClientConfig?: Omit<DriftClientConfig, 'connection' | 'wallet'>;
 }): Promise<{
 	signer: Keypair;
@@ -983,7 +984,9 @@ export async function bootstrapSignerClientAndUser(params: {
 		driftClient,
 		userAccountPublicKey: await driftClient.getUserAccountPublicKey(),
 	});
-	await user.subscribe();
+	if (!params.skipUser) {
+		await user.subscribe();
+	}
 	return {
 		signer,
 		user,

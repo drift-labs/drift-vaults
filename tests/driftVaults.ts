@@ -83,13 +83,16 @@ describe('driftVaults', () => {
 	let vd2: Keypair;
 	let vd2Client: VaultClient;
 	let vd2UserUSDCAccount: Keypair;
+	let _vd2User: User;
 
 	let delegate: Keypair;
 	let delegateClient: VaultClient;
+	let _delegateUser: User;
 
 	let protocol: Keypair;
 	let protocolClient: VaultClient;
 	let protocolVdUserUSDCAccount: Keypair;
+	let _protocolUser: User;
 
 	// ammInvariant == k == x * y
 	// const mantissaSqrtScale = new BN(Math.sqrt(PRICE_PRECISION.toNumber()));
@@ -190,6 +193,7 @@ describe('driftVaults', () => {
 			programId: program.programId,
 			usdcMint,
 			usdcAmount,
+			skipUser: true,
 			driftClientConfig: {
 				accountSubscription: {
 					type: 'websocket',
@@ -204,6 +208,7 @@ describe('driftVaults', () => {
 		});
 		delegate = bootstrapDelegate.signer;
 		delegateClient = bootstrapDelegate.vaultClient;
+		_delegateUser = bootstrapDelegate.user;
 
 		// init a market filler for manager to trade against
 		const bootstrapFiller = await bootstrapSignerClientAndUser({
@@ -257,6 +262,7 @@ describe('driftVaults', () => {
 			programId: program.programId,
 			usdcMint,
 			usdcAmount,
+			skipUser: true,
 			depositCollateral: false,
 			driftClientConfig: {
 				accountSubscription: {
@@ -273,6 +279,7 @@ describe('driftVaults', () => {
 		vd2 = bootstrapVD2.signer;
 		vd2Client = bootstrapVD2.vaultClient;
 		vd2UserUSDCAccount = bootstrapVD2.userUSDCAccount;
+		_vd2User = bootstrapVD2.user;
 
 		// init protocol
 		const bootstrapProtocol = await bootstrapSignerClientAndUser({
@@ -280,6 +287,7 @@ describe('driftVaults', () => {
 			programId: program.programId,
 			usdcMint,
 			usdcAmount,
+			skipUser: true,
 			driftClientConfig: {
 				accountSubscription: {
 					type: 'websocket',
@@ -295,6 +303,7 @@ describe('driftVaults', () => {
 		protocol = bootstrapProtocol.signer;
 		protocolClient = bootstrapProtocol.vaultClient;
 		protocolVdUserUSDCAccount = bootstrapProtocol.userUSDCAccount;
+		_protocolUser = bootstrapProtocol.user;
 
 		// start account loader
 		bulkAccountLoader.startPolling();
@@ -313,6 +322,9 @@ describe('driftVaults', () => {
 		await managerUser.unsubscribe();
 		await fillerUser.unsubscribe();
 		await vdUser.subscribe();
+		await _vd2User.unsubscribe();
+		await _delegateUser.unsubscribe();
+		await _protocolUser.unsubscribe();
 
 		bulkAccountLoader.stopPolling();
 	});
