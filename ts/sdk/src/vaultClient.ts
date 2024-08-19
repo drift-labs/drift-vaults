@@ -8,6 +8,7 @@ import {
 	getUserStatsAccountPublicKey,
 	TEN,
 	UserMap,
+	unstakeSharesToAmount as depositSharesToVaultAmount,
 	ZERO,
 } from '@drift-labs/sdk';
 import { BorshAccountsCoder, Program, ProgramAccount } from '@coral-xyz/anchor';
@@ -21,8 +22,10 @@ import {
 	getTokenVaultAddressSync,
 	getVaultAddressSync,
 	getVaultDepositorAddressSync,
+	getVaultProtocolAddressSync,
 } from './addresses';
 import {
+	AccountMeta,
 	AddressLookupTableAccount,
 	ComputeBudgetProgram,
 	PublicKey,
@@ -37,9 +40,17 @@ import {
 	getAssociatedTokenAddressSync,
 	TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
-import { Vault, VaultDepositor, WithdrawUnit } from './types/types';
+import {
+	Vault,
+	VaultDepositor,
+	VaultParams,
+	VaultProtocol,
+	VaultProtocolParams,
+	WithdrawUnit,
+} from './types/types';
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
 import { UserMapConfig } from '@drift-labs/sdk/lib/userMap/userMapConfig';
+import { calculateRealizedVaultDepositorEquity } from './math';
 
 export type TxParams = {
 	cuLimit?: number;
@@ -87,8 +98,14 @@ export class VaultClient {
 		}
 	}
 
+	/**
+	 * Unsubscribes from the vault users map. Call this to clean up any dangling promises.
+	 */
+	public async unsubscribe() {
+		await this.vaultUsers.unsubscribe();
+	}
+
 	public async getVault(vault: PublicKey): Promise<Vault> {
-		// @ts-ignore
 		return await this.program.account.vault.fetch(vault);
 	}
 
@@ -116,6 +133,27 @@ export class VaultClient {
 		return {
 			vaultDepositor: vaultDepositorAndSlot.data,
 			slot: vaultDepositorAndSlot.context.slot,
+		};
+	}
+
+	public getVaultProtocolAddress(vault: PublicKey): PublicKey {
+		return getVaultProtocolAddressSync(this.program.programId, vault);
+	}
+
+	public async getVaultProtocol(
+		vaultProtocol: PublicKey
+	): Promise<VaultProtocol> {
+		return await this.program.account.vaultProtocol.fetch(vaultProtocol);
+	}
+
+	public async getVaultProtocolAndSlot(
+		vaultProtocol: PublicKey
+	): Promise<{ vaultProtocol: VaultProtocol; slot: number }> {
+		const vaultProtocolAndSlot =
+			await this.program.account.vaultProtocol.fetchAndContext(vaultProtocol);
+		return {
+			vaultProtocol: vaultProtocolAndSlot.data as VaultProtocol,
+			slot: vaultProtocolAndSlot.context.slot,
 		};
 	}
 
@@ -189,13 +227,21 @@ export class VaultClient {
 	/**
 	 *
 	 * @param vault pubkey
+	 * @param factorUnrealizedPNL add unrealized pnl to net balance
 	 * @returns vault equity, in USDC
 	 */
 	public async calculateVaultEquity(params: {
 		address?: PublicKey;
 		vault?: Vault;
+		factorUnrealizedPNL?: boolean;
 	}): Promise<BN> {
 		try {
+			// defaults to true if undefined
+			let factorUnrealizedPNL = true;
+			if (params.factorUnrealizedPNL !== undefined) {
+				factorUnrealizedPNL = params.factorUnrealizedPNL;
+			}
+
 			let vaultAccount: Vault;
 			if (params.address !== undefined) {
 				// @ts-ignore
@@ -209,9 +255,13 @@ export class VaultClient {
 			const user = await this.getSubscribedVaultUser(vaultAccount.user);
 
 			const netSpotValue = user.getNetSpotMarketValue();
-			const unrealizedPnl = user.getUnrealizedPNL(true, undefined, undefined);
 
-			return netSpotValue.add(unrealizedPnl);
+			if (factorUnrealizedPNL) {
+				const unrealizedPnl = user.getUnrealizedPNL(true, undefined, undefined);
+				return netSpotValue.add(unrealizedPnl);
+			} else {
+				return netSpotValue;
+			}
 		} catch (err) {
 			console.error('VaultClient ~ err:', err);
 			return ZERO;
@@ -221,15 +271,16 @@ export class VaultClient {
 	/**
 	 *
 	 * @param vault pubkey
-	 * @returns vault equity, in spot deposit asset
+	 * @param factorUnrealizedPNL add unrealized pnl to existing equity
+	 * @returns total vault equity, in spot deposit asset
 	 */
 	public async calculateVaultEquityInDepositAsset(params: {
 		address?: PublicKey;
 		vault?: Vault;
+		factorUnrealizedPNL?: boolean;
 	}): Promise<BN> {
 		let vaultAccount: Vault;
 		if (params.address !== undefined) {
-			// @ts-ignore
 			vaultAccount = await this.program.account.vault.fetch(params.address);
 		} else if (params.vault !== undefined) {
 			vaultAccount = params.vault;
@@ -238,6 +289,7 @@ export class VaultClient {
 		}
 		const vaultEquity = await this.calculateVaultEquity({
 			vault: vaultAccount,
+			factorUnrealizedPNL: params.factorUnrealizedPNL,
 		});
 		const spotMarket = this.driftClient.getSpotMarketAccount(
 			vaultAccount.spotMarketIndex
@@ -250,6 +302,124 @@ export class VaultClient {
 		return vaultEquity.mul(spotPrecision).div(spotOracle.price);
 	}
 
+	/**
+	 * @param params
+	 * @returns vault depositor equity, in spot market value (which is usually USDC)
+	 */
+	public async calculateWithdrawableVaultDepositorEquity(params: {
+		vaultDepositorAddress?: PublicKey;
+		vaultDepositor?: VaultDepositor;
+		vaultAddress?: PublicKey;
+		vault?: Vault;
+	}): Promise<BN> {
+		let vaultAccount: Vault;
+		if (params.vaultAddress !== undefined) {
+			vaultAccount = await this.program.account.vault.fetch(
+				params.vaultAddress
+			);
+		} else if (params.vault !== undefined) {
+			vaultAccount = params.vault;
+		} else {
+			throw new Error('Must supply vaultAddress or vault');
+		}
+
+		let vaultDepositorAccount: VaultDepositor;
+		if (params.vaultDepositorAddress !== undefined) {
+			vaultDepositorAccount = await this.program.account.vaultDepositor.fetch(
+				params.vaultDepositorAddress
+			);
+		} else if (params.vaultDepositor !== undefined) {
+			vaultDepositorAccount = params.vaultDepositor;
+		} else {
+			throw new Error('Must supply vaultDepositorAddress or vaultDepositor');
+		}
+
+		const vaultEquity = await this.calculateVaultEquity({
+			vault: vaultAccount,
+			factorUnrealizedPNL: false,
+		});
+		return calculateRealizedVaultDepositorEquity(
+			vaultDepositorAccount,
+			vaultEquity,
+			vaultAccount
+		);
+	}
+
+	public async calculateWithdrawableVaultDepositorEquityInDepositAsset(params: {
+		vaultDepositorAddress?: PublicKey;
+		vaultDepositor?: VaultDepositor;
+		vaultAddress?: PublicKey;
+		vault?: Vault;
+	}): Promise<BN> {
+		let vaultAccount: Vault;
+		if (params.vaultAddress !== undefined) {
+			vaultAccount = await this.program.account.vault.fetch(
+				params.vaultAddress
+			);
+		} else if (params.vault !== undefined) {
+			vaultAccount = params.vault;
+		} else {
+			throw new Error('Must supply vaultAddress or vault');
+		}
+
+		let vaultDepositorAccount: VaultDepositor;
+		if (params.vaultDepositorAddress !== undefined) {
+			vaultDepositorAccount = await this.program.account.vaultDepositor.fetch(
+				params.vaultDepositorAddress
+			);
+		} else if (params.vaultDepositor !== undefined) {
+			vaultDepositorAccount = params.vaultDepositor;
+		} else {
+			throw new Error('Must supply vaultDepositorAddress or vaultDepositor');
+		}
+
+		let vaultProtocol: VaultProtocol | undefined = undefined;
+		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+			vaultProtocol = await this.program.account.vaultProtocol.fetch(
+				vaultAccount.vaultProtocol
+			);
+		}
+
+		const vaultEquity = await this.calculateVaultEquity({
+			vault: vaultAccount,
+			factorUnrealizedPNL: false,
+		});
+		const vdEquity = calculateRealizedVaultDepositorEquity(
+			vaultDepositorAccount,
+			vaultEquity,
+			vaultAccount,
+			vaultProtocol
+		);
+
+		const spotMarket = this.driftClient.getSpotMarketAccount(
+			vaultAccount.spotMarketIndex
+		);
+		const spotOracle = this.driftClient.getOracleDataForSpotMarket(
+			vaultAccount.spotMarketIndex
+		);
+		const spotPrecision = TEN.pow(new BN(spotMarket!.decimals));
+
+		return vdEquity.mul(spotPrecision).div(spotOracle.price);
+	}
+
+	public async calculateVaultProtocolEquity(params: {
+		vault: PublicKey;
+	}): Promise<BN> {
+		const vaultAccount = await this.program.account.vault.fetch(params.vault);
+		const vaultTotalEquity = await this.calculateVaultEquity({
+			vault: vaultAccount,
+		});
+		const vaultProtocol = this.getVaultProtocolAddress(params.vault);
+		const vpAccount = await this.program.account.vaultProtocol.fetch(
+			vaultProtocol
+		);
+		return depositSharesToVaultAmount(
+			vpAccount.protocolProfitAndFeeShares,
+			vaultAccount.totalShares,
+			vaultTotalEquity
+		);
+	}
+
 	public async initializeVault(params: {
 		name: number[];
 		spotMarketIndex: number;
@@ -260,7 +430,17 @@ export class VaultClient {
 		profitShare: number;
 		hurdleRate: number;
 		permissioned: boolean;
+		vaultProtocol?: VaultProtocolParams;
 	}): Promise<TransactionSignature> {
+		// This is a workaround to make client backwards compatible.
+		// VaultProtocol is optionally undefined, but the anchor type is optionally null.
+		// Old clients will default to undefined which prevents old clients from having to pass in a null value.
+		// Instead, we can cast to null internally.
+		const _params: VaultParams = {
+			...params,
+			vaultProtocol: params.vaultProtocol ? params.vaultProtocol : null,
+		};
+
 		const vault = getVaultAddressSync(this.program.programId, params.name);
 		const tokenAccount = getTokenVaultAddressSync(
 			this.program.programId,
@@ -297,18 +477,44 @@ export class VaultClient {
 			driftProgram: this.driftClient.program.programId,
 		};
 
-		return await this.program.methods
-			.initializeVault(params)
-			.preInstructions([
-				ComputeBudgetProgram.setComputeUnitLimit({
-					units: 400_000,
-				}),
-				ComputeBudgetProgram.setComputeUnitPrice({
-					microLamports: 300_000,
-				}),
-			])
-			.accounts(accounts)
-			.rpc();
+		if (params.vaultProtocol) {
+			const vaultProtocol = this.getVaultProtocolAddress(
+				getVaultAddressSync(this.program.programId, params.name)
+			);
+			const remainingAccounts: AccountMeta[] = [
+				{
+					pubkey: vaultProtocol,
+					isSigner: false,
+					isWritable: true,
+				},
+			];
+			return await this.program.methods
+				.initializeVault(_params)
+				.preInstructions([
+					ComputeBudgetProgram.setComputeUnitLimit({
+						units: 400_000,
+					}),
+					ComputeBudgetProgram.setComputeUnitPrice({
+						microLamports: 300_000,
+					}),
+				])
+				.accounts(accounts)
+				.remainingAccounts(remainingAccounts)
+				.rpc();
+		} else {
+			return await this.program.methods
+				.initializeVault(_params)
+				.preInstructions([
+					ComputeBudgetProgram.setComputeUnitLimit({
+						units: 400_000,
+					}),
+					ComputeBudgetProgram.setComputeUnitPrice({
+						microLamports: 300_000,
+					}),
+				])
+				.accounts(accounts)
+				.rpc();
+		}
 	}
 
 	/**
@@ -344,7 +550,7 @@ export class VaultClient {
 	/**
 	 * Updates the vault margin trading status.
 	 * @param vault vault address to update
-	 * @param enabeld whether to enable margin trading
+	 * @param enabled whether to enable margin trading
 	 * @returns
 	 */
 	public async updateMarginTradingEnabled(
@@ -388,6 +594,14 @@ export class VaultClient {
 			userAccounts: [user.getUserAccount()],
 			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
 		});
+		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+			const vaultProtocol = this.getVaultProtocolAddress(vault);
+			remainingAccounts.push({
+				pubkey: vaultProtocol,
+				isSigner: false,
+				isWritable: true,
+			});
+		}
 
 		return await this.program.methods
 			.managerDeposit(amount)
@@ -435,6 +649,14 @@ export class VaultClient {
 			userAccounts: [user.getUserAccount()],
 			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
 		});
+		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+			const vaultProtocol = this.getVaultProtocolAddress(vault);
+			remainingAccounts.push({
+				pubkey: vaultProtocol,
+				isSigner: false,
+				isWritable: true,
+			});
+		}
 
 		const userStatsKey = getUserStatsAccountPublicKey(
 			this.driftClient.program.programId,
@@ -499,6 +721,14 @@ export class VaultClient {
 		const remainingAccounts = this.driftClient.getRemainingAccounts({
 			userAccounts: [user.getUserAccount()],
 		});
+		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+			const vaultProtocol = this.getVaultProtocolAddress(vault);
+			remainingAccounts.push({
+				pubkey: vaultProtocol,
+				isSigner: false,
+				isWritable: true,
+			});
+		}
 
 		if (this.cliMode) {
 			return await this.program.methods
@@ -535,6 +765,14 @@ export class VaultClient {
 			userAccounts: [user.getUserAccount()],
 			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
 		});
+		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+			const vaultProtocol = this.getVaultProtocolAddress(vault);
+			remainingAccounts.push({
+				pubkey: vaultProtocol,
+				isSigner: false,
+				isWritable: true,
+			});
+		}
 
 		const spotMarket = this.driftClient.getSpotMarketAccount(
 			vaultAccount.spotMarketIndex
@@ -728,6 +966,14 @@ export class VaultClient {
 			userAccounts: [user.getUserAccount()],
 			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
 		});
+		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+			const vaultProtocol = this.getVaultProtocolAddress(vaultPubKey);
+			remainingAccounts.push({
+				pubkey: vaultProtocol,
+				isSigner: false,
+				isWritable: true,
+			});
+		}
 
 		const userStatsKey = getUserStatsAccountPublicKey(
 			this.driftClient.program.programId,
@@ -769,6 +1015,15 @@ export class VaultClient {
 		};
 	}
 
+	/**
+	 * Creates a transaction to deposit funds into the specified vault.
+	 * Uses the associated token account of the vault depositor authority and spot market mint,
+	 * and assumes it exists before calling this function.
+	 * @param vaultDepositor
+	 * @param amount
+	 * @param initVaultDepositor If true, will initialize the vault depositor account
+	 * @returns transaction
+	 */
 	public async createDepositTx(
 		vaultDepositor: PublicKey,
 		amount: BN,
@@ -781,23 +1036,28 @@ export class VaultClient {
 		const { vaultAccount, accounts, remainingAccounts } =
 			await this.prepDepositTx(vaultDepositor, amount, initVaultDepositor);
 
-		const depositIx = this.program.instruction.deposit(amount, {
-			accounts: {
-				authority: this.driftClient.wallet.publicKey,
-				...accounts,
-			},
-			remainingAccounts,
-		});
+		const ixs: TransactionInstruction[] = [];
 
 		if (initVaultDepositor) {
-			const initIx = this.createInitVaultDepositorIx(
-				vaultAccount.pubkey,
-				initVaultDepositor.authority
+			ixs.push(
+				this.createInitVaultDepositorIx(
+					vaultAccount.pubkey,
+					initVaultDepositor.authority
+				)
 			);
-			return await this.createTxn([initIx, depositIx], txParams);
-		} else {
-			return await this.createTxn([depositIx], txParams);
 		}
+
+		const depositIx = await this.program.methods
+			.deposit(amount)
+			.accounts({
+				authority: this.driftClient.wallet.publicKey,
+				...accounts,
+			})
+			.remainingAccounts(remainingAccounts)
+			.instruction();
+		ixs.push(depositIx);
+
+		return await this.createTxn(ixs, txParams);
 	}
 
 	/**
@@ -805,6 +1065,7 @@ export class VaultClient {
 	 * @param vaultDepositor
 	 * @param amount
 	 * @param initVaultDepositor If true, will initialize the vault depositor account
+	 * @param txParams
 	 * @returns
 	 */
 	public async deposit(
@@ -859,6 +1120,16 @@ export class VaultClient {
 		const remainingAccounts = this.driftClient.getRemainingAccounts({
 			userAccounts: [user.getUserAccount()],
 		});
+		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+			const vaultProtocol = this.getVaultProtocolAddress(
+				vaultDepositorAccount.vault
+			);
+			remainingAccounts.push({
+				pubkey: vaultProtocol,
+				isSigner: false,
+				isWritable: true,
+			});
+		}
 
 		const userStatsKey = getUserStatsAccountPublicKey(
 			this.driftClient.program.programId,
@@ -915,6 +1186,16 @@ export class VaultClient {
 			userAccounts: [user.getUserAccount()],
 			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
 		});
+		const vaultProtocol = this.getVaultProtocolAddress(
+			vaultDepositorAccount.vault
+		);
+		if (!vaultProtocol.equals(SystemProgram.programId)) {
+			remainingAccounts.push({
+				pubkey: vaultProtocol,
+				isSigner: false,
+				isWritable: true,
+			});
+		}
 
 		const userStatsKey = getUserStatsAccountPublicKey(
 			this.driftClient.program.programId,
@@ -966,20 +1247,30 @@ export class VaultClient {
 		};
 
 		if (this.cliMode) {
-			return await this.program.methods
-				.withdraw()
-				.accounts(accounts)
-				.remainingAccounts(remainingAccounts)
-				.rpc();
+			if (createAtaIx) {
+				return await this.program.methods
+					.withdraw()
+					.accounts(accounts)
+					.remainingAccounts(remainingAccounts)
+					.preInstructions([createAtaIx])
+					.rpc();
+			} else {
+				return await this.program.methods
+					.withdraw()
+					.accounts(accounts)
+					.remainingAccounts(remainingAccounts)
+					.rpc();
+			}
 		} else {
 			const ixs = [
-				this.program.instruction.withdraw({
-					accounts: {
+				await this.program.methods
+					.withdraw()
+					.accounts({
 						authority: this.driftClient.wallet.publicKey,
 						...accounts,
-					},
-					remainingAccounts,
-				}),
+					})
+					.remainingAccounts(remainingAccounts)
+					.instruction(),
 			];
 			if (createAtaIx) {
 				ixs.unshift(createAtaIx);
@@ -1006,6 +1297,16 @@ export class VaultClient {
 			userAccounts: [user.getUserAccount()],
 			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
 		});
+		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+			const vaultProtocol = this.getVaultProtocolAddress(
+				vaultDepositorAccount.vault
+			);
+			remainingAccounts.push({
+				pubkey: vaultProtocol,
+				isSigner: false,
+				isWritable: true,
+			});
+		}
 
 		const userStatsKey = getUserStatsAccountPublicKey(
 			this.driftClient.program.programId,
@@ -1096,6 +1397,16 @@ export class VaultClient {
 		const remainingAccounts = this.driftClient.getRemainingAccounts({
 			userAccounts: [user.getUserAccount()],
 		});
+		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+			const vaultProtocol = this.getVaultProtocolAddress(
+				vaultDepositorAccount.vault
+			);
+			remainingAccounts.push({
+				pubkey: vaultProtocol,
+				isSigner: false,
+				isWritable: true,
+			});
+		}
 
 		if (this.cliMode) {
 			return await this.program.methods
@@ -1325,5 +1636,192 @@ export class VaultClient {
 				driftCompetitionsProgram: competitionsClient.program.programId,
 			})
 			.rpc();
+	}
+
+	public async protocolRequestWithdraw(
+		vault: PublicKey,
+		amount: BN,
+		withdrawUnit: WithdrawUnit
+	): Promise<TransactionSignature> {
+		// @ts-ignore
+		const vaultAccount = (await this.program.account.vault.fetch(
+			vault
+		)) as Vault;
+		const vp = this.getVaultProtocolAddress(vault);
+		const vpAccount = (await this.program.account.vaultProtocol.fetch(
+			vp
+		)) as VaultProtocol;
+
+		if (!this.driftClient.wallet.publicKey.equals(vpAccount.protocol)) {
+			throw new Error(`Only the protocol of the vault can request a withdraw.`);
+		}
+
+		const user = await this.getSubscribedVaultUser(vaultAccount.user);
+		const remainingAccounts = this.driftClient.getRemainingAccounts({
+			userAccounts: [user.getUserAccount()],
+			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
+		});
+		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+			const vaultProtocol = this.getVaultProtocolAddress(vault);
+			remainingAccounts.push({
+				pubkey: vaultProtocol,
+				isSigner: false,
+				isWritable: true,
+			});
+		}
+
+		const userStatsKey = getUserStatsAccountPublicKey(
+			this.driftClient.program.programId,
+			vault
+		);
+
+		const driftStateKey = await this.driftClient.getStatePublicKey();
+
+		const accounts = {
+			vault,
+			driftUserStats: userStatsKey,
+			driftUser: vaultAccount.user,
+			driftState: driftStateKey,
+		};
+
+		if (this.cliMode) {
+			return await this.program.methods
+				// @ts-ignore, 0.29.0 anchor issues..
+				.managerRequestWithdraw(amount, withdrawUnit)
+				.accounts(accounts)
+				.remainingAccounts(remainingAccounts)
+				.rpc();
+		} else {
+			const requestWithdrawIx = this.program.instruction.managerRequestWithdraw(
+				// @ts-ignore
+				amount,
+				withdrawUnit,
+				{
+					accounts: {
+						manager: this.driftClient.wallet.publicKey,
+						...accounts,
+					},
+					remainingAccounts,
+				}
+			);
+
+			return await this.createAndSendTxn([requestWithdrawIx]);
+		}
+	}
+
+	public async protocolCancelWithdrawRequest(
+		vault: PublicKey
+	): Promise<TransactionSignature> {
+		const vaultAccount = await this.program.account.vault.fetch(vault);
+
+		const userStatsKey = getUserStatsAccountPublicKey(
+			this.driftClient.program.programId,
+			vault
+		);
+
+		const driftStateKey = await this.driftClient.getStatePublicKey();
+
+		const accounts = {
+			manager: this.driftClient.wallet.publicKey,
+			vault,
+			driftUserStats: userStatsKey,
+			driftUser: vaultAccount.user,
+			driftState: driftStateKey,
+		};
+
+		const user = await this.getSubscribedVaultUser(vaultAccount.user);
+		const remainingAccounts = this.driftClient.getRemainingAccounts({
+			userAccounts: [user.getUserAccount()],
+		});
+		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+			const vaultProtocol = this.getVaultProtocolAddress(vault);
+			remainingAccounts.push({
+				pubkey: vaultProtocol,
+				isSigner: false,
+				isWritable: true,
+			});
+		}
+
+		if (this.cliMode) {
+			return await this.program.methods
+				.mangerCancelWithdrawRequest()
+				.accounts(accounts)
+				.remainingAccounts(remainingAccounts)
+				.rpc();
+		} else {
+			const cancelRequestWithdrawIx =
+				this.program.instruction.mangerCancelWithdrawRequest({
+					accounts: {
+						...accounts,
+						manager: this.driftClient.wallet.publicKey,
+					},
+					remainingAccounts,
+				});
+
+			return await this.createAndSendTxn([cancelRequestWithdrawIx]);
+		}
+	}
+
+	public async protocolWithdraw(
+		vault: PublicKey
+	): Promise<TransactionSignature> {
+		const vaultAccount = await this.program.account.vault.fetch(vault);
+
+		if (!this.driftClient.wallet.publicKey.equals(vaultAccount.manager)) {
+			throw new Error(`Only the manager of the vault can request a withdraw.`);
+		}
+
+		const user = await this.getSubscribedVaultUser(vaultAccount.user);
+
+		const remainingAccounts = this.driftClient.getRemainingAccounts({
+			userAccounts: [user.getUserAccount()],
+			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
+		});
+		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+			const vaultProtocol = this.getVaultProtocolAddress(vault);
+			remainingAccounts.push({
+				pubkey: vaultProtocol,
+				isSigner: false,
+				isWritable: true,
+			});
+		}
+
+		const spotMarket = this.driftClient.getSpotMarketAccount(
+			vaultAccount.spotMarketIndex
+		);
+		if (!spotMarket) {
+			throw new Error(
+				`Spot market ${vaultAccount.spotMarketIndex} not found on driftClient`
+			);
+		}
+
+		const ix = this.program.instruction.managerWithdraw({
+			accounts: {
+				vault,
+				manager: this.driftClient.wallet.publicKey,
+				vaultTokenAccount: vaultAccount.tokenAccount,
+				driftUser: await getUserAccountPublicKey(
+					this.driftClient.program.programId,
+					vault
+				),
+				driftProgram: this.driftClient.program.programId,
+				driftUserStats: getUserStatsAccountPublicKey(
+					this.driftClient.program.programId,
+					vault
+				),
+				driftState: await this.driftClient.getStatePublicKey(),
+				driftSpotMarketVault: spotMarket.vault,
+				userTokenAccount: getAssociatedTokenAddressSync(
+					spotMarket.mint,
+					this.driftClient.wallet.publicKey
+				),
+				driftSigner: this.driftClient.getStateAccount().signer,
+				tokenProgram: TOKEN_PROGRAM_ID,
+			},
+			remainingAccounts,
+		});
+		return this.createAndSendTxn([ix], {
+			cuLimit: 1_000_000,
+		});
 	}
 }
