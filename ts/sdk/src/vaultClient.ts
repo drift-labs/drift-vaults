@@ -1357,12 +1357,10 @@ export class VaultClient {
 				);
 
 			if (initVaultDepositor) {
-				console.log('1');
 				await this.initializeVaultDepositor(
 					vaultAccount.pubkey,
 					initVaultDepositor.authority
 				);
-				console.log('2');
 			}
 			return this.program.methods
 				.deposit(amount)

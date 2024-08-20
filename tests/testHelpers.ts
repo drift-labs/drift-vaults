@@ -48,8 +48,16 @@ import {
 	BASE_PRECISION,
 	parseLogs,
 } from '@drift-labs/sdk';
-import { DriftVaults, getVaultDepositorAddressSync, IDL, VaultClient } from '../ts/sdk';
-import { getTokenizedVaultAddressSync, getTokenizedVaultMintAddressSync } from '../ts/sdk/src';
+import {
+	DriftVaults,
+	getVaultDepositorAddressSync,
+	IDL,
+	VaultClient,
+} from '../ts/sdk';
+import {
+	getTokenizedVaultAddressSync,
+	getTokenizedVaultMintAddressSync,
+} from '../ts/sdk/src';
 import { Metaplex } from '@metaplex-foundation/js';
 
 export async function mockOracle(

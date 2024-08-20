@@ -1,10 +1,9 @@
-use crate::{TokenizedVaultDepositor, Vault, VaultDepositor};
-
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::get_associated_token_address;
 use drift::state::spot_market::SpotMarket;
 
 use crate::state::VaultProtocol;
+use crate::{TokenizedVaultDepositor, Vault, VaultDepositor};
 
 pub fn is_vault_for_vault_depositor(
     vault_depositor: &AccountLoader<VaultDepositor>,

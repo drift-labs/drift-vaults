@@ -1,16 +1,15 @@
-use crate::constraints::{
-    is_delegate_for_vault, is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault,
-    is_vault_for_vault_depositor,
-};
-use crate::{Vault, VaultDepositor, VaultProtocolProvider};
-
-use crate::{validate, AccountMapProvider};
 use anchor_lang::prelude::*;
 use drift::instructions::optional_accounts::AccountMaps;
 use drift::program::Drift;
 use drift::state::user::User;
 
+use crate::constraints::{
+    is_delegate_for_vault, is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault,
+    is_vault_for_vault_depositor,
+};
 use crate::error::ErrorCode;
+use crate::{validate, AccountMapProvider};
+use crate::{Vault, VaultDepositor, VaultProtocolProvider};
 
 pub fn apply_profit_share<'c: 'info, 'info>(
     ctx: Context<'_, '_, 'c, 'info, ApplyProfitShare<'info>>,

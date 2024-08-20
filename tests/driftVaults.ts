@@ -781,8 +781,8 @@ describe('driftVaults', () => {
 				userUSDCAccount.publicKey
 			);
 		} catch (e) {
-			console.error(e)
-			assert(false)
+			console.error(e);
+			assert(false);
 		}
 
 		await validateTotalUserShares(program, vault);
@@ -1230,7 +1230,8 @@ describe('driftVaults', () => {
 				address: vault,
 			});
 		console.log(
-			`Vault equity (solprice: ${solPrice1.toString()}): ${vaultEquity2.toString()} (${(vaultEquity2.toNumber() / vaultEquity.toNumber() - 1) * 100
+			`Vault equity (solprice: ${solPrice1.toString()}): ${vaultEquity2.toString()} (${
+				(vaultEquity2.toNumber() / vaultEquity.toNumber() - 1) * 100
 			}% return)`
 		);
 
@@ -1722,7 +1723,7 @@ describe('driftVaults', () => {
 		);
 		assert(
 			finalSolPerpPrice ===
-			solPrice.price.toNumber() / PRICE_PRECISION.toNumber()
+				solPrice.price.toNumber() / PRICE_PRECISION.toNumber()
 		);
 
 		const solPerpMarket = delegateClient.driftClient.getPerpMarketAccount(0);
@@ -1740,7 +1741,7 @@ describe('driftVaults', () => {
 		assert(pnl === upnl);
 		assert(
 			solPerpPos.quoteAssetAmount.toNumber() / QUOTE_PRECISION.toNumber() ==
-			upnl
+				upnl
 		);
 		assert(solPerpQuote === pnl);
 
