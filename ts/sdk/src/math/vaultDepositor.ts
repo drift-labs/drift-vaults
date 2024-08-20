@@ -5,7 +5,7 @@ import {
 	unstakeSharesToAmount as depositSharesToVaultAmount,
 	stakeAmountToShares as vaultAmountToDepositorShares,
 } from '@drift-labs/sdk';
-import { Vault, VaultDepositor } from '../types/types';
+import { Vault, VaultDepositor, VaultProtocol } from '../types/types';
 
 /**
  * Calculates the unrealized profitShare for a vaultDepositor
@@ -42,17 +42,49 @@ export function calculateApplyProfitShare(
 export function calculateProfitShare(
 	vaultDepositor: VaultDepositor,
 	totalAmount: BN,
-	vault: Vault
+	vault: Vault,
+	vaultProtocol?: VaultProtocol
 ) {
 	const profit = totalAmount.sub(
 		vaultDepositor.netDeposits.add(vaultDepositor.cumulativeProfitShareAmount)
 	);
+	let profitShare = vault.profitShare;
+	if (vaultProtocol) {
+		profitShare += vaultProtocol.protocolProfitShare;
+	}
 	if (profit.gt(ZERO)) {
 		const profitShareAmount = profit
-			.mul(new BN(vault.profitShare))
+			.mul(new BN(profitShare))
 			.div(PERCENTAGE_PRECISION);
 		return profitShareAmount;
 	}
-
 	return ZERO;
+}
+
+/**
+ * Calculates the equity across deposits and realized profit for a vaultDepositor
+ * @param vaultDepositor vault depositor account
+ * @param vaultEquity total vault equity
+ * @param vault vault account
+ * @param vaultProtocol if vault account has "vaultProtocol" then this is needed
+ * @returns
+ */
+export function calculateRealizedVaultDepositorEquity(
+	vaultDepositor: VaultDepositor,
+	vaultEquity: BN,
+	vault: Vault,
+	vaultProtocol?: VaultProtocol
+): BN {
+	const vdAmount = depositSharesToVaultAmount(
+		vaultDepositor.vaultShares,
+		vault.totalShares,
+		vaultEquity
+	);
+	const profitShareAmount = calculateProfitShare(
+		vaultDepositor,
+		vdAmount,
+		vault,
+		vaultProtocol
+	);
+	return vdAmount.sub(profitShareAmount);
 }

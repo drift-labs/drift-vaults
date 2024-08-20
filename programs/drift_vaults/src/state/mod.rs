@@ -3,6 +3,7 @@ pub use tokenized_vault_depositor::*;
 pub use traits::*;
 pub use vault::*;
 pub use vault_depositor::*;
+pub use vault_protocol::*;
 pub use withdraw_unit::*;
 
 pub mod account_maps;
@@ -11,5 +12,6 @@ mod tokenized_vault_depositor;
 pub mod traits;
 mod vault;
 mod vault_depositor;
+mod vault_protocol;
 pub mod withdraw_request;
 mod withdraw_unit;

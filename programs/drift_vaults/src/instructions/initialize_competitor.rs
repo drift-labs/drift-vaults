@@ -1,11 +1,12 @@
-use crate::constraints::{is_manager_for_vault, is_user_stats_for_vault};
-use crate::cpi::InitializeCompetitorCPI;
-use crate::declare_vault_seeds;
-use crate::Vault;
 use anchor_lang::prelude::*;
 use drift::state::user::UserStats;
 use drift_competitions::cpi::accounts::InitializeCompetitor as DriftCompetitionInitializeCompetitor;
 use drift_competitions::program::DriftCompetitions;
+
+use crate::constraints::{is_manager_for_vault, is_user_stats_for_vault};
+use crate::declare_vault_seeds;
+use crate::drift_cpi::InitializeCompetitorCPI;
+use crate::Vault;
 
 pub fn initialize_competitor<'info>(
     ctx: Context<'_, '_, '_, 'info, InitializeCompetitor<'info>>,
@@ -16,10 +17,8 @@ pub fn initialize_competitor<'info>(
 
 #[derive(Accounts)]
 pub struct InitializeCompetitor<'info> {
-    #[account(
-        mut,
-        constraint = is_manager_for_vault(&vault, &manager)?,
-    )]
+    #[account(mut,
+  constraint = is_manager_for_vault(& vault, & manager) ?,)]
     pub vault: AccountLoader<'info, Vault>,
     pub manager: Signer<'info>,
     #[account(mut)]
@@ -27,21 +26,17 @@ pub struct InitializeCompetitor<'info> {
     pub rent: Sysvar<'info, Rent>,
     pub system_program: Program<'info, System>,
 
-    #[account(
-        mut,
-        seeds = [b"competitor",  drift_competitions.key().as_ref(), vault.key().as_ref()],
-        bump,
-        seeds::program = drift_competitions_program.key(),
-    )]
+    #[account(mut,
+  seeds = [b"competitor", drift_competitions.key().as_ref(), vault.key().as_ref()],
+  bump,
+  seeds::program = drift_competitions_program.key(),)]
     /// CHECK: checked in drift cpi
     pub competitor: AccountInfo<'info>,
     #[account(mut)]
     /// CHECK: checked in drift cpi
     pub drift_competitions: AccountInfo<'info>,
-    #[account(
-        mut,
-        constraint = is_user_stats_for_vault(&vault, &drift_user_stats.to_account_info())?
-    )]
+    #[account(mut,
+  constraint = is_user_stats_for_vault(& vault, & drift_user_stats.to_account_info()) ?)]
     /// CHECK: checked in drift cpi
     pub drift_user_stats: AccountLoader<'info, UserStats>,
     pub drift_competitions_program: Program<'info, DriftCompetitions>,

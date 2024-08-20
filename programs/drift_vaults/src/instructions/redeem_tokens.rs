@@ -2,11 +2,11 @@ use crate::constraints::{
     is_ata, is_authority_for_vault_depositor, is_mint_for_tokenized_depositor,
     is_tokenized_depositor_for_vault, is_user_for_vault,
 };
-use crate::cpi::{BurnTokensCPI, TokenTransferCPI};
+use crate::drift_cpi::{BurnTokensCPI, TokenTransferCPI};
 use crate::error::ErrorCode;
 use crate::state::traits::VaultDepositorBase;
 use crate::{validate, AccountMapProvider};
-use crate::{TokenizedVaultDepositor, Vault, VaultDepositor, WithdrawUnit};
+use crate::{TokenizedVaultDepositor, Vault, VaultDepositor, VaultProtocolProvider, WithdrawUnit};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{burn, transfer, Burn, Mint, Token, TokenAccount, Transfer};
 use drift::instructions::optional_accounts::AccountMaps;
@@ -26,6 +26,17 @@ pub fn redeem_tokens<'info>(
     let mut vault_depositor = ctx.accounts.vault_depositor.load_mut()?;
     let mut tokenized_vault_depositor = ctx.accounts.tokenized_vault_depositor.load_mut()?;
 
+    // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
+    let mut vp = ctx.vault_protocol();
+    let vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
+
+    validate!(
+        (vault.vault_protocol == Pubkey::default() && vp.is_none())
+            || (vault.vault_protocol != Pubkey::default() && vp.is_some()),
+        ErrorCode::VaultProtocolMissing,
+        "vault protocol missing in remaining accounts"
+    )?;
+
     let manager_shares_before = vault.total_shares.safe_sub(vault.user_shares)?;
     let total_shares_before = vault_depositor
         .get_vault_shares()
@@ -38,7 +49,7 @@ pub fn redeem_tokens<'info>(
         perp_market_map,
         spot_market_map,
         mut oracle_map,
-    } = ctx.load_maps(clock.slot, Some(spot_market_index))?;
+    } = ctx.load_maps(clock.slot, Some(spot_market_index), vp.is_some())?;
 
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
@@ -51,22 +62,48 @@ pub fn redeem_tokens<'info>(
 
     let total_supply_before = ctx.accounts.mint.supply;
 
-    let shares_to_transfer = tokenized_vault_depositor.redeem_tokens(
-        &mut vault,
-        total_supply_before,
-        vault_equity,
-        tokens_to_burn,
-        clock.unix_timestamp,
-    )?;
-
-    let shares_transferred = tokenized_vault_depositor.transfer_shares(
-        &mut *vault_depositor,
-        &mut vault,
-        shares_to_transfer,
-        WithdrawUnit::Shares,
-        vault_equity,
-        clock.unix_timestamp,
-    )?;
+    let (shares_transferred, shares_to_transfer) = match vp {
+        None => {
+            let (shares_to_transfer, _) = tokenized_vault_depositor.redeem_tokens(
+                &mut vault,
+                &mut None,
+                total_supply_before,
+                vault_equity,
+                tokens_to_burn,
+                clock.unix_timestamp,
+            )?;
+            let (shares_transferred, _) = tokenized_vault_depositor.transfer_shares(
+                &mut *vault_depositor,
+                &mut vault,
+                &mut None,
+                shares_to_transfer,
+                WithdrawUnit::Shares,
+                vault_equity,
+                clock.unix_timestamp,
+            )?;
+            (shares_transferred, shares_to_transfer)
+        }
+        Some(vp) => {
+            let (shares_to_transfer, mut vp) = tokenized_vault_depositor.redeem_tokens(
+                &mut vault,
+                &mut Some(vp),
+                total_supply_before,
+                vault_equity,
+                tokens_to_burn,
+                clock.unix_timestamp,
+            )?;
+            let (shares_transferred, _) = tokenized_vault_depositor.transfer_shares(
+                &mut *vault_depositor,
+                &mut vault,
+                &mut vp,
+                shares_to_transfer,
+                WithdrawUnit::Shares,
+                vault_equity,
+                clock.unix_timestamp,
+            )?;
+            (shares_transferred, shares_to_transfer)
+        }
+    };
 
     let manager_shares_after = vault.total_shares.safe_sub(vault.user_shares)?;
     let total_shares_after = vault_depositor

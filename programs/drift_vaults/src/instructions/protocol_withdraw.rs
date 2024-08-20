@@ -6,33 +6,33 @@ use drift::instructions::optional_accounts::AccountMaps;
 use drift::program::Drift;
 use drift::state::user::User;
 
-use crate::constraints::*;
+use crate::constraints::{
+    is_protocol_for_vault, is_user_for_vault, is_user_stats_for_vault, is_vault_protocol_for_vault,
+};
 use crate::drift_cpi::{TokenTransferCPI, WithdrawCPI};
 use crate::error::ErrorCode;
-use crate::state::{Vault, VaultProtocolProvider};
-use crate::{declare_vault_seeds, AccountMapProvider};
-use crate::{validate, VaultDepositor};
+use crate::state::{Vault, VaultProtocol};
+use crate::{declare_vault_seeds, validate, AccountMapProvider};
 
-pub fn force_withdraw<'c: 'info, 'info>(
-    ctx: Context<'_, '_, 'c, 'info, ForceWithdraw<'info>>,
+pub fn protocol_withdraw<'c: 'info, 'info>(
+    ctx: Context<'_, '_, 'c, 'info, ProtocolWithdraw<'info>>,
 ) -> Result<()> {
     let clock = &Clock::get()?;
     let mut vault = ctx.accounts.vault.load_mut()?;
-    let mut vault_depositor = ctx.accounts.vault_depositor.load_mut()?;
-
-    // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
-    let mut vp = ctx.vault_protocol();
-    let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
-
-    validate!(
-        (vault.vault_protocol == Pubkey::default() && vp.is_none())
-            || (vault.vault_protocol != Pubkey::default() && vp.is_some()),
-        ErrorCode::VaultProtocolMissing,
-        "vault protocol missing in remaining accounts"
-    )?;
+    let now = clock.unix_timestamp;
 
     let user = ctx.accounts.drift_user.load()?;
     let spot_market_index = vault.spot_market_index;
+
+    // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
+    let mut vp = Some(ctx.accounts.vault_protocol.load_mut()?);
+    if vp.is_none() {
+        validate!(
+            false,
+            ErrorCode::VaultProtocolMissing,
+            "Protocol cannot withdraw from a non-protocol vault"
+        )?;
+    }
 
     let AccountMaps {
         perp_market_map,
@@ -43,29 +43,28 @@ pub fn force_withdraw<'c: 'info, 'info>(
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
-    let (withdraw_amount, _) =
-        vault_depositor.withdraw(vault_equity, &mut vault, &mut vp, clock.unix_timestamp)?;
+    let protocol_withdraw_amount = vault.protocol_withdraw(&mut vp, vault_equity, now)?;
 
-    msg!("force_withdraw_amount: {}", withdraw_amount);
-
+    drop(vault);
     drop(user);
+    drop(vp);
 
-    ctx.drift_withdraw(withdraw_amount)?;
+    ctx.drift_withdraw(protocol_withdraw_amount)?;
 
-    ctx.token_transfer(withdraw_amount)?;
+    ctx.token_transfer(protocol_withdraw_amount)?;
 
     Ok(())
 }
 
 #[derive(Accounts)]
-pub struct ForceWithdraw<'info> {
+pub struct ProtocolWithdraw<'info> {
     #[account(mut,
-  constraint = is_manager_for_vault(& vault, & manager) ? || is_delegate_for_vault(& vault, & manager) ?)]
+  constraint = is_protocol_for_vault(& vault, & vault_protocol, & protocol) ?)]
     pub vault: AccountLoader<'info, Vault>,
-    pub manager: Signer<'info>,
     #[account(mut,
-  constraint = is_vault_for_vault_depositor(& vault_depositor, & vault) ?,)]
-    pub vault_depositor: AccountLoader<'info, VaultDepositor>,
+  constraint = is_vault_protocol_for_vault(& vault_protocol, & vault) ?)]
+    pub vault_protocol: AccountLoader<'info, VaultProtocol>,
+    pub protocol: Signer<'info>,
     #[account(mut,
   seeds = [b"vault_token_account".as_ref(), vault.key().as_ref()],
   bump,)]
@@ -86,14 +85,14 @@ pub struct ForceWithdraw<'info> {
     /// CHECK: checked in drift cpi
     pub drift_signer: AccountInfo<'info>,
     #[account(mut,
-  token::authority = vault_depositor.load() ?.authority,
+  token::authority = protocol,
   token::mint = vault_token_account.mint)]
     pub user_token_account: Box<Account<'info, TokenAccount>>,
     pub drift_program: Program<'info, Drift>,
     pub token_program: Program<'info, Token>,
 }
 
-impl<'info> WithdrawCPI for Context<'_, '_, '_, 'info, ForceWithdraw<'info>> {
+impl<'info> WithdrawCPI for Context<'_, '_, '_, 'info, ProtocolWithdraw<'info>> {
     fn drift_withdraw(&self, amount: u64) -> Result<()> {
         declare_vault_seeds!(self.accounts.vault, seeds);
         let spot_market_index = self.accounts.vault.load()?.spot_market_index;
@@ -122,7 +121,7 @@ impl<'info> WithdrawCPI for Context<'_, '_, '_, 'info, ForceWithdraw<'info>> {
     }
 }
 
-impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, ForceWithdraw<'info>> {
+impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, ProtocolWithdraw<'info>> {
     fn token_transfer(&self, amount: u64) -> Result<()> {
         declare_vault_seeds!(self.accounts.vault, seeds);
 

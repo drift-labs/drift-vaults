@@ -4,6 +4,8 @@ use anchor_lang::prelude::*;
 use anchor_spl::associated_token::get_associated_token_address;
 use drift::state::spot_market::SpotMarket;
 
+use crate::state::VaultProtocol;
+
 pub fn is_vault_for_vault_depositor(
     vault_depositor: &AccountLoader<VaultDepositor>,
     vault: &AccountLoader<Vault>,
@@ -23,6 +25,15 @@ pub fn is_manager_for_vault(
     signer: &Signer,
 ) -> anchor_lang::Result<bool> {
     Ok(vault.load()?.manager.eq(signer.key))
+}
+
+pub fn is_protocol_for_vault(
+    vault: &AccountLoader<Vault>,
+    vault_protocol: &AccountLoader<VaultProtocol>,
+    signer: &Signer,
+) -> anchor_lang::Result<bool> {
+    Ok(vault_protocol.load()?.protocol.eq(signer.key)
+        && vault.load()?.vault_protocol.eq(&vault_protocol.key()))
 }
 
 pub fn is_delegate_for_vault(
@@ -73,4 +84,11 @@ pub fn is_mint_for_tokenized_depositor(
 
 pub fn is_ata(token_account: &Pubkey, owner: &Pubkey, mint: &Pubkey) -> anchor_lang::Result<bool> {
     Ok(get_associated_token_address(owner, mint).eq(token_account))
+}
+
+pub fn is_vault_protocol_for_vault(
+    vault_protocol: &AccountLoader<VaultProtocol>,
+    vault: &AccountLoader<Vault>,
+) -> anchor_lang::Result<bool> {
+    Ok(vault.load()?.vault_protocol.eq(&vault_protocol.key()))
 }

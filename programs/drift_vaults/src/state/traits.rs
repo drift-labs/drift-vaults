@@ -1,7 +1,9 @@
+use std::cell::RefMut;
+
 use crate::error::ErrorCode;
 use crate::events::{ShareTransferRecord, VaultDepositorAction, VaultDepositorRecord};
 use crate::state::vault::Vault;
-use crate::{validate, WithdrawUnit};
+use crate::{validate, VaultFee, VaultProtocol, WithdrawUnit};
 use anchor_lang::prelude::*;
 
 use drift::math::casting::Cast;
@@ -17,7 +19,12 @@ pub trait Size {
 }
 
 pub trait VaultDepositorBase {
-    fn apply_rebase(&mut self, vault: &mut Vault, vault_equity: u64) -> Result<Option<u128>>;
+    fn apply_rebase(
+        &mut self,
+        vault: &mut Vault,
+        vault_protocol: &mut Option<RefMut<VaultProtocol>>,
+        vault_equity: u64,
+    ) -> Result<Option<u128>>;
 
     fn get_authority(&self) -> Pubkey;
     fn get_pubkey(&self) -> Pubkey;
@@ -136,17 +143,18 @@ pub trait VaultDepositorBase {
     /// Transfer shares from `self` to `to`
     ///
     /// Returns the number of shares transferred
-    fn transfer_shares(
+    fn transfer_shares<'a>(
         &mut self,
         to: &mut dyn VaultDepositorBase,
         vault: &mut Vault,
+        vault_protocol: &mut Option<RefMut<'a, VaultProtocol>>,
         withdraw_amount: u64,
         withdraw_unit: WithdrawUnit,
         vault_equity: u64,
         now: i64,
-    ) -> Result<u128> {
-        let from_rebase_divisor = self.apply_rebase(vault, vault_equity)?;
-        let to_rebase_divisor = to.apply_rebase(vault, vault_equity)?;
+    ) -> Result<(u128, Option<RefMut<'a, VaultProtocol>>)> {
+        let from_rebase_divisor = self.apply_rebase(vault, vault_protocol, vault_equity)?;
+        let to_rebase_divisor = to.apply_rebase(vault, vault_protocol, vault_equity)?;
 
         validate!(
             from_rebase_divisor == to_rebase_divisor,
@@ -154,8 +162,12 @@ pub trait VaultDepositorBase {
             "from and to vault depositors rebase divisors mismatch"
         )?;
 
-        let (management_fee, management_fee_shares) =
-            vault.apply_management_fee(vault_equity, now)?;
+        let VaultFee {
+            management_fee_payment,
+            management_fee_shares,
+            protocol_fee_payment: _protocol_fee_payment,
+            protocol_fee_shares: _protocol_fee_shares,
+        } = vault.apply_fee(vault_protocol, vault_equity, now)?;
 
         let from_profit_share: u64 = self.apply_profit_share(vault_equity, vault)?;
         let to_profit_share: u64 = to.apply_profit_share(vault_equity, vault)?;
@@ -227,7 +239,7 @@ pub trait VaultDepositorBase {
             total_vault_shares_after: vault.total_shares,
             user_vault_shares_after: vault.user_shares,
             profit_share: from_profit_share,
-            management_fee,
+            management_fee: management_fee_payment,
             management_fee_shares,
         });
 
@@ -246,10 +258,10 @@ pub trait VaultDepositorBase {
             total_vault_shares_after: vault.total_shares,
             user_vault_shares_after: vault.user_shares,
             profit_share: to_profit_share,
-            management_fee,
+            management_fee: management_fee_payment,
             management_fee_shares,
         });
 
-        Ok(n_shares)
+        Ok((n_shares, vault_protocol.take()))
     }
 }

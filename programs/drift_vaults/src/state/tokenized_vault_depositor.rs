@@ -1,7 +1,9 @@
+use std::cell::RefMut;
+
 use crate::error::ErrorCode;
 use crate::events::{VaultDepositorAction, VaultDepositorRecord};
 use crate::state::vault::Vault;
-use crate::validate;
+use crate::{validate, VaultFee, VaultProtocol};
 use crate::{Size, VaultDepositorBase};
 use static_assertions::const_assert_eq;
 
@@ -101,8 +103,13 @@ impl VaultDepositorBase for TokenizedVaultDepositor {
         self.profit_share_fee_paid = amount;
     }
 
-    fn apply_rebase(&mut self, vault: &mut Vault, vault_equity: u64) -> Result<Option<u128>> {
-        vault.apply_rebase(vault_equity)?;
+    fn apply_rebase(
+        &mut self,
+        vault: &mut Vault,
+        vault_protocol: &mut Option<RefMut<VaultProtocol>>,
+        vault_equity: u64,
+    ) -> Result<Option<u128>> {
+        vault.apply_rebase(vault_protocol, vault_equity)?;
 
         let mut rebase_divisor: Option<u128> = None;
 
@@ -200,12 +207,13 @@ impl TokenizedVaultDepositor {
     pub fn tokenize_shares(
         self: &mut TokenizedVaultDepositor,
         vault: &mut Vault,
+        vault_protocol: &mut Option<RefMut<VaultProtocol>>,
         mint_supply: u64,
         vault_equity: u64,
         shares_transferred: u128,
         now: i64,
     ) -> Result<u64> {
-        let rebase_divisor = self.apply_rebase(vault, vault_equity)?;
+        let rebase_divisor = self.apply_rebase(vault, vault_protocol, vault_equity)?;
         if rebase_divisor.is_some() {
             return Err(ErrorCode::InvalidVaultRebase.into());
         }
@@ -218,8 +226,12 @@ impl TokenizedVaultDepositor {
             shares_transferred
         };
 
-        let (management_fee, management_fee_shares) =
-            vault.apply_management_fee(vault_equity, now)?;
+        let VaultFee {
+            management_fee_payment,
+            management_fee_shares,
+            protocol_fee_payment: _protocol_fee_payment,
+            protocol_fee_shares: _protocol_fee_shares,
+        } = vault.apply_fee(vault_protocol, vault_equity, now)?;
         let profit_share: u64 = self.apply_profit_share(vault_equity, vault)?;
 
         let vault_shares_before = self.checked_vault_shares(vault)?;
@@ -270,25 +282,30 @@ impl TokenizedVaultDepositor {
             total_vault_shares_after: vault.total_shares,
             user_vault_shares_after: vault.user_shares,
             profit_share,
-            management_fee,
+            management_fee: management_fee_payment,
             management_fee_shares,
         });
 
         Ok(tokens_to_mint.cast()?)
     }
 
-    pub fn redeem_tokens(
+    pub fn redeem_tokens<'a>(
         self: &mut TokenizedVaultDepositor,
         vault: &mut Vault,
+        vault_protocol: &mut Option<RefMut<'a, VaultProtocol>>,
         mint_supply: u64,
         vault_equity: u64,
         tokens_to_burn: u64,
         now: i64,
-    ) -> Result<u64> {
-        self.apply_rebase(vault, vault_equity)?;
+    ) -> Result<(u64, Option<RefMut<'a, VaultProtocol>>)> {
+        self.apply_rebase(vault, vault_protocol, vault_equity)?;
 
-        let (management_fee, management_fee_shares) =
-            vault.apply_management_fee(vault_equity, now)?;
+        let VaultFee {
+            management_fee_payment,
+            management_fee_shares,
+            protocol_fee_payment: _protocol_fee_payment,
+            protocol_fee_shares: _protocol_fee_shares,
+        } = vault.apply_fee(vault_protocol, vault_equity, now)?;
         let profit_share: u64 = self.apply_profit_share(vault_equity, vault)?;
 
         let vault_shares_before = self.checked_vault_shares(vault)?;
@@ -326,11 +343,11 @@ impl TokenizedVaultDepositor {
             total_vault_shares_after: vault.total_shares,
             user_vault_shares_after: vault.user_shares,
             profit_share,
-            management_fee,
+            management_fee: management_fee_payment,
             management_fee_shares,
         });
 
-        Ok(shares_to_redeem.cast()?)
+        Ok((shares_to_redeem, vault_protocol.take()))
     }
 }
 #[cfg(test)]
@@ -357,7 +374,14 @@ mod tests {
         let mut total_supply = 0;
         let vault_equity = 1_000_000;
         let tokens_issued_1 = tvd
-            .tokenize_shares(vault, total_supply, vault_equity, shares_transferred, now)
+            .tokenize_shares(
+                vault,
+                &mut None,
+                total_supply,
+                vault_equity,
+                shares_transferred,
+                now,
+            )
             .unwrap();
 
         // first tokenization will issue same amount of tokens as shares
@@ -372,7 +396,14 @@ mod tests {
         tvd.vault_shares = tvd.last_vault_shares + shares_transferred;
 
         let tokens_issued_2 = tvd
-            .tokenize_shares(vault, total_supply, vault_equity, shares_transferred, now)
+            .tokenize_shares(
+                vault,
+                &mut None,
+                total_supply,
+                vault_equity,
+                shares_transferred,
+                now,
+            )
             .unwrap();
 
         // first tokenization will issue same amount of tokens as shares
@@ -408,13 +439,14 @@ mod tests {
         let shares_to_transfer = tvd
             .redeem_tokens(
                 vault,
+                &mut None,
                 total_supply as u64,
                 vault_equity,
                 tokens_to_burn as u64,
                 now,
             )
             .expect("redeem_tokens");
-        assert_eq!(shares_to_transfer, tokens_to_burn as u64);
+        assert_eq!(shares_to_transfer.0, tokens_to_burn as u64);
         assert_eq!(tvd.last_vault_shares, tvd.vault_shares);
     }
 
@@ -436,7 +468,14 @@ mod tests {
         let mut total_supply = 0;
         let mut vault_equity = 1_000_000;
         let tokens_issued_1 = tvd
-            .tokenize_shares(vault, total_supply, vault_equity, shares_transferred, now)
+            .tokenize_shares(
+                vault,
+                &mut None,
+                total_supply,
+                vault_equity,
+                shares_transferred,
+                now,
+            )
             .unwrap();
 
         // first tokenization will issue same amount of tokens as shares
@@ -453,8 +492,14 @@ mod tests {
         tvd.vault_shares = tvd.last_vault_shares + shares_transferred;
 
         // will trigger rebase
-        let tokens_issued_2 =
-            tvd.tokenize_shares(vault, total_supply, vault_equity, shares_transferred, now);
+        let tokens_issued_2 = tvd.tokenize_shares(
+            vault,
+            &mut None,
+            total_supply,
+            vault_equity,
+            shares_transferred,
+            now,
+        );
 
         assert_eq!(
             tokens_issued_2.is_err(),
@@ -490,7 +535,14 @@ mod tests {
         assert_eq!(tvd.last_vault_shares, 0);
 
         let tokens_issued_1 = tvd
-            .tokenize_shares(vault, total_supply, vault_equity, shares_transferred, now)
+            .tokenize_shares(
+                vault,
+                &mut None,
+                total_supply,
+                vault_equity,
+                shares_transferred,
+                now,
+            )
             .unwrap();
 
         // first tokenization will issue same amount of tokens as shares
