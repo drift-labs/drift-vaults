@@ -1,4 +1,4 @@
-# Drift Vaults
+# tDrift Vaults
 
 soon^TM
 
@@ -48,9 +48,15 @@ brew install gnu-tar
 export PATH="/opt/homebrew/opt/gnu-tar/libexec/gnubin:$PATH"
 ```
 
-## Run tests
+Setup deps:
 ```shell
 yarn && cd ts/sdk && yarn && yarn build && cd ..
 
-export ANCHOR_WALLET=~/.config/solana/id.json && anchor test
+# can be any valid key
+export ANCHOR_WALLET=~/.config/solana/id.json
+```
+
+Run all tests:
+```shell
+anchor test
 ```

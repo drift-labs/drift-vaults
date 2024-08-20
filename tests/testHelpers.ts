@@ -248,6 +248,17 @@ export async function createUSDCAccountForUser(
 	return userUSDCAccount.publicKey;
 }
 
+export async function isDriftInitialized(driftClient: DriftClient) {
+	const stateAccountRPCResponse =
+		await driftClient.connection.getParsedAccountInfo(
+			await driftClient.getStatePublicKey()
+		);
+	if (stateAccountRPCResponse.value !== null) {
+		return true;
+	}
+	return false;
+}
+
 export async function initializeAndSubscribeDriftClient(
 	connection: Connection,
 	program: Program,
@@ -299,6 +310,7 @@ export async function createUserWithUSDCAccount(
 		usdcMint,
 		usdcAmount
 	);
+
 	const driftClient = await initializeAndSubscribeDriftClient(
 		provider.connection,
 		chProgram,
@@ -1111,7 +1123,6 @@ export async function bootstrapSignerClientAndUser(params: {
 
 	const signer = Keypair.generate();
 	await payer.connection.requestAirdrop(signer.publicKey, LAMPORTS_PER_SOL);
-	await sleep(1000);
 
 	const driftClient = new DriftClient({
 		connection: payer.connection,
