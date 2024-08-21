@@ -47,6 +47,11 @@ import {
 	PositionDirection,
 	BASE_PRECISION,
 	parseLogs,
+	convertToNumber,
+	TWO,
+	getTokenAmount,
+	getSignedTokenAmount,
+	TEN,
 } from '@drift-labs/sdk';
 import {
 	DriftVaults,
@@ -387,9 +392,15 @@ export async function initializeSolSpotMarketMaker(
 	solAmount?: BN,
 	usdcAmount?: BN,
 	accountLoader?: BulkAccountLoader
-): Promise<[TestClient, PublicKey, PublicKey, Keypair]> {
-	const solDepositAmount = solAmount ?? new BN(1000 * LAMPORTS_PER_SOL);
-	const usdcDepositAmount = usdcAmount ?? new BN(100_000 * 1e6);
+): Promise<{
+	driftClient: TestClient;
+	solAccount: PublicKey;
+	usdcAccount: PublicKey;
+	userKeyPair: Keypair;
+	requoteFunc: (bid?: BN, ask?: BN) => Promise<void>;
+}> {
+	const solDepositAmount = solAmount ?? new BN(10_000 * LAMPORTS_PER_SOL);
+	const usdcDepositAmount = usdcAmount ?? new BN(1_000_000 * 1e6);
 
 	const [driftClient, solAccount, usdcAccount, userKeyPair] =
 		await createUserWithUSDCAndWSOLAccount(
@@ -415,44 +426,114 @@ export async function initializeSolSpotMarketMaker(
 	const solMarket = driftClient.getSpotMarketAccount(1);
 	assert(solMarket !== undefined, 'solMarket was not initialized');
 
-	const solOracle = driftClient.getOracleDataForSpotMarket(1);
-
 	await driftClient.deposit(usdcDepositAmount, 0, usdcAccount);
 	await driftClient.deposit(solDepositAmount, 1, solAccount);
 
-	const bidPrice = solOracle.price.sub(
-		new BN(100).mul(solMarket.orderTickSize)
-	);
-	const askPrice = solOracle.price.add(
-		new BN(100).mul(solMarket.orderTickSize)
-	);
+	// const solOracle = driftClient.getOracleDataForSpotMarket(1);
+	// const bidPrice = solOracle.price.sub(
+	// 	new BN(100).mul(solMarket.orderTickSize)
+	// );
+	// const askPrice = solOracle.price.add(
+	// 	new BN(100).mul(solMarket.orderTickSize)
+	// );
 
-	try {
-		await driftClient.placeOrders([
-			getOrderParams({
-				orderType: OrderType.LIMIT,
-				marketType: MarketType.SPOT,
-				marketIndex: 1,
-				direction: PositionDirection.LONG,
-				price: bidPrice,
-				baseAssetAmount: usdcDepositAmount.mul(BASE_PRECISION).div(bidPrice),
-			}),
-			getOrderParams({
-				orderType: OrderType.LIMIT,
-				marketType: MarketType.SPOT,
-				marketIndex: 1,
-				direction: PositionDirection.SHORT,
-				price: askPrice,
-				baseAssetAmount: solDepositAmount,
-			}),
-		]);
-	} catch (e) {
-		console.error(e);
-	}
+	// try {
+	// 	await driftClient.placeOrders([
+	// 		getOrderParams({
+	// 			orderType: OrderType.LIMIT,
+	// 			marketType: MarketType.SPOT,
+	// 			marketIndex: 1,
+	// 			direction: PositionDirection.LONG,
+	// 			price: bidPrice,
+	// 			baseAssetAmount: usdcDepositAmount.mul(BASE_PRECISION).div(bidPrice),
+	// 		}),
+	// 		getOrderParams({
+	// 			orderType: OrderType.LIMIT,
+	// 			marketType: MarketType.SPOT,
+	// 			marketIndex: 1,
+	// 			direction: PositionDirection.SHORT,
+	// 			price: askPrice,
+	// 			baseAssetAmount: solDepositAmount,
+	// 		}),
+	// 	]);
+	// } catch (e) {
+	// 	console.error(e);
+	// }
 
-	await driftClient.fetchAccounts();
+	// await driftClient.fetchAccounts();
 
-	return [driftClient, solAccount, usdcAccount, userKeyPair];
+	const requoteFunc = async (bid?: BN, ask?: BN) => {
+		await driftClient.fetchAccounts();
+		const solOracle = driftClient.getOracleDataForSpotMarket(1);
+
+		const bidPrice =
+			bid ?? solOracle.price.sub(new BN(10).mul(solMarket.orderTickSize));
+		const askPrice =
+			ask ?? solOracle.price.add(new BN(10).mul(solMarket.orderTickSize));
+
+		const usdcPos = driftClient.getUser().getSpotPosition(0);
+		const usdcBal = getSignedTokenAmount(
+			getTokenAmount(usdcPos.scaledBalance, usdcMarket, usdcPos.balanceType),
+			usdcPos.balanceType
+		);
+		const solPos = driftClient.getUser().getSpotPosition(1);
+		const solBal = getSignedTokenAmount(
+			getTokenAmount(solPos.scaledBalance, solMarket, solPos.balanceType),
+			solPos.balanceType
+		);
+
+		const usdcPrec = TEN.pow(new BN(usdcMarket.decimals));
+		const solPrec = TEN.pow(new BN(solMarket.decimals));
+
+		try {
+			// const bidAmount = convertToNumber(usdcBal, usdcPrec) / 10 / convertToNumber(bidPrice)
+			const askAmount = convertToNumber(solBal, solPrec) / 10;
+			const bidAmount = askAmount;
+			console.log(
+				`mm ${driftClient.authority.toBase58()} requoting around ${convertToNumber(
+					solOracle.price
+				)}. bid: ${bidAmount}@$${convertToNumber(
+					bidPrice
+				)}, ask: ${askAmount}@$${convertToNumber(askPrice)}`
+			);
+
+			await driftClient.cancelAndPlaceOrders(
+				{
+					marketType: MarketType.SPOT,
+					marketIndex: 1,
+				},
+				[
+					getOrderParams({
+						orderType: OrderType.LIMIT,
+						marketType: MarketType.SPOT,
+						marketIndex: 1,
+						direction: PositionDirection.LONG,
+						price: bidPrice,
+						baseAssetAmount: new BN(bidAmount * solPrec.toNumber()),
+					}),
+					getOrderParams({
+						orderType: OrderType.LIMIT,
+						marketType: MarketType.SPOT,
+						marketIndex: 1,
+						direction: PositionDirection.SHORT,
+						price: askPrice,
+						baseAssetAmount: new BN(askAmount * solPrec.toNumber()),
+					}),
+				]
+			);
+		} catch (e) {
+			console.error(e);
+			throw new Error(`mm failed to requote`);
+		}
+	};
+
+	return {
+		driftClient,
+		solAccount,
+		usdcAccount,
+		userKeyPair,
+		requoteFunc,
+	};
 }
 
 export async function printTxLogs(

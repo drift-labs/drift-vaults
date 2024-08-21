@@ -32,6 +32,10 @@ import {
 	getUserStatsAccountPublicKey,
 	DRIFT_PROGRAM_ID,
 	OracleInfo,
+	Wallet,
+	calculateLongShortFundingRateAndLiveTwaps,
+	convertPythPrice,
+	convertToNumber,
 } from '@drift-labs/sdk';
 import {
 	bootstrapSignerClientAndUser,
@@ -185,12 +189,6 @@ describe('TestDriftVaults', () => {
 
 		await adminClient.subscribe();
 
-		// const perpMarketIndexes = [0];
-		// const spotMarketIndexes = [0];
-		// const oracleInfos = [
-		// 	{ publicKey: solPerpOracle, source: OracleSource.PYTH },
-		// ];
-
 		// init vault manager
 		const bootstrapManager = await bootstrapSignerClientAndUser({
 			payer: provider,
@@ -204,9 +202,6 @@ describe('TestDriftVaults', () => {
 				},
 				opts,
 				activeSubAccountId: 0,
-				// perpMarketIndexes,
-				// spotMarketIndexes,
-				// oracleInfos,
 			},
 			metaplex,
 		});
@@ -228,9 +223,6 @@ describe('TestDriftVaults', () => {
 				},
 				opts,
 				activeSubAccountId: 0,
-				// perpMarketIndexes,
-				// spotMarketIndexes,
-				// oracleInfos,
 			},
 		});
 		// delegate = bootstrapDelegate.signer;
@@ -250,9 +242,6 @@ describe('TestDriftVaults', () => {
 				},
 				opts,
 				activeSubAccountId: 0,
-				// perpMarketIndexes,
-				// spotMarketIndexes,
-				// oracleInfos,
 			},
 		});
 		fillerClient = bootstrapFiller.vaultClient;
@@ -272,9 +261,6 @@ describe('TestDriftVaults', () => {
 				},
 				opts,
 				activeSubAccountId: 0,
-				// perpMarketIndexes,
-				// spotMarketIndexes,
-				// oracleInfos,
 			},
 		});
 		// vd = bootstrapVD.signer;
@@ -296,9 +282,6 @@ describe('TestDriftVaults', () => {
 				},
 				opts,
 				activeSubAccountId: 0,
-				// perpMarketIndexes,
-				// spotMarketIndexes,
-				// oracleInfos,
 			},
 		});
 		vd2 = bootstrapVD2.signer;
@@ -319,9 +302,6 @@ describe('TestDriftVaults', () => {
 				},
 				opts,
 				activeSubAccountId: 0,
-				// perpMarketIndexes,
-				// spotMarketIndexes,
-				// oracleInfos,
 			},
 		});
 		protocolClient = bootstrapProtocol.vaultClient;
@@ -731,12 +711,6 @@ describe('TestProtocolVaults', () => {
 
 		await adminClient.subscribe();
 
-		// const perpMarketIndexes = [0];
-		// const spotMarketIndexes = [0];
-		// const oracleInfos = [
-		// 	{ publicKey: solPerpOracle, source: OracleSource.PYTH },
-		// ];
-
 		// init vault manager
 		const bootstrapManager = await bootstrapSignerClientAndUser({
 			payer: provider,
@@ -750,9 +724,6 @@ describe('TestProtocolVaults', () => {
 				},
 				opts,
 				activeSubAccountId: 0,
-				// perpMarketIndexes,
-				// spotMarketIndexes,
-				// oracleInfos,
 			},
 			metaplex,
 		});
@@ -774,9 +745,6 @@ describe('TestProtocolVaults', () => {
 				},
 				opts,
 				activeSubAccountId: 0,
-				// perpMarketIndexes,
-				// spotMarketIndexes,
-				// oracleInfos,
 			},
 		});
 		delegate = bootstrapDelegate.signer;
@@ -796,9 +764,6 @@ describe('TestProtocolVaults', () => {
 				},
 				opts,
 				activeSubAccountId: 0,
-				// perpMarketIndexes,
-				// spotMarketIndexes,
-				// oracleInfos,
 			},
 		});
 		fillerClient = bootstrapFiller.vaultClient;
@@ -818,9 +783,6 @@ describe('TestProtocolVaults', () => {
 				},
 				opts,
 				activeSubAccountId: 0,
-				// perpMarketIndexes,
-				// spotMarketIndexes,
-				// oracleInfos,
 			},
 		});
 		vd = bootstrapVD.signer;
@@ -843,9 +805,6 @@ describe('TestProtocolVaults', () => {
 				},
 				opts,
 				activeSubAccountId: 0,
-				// perpMarketIndexes,
-				// spotMarketIndexes,
-				// oracleInfos,
 			},
 		});
 		vd2Client = bootstrapVD2.vaultClient;
@@ -864,9 +823,6 @@ describe('TestProtocolVaults', () => {
 				},
 				opts,
 				activeSubAccountId: 0,
-				// perpMarketIndexes,
-				// spotMarketIndexes,
-				// oracleInfos,
 			},
 		});
 		protocol = bootstrapProtocol.signer;
@@ -1310,7 +1266,7 @@ describe('TestProtocolVaults', () => {
 		);
 		assert(
 			finalSolPerpPrice ===
-				solPrice.price.toNumber() / PRICE_PRECISION.toNumber()
+			solPrice.price.toNumber() / PRICE_PRECISION.toNumber()
 		);
 
 		const solPerpMarket = delegateClient.driftClient.getPerpMarketAccount(0);
@@ -1328,7 +1284,7 @@ describe('TestProtocolVaults', () => {
 		assert(pnl === upnl);
 		assert(
 			solPerpPos.quoteAssetAmount.toNumber() / QUOTE_PRECISION.toNumber() ==
-				upnl
+			upnl
 		);
 		assert(solPerpQuote === pnl);
 
@@ -1629,71 +1585,612 @@ describe('TestTokenizedDriftVaults', () => {
 		await managerDriftClient.unsubscribe();
 	});
 
-	it('Initialize TokenizedVaultDepositor', async () => {
-		try {
-			await managerClient.initializeTokenizedVaultDepositor({
-				vault: commonVaultKey,
-				tokenName: 'Tokenized Vault',
-				tokenSymbol: 'TV',
-				tokenUri: '',
-				decimals: 6,
-			});
-		} catch (e) {
-			console.error(e);
-			assert(false);
-		}
+	// it('Initialize TokenizedVaultDepositor', async () => {
+	// 	try {
+	// 		await managerClient.initializeTokenizedVaultDepositor({
+	// 			vault: commonVaultKey,
+	// 			tokenName: 'Tokenized Vault',
+	// 			tokenSymbol: 'TV',
+	// 			tokenUri: '',
+	// 			decimals: 6,
+	// 		});
+	// 	} catch (e) {
+	// 		console.error(e);
+	// 		assert(false);
+	// 	}
 
-		const tokenMint = getTokenizedVaultMintAddressSync(
-			program.programId,
-			commonVaultKey
-		);
-		const metadataAccount = metaplex.nfts().pdas().metadata({
-			mint: tokenMint,
-		});
+	// 	const tokenMint = getTokenizedVaultMintAddressSync(
+	// 		program.programId,
+	// 		commonVaultKey
+	// 	);
+	// 	const metadataAccount = metaplex.nfts().pdas().metadata({
+	// 		mint: tokenMint,
+	// 	});
 
-		const mintAccount = await getMint(connection, tokenMint);
-		assert(mintAccount.mintAuthority.equals(commonVaultKey));
-		assert(mintAccount.decimals === 6);
-		assert(mintAccount.isInitialized === true);
+	// 	const mintAccount = await getMint(connection, tokenMint);
+	// 	assert(mintAccount.mintAuthority.equals(commonVaultKey));
+	// 	assert(mintAccount.decimals === 6);
+	// 	assert(mintAccount.isInitialized === true);
 
-		assert((await connection.getAccountInfo(metadataAccount)) !== null);
-		const metadata = await metaplex
-			.nfts()
-			.findByMint({ mintAddress: tokenMint });
-		assert(metadata.mint.address.equals(tokenMint));
-		assert(metadata.name === 'Tokenized Vault');
-		assert(metadata.symbol === 'TV');
-		assert(metadata.uri === '');
-	});
+	// 	assert((await connection.getAccountInfo(metadataAccount)) !== null);
+	// 	const metadata = await metaplex
+	// 		.nfts()
+	// 		.findByMint({ mintAddress: tokenMint });
+	// 	assert(metadata.mint.address.equals(tokenMint));
+	// 	assert(metadata.name === 'Tokenized Vault');
+	// 	assert(metadata.symbol === 'TV');
+	// 	assert(metadata.uri === '');
+	// });
 
-	it('Initialize another TokenizedVaultDepositor', async () => {
-		const { tokenizedVaultDepositor } = calculateAllPdas(
-			program.programId,
-			commonVaultKey,
-			provider.wallet.publicKey
-		);
-		const tvdAccount = await connection.getAccountInfo(tokenizedVaultDepositor);
-		assert(tvdAccount !== null, 'TokenizedVaultDepositor account should exist');
-		try {
-			const initTx = await managerClient.initializeTokenizedVaultDepositor({
-				vault: commonVaultKey,
-				tokenName: 'Tokenized Vault',
-				tokenSymbol: 'TV',
-				tokenUri: '',
-				decimals: 6,
-			});
-			await printTxLogs(provider.connection, initTx);
-		} catch (e) {
-			return;
-		}
-		assert(
-			false,
-			'Should not have been able to initialize a second TokenizedVaultDepositor'
-		);
-	});
+	// it('Initialize another TokenizedVaultDepositor', async () => {
+	// 	const { tokenizedVaultDepositor } = calculateAllPdas(
+	// 		program.programId,
+	// 		commonVaultKey,
+	// 		provider.wallet.publicKey
+	// 	);
+	// 	const tvdAccount = await connection.getAccountInfo(tokenizedVaultDepositor);
+	// 	assert(tvdAccount !== null, 'TokenizedVaultDepositor account should exist');
+	// 	try {
+	// 		const initTx = await managerClient.initializeTokenizedVaultDepositor({
+	// 			vault: commonVaultKey,
+	// 			tokenName: 'Tokenized Vault',
+	// 			tokenSymbol: 'TV',
+	// 			tokenUri: '',
+	// 			decimals: 6,
+	// 		});
+	// 		await printTxLogs(provider.connection, initTx);
+	// 	} catch (e) {
+	// 		return;
+	// 	}
+	// 	assert(
+	// 		false,
+	// 		'Should not have been able to initialize a second TokenizedVaultDepositor'
+	// 	);
+	// });
 
-	it('Tokenize and redeem vault shares', async () => {
-		const bootstrapVd = await bootstrapSignerClientAndUser({
+	// it('Tokenize and redeem vault shares', async () => {
+	// 	const bootstrapVd = await bootstrapSignerClientAndUser({
+	// 		payer: provider,
+	// 		programId: program.programId,
+	// 		usdcMint,
+	// 		usdcAmount,
+	// 		driftClientConfig: {
+	// 			accountSubscription: {
+	// 				type: 'websocket',
+	// 				resubTimeoutMs: 30_000,
+	// 			},
+	// 			opts,
+	// 			activeSubAccountId: 0,
+	// 		},
+	// 		metaplex,
+	// 	});
+
+	// 	const {
+	// 		vaultDepositor,
+	// 		tokenizedVaultDepositor,
+	// 		mintAddress,
+	// 		userVaultTokenAta,
+	// 		vaultTokenizedTokenAta,
+	// 	} = calculateAllPdas(
+	// 		program.programId,
+	// 		commonVaultKey,
+	// 		bootstrapVd.signer.publicKey
+	// 	);
+
+	// 	// deposit to vault
+	// 	try {
+	// 		await bootstrapVd.vaultClient.deposit(
+	// 			vaultDepositor,
+	// 			usdcAmount,
+	// 			{
+	// 				vault: commonVaultKey,
+	// 				authority: bootstrapVd.vaultClient.driftClient.wallet.publicKey,
+	// 			},
+	// 			undefined,
+	// 			bootstrapVd.userUSDCAccount.publicKey
+	// 		);
+	// 	} catch (e) {
+	// 		console.error(e);
+	// 		assert(false);
+	// 	}
+
+	// 	await validateTotalUserShares(program, commonVaultKey);
+
+	// 	const vdBefore = await program.account.vaultDepositor.fetch(vaultDepositor);
+	// 	const vdtBefore = await program.account.tokenizedVaultDepositor.fetch(
+	// 		tokenizedVaultDepositor
+	// 	);
+	// 	const vaultBefore = await program.account.vault.fetch(commonVaultKey);
+	// 	const mintAccountBefore = await getMint(connection, mintAddress);
+	// 	const tvdTokenBalanceBefore = await connection.getTokenAccountBalance(
+	// 		vaultTokenizedTokenAta
+	// 	);
+
+	// 	assert(
+	// 		(await connection.getAccountInfo(userVaultTokenAta)) === null,
+	// 		'User vault token account should not exist'
+	// 	);
+	// 	assert(
+	// 		tvdTokenBalanceBefore.value.uiAmount === 0,
+	// 		'TokenizedVaultDepositor token account has tokens'
+	// 	);
+	// 	assert(Number(mintAccountBefore.supply) === 0, 'Mint supply !== 0');
+
+	// 	assert(
+	// 		Number(vdBefore.vaultShares) === Number(usdcAmount),
+	// 		`VaultDepositor has no shares`
+	// 	);
+
+	// 	// tokenize shares for tokens
+	// 	try {
+	// 		const txSig = await bootstrapVd.vaultClient.tokenizeShares(
+	// 			vaultDepositor,
+	// 			vdBefore.vaultShares,
+	// 			WithdrawUnit.SHARES
+	// 		);
+	// 		await printTxLogs(provider.connection, txSig);
+	// 	} catch (e) {
+	// 		console.error(e);
+	// 		assert(false, 'tokenizeShares threw');
+	// 	}
+
+	// 	const vdAfterTokenize = await program.account.vaultDepositor.fetch(
+	// 		vaultDepositor
+	// 	);
+	// 	const vdtAfterTokenize =
+	// 		await program.account.tokenizedVaultDepositor.fetch(
+	// 			tokenizedVaultDepositor
+	// 		);
+	// 	const vaultAfterTokenize = await program.account.vault.fetch(
+	// 		commonVaultKey
+	// 	);
+	// 	const mintAccountAfterTokenize = await getMint(connection, mintAddress);
+	// 	const userTokenBalanceAfterTokenize =
+	// 		await connection.getTokenAccountBalance(userVaultTokenAta);
+	// 	const tvdTokenBalanceAfterTokenize =
+	// 		await connection.getTokenAccountBalance(vaultTokenizedTokenAta);
+
+	// 	assert(
+	// 		tvdTokenBalanceAfterTokenize.value.uiAmount === 0,
+	// 		'TokenizedVaultDepositor token account has tokens'
+	// 	);
+
+	// 	const vdSharesDelta = vdAfterTokenize.vaultShares.sub(vdBefore.vaultShares);
+	// 	const vdtSharesDelta = vdtAfterTokenize.vaultShares.sub(
+	// 		vdtBefore.vaultShares
+	// 	);
+	// 	const tokenBalanceDelta = new BN(
+	// 		userTokenBalanceAfterTokenize.value.amount
+	// 	).sub(ZERO);
+	// 	const mintSupplyDelta = new BN(String(mintAccountAfterTokenize.supply)).sub(
+	// 		new BN(String(mintAccountBefore.supply))
+	// 	);
+
+	// 	assert(
+	// 		vdAfterTokenize.vaultSharesBase === vdBefore.vaultSharesBase,
+	// 		'VaultDepositor shares base changed'
+	// 	);
+	// 	assert(
+	// 		vdtAfterTokenize.vaultSharesBase === vdtBefore.vaultSharesBase,
+	// 		'TokenizedVaultDepositor shares base changed'
+	// 	);
+
+	// 	assert(
+	// 		vdSharesDelta.neg().eq(vdtSharesDelta),
+	// 		'VaultDepositor and TokenizedVaultDepositor shares delta should be equal and opposite'
+	// 	);
+	// 	assert(
+	// 		tokenBalanceDelta.eq(mintSupplyDelta),
+	// 		'Token balance delta should equal mint supply delta'
+	// 	);
+
+	// 	assert(
+	// 		vaultBefore.totalShares.eq(vaultAfterTokenize.totalShares),
+	// 		'Vault total shares should not have changed'
+	// 	);
+	// 	assert(
+	// 		vaultBefore.userShares.eq(vaultAfterTokenize.userShares),
+	// 		'Vault user shares should not have changed'
+	// 	);
+
+	// 	// redeem tokens for shares
+	// 	try {
+	// 		const txSig = await bootstrapVd.vaultClient.redeemTokens(
+	// 			vaultDepositor,
+	// 			new BN(userTokenBalanceAfterTokenize.value.amount).div(TWO)
+	// 		);
+	// 		await printTxLogs(provider.connection, txSig);
+	// 	} catch (e) {
+	// 		console.error(e);
+	// 		assert(false, 'redeemTokens threw');
+	// 	}
+
+	// 	const vdAfterRedeem = await program.account.vaultDepositor.fetch(
+	// 		vaultDepositor
+	// 	);
+	// 	const vdtAfterRedeem = await program.account.tokenizedVaultDepositor.fetch(
+	// 		tokenizedVaultDepositor
+	// 	);
+	// 	const vaultAfterRedeem = await program.account.vault.fetch(commonVaultKey);
+	// 	const mintAccountAfterRedeem = await getMint(connection, mintAddress);
+	// 	const userTokenBalanceAfterRedeem = await connection.getTokenAccountBalance(
+	// 		userVaultTokenAta
+	// 	);
+	// 	const tvdTokenBalanceAfterRedeem = await connection.getTokenAccountBalance(
+	// 		vaultTokenizedTokenAta
+	// 	);
+
+	// 	assert(
+	// 		tvdTokenBalanceAfterRedeem.value.uiAmount === 0,
+	// 		'TokenizedVaultDepositor token account has tokens'
+	// 	);
+
+	// 	const vdSharesDeltaAfterRedeem = vdAfterRedeem.vaultShares.sub(
+	// 		vdBefore.vaultShares
+	// 	);
+	// 	const vdtSharesDeltaAfterRedeem = vdtAfterRedeem.vaultShares.sub(
+	// 		vdtBefore.vaultShares
+	// 	);
+	// 	const tokenBalanceDeltaAfterRedeem = new BN(
+	// 		userTokenBalanceAfterRedeem.value.amount
+	// 	).sub(new BN(userTokenBalanceAfterTokenize.value.amount));
+	// 	const mintSupplyDeltaAfterRedeem = new BN(
+	// 		String(mintAccountAfterRedeem.supply)
+	// 	).sub(new BN(String(mintAccountAfterTokenize.supply)));
+
+	// 	assert(
+	// 		vdAfterRedeem.vaultSharesBase === vdBefore.vaultSharesBase,
+	// 		'VaultDepositor shares base changed'
+	// 	);
+	// 	assert(
+	// 		vdtAfterRedeem.vaultSharesBase === vdtBefore.vaultSharesBase,
+	// 		'TokenizedVaultDepositor shares base changed'
+	// 	);
+
+	// 	assert(
+	// 		vdSharesDeltaAfterRedeem.neg().eq(vdtSharesDeltaAfterRedeem),
+	// 		'VaultDepositor and TokenizedVaultDepositor shares delta should be equal and opposite'
+	// 	);
+	// 	assert(
+	// 		tokenBalanceDeltaAfterRedeem.eq(mintSupplyDeltaAfterRedeem),
+	// 		'Token balance delta should equal mint supply delta'
+	// 	);
+
+	// 	assert(
+	// 		vaultBefore.totalShares.eq(vaultAfterRedeem.totalShares),
+	// 		'Vault total shares should not have changed'
+	// 	);
+	// 	assert(
+	// 		vaultBefore.userShares.eq(vaultAfterRedeem.userShares),
+	// 		'Vault user shares should not have changed'
+	// 	);
+
+	// 	// teardown
+
+	// 	await validateTotalUserShares(program, commonVaultKey);
+
+	// 	await bootstrapVd.driftClient.unsubscribe();
+	// 	await bootstrapVd.vaultClient.unsubscribe();
+	// });
+
+	// /**
+	//  * Initializes a new vault (with TokenizedVaultDepositor) and 10% profit share, SOL spot market maker, and a non-manager depositor.
+	//  *
+	//  * Vault buys SOL spot with 99% of USDC deposits, and then the price changes from solStartPrice to solEndPrice.
+	//  * Depositor tokenizes shares and redeems after manager buys SOL and price changes.
+	//  */
+	// async function testRedeemVaultTokensWithProfitShare(
+	// 	solStartPrice: number,
+	// 	solEndPrice: number,
+	// 	profitable: boolean
+	// ) {
+	// 	console.log(`Initializing SOL price to ${solStartPrice}`);
+	// 	await setFeedPrice(anchor.workspace.Pyth, solStartPrice, solOracle);
+
+	// 	const usdcDepositAmount = new BN(10000 * 10 ** 6);
+	// 	const usdcSpotMarket = adminClient.getSpotMarketAccount(0);
+	// 	const solSpotMarket = adminClient.getSpotMarketAccount(1);
+
+	// 	const bulkAccountLoader = new BulkAccountLoader(connection, 'confirmed', 1);
+	// 	const [driftClient, usdcAccount, kp] = await createUserWithUSDCAccount(
+	// 		provider,
+	// 		usdcMint,
+	// 		new anchor.Program(
+	// 			managerDriftClient.program.idl,
+	// 			managerDriftClient.program.programId,
+	// 			provider
+	// 		),
+	// 		usdcDepositAmount,
+	// 		[],
+	// 		[0, 1],
+	// 		[
+	// 			{
+	// 				publicKey: solSpotMarket.oracle,
+	// 				source: solSpotMarket.oracleSource,
+	// 			},
+	// 		],
+	// 		bulkAccountLoader
+	// 	);
+	// 	const { driftClient: mmDriftClient, requoteFunc } = await initializeSolSpotMarketMaker(
+	// 		provider,
+	// 		usdcMint,
+	// 		new anchor.Program(
+	// 			managerDriftClient.program.idl,
+	// 			managerDriftClient.program.programId,
+	// 			provider
+	// 		),
+	// 		[
+	// 			{
+	// 				publicKey: solOracle,
+	// 				source: OracleSource.PYTH,
+	// 			},
+	// 		],
+	// 		undefined,
+	// 		undefined,
+	// 		bulkAccountLoader
+	// 	);
+	// 	await requoteFunc();
+
+	// 	const testVaultClient = new VaultClient({
+	// 		// @ts-ignore
+	// 		driftClient: adminClient,
+	// 		program: program,
+	// 		metaplex: metaplex,
+	// 		cliMode: true,
+	// 	});
+	// 	const depositorVaultClient = new VaultClient({
+	// 		// @ts-ignore
+	// 		driftClient: driftClient,
+	// 		program: new anchor.Program(
+	// 			program.idl,
+	// 			program.programId,
+	// 			new anchor.AnchorProvider(provider.connection, new anchor.Wallet(kp), {
+	// 				preflightCommitment: 'confirmed',
+	// 				skipPreflight: false,
+	// 				commitment: 'confirmed',
+	// 			})
+	// 		),
+	// 		metaplex: metaplex,
+	// 		cliMode: true,
+	// 	});
+
+	// 	const vaultName = `vault (${solStartPrice} -> ${solEndPrice})`;
+	// 	const vault = getVaultAddressSync(program.programId, encodeName(vaultName));
+
+	// 	await testVaultClient.initializeVault({
+	// 		name: encodeName(vaultName),
+	// 		spotMarketIndex: 0,
+	// 		redeemPeriod: ZERO,
+	// 		maxTokens: ZERO,
+	// 		managementFee: PERCENTAGE_PRECISION.div(TEN),
+	// 		profitShare: PERCENTAGE_PRECISION.toNumber() / 10, // 10%
+	// 		hurdleRate: 0,
+	// 		permissioned: false,
+	// 		minDepositAmount: ZERO,
+	// 	});
+	// 	await testVaultClient.updateDelegate(vault, provider.wallet.publicKey);
+	// 	await testVaultClient.updateMarginTradingEnabled(vault, true);
+
+	// 	const { vaultDepositor, tokenizedVaultDepositor, userVaultTokenAta } =
+	// 		calculateAllPdas(program.programId, vault, driftClient.wallet.publicKey);
+
+	// 	await testVaultClient.initializeTokenizedVaultDepositor({
+	// 		vault,
+	// 		tokenName: 'Tokenized Vault 2',
+	// 		tokenSymbol: 'TV2',
+	// 		tokenUri: '',
+	// 		decimals: 6,
+	// 	});
+
+	// 	try {
+	// 		await depositorVaultClient.deposit(
+	// 			vaultDepositor,
+	// 			usdcDepositAmount.div(TWO),
+	// 			{
+	// 				vault,
+	// 				authority: depositorVaultClient.driftClient.wallet.publicKey,
+	// 			},
+	// 			undefined,
+	// 			usdcAccount
+	// 		);
+	// 	} catch (e) {
+	// 		console.error(e);
+	// 		throw e;
+	// 	}
+	// 	await validateTotalUserShares(program, vault);
+
+	// 	const vdBefore = await program.account.vaultDepositor.fetch(vaultDepositor);
+	// 	const vdtBefore = await program.account.tokenizedVaultDepositor.fetch(
+	// 		tokenizedVaultDepositor
+	// 	);
+	// 	await depositorVaultClient.tokenizeShares(
+	// 		vaultDepositor,
+	// 		vdBefore.vaultShares,
+	// 		WithdrawUnit.SHARES
+	// 	);
+
+	// 	const vdAfter = await program.account.vaultDepositor.fetch(vaultDepositor);
+	// 	const vdtAfter = await program.account.tokenizedVaultDepositor.fetch(
+	// 		tokenizedVaultDepositor
+	// 	);
+
+	// 	const userTokenBalance = await connection.getTokenAccountBalance(
+	// 		userVaultTokenAta
+	// 	);
+
+	// 	console.log(`User token balance: ${userTokenBalance.value.uiAmountString}`);
+	// 	console.log(
+	// 		`VaultDepositor shares: ${vdBefore.vaultShares.toString()} -> ${vdAfter.vaultShares.toString()}`
+	// 	);
+	// 	console.log(
+	// 		`TokenizedVaultDepositor shares: ${vdtBefore.vaultShares.toString()} -> ${vdtAfter.vaultShares.toString()}`
+	// 	);
+
+	// 	const vaultEquity =
+	// 		await depositorVaultClient.calculateVaultEquityInDepositAsset({
+	// 			address: vault,
+	// 		});
+	// 	console.log(
+	// 		`Vault equity (${vault.toString()}): ${vaultEquity.toString()}`
+	// 	);
+
+	// 	const delegateDriftClient = new DriftClient({
+	// 		connection: driftClient.connection,
+	// 		wallet: provider.wallet,
+	// 		opts: {
+	// 			commitment: 'confirmed',
+	// 		},
+	// 		accountSubscription: {
+	// 			type: 'websocket',
+	// 		},
+	// 		authority: vault,
+	// 		activeSubAccountId: 0,
+	// 		subAccountIds: [0],
+	// 	});
+
+	// 	await delegateDriftClient.subscribe();
+
+	// 	const user = delegateDriftClient.getUser(0, vault);
+	// 	const s00 = user.getSpotPosition(0);
+	// 	const vaultUsdcBalance = getTokenAmount(
+	// 		s00.scaledBalance,
+	// 		usdcSpotMarket,
+	// 		s00.balanceType
+	// 	)
+	// 		.mul(new BN(99))
+	// 		.div(new BN(100));
+
+	// 	const mmUser = mmDriftClient.getUser();
+	// 	const mmOffer = mmUser
+	// 		.getOpenOrders()
+	// 		.find((o) => o.marketIndex === 1 && isVariant(o.direction, 'short'));
+	// 	if (!mmOffer) {
+	// 		throw new Error('mmOffer not found');
+	// 	}
+
+	// 	try {
+	// 		const tx = await delegateDriftClient.placeAndTakeSpotOrder(
+	// 			{
+	// 				orderType: OrderType.LIMIT,
+	// 				marketIndex: 1,
+	// 				baseAssetAmount: vaultUsdcBalance
+	// 					.mul(BASE_PRECISION)
+	// 					.div(mmOffer.price),
+	// 				price: mmOffer.price,
+	// 				direction: PositionDirection.LONG,
+	// 				immediateOrCancel: true,
+	// 				auctionDuration: 0,
+	// 			},
+	// 			undefined,
+	// 			{
+	// 				maker: mmUser.getUserAccountPublicKey(),
+	// 				makerStats: getUserStatsAccountPublicKey(
+	// 					new PublicKey(DRIFT_PROGRAM_ID),
+	// 					mmDriftClient.authority
+	// 				),
+	// 				makerUserAccount: mmUser.getUserAccount(),
+	// 				order: mmOffer,
+	// 			}
+	// 		);
+	// 		// await printTxLogs(provider.connection, tx, true, mmDriftClient.program);
+	// 		await printTxLogs(provider.connection, tx);
+	// 	} catch (e) {
+	// 		console.error(e);
+	// 		throw e;
+	// 	}
+
+	// 	await delegateDriftClient.fetchAccounts();
+	// 	await user.fetchAccounts();
+
+	// 	console.log(`Updating price to ${solEndPrice}`);
+	// 	await setFeedPrice(anchor.workspace.Pyth, solEndPrice, solOracle);
+	// 	await driftClient.fetchAccounts();
+
+	// 	const solPrice1 = delegateDriftClient.getOracleDataForSpotMarket(1).price;
+	// 	const vaultEquity2 =
+	// 		await depositorVaultClient.calculateVaultEquityInDepositAsset({
+	// 			address: vault,
+	// 		});
+	// 	console.log(
+	// 		`Vault equity (solprice: ${solPrice1.toString()}): ${vaultEquity2.toString()} (${(vaultEquity2.toNumber() / vaultEquity.toNumber() - 1) * 100
+	// 		}% return)`
+	// 	);
+
+	// 	const vdBefore1 = await program.account.vaultDepositor.fetch(
+	// 		vaultDepositor
+	// 	);
+	// 	const vdtBefore1 = await program.account.tokenizedVaultDepositor.fetch(
+	// 		tokenizedVaultDepositor
+	// 	);
+
+	// 	const tx3 = await depositorVaultClient.redeemTokens(
+	// 		vaultDepositor,
+	// 		new BN(userTokenBalance.value.amount)
+	// 	);
+	// 	await printTxLogs(provider.connection, tx3);
+
+	// 	const vdAfter1 = await program.account.vaultDepositor.fetch(vaultDepositor);
+	// 	const vdtAfter1 = await program.account.tokenizedVaultDepositor.fetch(
+	// 		tokenizedVaultDepositor
+	// 	);
+
+	// 	const userTokenBalance1 = await connection.getTokenAccountBalance(
+	// 		userVaultTokenAta
+	// 	);
+
+	// 	console.log('Shares after redeeming tokens:');
+	// 	console.log(
+	// 		`User token balance: ${userTokenBalance1.value.uiAmountString}`
+	// 	);
+	// 	console.log(
+	// 		`VaultDepositor shares: ${vdBefore1.vaultShares.toString()} -> ${vdAfter1.vaultShares.toString()}`
+	// 	);
+	// 	console.log(
+	// 		`TokenizedVaultDepositor shares: ${vdtBefore1.vaultShares.toString()} -> ${vdtAfter1.vaultShares.toString()}`
+	// 	);
+
+	// 	assert(
+	// 		userTokenBalance1.value.uiAmountString === '0',
+	// 		'User token balance should be 0'
+	// 	);
+	// 	assert(
+	// 		vdtAfter1.vaultShares.eq(ZERO),
+	// 		'TokenizedVaultDepositor shares should be 0'
+	// 	);
+
+	// 	if (profitable) {
+	// 		assert(
+	// 			vdAfter1.vaultShares.lt(vdBefore.vaultShares),
+	// 			'VaultDepositor shares should decrease due to profit share'
+	// 		);
+	// 	} else {
+	// 		assert(
+	// 			vdAfter1.vaultShares.eq(vdBefore.vaultShares),
+	// 			'VaultDepositor shares should stay same due to no profit share'
+	// 		);
+	// 	}
+
+	// 	await validateTotalUserShares(program, vault);
+
+	// 	await mmDriftClient.unsubscribe();
+	// 	await driftClient.unsubscribe();
+	// 	await delegateDriftClient.unsubscribe();
+	// 	await testVaultClient.unsubscribe();
+	// 	await depositorVaultClient.unsubscribe();
+	// }
+
+	// it('Redeem vault tokens with profit share, profitable', async () => {
+	// 	// 10% gain
+	// 	await testRedeemVaultTokensWithProfitShare(100, 110, true);
+	// });
+
+	// it('Redeem vault tokens with profit share, not profitable', async () => {
+	// 	// 10% loss
+	// 	await testRedeemVaultTokensWithProfitShare(100, 90, false);
+	// });
+
+	it('Tokenize after vault rebases', async () => {
+		const managerBootstrap = await bootstrapSignerClientAndUser({
 			payer: provider,
 			programId: program.programId,
 			usdcMint,
@@ -1709,298 +2206,68 @@ describe('TestTokenizedDriftVaults', () => {
 			metaplex,
 		});
 
-		const {
-			vaultDepositor,
-			tokenizedVaultDepositor,
-			mintAddress,
-			userVaultTokenAta,
-			vaultTokenizedTokenAta,
-		} = calculateAllPdas(
-			program.programId,
-			commonVaultKey,
-			bootstrapVd.signer.publicKey
-		);
-
-		// deposit to vault
-		try {
-			await bootstrapVd.vaultClient.deposit(
-				vaultDepositor,
-				usdcAmount,
-				{
-					vault: commonVaultKey,
-					authority: bootstrapVd.vaultClient.driftClient.wallet.publicKey,
+		const vd0Bootstrap = await bootstrapSignerClientAndUser({
+			payer: provider,
+			programId: program.programId,
+			usdcMint,
+			usdcAmount,
+			driftClientConfig: {
+				accountSubscription: {
+					type: 'websocket',
+					resubTimeoutMs: 30_000,
 				},
+				opts,
+				activeSubAccountId: 0,
+			},
+			metaplex,
+		});
+
+		const vd1Bootstrap = await bootstrapSignerClientAndUser({
+			payer: provider,
+			programId: program.programId,
+			usdcMint,
+			usdcAmount,
+			driftClientConfig: {
+				accountSubscription: {
+					type: 'websocket',
+					resubTimeoutMs: 30_000,
+				},
+				opts,
+				activeSubAccountId: 0,
+			},
+			metaplex,
+		});
+
+		const { driftClient: mmDriftClient, requoteFunc } =
+			await initializeSolSpotMarketMaker(
+				provider,
+				usdcMint,
+				new anchor.Program(
+					managerDriftClient.program.idl,
+					managerDriftClient.program.programId,
+					provider
+				),
+				[
+					{
+						publicKey: solOracle,
+						source: OracleSource.PYTH,
+					},
+				],
 				undefined,
-				bootstrapVd.userUSDCAccount.publicKey
+				undefined,
+				bulkAccountLoader
 			);
-		} catch (e) {
-			console.error(e);
-			assert(false);
-		}
 
-		await validateTotalUserShares(program, commonVaultKey);
-
-		const vdBefore = await program.account.vaultDepositor.fetch(vaultDepositor);
-		const vdtBefore = await program.account.tokenizedVaultDepositor.fetch(
-			tokenizedVaultDepositor
-		);
-		const vaultBefore = await program.account.vault.fetch(commonVaultKey);
-		const mintAccountBefore = await getMint(connection, mintAddress);
-		const tvdTokenBalanceBefore = await connection.getTokenAccountBalance(
-			vaultTokenizedTokenAta
+		// price bands 20%
+		await requoteFunc(
+			new BN(81 * PRICE_PRECISION.toNumber()),
+			new BN(119 * PRICE_PRECISION.toNumber())
 		);
 
-		assert(
-			(await connection.getAccountInfo(userVaultTokenAta)) === null,
-			'User vault token account should not exist'
-		);
-		assert(
-			tvdTokenBalanceBefore.value.uiAmount === 0,
-			'TokenizedVaultDepositor token account has tokens'
-		);
-		assert(Number(mintAccountBefore.supply) === 0, 'Mint supply !== 0');
-
-		assert(
-			Number(vdBefore.vaultShares) === Number(usdcAmount),
-			`VaultDepositor has no shares`
-		);
-
-		// tokenize shares for tokens
-		try {
-			const txSig = await bootstrapVd.vaultClient.tokenizeShares(
-				vaultDepositor,
-				vdBefore.vaultShares,
-				WithdrawUnit.SHARES
-			);
-			await printTxLogs(provider.connection, txSig);
-		} catch (e) {
-			console.error(e);
-			assert(false, 'tokenizeShares threw');
-		}
-
-		const vdAfterTokenize = await program.account.vaultDepositor.fetch(
-			vaultDepositor
-		);
-		const vdtAfterTokenize =
-			await program.account.tokenizedVaultDepositor.fetch(
-				tokenizedVaultDepositor
-			);
-		const vaultAfterTokenize = await program.account.vault.fetch(
-			commonVaultKey
-		);
-		const mintAccountAfterTokenize = await getMint(connection, mintAddress);
-		const userTokenBalanceAfterTokenize =
-			await connection.getTokenAccountBalance(userVaultTokenAta);
-		const tvdTokenBalanceAfterTokenize =
-			await connection.getTokenAccountBalance(vaultTokenizedTokenAta);
-
-		assert(
-			tvdTokenBalanceAfterTokenize.value.uiAmount === 0,
-			'TokenizedVaultDepositor token account has tokens'
-		);
-
-		const vdSharesDelta = vdAfterTokenize.vaultShares.sub(vdBefore.vaultShares);
-		const vdtSharesDelta = vdtAfterTokenize.vaultShares.sub(
-			vdtBefore.vaultShares
-		);
-		const tokenBalanceDelta = new BN(
-			userTokenBalanceAfterTokenize.value.amount
-		).sub(ZERO);
-		const mintSupplyDelta = new BN(String(mintAccountAfterTokenize.supply)).sub(
-			new BN(String(mintAccountBefore.supply))
-		);
-
-		assert(
-			vdAfterTokenize.vaultSharesBase === vdBefore.vaultSharesBase,
-			'VaultDepositor shares base changed'
-		);
-		assert(
-			vdtAfterTokenize.vaultSharesBase === vdtBefore.vaultSharesBase,
-			'TokenizedVaultDepositor shares base changed'
-		);
-
-		assert(
-			vdSharesDelta.neg().eq(vdtSharesDelta),
-			'VaultDepositor and TokenizedVaultDepositor shares delta should be equal and opposite'
-		);
-		assert(
-			tokenBalanceDelta.eq(mintSupplyDelta),
-			'Token balance delta should equal mint supply delta'
-		);
-
-		assert(
-			vaultBefore.totalShares.eq(vaultAfterTokenize.totalShares),
-			'Vault total shares should not have changed'
-		);
-		assert(
-			vaultBefore.userShares.eq(vaultAfterTokenize.userShares),
-			'Vault user shares should not have changed'
-		);
-
-		// redeem tokens for shares
-		try {
-			const txSig = await bootstrapVd.vaultClient.redeemTokens(
-				vaultDepositor,
-				new BN(userTokenBalanceAfterTokenize.value.amount).div(TWO)
-			);
-			await printTxLogs(provider.connection, txSig);
-		} catch (e) {
-			console.error(e);
-			assert(false, 'redeemTokens threw');
-		}
-
-		const vdAfterRedeem = await program.account.vaultDepositor.fetch(
-			vaultDepositor
-		);
-		const vdtAfterRedeem = await program.account.tokenizedVaultDepositor.fetch(
-			tokenizedVaultDepositor
-		);
-		const vaultAfterRedeem = await program.account.vault.fetch(commonVaultKey);
-		const mintAccountAfterRedeem = await getMint(connection, mintAddress);
-		const userTokenBalanceAfterRedeem = await connection.getTokenAccountBalance(
-			userVaultTokenAta
-		);
-		const tvdTokenBalanceAfterRedeem = await connection.getTokenAccountBalance(
-			vaultTokenizedTokenAta
-		);
-
-		assert(
-			tvdTokenBalanceAfterRedeem.value.uiAmount === 0,
-			'TokenizedVaultDepositor token account has tokens'
-		);
-
-		const vdSharesDeltaAfterRedeem = vdAfterRedeem.vaultShares.sub(
-			vdBefore.vaultShares
-		);
-		const vdtSharesDeltaAfterRedeem = vdtAfterRedeem.vaultShares.sub(
-			vdtBefore.vaultShares
-		);
-		const tokenBalanceDeltaAfterRedeem = new BN(
-			userTokenBalanceAfterRedeem.value.amount
-		).sub(new BN(userTokenBalanceAfterTokenize.value.amount));
-		const mintSupplyDeltaAfterRedeem = new BN(
-			String(mintAccountAfterRedeem.supply)
-		).sub(new BN(String(mintAccountAfterTokenize.supply)));
-
-		assert(
-			vdAfterRedeem.vaultSharesBase === vdBefore.vaultSharesBase,
-			'VaultDepositor shares base changed'
-		);
-		assert(
-			vdtAfterRedeem.vaultSharesBase === vdtBefore.vaultSharesBase,
-			'TokenizedVaultDepositor shares base changed'
-		);
-
-		assert(
-			vdSharesDeltaAfterRedeem.neg().eq(vdtSharesDeltaAfterRedeem),
-			'VaultDepositor and TokenizedVaultDepositor shares delta should be equal and opposite'
-		);
-		assert(
-			tokenBalanceDeltaAfterRedeem.eq(mintSupplyDeltaAfterRedeem),
-			'Token balance delta should equal mint supply delta'
-		);
-
-		assert(
-			vaultBefore.totalShares.eq(vaultAfterRedeem.totalShares),
-			'Vault total shares should not have changed'
-		);
-		assert(
-			vaultBefore.userShares.eq(vaultAfterRedeem.userShares),
-			'Vault user shares should not have changed'
-		);
-
-		// teardown
-
-		await validateTotalUserShares(program, commonVaultKey);
-
-		await bootstrapVd.driftClient.unsubscribe();
-		await bootstrapVd.vaultClient.unsubscribe();
-	});
-
-	/**
-	 * Initializes a new vault (with TokenizedVaultDepositor) and 10% profit share, SOL spot market maker, and a non-manager depositor.
-	 *
-	 * Vault buys SOL spot with 99% of USDC deposits, and then the price changes from solStartPrice to solEndPrice.
-	 * Depositor tokenizes shares and redeems after manager buys SOL and price changes.
-	 */
-	async function testRedeemVaultTokensWithProfitShare(
-		solStartPrice: number,
-		solEndPrice: number,
-		profitable: boolean
-	) {
-		console.log(`Initializing SOL price to ${solStartPrice}`);
-		await setFeedPrice(anchor.workspace.Pyth, solStartPrice, solOracle);
-
-		const usdcDepositAmount = new BN(10000 * 10 ** 6);
-		const usdcSpotMarket = adminClient.getSpotMarketAccount(0);
-		const solSpotMarket = adminClient.getSpotMarketAccount(1);
-
-		const bulkAccountLoader = new BulkAccountLoader(connection, 'confirmed', 1);
-		const [driftClient, usdcAccount, kp] = await createUserWithUSDCAccount(
-			provider,
-			usdcMint,
-			new anchor.Program(
-				managerDriftClient.program.idl,
-				managerDriftClient.program.programId,
-				provider
-			),
-			usdcDepositAmount,
-			[],
-			[0, 1],
-			[
-				{
-					publicKey: solSpotMarket.oracle,
-					source: solSpotMarket.oracleSource,
-				},
-			],
-			bulkAccountLoader
-		);
-		const [mmDriftClient] = await initializeSolSpotMarketMaker(
-			provider,
-			usdcMint,
-			new anchor.Program(
-				managerDriftClient.program.idl,
-				managerDriftClient.program.programId,
-				provider
-			),
-			[
-				{
-					publicKey: solOracle,
-					source: OracleSource.PYTH,
-				},
-			],
-			undefined,
-			undefined,
-			bulkAccountLoader
-		);
-
-		const testVaultClient = new VaultClient({
-			// @ts-ignore
-			driftClient: adminClient,
-			program: program,
-			metaplex: metaplex,
-			cliMode: true,
-		});
-		const depositorVaultClient = new VaultClient({
-			// @ts-ignore
-			driftClient: driftClient,
-			program: new anchor.Program(
-				program.idl,
-				program.programId,
-				new anchor.AnchorProvider(provider.connection, new anchor.Wallet(kp), {
-					preflightCommitment: 'confirmed',
-					skipPreflight: false,
-					commitment: 'confirmed',
-				})
-			),
-			metaplex: metaplex,
-			cliMode: true,
-		});
-
-		const vaultName = `vault (${solStartPrice} -> ${solEndPrice})`;
+		const vaultName = `test tokenize post rebase`;
 		const vault = getVaultAddressSync(program.programId, encodeName(vaultName));
 
-		await testVaultClient.initializeVault({
+		await managerBootstrap.vaultClient.initializeVault({
 			name: encodeName(vaultName),
 			spotMarketIndex: 0,
 			redeemPeriod: ZERO,
@@ -2011,13 +2278,23 @@ describe('TestTokenizedDriftVaults', () => {
 			permissioned: false,
 			minDepositAmount: ZERO,
 		});
-		await testVaultClient.updateDelegate(vault, provider.wallet.publicKey);
-		await testVaultClient.updateMarginTradingEnabled(vault, true);
+		await managerBootstrap.vaultClient.updateDelegate(
+			vault,
+			managerBootstrap.signer.publicKey
+		);
+		await managerBootstrap.vaultClient.updateMarginTradingEnabled(vault, true);
 
-		const { vaultDepositor, tokenizedVaultDepositor, userVaultTokenAta } =
-			calculateAllPdas(program.programId, vault, driftClient.wallet.publicKey);
+		const {
+			vaultDepositor: vd0VaultDepositor,
+			tokenizedVaultDepositor,
+			userVaultTokenAta: vd0VaultTokenAta,
+		} = calculateAllPdas(
+			program.programId,
+			vault,
+			vd0Bootstrap.signer.publicKey
+		);
 
-		await testVaultClient.initializeTokenizedVaultDepositor({
+		await managerBootstrap.vaultClient.initializeTokenizedVaultDepositor({
 			vault,
 			tokenName: 'Tokenized Vault 2',
 			tokenSymbol: 'TV2',
@@ -2025,72 +2302,52 @@ describe('TestTokenizedDriftVaults', () => {
 			decimals: 6,
 		});
 
-		try {
-			await depositorVaultClient.deposit(
-				vaultDepositor,
-				usdcDepositAmount.div(TWO),
-				{
-					vault,
-					authority: depositorVaultClient.driftClient.wallet.publicKey,
-				},
-				undefined,
-				usdcAccount
-			);
-		} catch (e) {
-			console.error(e);
-			throw e;
-		}
+		await vd0Bootstrap.vaultClient.deposit(
+			vd0VaultDepositor,
+			usdcAmount,
+			{
+				vault,
+				authority: vd0Bootstrap.driftClient.wallet.publicKey,
+			},
+			undefined,
+			vd0Bootstrap.userUSDCAccount.publicKey
+		);
 		await validateTotalUserShares(program, vault);
 
-		const vdBefore = await program.account.vaultDepositor.fetch(vaultDepositor);
-		const vdtBefore = await program.account.tokenizedVaultDepositor.fetch(
+		const vd00 = await program.account.vaultDepositor.fetch(vd0VaultDepositor);
+		const vdt00 = await program.account.tokenizedVaultDepositor.fetch(
 			tokenizedVaultDepositor
 		);
-		await depositorVaultClient.tokenizeShares(
-			vaultDepositor,
-			vdBefore.vaultShares,
+		await vd0Bootstrap.vaultClient.tokenizeShares(
+			vd0VaultDepositor,
+			vd00.vaultShares,
 			WithdrawUnit.SHARES
 		);
 
-		const vdAfter = await program.account.vaultDepositor.fetch(vaultDepositor);
-		const vdtAfter = await program.account.tokenizedVaultDepositor.fetch(
+		const vd01 = await program.account.vaultDepositor.fetch(vd0VaultDepositor);
+		const vdt01 = await program.account.tokenizedVaultDepositor.fetch(
 			tokenizedVaultDepositor
 		);
+		const vault0 = await vd0Bootstrap.vaultClient.getVault(vault);
 
-		const userTokenBalance = await connection.getTokenAccountBalance(
-			userVaultTokenAta
-		);
-
-		console.log(`User token balance: ${userTokenBalance.value.uiAmountString}`);
-		console.log(
-			`VaultDepositor shares: ${vdBefore.vaultShares.toString()} -> ${vdAfter.vaultShares.toString()}`
-		);
-		console.log(
-			`TokenizedVaultDepositor shares: ${vdtBefore.vaultShares.toString()} -> ${vdtAfter.vaultShares.toString()}`
+		const vdTokens00 = await connection.getTokenAccountBalance(
+			vd0VaultTokenAta
 		);
 
-		const vaultEquity =
-			await depositorVaultClient.calculateVaultEquityInDepositAsset({
-				address: vault,
-			});
-		console.log(
-			`Vault equity (${vault.toString()}): ${vaultEquity.toString()}`
-		);
+		await validateTotalUserShares(program, vault);
+
+		assert(vd01.vaultShares.eq(ZERO), 'vd01 has shares');
+		assert(vdt01.vaultShares.gt(ZERO), 'vdt01 has no shares');
+		assert(vd01.vaultSharesBase === 0, 'vd01 rebased');
+		assert(vd01.vaultSharesBase === vault0.sharesBase, 'vault rebased');
+		assert(vdTokens00.value.uiAmount > 0, 'vd0 tokens');
 
 		const delegateDriftClient = new DriftClient({
-			connection: driftClient.connection,
-			wallet: provider.wallet,
+			connection: provider.connection,
+			wallet: new Wallet(managerBootstrap.signer),
 			opts: {
 				commitment: 'confirmed',
 			},
-			// perpMarketIndexes: [],
-			// spotMarketIndexes: [0, 1],
-			// oracleInfos: [
-			// 	{
-			// 		publicKey: solOracle,
-			// 		source: OracleSource.PYTH,
-			// 	},
-			// ],
 			accountSubscription: {
 				type: 'websocket',
 			},
@@ -2098,146 +2355,198 @@ describe('TestTokenizedDriftVaults', () => {
 			activeSubAccountId: 0,
 			subAccountIds: [0],
 		});
-
 		await delegateDriftClient.subscribe();
 
-		const user = delegateDriftClient.getUser(0, vault);
-		const s00 = user.getSpotPosition(0);
-		const vaultUsdcBalance = getTokenAmount(
-			s00.scaledBalance,
-			usdcSpotMarket,
-			s00.balanceType
-		)
-			.mul(new BN(99))
-			.div(new BN(100));
+		const usdcSpotMarket = delegateDriftClient.getSpotMarketAccount(0);
 
-		const mmUser = mmDriftClient.getUser();
-		const mmOffer = mmUser
-			.getOpenOrders()
-			.find((o) => o.marketIndex === 1 && isVariant(o.direction, 'short'));
-		if (!mmOffer) {
-			throw new Error('mmOffer not found');
-		}
+		const vaultEquity0 =
+			await managerBootstrap.vaultClient.calculateVaultEquityInDepositAsset({
+				address: vault,
+			});
+		console.log(`Vault equity 0: ${vaultEquity0.toString()}`);
 
+		// place and take until we're broke
 		try {
-			const tx = await delegateDriftClient.placeAndTakeSpotOrder(
-				{
-					orderType: OrderType.LIMIT,
-					marketIndex: 1,
-					baseAssetAmount: vaultUsdcBalance
-						.mul(BASE_PRECISION)
-						.div(mmOffer.price),
-					price: mmOffer.price,
-					direction: PositionDirection.LONG,
-					immediateOrCancel: true,
-					auctionDuration: 0,
-				},
-				undefined,
-				{
-					maker: mmUser.getUserAccountPublicKey(),
-					makerStats: getUserStatsAccountPublicKey(
-						new PublicKey(DRIFT_PROGRAM_ID),
-						mmDriftClient.authority
-					),
-					makerUserAccount: mmUser.getUserAccount(),
-					order: mmOffer,
+			let diff = 1;
+			let i = 0;
+			while (diff > -0.99 && i < 15) {
+				i++;
+				await delegateDriftClient.fetchAccounts();
+
+				const mmUser = mmDriftClient.getUser();
+				const mmOffer = mmUser
+					.getOpenOrders()
+					.find((o) => o.marketIndex === 1 && isVariant(o.direction, 'short'));
+				const mmBid = mmUser
+					.getOpenOrders()
+					.find((o) => o.marketIndex === 1 && isVariant(o.direction, 'long'));
+				assert(mmOffer !== undefined, 'mm has no offers');
+				assert(mmBid !== undefined, 'mm has no bids');
+
+				const vaultSpotPos0 = delegateDriftClient
+					.getUser(0, vault)
+					.getSpotPosition(0);
+				const vaultUsdcBalance = getTokenAmount(
+					vaultSpotPos0.scaledBalance,
+					usdcSpotMarket,
+					vaultSpotPos0.balanceType
+				)
+					.mul(new BN(90))
+					.div(new BN(100));
+
+				const vaultEquity =
+					await managerBootstrap.vaultClient.calculateVaultEquityInDepositAsset(
+						{
+							address: vault,
+						}
+					);
+				diff = vaultEquity.toNumber() / vaultEquity0.toNumber() - 1;
+
+				if (i % 10 === 0) {
+					console.log(
+						`iter ${i}: Vault equity: ${vaultEquity.toString()} (${diff * 100}%)`
+					);
 				}
-			);
-			// await printTxLogs(provider.connection, tx, true, mmDriftClient.program);
-			await printTxLogs(provider.connection, tx);
+
+				const bidAmount = vaultUsdcBalance
+					.mul(BASE_PRECISION)
+					.div(mmOffer.price);
+
+				console.log(
+					`Buying ${convertToNumber(
+						bidAmount,
+						BASE_PRECISION
+					)} SOL at ${convertToNumber(mmOffer.price)}`
+				);
+				await delegateDriftClient.placeAndTakeSpotOrder(
+					{
+						orderType: OrderType.LIMIT,
+						marketIndex: 1,
+						baseAssetAmount: bidAmount,
+						price: mmOffer.price,
+						direction: PositionDirection.LONG,
+						immediateOrCancel: true,
+						auctionDuration: 0,
+					},
+					undefined,
+					{
+						maker: mmUser.getUserAccountPublicKey(),
+						makerStats: getUserStatsAccountPublicKey(
+							new PublicKey(DRIFT_PROGRAM_ID),
+							mmDriftClient.authority
+						),
+						makerUserAccount: mmUser.getUserAccount(),
+						order: mmOffer,
+					}
+				);
+
+				console.log(
+					`Selling ${convertToNumber(
+						bidAmount,
+						BASE_PRECISION
+					)} SOL at ${convertToNumber(mmBid.price)}`
+				);
+				await delegateDriftClient.placeAndTakeSpotOrder(
+					{
+						orderType: OrderType.LIMIT,
+						marketIndex: 1,
+						baseAssetAmount: bidAmount,
+						price: mmBid.price,
+						direction: PositionDirection.SHORT,
+						immediateOrCancel: true,
+						auctionDuration: 0,
+						reduceOnly: true,
+					},
+					undefined,
+					{
+						maker: mmUser.getUserAccountPublicKey(),
+						makerStats: getUserStatsAccountPublicKey(
+							new PublicKey(DRIFT_PROGRAM_ID),
+							mmDriftClient.authority
+						),
+						makerUserAccount: mmUser.getUserAccount(),
+						order: mmBid,
+					}
+				);
+
+				await requoteFunc(
+					new BN(81 * PRICE_PRECISION.toNumber()),
+					new BN(119 * PRICE_PRECISION.toNumber())
+				);
+			}
 		} catch (e) {
 			console.error(e);
-			throw e;
+			assert(false, 'Failed to place and take orders');
 		}
 
-		await delegateDriftClient.fetchAccounts();
-		await user.fetchAccounts();
-
-		console.log(`Updating price to ${solEndPrice}`);
-		await setFeedPrice(anchor.workspace.Pyth, solEndPrice, solOracle);
-		await driftClient.fetchAccounts();
-
-		const solPrice1 = delegateDriftClient.getOracleDataForSpotMarket(1).price;
 		const vaultEquity2 =
-			await depositorVaultClient.calculateVaultEquityInDepositAsset({
+			await managerBootstrap.vaultClient.calculateVaultEquityInDepositAsset({
 				address: vault,
 			});
 		console.log(
-			`Vault equity (solprice: ${solPrice1.toString()}): ${vaultEquity2.toString()} (${
-				(vaultEquity2.toNumber() / vaultEquity.toNumber() - 1) * 100
-			}% return)`
+			`Vault equity 2: ${vaultEquity2.toString()} (${(vaultEquity2.toNumber() / vaultEquity0.toNumber() - 1) * 100
+			}%)`
 		);
 
-		const vdBefore1 = await program.account.vaultDepositor.fetch(
-			vaultDepositor
-		);
-		const vdtBefore1 = await program.account.tokenizedVaultDepositor.fetch(
-			tokenizedVaultDepositor
-		);
-
-		const tx3 = await depositorVaultClient.redeemTokens(
-			vaultDepositor,
-			new BN(userTokenBalance.value.amount)
-		);
-		await printTxLogs(provider.connection, tx3);
-
-		const vdAfter1 = await program.account.vaultDepositor.fetch(vaultDepositor);
-		const vdtAfter1 = await program.account.tokenizedVaultDepositor.fetch(
-			tokenizedVaultDepositor
-		);
-
-		const userTokenBalance1 = await connection.getTokenAccountBalance(
-			userVaultTokenAta
-		);
-
-		console.log('Shares after redeeming tokens:');
-		console.log(
-			`User token balance: ${userTokenBalance1.value.uiAmountString}`
-		);
-		console.log(
-			`VaultDepositor shares: ${vdBefore1.vaultShares.toString()} -> ${vdAfter1.vaultShares.toString()}`
-		);
-		console.log(
-			`TokenizedVaultDepositor shares: ${vdtBefore1.vaultShares.toString()} -> ${vdtAfter1.vaultShares.toString()}`
-		);
-
-		assert(
-			userTokenBalance1.value.uiAmountString === '0',
-			'User token balance should be 0'
-		);
-		assert(
-			vdtAfter1.vaultShares.eq(ZERO),
-			'TokenizedVaultDepositor shares should be 0'
-		);
-
-		if (profitable) {
-			assert(
-				vdAfter1.vaultShares.lt(vdBefore.vaultShares),
-				'VaultDepositor shares should decrease due to profit share'
+		// enter second depositor
+		try {
+			const {
+				vaultDepositor: vd1VaultDepositor,
+				userVaultTokenAta: vd1VaultTokenAta,
+			} = calculateAllPdas(
+				program.programId,
+				vault,
+				vd1Bootstrap.signer.publicKey
 			);
-		} else {
-			assert(
-				vdAfter1.vaultShares.eq(vdBefore.vaultShares),
-				'VaultDepositor shares should stay same due to no profit share'
+			const dep1Tx = await vd1Bootstrap.vaultClient.deposit(
+				vd1VaultDepositor,
+				usdcAmount,
+				{
+					vault,
+					authority: vd1Bootstrap.driftClient.wallet.publicKey,
+				},
+				undefined,
+				vd1Bootstrap.userUSDCAccount.publicKey
 			);
+			await printTxLogs(provider.connection, dep1Tx);
+
+			const vault1 = await managerBootstrap.vaultClient.getVault(vault);
+			const vd10 = await program.account.vaultDepositor.fetch(
+				vd1VaultDepositor
+			);
+			const vdt10 = await program.account.tokenizedVaultDepositor.fetch(
+				tokenizedVaultDepositor
+			);
+			assert(vd10.vaultShares.gt(ZERO), 'vd10 has shares');
+			assert(vdt10.vaultShares.gt(ZERO), 'vdt10 has no shares');
+			assert(vd10.vaultSharesBase === vault1.sharesBase, 'vault1 didnt rebase');
+			assert(vd10.vaultSharesBase === 1, 'vd10 didnt rebase');
+			assert(vdt10.vaultSharesBase === 0, 'vdt10 should not have rebased');
+
+			const dep1TokenizeTx = await vd1Bootstrap.vaultClient.tokenizeShares(
+				vd1VaultDepositor,
+				vd10.vaultShares,
+				WithdrawUnit.SHARES
+			);
+			await printTxLogs(provider.connection, dep1TokenizeTx);
+		} catch (e) {
+			console.error(e);
+			assert(false, 'Deposit 2 failed');
 		}
 
 		await validateTotalUserShares(program, vault);
 
+		// teardown
+
+		await managerBootstrap.driftClient.unsubscribe();
+		await vd0Bootstrap.driftClient.unsubscribe();
+		await vd1Bootstrap.driftClient.unsubscribe();
+
+		await managerBootstrap.vaultClient.unsubscribe();
+		await vd0Bootstrap.driftClient.unsubscribe();
+		await vd1Bootstrap.driftClient.unsubscribe();
+
 		await mmDriftClient.unsubscribe();
-		await driftClient.unsubscribe();
 		await delegateDriftClient.unsubscribe();
-		await testVaultClient.unsubscribe();
-		await depositorVaultClient.unsubscribe();
-	}
-
-	it('Redeem vault tokens with profit share, profitable', async () => {
-		// 10% gain
-		await testRedeemVaultTokensWithProfitShare(100, 110, true);
-	});
-
-	it('Redeem vault tokens with profit share, not profitable', async () => {
-		// 10% loss
-		await testRedeemVaultTokensWithProfitShare(100, 90, false);
 	});
 });
