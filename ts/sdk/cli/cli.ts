@@ -14,6 +14,7 @@ import {
     requestWithdraw,
     withdraw,
     forceWithdraw,
+    forceWithdrawAll,
     listDepositorsForVault,
     managerUpdateMarginTradingEnabled,
     decodeLogs,
@@ -147,6 +148,11 @@ program
     .addOption(new Option("--vault-depositor-authority <vaultDepositorAuthority>", "Authority address of VaultDepositor, must also provide --vault-address").makeOptionMandatory(false))
     .addOption(new Option("--vault-address <vaultAddress>", "Address of vault, must required if only --vault-deposit-authority is provided").makeOptionMandatory(false))
     .action((opts) => forceWithdraw(program, opts));
+program
+    .command("force-withdraw-all")
+    .description("Processes all pending withdrawals that are ready to be redeemed")
+    .addOption(new Option("--vault-address <vaultAddress>", "Address of vault, must required if only --vault-deposit-authority is provided").makeOptionMandatory(true))
+    .action((opts) => forceWithdrawAll(program, opts));
 program
     .command("decode-logs")
     .description("Decode program logs from a txid")

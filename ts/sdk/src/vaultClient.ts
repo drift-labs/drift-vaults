@@ -57,6 +57,7 @@ import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
 import { UserMapConfig } from '@drift-labs/sdk/lib/userMap/userMapConfig';
 import { Metaplex } from '@metaplex-foundation/js';
 import { calculateRealizedVaultDepositorEquity } from './math';
+import { getOrCreateATAInstruction } from './utils';
 
 export type TxParams = {
 	cuLimit?: number;
@@ -1561,6 +1562,13 @@ export class VaultClient {
 	public async forceWithdraw(
 		vaultDepositor: PublicKey
 	): Promise<TransactionSignature> {
+		const ix = await this.getForceWithdrawIx(vaultDepositor);
+		return await this.createAndSendTxn(ix);
+	}
+
+	public async getForceWithdrawIx(
+		vaultDepositor: PublicKey
+	): Promise<TransactionInstruction[]> {
 		const vaultDepositorAccount =
 			await this.program.account.vaultDepositor.fetch(vaultDepositor);
 		const vaultAccount = await this.program.account.vault.fetch(
@@ -1599,6 +1607,20 @@ export class VaultClient {
 			);
 		}
 
+		const [userTokenAccount, createAtaIx] = await getOrCreateATAInstruction(
+			spotMarket.mint,
+			vaultDepositorAccount.authority,
+			this.driftClient.connection,
+			true,
+			this.driftClient.wallet.publicKey
+		);
+
+		if (createAtaIx) {
+			console.log(
+				`Creating ATA for ${vaultDepositorAccount.authority.toBase58()} to ${userTokenAccount.toBase58()}`
+			);
+		}
+
 		const accounts = {
 			manager: this.driftClient.wallet.publicKey,
 			vault: vaultDepositorAccount.vault,
@@ -1609,38 +1631,26 @@ export class VaultClient {
 			driftState: driftStateKey,
 			driftSpotMarketVault: spotMarket.vault,
 			driftSigner: this.driftClient.getStateAccount().signer,
-			userTokenAccount: getAssociatedTokenAddressSync(
-				spotMarket.mint,
-				vaultDepositorAccount.authority,
-				true
-			),
+			userTokenAccount,
 			driftProgram: this.driftClient.program.programId,
 			tokenProgram: TOKEN_PROGRAM_ID,
 		};
 
-		if (this.cliMode) {
-			return await this.program.methods
+		const ixs = [];
+
+		if (createAtaIx) {
+			ixs.push(createAtaIx);
+		}
+
+		ixs.push(
+			await this.program.methods
 				.forceWithdraw()
-				.preInstructions([
-					ComputeBudgetProgram.setComputeUnitLimit({
-						units: 500_000,
-					}),
-					ComputeBudgetProgram.setComputeUnitPrice({
-						microLamports: 50_000,
-					}),
-				])
 				.accounts(accounts)
 				.remainingAccounts(remainingAccounts)
-				.rpc();
-		} else {
-			const forceWithdrawIx = this.program.instruction.forceWithdraw({
-				accounts: {
-					...accounts,
-				},
-				remainingAccounts,
-			});
-			return await this.createAndSendTxn([forceWithdrawIx]);
-		}
+				.instruction()
+		);
+
+		return ixs;
 	}
 
 	public async cancelRequestWithdraw(

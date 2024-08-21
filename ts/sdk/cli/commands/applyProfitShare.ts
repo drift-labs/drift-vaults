@@ -1,4 +1,4 @@
-import { ComputeBudgetProgram, PublicKey, TransactionInstruction, VersionedTransactionResponse } from "@solana/web3.js";
+import { ComputeBudgetProgram, PublicKey, SendTransactionError, TransactionInstruction, TransactionMessage, VersionedTransaction, VersionedTransactionResponse } from "@solana/web3.js";
 import {
     OptionValues,
     Command
@@ -21,6 +21,7 @@ export const applyProfitShare = async (program: Command, cmdOpts: OptionValues) 
     const {
         driftVault,
         driftClient,
+        wallet,
     } = await getCommandContext(program, true);
 
     const vault = await driftVault.getVault(vaultAddress);
@@ -72,24 +73,21 @@ export const applyProfitShare = async (program: Command, cmdOpts: OptionValues) 
                 units: 170_000,
             }));
 
-            const tx = await driftClient.txSender.getVersionedTransaction(ixs, [], undefined, undefined);
+            const message = new TransactionMessage({
+                payerKey: driftClient.wallet.publicKey,
+                recentBlockhash: (await driftClient.connection.getLatestBlockhash('finalized')).blockhash,
+                instructions: ixs,
+            }).compileToV0Message();
 
-            let attempt = 0;
-            let txResp: VersionedTransactionResponse | null = null;
-            while (txResp === null) {
-                attempt++;
-                const { txSig } = await driftClient.txSender.sendVersionedTransaction(
-                    tx,
-                );
-                console.log(`[${i}]: https://solscan.io/tx/${txSig} (attempt ${attempt})`);
+            const tx = await wallet.signVersionedTransaction(new VersionedTransaction(message));
 
-                await new Promise(resolve => setTimeout(resolve, 1000));
-
-                txResp = await driftClient.connection.getTransaction(txSig, { commitment: 'confirmed', maxSupportedTransactionVersion: 0 });
+            try {
+                const txid = await driftClient.connection.sendTransaction(tx);
+                console.log(`Sent chunk: ${txid}`);
+            } catch (e) {
+                console.error(`Error sending chunk: ${e}`);
+                console.log((e as SendTransactionError).logs);
             }
-            console.log(txResp);
-
-
         } catch (e) {
             console.error(e);
             continue;
