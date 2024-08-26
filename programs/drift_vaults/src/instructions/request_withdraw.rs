@@ -1,15 +1,12 @@
+use crate::constraints::{
+    is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
+};
+use crate::state::account_maps::AccountMapProvider;
+use crate::{Vault, VaultDepositor, WithdrawUnit};
 use anchor_lang::prelude::*;
 use drift::instructions::optional_accounts::AccountMaps;
 use drift::math::casting::Cast;
 use drift::state::user::User;
-
-use crate::constraints::{
-    is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
-};
-use crate::error::ErrorCode;
-use crate::state::account_maps::AccountMapProvider;
-use crate::state::{Vault, VaultProtocolProvider};
-use crate::{validate, VaultDepositor, WithdrawUnit};
 
 pub fn request_withdraw<'c: 'info, 'info>(
     ctx: Context<'_, '_, 'c, 'info, RequestWithdraw<'info>>,
@@ -22,21 +19,11 @@ pub fn request_withdraw<'c: 'info, 'info>(
 
     let user = ctx.accounts.drift_user.load()?;
 
-    let mut vp = ctx.vault_protocol();
-    let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
-
-    validate!(
-        (vault.vault_protocol == Pubkey::default() && vp.is_none())
-            || (vault.vault_protocol != Pubkey::default() && vp.is_some()),
-        ErrorCode::VaultProtocolMissing,
-        "vault protocol missing in remaining accounts"
-    )?;
-
     let AccountMaps {
         perp_market_map,
         spot_market_map,
         mut oracle_map,
-    } = ctx.load_maps(clock.slot, None, vp.is_some())?;
+    } = ctx.load_maps(clock.slot, None)?;
 
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
@@ -46,7 +33,6 @@ pub fn request_withdraw<'c: 'info, 'info>(
         withdraw_unit,
         vault_equity,
         vault,
-        &mut vp,
         clock.unix_timestamp,
     )?;
 
@@ -57,16 +43,22 @@ pub fn request_withdraw<'c: 'info, 'info>(
 pub struct RequestWithdraw<'info> {
     #[account(mut)]
     pub vault: AccountLoader<'info, Vault>,
-    #[account(mut,
-  seeds = [b"vault_depositor", vault.key().as_ref(), authority.key().as_ref()],
-  bump,
-  constraint = is_authority_for_vault_depositor(& vault_depositor, & authority) ?,)]
+    #[account(
+        mut,
+        seeds = [b"vault_depositor", vault.key().as_ref(), authority.key().as_ref()],
+        bump,
+        constraint = is_authority_for_vault_depositor(&vault_depositor, &authority)?,
+    )]
     pub vault_depositor: AccountLoader<'info, VaultDepositor>,
     pub authority: Signer<'info>,
-    #[account(constraint = is_user_stats_for_vault(& vault, & drift_user_stats) ?)]
+    #[account(
+        constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?
+    )]
     /// CHECK: checked in drift cpi
     pub drift_user_stats: AccountInfo<'info>,
-    #[account(constraint = is_user_for_vault(& vault, & drift_user.key()) ?)]
+    #[account(
+        constraint = is_user_for_vault(&vault, &drift_user.key())?
+    )]
     /// CHECK: checked in drift cpi
     pub drift_user: AccountLoader<'info, User>,
     /// CHECK: checked in drift cpi

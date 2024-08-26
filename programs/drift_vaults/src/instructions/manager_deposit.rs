@@ -1,15 +1,13 @@
+use crate::constraints::{is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault};
+use crate::cpi::{DepositCPI, TokenTransferCPI};
+use crate::Vault;
+use crate::{declare_vault_seeds, AccountMapProvider};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 use drift::cpi::accounts::Deposit as DriftDeposit;
 use drift::instructions::optional_accounts::AccountMaps;
 use drift::program::Drift;
 use drift::state::user::User;
-
-use crate::constraints::{is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault};
-use crate::drift_cpi::{DepositCPI, TokenTransferCPI};
-use crate::error::ErrorCode;
-use crate::state::{Vault, VaultProtocolProvider};
-use crate::{declare_vault_seeds, validate, AccountMapProvider};
 
 pub fn manager_deposit<'c: 'info, 'info>(
     ctx: Context<'_, '_, 'c, 'info, ManagerDeposit<'info>>,
@@ -19,17 +17,6 @@ pub fn manager_deposit<'c: 'info, 'info>(
 
     let mut vault = ctx.accounts.vault.load_mut()?;
 
-    // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
-    let mut vp = ctx.vault_protocol();
-    let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
-
-    validate!(
-        (vault.vault_protocol == Pubkey::default() && vp.is_none())
-            || (vault.vault_protocol != Pubkey::default() && vp.is_some()),
-        ErrorCode::VaultProtocolMissing,
-        "vault protocol missing in remaining accounts"
-    )?;
-
     let user = ctx.accounts.drift_user.load()?;
     let spot_market_index = vault.spot_market_index;
 
@@ -37,16 +24,15 @@ pub fn manager_deposit<'c: 'info, 'info>(
         perp_market_map,
         spot_market_map,
         mut oracle_map,
-    } = ctx.load_maps(clock.slot, Some(spot_market_index), vp.is_some())?;
+    } = ctx.load_maps(clock.slot, Some(spot_market_index))?;
 
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
-    vault.manager_deposit(&mut vp, amount, vault_equity, clock.unix_timestamp)?;
+    vault.manager_deposit(amount, vault_equity, clock.unix_timestamp)?;
 
     drop(vault);
     drop(user);
-    drop(vp);
 
     ctx.token_transfer(amount)?;
 
@@ -57,30 +43,42 @@ pub fn manager_deposit<'c: 'info, 'info>(
 
 #[derive(Accounts)]
 pub struct ManagerDeposit<'info> {
-    #[account(mut,
-  constraint = is_manager_for_vault(& vault, & manager) ?)]
+    #[account(
+        mut,
+        constraint = is_manager_for_vault(&vault, &manager)?
+    )]
     pub vault: AccountLoader<'info, Vault>,
     pub manager: Signer<'info>,
-    #[account(mut,
-  seeds = [b"vault_token_account".as_ref(), vault.key().as_ref()],
-  bump,)]
+    #[account(
+        mut,
+        seeds = [b"vault_token_account".as_ref(), vault.key().as_ref()],
+        bump,
+    )]
     pub vault_token_account: Box<Account<'info, TokenAccount>>,
-    #[account(mut,
-  constraint = is_user_stats_for_vault(& vault, & drift_user_stats) ?)]
+    #[account(
+        mut,
+        constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?
+    )]
     /// CHECK: checked in drift cpi
     pub drift_user_stats: AccountInfo<'info>,
-    #[account(mut,
-  constraint = is_user_for_vault(& vault, & drift_user.key()) ?)]
+    #[account(
+        mut,
+        constraint = is_user_for_vault(&vault, &drift_user.key())?
+    )]
     /// CHECK: checked in drift cpi
     pub drift_user: AccountLoader<'info, User>,
     /// CHECK: checked in drift cpi
     pub drift_state: AccountInfo<'info>,
-    #[account(mut,
-  token::mint = vault_token_account.mint)]
+    #[account(
+        mut,
+        token::mint = vault_token_account.mint
+    )]
     pub drift_spot_market_vault: Box<Account<'info, TokenAccount>>,
-    #[account(mut,
-  token::authority = manager,
-  token::mint = vault_token_account.mint)]
+    #[account(
+        mut,
+        token::authority = manager,
+        token::mint = vault_token_account.mint
+    )]
     pub user_token_account: Box<Account<'info, TokenAccount>>,
     pub drift_program: Program<'info, Drift>,
     pub token_program: Program<'info, Token>,

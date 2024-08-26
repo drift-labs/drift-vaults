@@ -1,8 +1,6 @@
-use anchor_lang::prelude::*;
-
 use crate::error::ErrorCode;
-use crate::state::Vault;
-use crate::{validate, Size, VaultDepositor};
+use crate::{validate, Size, Vault, VaultDepositor};
+use anchor_lang::prelude::*;
 
 pub fn initialize_vault_depositor(ctx: Context<InitializeVaultDepositor>) -> Result<()> {
     let mut vault_depositor = ctx.accounts.vault_depositor.load_init()?;
@@ -31,11 +29,13 @@ pub fn initialize_vault_depositor(ctx: Context<InitializeVaultDepositor>) -> Res
 #[derive(Accounts)]
 pub struct InitializeVaultDepositor<'info> {
     pub vault: AccountLoader<'info, Vault>,
-    #[account(init,
-  seeds = [b"vault_depositor", vault.key().as_ref(), authority.key().as_ref()],
-  space = VaultDepositor::SIZE,
-  bump,
-  payer = payer)]
+    #[account(
+        init,
+        seeds = [b"vault_depositor", vault.key().as_ref(), authority.key().as_ref()],
+        space = VaultDepositor::SIZE,
+        bump,
+        payer = payer
+    )]
     pub vault_depositor: AccountLoader<'info, VaultDepositor>,
     /// CHECK: dont need to sign if vault is permissioned
     pub authority: AccountInfo<'info>,

@@ -1,17 +1,15 @@
+use crate::constraints::{
+    is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
+};
+use crate::cpi::{UpdateUserDelegateCPI, UpdateUserReduceOnlyCPI};
+use crate::{declare_vault_seeds, implement_update_user_delegate_cpi};
+use crate::{implement_update_user_reduce_only_cpi, AccountMapProvider};
+use crate::{Vault, VaultDepositor};
 use anchor_lang::prelude::*;
 use drift::cpi::accounts::UpdateUser;
 use drift::instructions::optional_accounts::AccountMaps;
 use drift::program::Drift;
 use drift::state::user::User;
-
-use crate::constraints::{
-    is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
-};
-use crate::drift_cpi::{UpdateUserDelegateCPI, UpdateUserReduceOnlyCPI};
-use crate::error::ErrorCode;
-use crate::state::{Vault, VaultDepositor, VaultProtocolProvider};
-use crate::{declare_vault_seeds, implement_update_user_delegate_cpi, validate};
-use crate::{implement_update_user_reduce_only_cpi, AccountMapProvider};
 
 pub fn liquidate<'c: 'info, 'info>(
     ctx: Context<'_, '_, 'c, 'info, Liquidate<'info>>,
@@ -23,22 +21,11 @@ pub fn liquidate<'c: 'info, 'info>(
     let mut vault = ctx.accounts.vault.load_mut()?;
     let vault_depositor = ctx.accounts.vault_depositor.load()?;
 
-    // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
-    let mut vp = ctx.vault_protocol();
-    let vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
-
-    validate!(
-        (vault.vault_protocol == Pubkey::default() && vp.is_none())
-            || (vault.vault_protocol != Pubkey::default() && vp.is_some()),
-        ErrorCode::VaultProtocolMissing,
-        "vault protocol missing in remaining accounts"
-    )?;
-
     let AccountMaps {
         perp_market_map,
         spot_market_map,
         mut oracle_map,
-    } = ctx.load_maps(clock.slot, Some(vault.spot_market_index), vp.is_some())?;
+    } = ctx.load_maps(clock.slot, Some(vault.spot_market_index))?;
 
     // 1. Check the vault depositor has waited the redeem period
     vault_depositor
@@ -62,7 +49,6 @@ pub fn liquidate<'c: 'info, 'info>(
 
     drop(user);
     drop(vault);
-    drop(vp);
 
     ctx.drift_update_user_delegate(vault_depositor.authority)?;
     ctx.drift_update_user_reduce_only(true)?;
@@ -74,18 +60,24 @@ pub fn liquidate<'c: 'info, 'info>(
 pub struct Liquidate<'info> {
     #[account(mut)]
     pub vault: AccountLoader<'info, Vault>,
-    #[account(mut,
-  seeds = [b"vault_depositor", vault.key().as_ref(), authority.key().as_ref()],
-  bump,
-  constraint = is_authority_for_vault_depositor(& vault_depositor, & authority) ?,)]
+    #[account(
+        mut,
+        seeds = [b"vault_depositor", vault.key().as_ref(), authority.key().as_ref()],
+        bump,
+        constraint = is_authority_for_vault_depositor(&vault_depositor, &authority)?,
+    )]
     pub vault_depositor: AccountLoader<'info, VaultDepositor>,
     pub authority: Signer<'info>,
-    #[account(mut,
-  constraint = is_user_stats_for_vault(& vault, & drift_user_stats) ?)]
+    #[account(
+        mut,
+        constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?
+    )]
     /// CHECK: checked in drift cpi
     pub drift_user_stats: AccountInfo<'info>,
-    #[account(mut,
-  constraint = is_user_for_vault(& vault, & drift_user.key()) ?)]
+    #[account(
+        mut,
+        constraint = is_user_for_vault(&vault, &drift_user.key())?
+    )]
     /// CHECK: checked in drift cpi
     pub drift_user: AccountLoader<'info, User>,
     /// CHECK: checked in drift cpi
