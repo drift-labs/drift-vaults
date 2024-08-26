@@ -891,51 +891,27 @@ impl Vault {
 
         let vault_shares_after: u128 = self.get_protocol_shares(vault_protocol);
 
-        match vault_protocol {
-            None => {
-                emit!(VaultDepositorRecord {
-                    ts: now,
-                    vault: self.pubkey,
-                    depositor_authority: self.manager,
-                    action: VaultDepositorAction::WithdrawRequest,
-                    amount: self.last_manager_withdraw_request.value,
-                    spot_market_index: self.spot_market_index,
-                    vault_equity_before: vault_equity,
-                    vault_shares_before,
-                    user_vault_shares_before,
-                    total_vault_shares_before,
-                    vault_shares_after,
-                    total_vault_shares_after: self.total_shares,
-                    user_vault_shares_after: self.user_shares,
-                    profit_share: 0,
-                    management_fee: management_fee_payment,
-                    management_fee_shares,
-                });
-            }
-            Some(_) => {
-                emit!(VaultDepositorV1Record {
-                    ts: now,
-                    vault: self.pubkey,
-                    depositor_authority: self.manager,
-                    action: VaultDepositorAction::WithdrawRequest,
-                    amount: self.last_manager_withdraw_request.value,
-                    spot_market_index: self.spot_market_index,
-                    vault_equity_before: vault_equity,
-                    vault_shares_before,
-                    user_vault_shares_before,
-                    total_vault_shares_before,
-                    vault_shares_after,
-                    total_vault_shares_after: self.total_shares,
-                    user_vault_shares_after: self.user_shares,
-                    protocol_profit_share: 0,
-                    protocol_fee: protocol_fee_payment,
-                    protocol_fee_shares,
-                    manager_profit_share: 0,
-                    management_fee: management_fee_payment,
-                    management_fee_shares,
-                });
-            }
-        }
+        emit!(VaultDepositorV1Record {
+            ts: now,
+            vault: self.pubkey,
+            depositor_authority: self.manager,
+            action: VaultDepositorAction::WithdrawRequest,
+            amount: self.last_manager_withdraw_request.value,
+            spot_market_index: self.spot_market_index,
+            vault_equity_before: vault_equity,
+            vault_shares_before,
+            user_vault_shares_before,
+            total_vault_shares_before,
+            vault_shares_after,
+            total_vault_shares_after: self.total_shares,
+            user_vault_shares_after: self.user_shares,
+            protocol_profit_share: 0,
+            protocol_fee: protocol_fee_payment,
+            protocol_fee_shares,
+            manager_profit_share: 0,
+            management_fee: management_fee_payment,
+            management_fee_shares,
+        });
 
         Ok(())
     }
