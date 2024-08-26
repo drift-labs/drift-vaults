@@ -12,11 +12,10 @@ use crate::constraints::{
 use crate::drift_cpi::{
     TokenTransferCPI, UpdateUserDelegateCPI, UpdateUserReduceOnlyCPI, WithdrawCPI,
 };
-use crate::error::ErrorCode;
 use crate::state::{Vault, VaultDepositor, VaultProtocolProvider};
 use crate::{
     declare_vault_seeds, implement_update_user_delegate_cpi, implement_update_user_reduce_only_cpi,
-    implement_withdraw, validate, AccountMapProvider,
+    implement_withdraw, AccountMapProvider,
 };
 
 pub fn withdraw<'c: 'info, 'info>(ctx: Context<'_, '_, 'c, 'info, Withdraw<'info>>) -> Result<()> {
@@ -27,7 +26,7 @@ pub fn withdraw<'c: 'info, 'info>(ctx: Context<'_, '_, 'c, 'info, Withdraw<'info
     // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
     let mut vp = ctx.vault_protocol();
     let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
-    vault.validate_vault_protocol(&vp);
+    vault.validate_vault_protocol(&vp)?;
 
     let user = ctx.accounts.drift_user.load()?;
     let spot_market_index = vault.spot_market_index;

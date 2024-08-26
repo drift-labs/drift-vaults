@@ -3,9 +3,8 @@ use drift::instructions::optional_accounts::AccountMaps;
 use drift::state::user::User;
 
 use crate::constraints::{is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault};
-use crate::error::ErrorCode;
 use crate::state::VaultProtocolProvider;
-use crate::{validate, AccountMapProvider};
+use crate::AccountMapProvider;
 use crate::{Vault, WithdrawUnit};
 
 pub fn manager_request_withdraw<'c: 'info, 'info>(
@@ -20,7 +19,7 @@ pub fn manager_request_withdraw<'c: 'info, 'info>(
     // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
     let mut vp = ctx.vault_protocol();
     let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
-    vault.validate_vault_protocol(&vp);
+    vault.validate_vault_protocol(&vp)?;
 
     let user = ctx.accounts.drift_user.load()?;
     let spot_market_index = vault.spot_market_index;

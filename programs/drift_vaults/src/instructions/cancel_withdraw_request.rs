@@ -6,10 +6,9 @@ use drift::state::user::User;
 use crate::constraints::{
     is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
 };
-use crate::error::ErrorCode;
 use crate::state::{Vault, VaultProtocolProvider};
+use crate::AccountMapProvider;
 use crate::VaultDepositor;
-use crate::{validate, AccountMapProvider};
 
 pub fn cancel_withdraw_request<'c: 'info, 'info>(
     ctx: Context<'_, '_, 'c, 'info, CancelWithdrawRequest<'info>>,
@@ -21,7 +20,7 @@ pub fn cancel_withdraw_request<'c: 'info, 'info>(
     // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
     let mut vp = ctx.vault_protocol();
     let vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
-    vault.validate_vault_protocol(&vp);
+    vault.validate_vault_protocol(&vp)?;
 
     let user = ctx.accounts.drift_user.load()?;
 

@@ -8,9 +8,8 @@ use drift::state::user::User;
 
 use crate::constraints::{is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault};
 use crate::drift_cpi::{TokenTransferCPI, WithdrawCPI};
-use crate::error::ErrorCode;
 use crate::state::{Vault, VaultProtocolProvider};
-use crate::{declare_vault_seeds, validate, AccountMapProvider};
+use crate::{declare_vault_seeds, AccountMapProvider};
 
 pub fn manager_withdraw<'c: 'info, 'info>(
     ctx: Context<'_, '_, 'c, 'info, ManagerWithdraw<'info>>,
@@ -25,7 +24,7 @@ pub fn manager_withdraw<'c: 'info, 'info>(
     // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
     let mut vp = ctx.vault_protocol();
     let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
-    vault.validate_vault_protocol(&vp);
+    vault.validate_vault_protocol(&vp)?;
 
     let AccountMaps {
         perp_market_map,

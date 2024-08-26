@@ -6,10 +6,9 @@ use drift::state::user::User;
 use crate::constraints::{
     is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
 };
-use crate::error::ErrorCode;
 use crate::state::account_maps::AccountMapProvider;
 use crate::state::{Vault, VaultProtocolProvider};
-use crate::{validate, VaultDepositor, WithdrawUnit};
+use crate::{VaultDepositor, WithdrawUnit};
 
 pub fn request_withdraw<'c: 'info, 'info>(
     ctx: Context<'_, '_, 'c, 'info, RequestWithdraw<'info>>,
@@ -24,7 +23,7 @@ pub fn request_withdraw<'c: 'info, 'info>(
 
     let mut vp = ctx.vault_protocol();
     let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
-    vault.validate_vault_protocol(&vp);
+    vault.validate_vault_protocol(&vp)?;
 
     let AccountMaps {
         perp_market_map,

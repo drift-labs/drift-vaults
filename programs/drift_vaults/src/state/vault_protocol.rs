@@ -5,7 +5,6 @@ use static_assertions::const_assert_eq;
 
 use crate::state::withdraw_request::WithdrawRequest;
 use crate::state::Size;
-use crate::validate;
 
 pub struct VaultFee {
     pub management_fee_payment: i64,
