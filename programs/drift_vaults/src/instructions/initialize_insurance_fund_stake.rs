@@ -1,11 +1,11 @@
+use crate::constraints::{is_manager_for_vault, is_spot_market_for_vault, is_user_stats_for_vault};
+use crate::cpi::InitializeInsuranceFundStakeCPI;
+use crate::declare_vault_seeds;
+use crate::Vault;
 use anchor_lang::prelude::*;
 use drift::cpi::accounts::InitializeInsuranceFundStake as DriftInitializeInsuranceFundStake;
 use drift::program::Drift;
 use drift::state::spot_market::SpotMarket;
-
-use crate::constraints::{is_manager_for_vault, is_spot_market_for_vault, is_user_stats_for_vault};
-use crate::drift_cpi::InitializeInsuranceFundStakeCPI;
-use crate::{declare_vault_seeds, Vault};
 
 pub fn initialize_insurance_fund_stake<'info>(
     ctx: Context<'_, '_, '_, 'info, InitializeInsuranceFundStake<'info>>,

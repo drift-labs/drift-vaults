@@ -1,8 +1,7 @@
+use crate::{Vault, VaultDepositor};
+
 use anchor_lang::prelude::*;
 use drift::state::spot_market::SpotMarket;
-
-use crate::state::VaultProtocol;
-use crate::{Vault, VaultDepositor};
 
 pub fn is_vault_for_vault_depositor(
     vault_depositor: &AccountLoader<VaultDepositor>,
@@ -23,15 +22,6 @@ pub fn is_manager_for_vault(
     signer: &Signer,
 ) -> anchor_lang::Result<bool> {
     Ok(vault.load()?.manager.eq(signer.key))
-}
-
-pub fn is_protocol_for_vault(
-    vault: &AccountLoader<Vault>,
-    vault_protocol: &AccountLoader<VaultProtocol>,
-    signer: &Signer,
-) -> anchor_lang::Result<bool> {
-    Ok(vault_protocol.load()?.protocol.eq(signer.key)
-        && vault.load()?.vault_protocol.eq(&vault_protocol.key()))
 }
 
 pub fn is_delegate_for_vault(
@@ -64,11 +54,4 @@ pub fn is_spot_market_for_vault(
         (vault.load()?.spot_market_index).eq(&drift_spot_market.load()?.market_index)
             && (vault.load()?.spot_market_index).eq(&market_index),
     )
-}
-
-pub fn is_vault_protocol_for_vault(
-    vault_protocol: &AccountLoader<VaultProtocol>,
-    vault: &AccountLoader<Vault>,
-) -> anchor_lang::Result<bool> {
-    Ok(vault.load()?.vault_protocol.eq(&vault_protocol.key()))
 }

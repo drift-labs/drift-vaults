@@ -4,9 +4,8 @@ use drift::math::casting::Cast;
 use drift::state::user::User;
 
 use crate::constraints::{is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault};
-use crate::error::ErrorCode;
-use crate::state::{Vault, VaultProtocolProvider};
-use crate::{validate, AccountMapProvider};
+use crate::AccountMapProvider;
+use crate::Vault;
 
 pub fn manager_cancel_withdraw_request<'c: 'info, 'info>(
     ctx: Context<'_, '_, 'c, 'info, ManagerCancelWithdrawRequest<'info>>,
@@ -14,43 +13,38 @@ pub fn manager_cancel_withdraw_request<'c: 'info, 'info>(
     let clock = &Clock::get()?;
     let vault = &mut ctx.accounts.vault.load_mut()?;
 
-    // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
-    let mut vp = ctx.vault_protocol();
-    let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
-
-    validate!(
-        (vault.vault_protocol == Pubkey::default() && vp.is_none())
-            || (vault.vault_protocol != Pubkey::default() && vp.is_some()),
-        ErrorCode::VaultProtocolMissing,
-        "vault protocol missing in remaining accounts"
-    )?;
-
     let user = ctx.accounts.drift_user.load()?;
 
     let AccountMaps {
         perp_market_map,
         spot_market_map,
         mut oracle_map,
-    } = ctx.load_maps(clock.slot, None, vp.is_some())?;
+    } = ctx.load_maps(clock.slot, None)?;
 
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
-    vault.manager_cancel_withdraw_request(&mut vp, vault_equity.cast()?, clock.unix_timestamp)?;
+    vault.manager_cancel_withdraw_request(vault_equity.cast()?, clock.unix_timestamp)?;
 
     Ok(())
 }
 
 #[derive(Accounts)]
 pub struct ManagerCancelWithdrawRequest<'info> {
-    #[account(mut,
-  constraint = is_manager_for_vault(& vault, & manager) ?)]
+    #[account(
+        mut,
+        constraint = is_manager_for_vault(&vault, &manager)?
+    )]
     pub vault: AccountLoader<'info, Vault>,
     pub manager: Signer<'info>,
-    #[account(constraint = is_user_stats_for_vault(& vault, & drift_user_stats) ?)]
+    #[account(
+        constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?
+    )]
     /// CHECK: checked in drift cpi
     pub drift_user_stats: AccountInfo<'info>,
-    #[account(constraint = is_user_for_vault(& vault, & drift_user.key()) ?)]
+    #[account(
+        constraint = is_user_for_vault(&vault, &drift_user.key())?
+    )]
     /// CHECK: checked in drift cpi
     pub drift_user: AccountLoader<'info, User>,
     /// CHECK: checked in drift cpi

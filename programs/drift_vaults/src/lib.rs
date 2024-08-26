@@ -3,7 +3,7 @@ use instructions::*;
 use state::*;
 
 mod constants;
-mod drift_cpi;
+mod cpi;
 mod error;
 mod instructions;
 pub mod macros;
@@ -35,13 +35,6 @@ pub mod drift_vaults {
         enabled: bool,
     ) -> Result<()> {
         instructions::update_margin_trading_enabled(ctx, enabled)
-    }
-
-    pub fn update_vault_protocol<'c: 'info, 'info>(
-        ctx: Context<'_, '_, 'c, 'info, UpdateVaultProtocol<'info>>,
-        params: UpdateVaultProtocolParams,
-    ) -> Result<()> {
-        instructions::update_vault_protocol(ctx, params)
     }
 
     pub fn update_vault<'c: 'info, 'info>(
@@ -144,25 +137,5 @@ pub mod drift_vaults {
         ctx: Context<'_, '_, 'c, 'info, InitializeCompetitor<'info>>,
     ) -> Result<()> {
         instructions::initialize_competitor(ctx)
-    }
-
-    pub fn protocol_request_withdraw<'c: 'info, 'info>(
-        ctx: Context<'_, '_, 'c, 'info, ProtocolRequestWithdraw<'info>>,
-        withdraw_amount: u64,
-        withdraw_unit: WithdrawUnit,
-    ) -> Result<()> {
-        instructions::protocol_request_withdraw(ctx, withdraw_amount, withdraw_unit)
-    }
-
-    pub fn protocol_cancel_withdraw_request<'c: 'info, 'info>(
-        ctx: Context<'_, '_, 'c, 'info, ProtocolCancelWithdrawRequest<'info>>,
-    ) -> Result<()> {
-        instructions::protocol_cancel_withdraw_request(ctx)
-    }
-
-    pub fn protocol_withdraw<'c: 'info, 'info>(
-        ctx: Context<'_, '_, 'c, 'info, ProtocolWithdraw<'info>>,
-    ) -> Result<()> {
-        instructions::protocol_withdraw(ctx)
     }
 }
