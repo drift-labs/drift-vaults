@@ -162,11 +162,11 @@ pub struct InitializeVault<'info> {
     #[account(mut)]
     pub drift_state: AccountInfo<'info>,
     #[account(
-      constraint = drift_spot_market.load()?.market_index == params.spot_market_index
+        constraint = drift_spot_market.load()?.market_index == params.spot_market_index
     )]
     pub drift_spot_market: AccountLoader<'info, SpotMarket>,
     #[account(
-      constraint = drift_spot_market.load()?.mint.eq(&drift_spot_market_mint.key())
+        constraint = drift_spot_market.load()?.mint.eq(&drift_spot_market_mint.key())
     )]
     pub drift_spot_market_mint: Box<Account<'info, Mint>>,
     pub manager: Signer<'info>,

@@ -21,16 +21,8 @@ pub fn apply_profit_share<'c: 'info, 'info>(
     let mut vault_depositor = ctx.accounts.vault_depositor.load_mut()?;
 
     // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
-    // let mut vp = ctx.vault_protocol().map(|vp| vp.load_mut()).transpose()?;
     let mut vp = ctx.vault_protocol();
     let vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
-
-    validate!(
-        (vault.vault_protocol == Pubkey::default() && vp.is_none())
-            || (vault.vault_protocol != Pubkey::default() && vp.is_some()),
-        ErrorCode::VaultProtocolMissing,
-        "vault protocol missing in remaining accounts"
-    )?;
 
     let user = ctx.accounts.drift_user.load()?;
     let spot_market_index = vault.spot_market_index;
@@ -54,19 +46,27 @@ pub fn apply_profit_share<'c: 'info, 'info>(
 
 #[derive(Accounts)]
 pub struct ApplyProfitShare<'info> {
-    #[account(mut,
-  constraint = is_manager_for_vault(& vault, & manager) ? || is_delegate_for_vault(& vault, & manager) ?)]
+    #[account(
+        mut,
+        constraint = is_manager_for_vault(& vault, & manager) ? || is_delegate_for_vault(& vault, & manager) ?
+    )]
     pub vault: AccountLoader<'info, Vault>,
-    #[account(mut,
-  constraint = is_vault_for_vault_depositor(& vault_depositor, & vault) ?)]
+    #[account(
+        mut,
+        constraint = is_vault_for_vault_depositor(& vault_depositor, & vault) ?
+    )]
     pub vault_depositor: AccountLoader<'info, VaultDepositor>,
     pub manager: Signer<'info>,
-    #[account(mut,
-  constraint = is_user_stats_for_vault(& vault, & drift_user_stats) ?)]
+    #[account(
+        mut,
+        constraint = is_user_stats_for_vault(& vault, & drift_user_stats) ?
+    )]
     /// CHECK: checked in drift cpi
     pub drift_user_stats: AccountInfo<'info>,
-    #[account(mut,
-  constraint = is_user_for_vault(& vault, & drift_user.key()) ?)]
+    #[account(
+        mut,
+        constraint = is_user_for_vault(& vault, & drift_user.key()) ?
+    )]
     /// CHECK: checked in drift cpi
     pub drift_user: AccountLoader<'info, User>,
     /// CHECK: checked in drift cpi

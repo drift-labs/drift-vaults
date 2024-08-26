@@ -43,11 +43,15 @@ pub fn protocol_cancel_withdraw_request<'c: 'info, 'info>(
 
 #[derive(Accounts)]
 pub struct ProtocolCancelWithdrawRequest<'info> {
-    #[account(mut,
-  constraint = is_protocol_for_vault(& vault, & vault_protocol, & protocol) ?)]
+    #[account(
+        mut,
+        constraint = is_protocol_for_vault(& vault, & vault_protocol, & protocol) ?
+    )]
     pub vault: AccountLoader<'info, Vault>,
-    #[account(mut,
-  constraint = is_vault_protocol_for_vault(& vault_protocol, & vault) ?)]
+    #[account(
+        mut,
+        constraint = is_vault_protocol_for_vault(& vault_protocol, & vault) ?
+    )]
     pub vault_protocol: AccountLoader<'info, VaultProtocol>,
     pub protocol: Signer<'info>,
     #[account(constraint = is_user_stats_for_vault(& vault, & drift_user_stats) ?)]

@@ -31,11 +31,13 @@ pub fn initialize_vault_depositor(ctx: Context<InitializeVaultDepositor>) -> Res
 #[derive(Accounts)]
 pub struct InitializeVaultDepositor<'info> {
     pub vault: AccountLoader<'info, Vault>,
-    #[account(init,
-  seeds = [b"vault_depositor", vault.key().as_ref(), authority.key().as_ref()],
-  space = VaultDepositor::SIZE,
-  bump,
-  payer = payer)]
+    #[account(
+      init,
+      seeds = [b"vault_depositor", vault.key().as_ref(), authority.key().as_ref()],
+      space = VaultDepositor::SIZE,
+      bump,
+      payer = payer
+    )]
     pub vault_depositor: AccountLoader<'info, VaultDepositor>,
     /// CHECK: dont need to sign if vault is permissioned
     pub authority: AccountInfo<'info>,

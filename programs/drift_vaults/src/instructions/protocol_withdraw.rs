@@ -58,35 +58,49 @@ pub fn protocol_withdraw<'c: 'info, 'info>(
 
 #[derive(Accounts)]
 pub struct ProtocolWithdraw<'info> {
-    #[account(mut,
-  constraint = is_protocol_for_vault(& vault, & vault_protocol, & protocol) ?)]
+    #[account(
+        mut,
+        constraint = is_protocol_for_vault(& vault, & vault_protocol, & protocol) ?
+    )]
     pub vault: AccountLoader<'info, Vault>,
-    #[account(mut,
-  constraint = is_vault_protocol_for_vault(& vault_protocol, & vault) ?)]
+    #[account(
+        mut,
+        constraint = is_vault_protocol_for_vault(& vault_protocol, & vault) ?
+    )]
     pub vault_protocol: AccountLoader<'info, VaultProtocol>,
     pub protocol: Signer<'info>,
-    #[account(mut,
-  seeds = [b"vault_token_account".as_ref(), vault.key().as_ref()],
-  bump,)]
+    #[account(
+        mut,
+        seeds = [b"vault_token_account".as_ref(), vault.key().as_ref()],
+        bump,
+    )]
     pub vault_token_account: Box<Account<'info, TokenAccount>>,
-    #[account(mut,
-  constraint = is_user_stats_for_vault(& vault, & drift_user_stats) ?)]
+    #[account(
+        mut,
+        constraint = is_user_stats_for_vault(& vault, & drift_user_stats) ?
+    )]
     /// CHECK: checked in drift cpi
     pub drift_user_stats: AccountInfo<'info>,
-    #[account(mut,
-  constraint = is_user_for_vault(& vault, & drift_user.key()) ?)]
+    #[account(
+        mut,
+        constraint = is_user_for_vault(& vault, & drift_user.key()) ?
+    )]
     /// CHECK: checked in drift cpi
     pub drift_user: AccountLoader<'info, User>,
     /// CHECK: checked in drift cpi
     pub drift_state: AccountInfo<'info>,
-    #[account(mut,
-  token::mint = vault_token_account.mint)]
+    #[account(
+        mut,
+        token::mint = vault_token_account.mint
+    )]
     pub drift_spot_market_vault: Box<Account<'info, TokenAccount>>,
     /// CHECK: checked in drift cpi
     pub drift_signer: AccountInfo<'info>,
-    #[account(mut,
-  token::authority = protocol,
-  token::mint = vault_token_account.mint)]
+    #[account(
+        mut,
+        token::authority = protocol,
+        token::mint = vault_token_account.mint
+    )]
     pub user_token_account: Box<Account<'info, TokenAccount>>,
     pub drift_program: Program<'info, Drift>,
     pub token_program: Program<'info, Token>,

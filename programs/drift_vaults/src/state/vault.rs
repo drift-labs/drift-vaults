@@ -1207,4 +1207,13 @@ impl Vault {
             Some(vp) => self.profit_share.saturating_add(vp.protocol_profit_share),
         }
     }
+
+    pub fn validate_vault_protocol(&self, vp: &Option<RefMut<VaultProtocol>>) {
+        validate!(
+            (self.vault_protocol == Pubkey::default() && vp.is_none())
+                || (self.vault_protocol != Pubkey::default() && vp.is_some()),
+            ErrorCode::VaultProtocolMissing,
+            "vault protocol missing in remaining accounts"
+        )?;
+    }
 }

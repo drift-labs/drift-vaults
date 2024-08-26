@@ -25,13 +25,7 @@ pub fn manager_withdraw<'c: 'info, 'info>(
     // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
     let mut vp = ctx.vault_protocol();
     let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
-
-    validate!(
-        (vault.vault_protocol == Pubkey::default() && vp.is_none())
-            || (vault.vault_protocol != Pubkey::default() && vp.is_some()),
-        ErrorCode::VaultProtocolMissing,
-        "vault protocol missing in remaining accounts"
-    )?;
+    vault.validate_vault_protocol(&vp);
 
     let AccountMaps {
         perp_market_map,
@@ -57,32 +51,44 @@ pub fn manager_withdraw<'c: 'info, 'info>(
 
 #[derive(Accounts)]
 pub struct ManagerWithdraw<'info> {
-    #[account(mut,
-  constraint = is_manager_for_vault(& vault, & manager) ?)]
+    #[account(
+        mut,
+        constraint = is_manager_for_vault(& vault, & manager) ?
+    )]
     pub vault: AccountLoader<'info, Vault>,
     pub manager: Signer<'info>,
-    #[account(mut,
-  seeds = [b"vault_token_account".as_ref(), vault.key().as_ref()],
-  bump,)]
+    #[account(
+      mut,
+      seeds = [b"vault_token_account".as_ref(), vault.key().as_ref()],
+      bump,
+    )]
     pub vault_token_account: Box<Account<'info, TokenAccount>>,
-    #[account(mut,
-  constraint = is_user_stats_for_vault(& vault, & drift_user_stats) ?)]
+    #[account(
+        mut,
+        constraint = is_user_stats_for_vault(& vault, & drift_user_stats) ?
+    )]
     /// CHECK: checked in drift cpi
     pub drift_user_stats: AccountInfo<'info>,
-    #[account(mut,
-  constraint = is_user_for_vault(& vault, & drift_user.key()) ?)]
+    #[account(
+        mut,
+        constraint = is_user_for_vault(& vault, & drift_user.key()) ?
+    )]
     /// CHECK: checked in drift cpi
     pub drift_user: AccountLoader<'info, User>,
     /// CHECK: checked in drift cpi
     pub drift_state: AccountInfo<'info>,
-    #[account(mut,
-  token::mint = vault_token_account.mint)]
+    #[account(
+        mut,
+        token::mint = vault_token_account.mint
+    )]
     pub drift_spot_market_vault: Box<Account<'info, TokenAccount>>,
     /// CHECK: checked in drift cpi
     pub drift_signer: AccountInfo<'info>,
-    #[account(mut,
-  token::authority = manager,
-  token::mint = vault_token_account.mint)]
+    #[account(
+        mut,
+        token::authority = manager,
+        token::mint = vault_token_account.mint
+    )]
     pub user_token_account: Box<Account<'info, TokenAccount>>,
     pub drift_program: Program<'info, Drift>,
     pub token_program: Program<'info, Token>,

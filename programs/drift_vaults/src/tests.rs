@@ -660,7 +660,7 @@ mod vault_fcn {
             WithdrawRequest {
                 shares: vd_shares,
                 value: vault_equity,
-                ts: now,
+                ts: now
             }
         );
         println!(

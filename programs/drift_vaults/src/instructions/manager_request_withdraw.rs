@@ -20,13 +20,7 @@ pub fn manager_request_withdraw<'c: 'info, 'info>(
     // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
     let mut vp = ctx.vault_protocol();
     let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
-
-    validate!(
-        (vault.vault_protocol == Pubkey::default() && vp.is_none())
-            || (vault.vault_protocol != Pubkey::default() && vp.is_some()),
-        ErrorCode::VaultProtocolMissing,
-        "vault protocol missing in remaining accounts"
-    )?;
+    vault.validate_vault_protocol(&vp);
 
     let user = ctx.accounts.drift_user.load()?;
     let spot_market_index = vault.spot_market_index;
@@ -47,8 +41,10 @@ pub fn manager_request_withdraw<'c: 'info, 'info>(
 
 #[derive(Accounts)]
 pub struct ManagerRequestWithdraw<'info> {
-    #[account(mut,
-  constraint = is_manager_for_vault(& vault, & manager) ?)]
+    #[account(
+        mut,
+        constraint = is_manager_for_vault(& vault, & manager) ?
+    )]
     pub vault: AccountLoader<'info, Vault>,
     pub manager: Signer<'info>,
     #[account(constraint = is_user_stats_for_vault(& vault, & drift_user_stats) ?)]

@@ -26,13 +26,7 @@ pub fn liquidate<'c: 'info, 'info>(
     // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
     let mut vp = ctx.vault_protocol();
     let vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
-
-    validate!(
-        (vault.vault_protocol == Pubkey::default() && vp.is_none())
-            || (vault.vault_protocol != Pubkey::default() && vp.is_some()),
-        ErrorCode::VaultProtocolMissing,
-        "vault protocol missing in remaining accounts"
-    )?;
+    vault.validate_vault_protocol(&vp);
 
     let AccountMaps {
         perp_market_map,
@@ -74,18 +68,24 @@ pub fn liquidate<'c: 'info, 'info>(
 pub struct Liquidate<'info> {
     #[account(mut)]
     pub vault: AccountLoader<'info, Vault>,
-    #[account(mut,
-  seeds = [b"vault_depositor", vault.key().as_ref(), authority.key().as_ref()],
-  bump,
-  constraint = is_authority_for_vault_depositor(& vault_depositor, & authority) ?,)]
+    #[account(
+        mut,
+        seeds = [b"vault_depositor", vault.key().as_ref(), authority.key().as_ref()],
+        bump,
+        constraint = is_authority_for_vault_depositor(& vault_depositor, & authority) ?,
+    )]
     pub vault_depositor: AccountLoader<'info, VaultDepositor>,
     pub authority: Signer<'info>,
-    #[account(mut,
-  constraint = is_user_stats_for_vault(& vault, & drift_user_stats) ?)]
+    #[account(
+        mut,
+        constraint = is_user_stats_for_vault(& vault, & drift_user_stats) ?
+    )]
     /// CHECK: checked in drift cpi
     pub drift_user_stats: AccountInfo<'info>,
-    #[account(mut,
-  constraint = is_user_for_vault(& vault, & drift_user.key()) ?)]
+    #[account(
+        mut,
+        constraint = is_user_for_vault(& vault, & drift_user.key()) ?
+    )]
     /// CHECK: checked in drift cpi
     pub drift_user: AccountLoader<'info, User>,
     /// CHECK: checked in drift cpi

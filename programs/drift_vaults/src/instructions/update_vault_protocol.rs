@@ -55,11 +55,15 @@ pub struct UpdateVaultProtocolParams {
 
 #[derive(Accounts)]
 pub struct UpdateVaultProtocol<'info> {
-    #[account(mut,
-  constraint = is_protocol_for_vault(& vault, & vault_protocol, & protocol) ?)]
+    #[account(
+        mut,
+        constraint = is_protocol_for_vault(& vault, & vault_protocol, & protocol) ?
+    )]
     pub vault: AccountLoader<'info, Vault>,
     pub protocol: Signer<'info>,
-    #[account(mut,
-  constraint = is_vault_protocol_for_vault(& vault_protocol, & vault) ?)]
+    #[account(
+        mut,
+        constraint = is_vault_protocol_for_vault(& vault_protocol, & vault) ?
+    )]
     pub vault_protocol: AccountLoader<'info, VaultProtocol>,
 }

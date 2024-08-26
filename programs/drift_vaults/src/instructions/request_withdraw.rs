@@ -24,13 +24,7 @@ pub fn request_withdraw<'c: 'info, 'info>(
 
     let mut vp = ctx.vault_protocol();
     let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
-
-    validate!(
-        (vault.vault_protocol == Pubkey::default() && vp.is_none())
-            || (vault.vault_protocol != Pubkey::default() && vp.is_some()),
-        ErrorCode::VaultProtocolMissing,
-        "vault protocol missing in remaining accounts"
-    )?;
+    vault.validate_vault_protocol(&vp);
 
     let AccountMaps {
         perp_market_map,
@@ -57,10 +51,12 @@ pub fn request_withdraw<'c: 'info, 'info>(
 pub struct RequestWithdraw<'info> {
     #[account(mut)]
     pub vault: AccountLoader<'info, Vault>,
-    #[account(mut,
-  seeds = [b"vault_depositor", vault.key().as_ref(), authority.key().as_ref()],
-  bump,
-  constraint = is_authority_for_vault_depositor(& vault_depositor, & authority) ?,)]
+    #[account(
+        mut,
+        seeds = [b"vault_depositor", vault.key().as_ref(), authority.key().as_ref()],
+        bump,
+        constraint = is_authority_for_vault_depositor(& vault_depositor, & authority) ?,
+    )]
     pub vault_depositor: AccountLoader<'info, VaultDepositor>,
     pub authority: Signer<'info>,
     #[account(constraint = is_user_stats_for_vault(& vault, & drift_user_stats) ?)]
