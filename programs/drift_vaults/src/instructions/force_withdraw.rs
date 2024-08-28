@@ -53,7 +53,7 @@ pub fn force_withdraw<'c: 'info, 'info>(
 pub struct ForceWithdraw<'info> {
     #[account(
         mut,
-        constraint = is_manager_for_vault(&vault, &manager) ? || is_delegate_for_vault(&vault, &manager)?
+        constraint = is_manager_for_vault(&vault, &manager)? || is_delegate_for_vault(&vault, &manager)?
     )]
     pub vault: AccountLoader<'info, Vault>,
     pub manager: Signer<'info>,
@@ -91,7 +91,7 @@ pub struct ForceWithdraw<'info> {
     pub drift_signer: AccountInfo<'info>,
     #[account(
         mut,
-        token::authority = vault_depositor.load() ?.authority,
+        token::authority = vault_depositor.load()?.authority,
         token::mint = vault_token_account.mint
     )]
     pub user_token_account: Box<Account<'info, TokenAccount>>,

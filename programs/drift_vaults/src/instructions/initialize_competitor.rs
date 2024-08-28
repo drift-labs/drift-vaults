@@ -19,7 +19,7 @@ pub fn initialize_competitor<'info>(
 pub struct InitializeCompetitor<'info> {
     #[account(
         mut,
-        constraint = is_manager_for_vault(&vault, &manager) ?,
+        constraint = is_manager_for_vault(&vault, &manager)?,
     )]
     pub vault: AccountLoader<'info, Vault>,
     pub manager: Signer<'info>,

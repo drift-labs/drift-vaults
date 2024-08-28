@@ -48,7 +48,7 @@ pub fn apply_profit_share<'c: 'info, 'info>(
 pub struct ApplyProfitShare<'info> {
     #[account(
         mut,
-        constraint = is_manager_for_vault(&vault, &manager) ? || is_delegate_for_vault(&vault, &manager)?
+        constraint = is_manager_for_vault(&vault, &manager)? || is_delegate_for_vault(&vault, &manager)?
     )]
     pub vault: AccountLoader<'info, Vault>,
     #[account(
