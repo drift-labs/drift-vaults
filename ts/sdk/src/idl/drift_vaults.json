@@ -1258,9 +1258,6 @@
           },
           {
             "name": "padding",
-            "docs": [
-              "[`VaultProtocol`] is 117 bytes with padding to 120 bytes to make it a multiple of 8."
-            ],
             "type": {
               "array": [
                 "u8",
@@ -1518,10 +1515,18 @@
           {
             "name": "vaultProtocol",
             "docs": [
-              "The optional [`VaultProtocol`] account.",
-              "If this is the default Pubkey (system program id) then it is \"none\"."
+              "The optional [`VaultProtocol`] account."
             ],
-            "type": "publicKey"
+            "type": "bool"
+          },
+          {
+            "name": "padding1",
+            "type": {
+              "array": [
+                "u8",
+                7
+              ]
+            }
           },
           {
             "name": "padding",

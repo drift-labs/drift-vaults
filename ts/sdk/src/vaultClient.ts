@@ -374,9 +374,9 @@ export class VaultClient {
 		}
 
 		let vaultProtocol: VaultProtocol | undefined = undefined;
-		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+		if (vaultAccount.vaultProtocol) {
 			vaultProtocol = await this.program.account.vaultProtocol.fetch(
-				vaultAccount.vaultProtocol
+				this.getVaultProtocolAddress(vaultAccount.pubkey)
 			);
 		}
 
@@ -594,7 +594,7 @@ export class VaultClient {
 			userAccounts: [user.getUserAccount()],
 			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
 		});
-		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+		if (vaultAccount.vaultProtocol) {
 			const vaultProtocol = this.getVaultProtocolAddress(vault);
 			remainingAccounts.push({
 				pubkey: vaultProtocol,
@@ -649,7 +649,7 @@ export class VaultClient {
 			userAccounts: [user.getUserAccount()],
 			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
 		});
-		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+		if (vaultAccount.vaultProtocol) {
 			const vaultProtocol = this.getVaultProtocolAddress(vault);
 			remainingAccounts.push({
 				pubkey: vaultProtocol,
@@ -721,7 +721,7 @@ export class VaultClient {
 		const remainingAccounts = this.driftClient.getRemainingAccounts({
 			userAccounts: [user.getUserAccount()],
 		});
-		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+		if (vaultAccount.vaultProtocol) {
 			const vaultProtocol = this.getVaultProtocolAddress(vault);
 			remainingAccounts.push({
 				pubkey: vaultProtocol,
@@ -765,7 +765,7 @@ export class VaultClient {
 			userAccounts: [user.getUserAccount()],
 			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
 		});
-		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+		if (vaultAccount.vaultProtocol) {
 			const vaultProtocol = this.getVaultProtocolAddress(vault);
 			remainingAccounts.push({
 				pubkey: vaultProtocol,
@@ -966,7 +966,7 @@ export class VaultClient {
 			userAccounts: [user.getUserAccount()],
 			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
 		});
-		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+		if (vaultAccount.vaultProtocol) {
 			const vaultProtocol = this.getVaultProtocolAddress(vaultPubKey);
 			remainingAccounts.push({
 				pubkey: vaultProtocol,
@@ -1120,7 +1120,7 @@ export class VaultClient {
 		const remainingAccounts = this.driftClient.getRemainingAccounts({
 			userAccounts: [user.getUserAccount()],
 		});
-		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+		if (vaultAccount.vaultProtocol) {
 			const vaultProtocol = this.getVaultProtocolAddress(
 				vaultDepositorAccount.vault
 			);
@@ -1297,7 +1297,7 @@ export class VaultClient {
 			userAccounts: [user.getUserAccount()],
 			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
 		});
-		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+		if (vaultAccount.vaultProtocol) {
 			const vaultProtocol = this.getVaultProtocolAddress(
 				vaultDepositorAccount.vault
 			);
@@ -1397,7 +1397,7 @@ export class VaultClient {
 		const remainingAccounts = this.driftClient.getRemainingAccounts({
 			userAccounts: [user.getUserAccount()],
 		});
-		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+		if (vaultAccount.vaultProtocol) {
 			const vaultProtocol = this.getVaultProtocolAddress(
 				vaultDepositorAccount.vault
 			);
@@ -1661,7 +1661,7 @@ export class VaultClient {
 			userAccounts: [user.getUserAccount()],
 			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
 		});
-		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+		if (vaultAccount.vaultProtocol) {
 			const vaultProtocol = this.getVaultProtocolAddress(vault);
 			remainingAccounts.push({
 				pubkey: vaultProtocol,
@@ -1733,7 +1733,7 @@ export class VaultClient {
 		const remainingAccounts = this.driftClient.getRemainingAccounts({
 			userAccounts: [user.getUserAccount()],
 		});
-		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+		if (vaultAccount.vaultProtocol) {
 			const vaultProtocol = this.getVaultProtocolAddress(vault);
 			remainingAccounts.push({
 				pubkey: vaultProtocol,
@@ -1777,7 +1777,7 @@ export class VaultClient {
 			userAccounts: [user.getUserAccount()],
 			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
 		});
-		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+		if (vaultAccount.vaultProtocol) {
 			const vaultProtocol = this.getVaultProtocolAddress(vault);
 			remainingAccounts.push({
 				pubkey: vaultProtocol,

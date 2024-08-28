@@ -33,7 +33,7 @@ import {
 	printTxLogs,
 	setFeedPrice,
 } from './testHelpers';
-import { ConfirmOptions, Keypair, SystemProgram } from '@solana/web3.js';
+import { ConfirmOptions, Keypair } from '@solana/web3.js';
 import { assert } from 'chai';
 import {
 	VaultClient,
@@ -696,7 +696,7 @@ describe('driftVaults', () => {
 
 		// asserts Vault and VaultProtocol fields were set properly
 		const vpAcct = await program.account.vaultProtocol.fetch(vp);
-		assert(vaultAcct.vaultProtocol.equals(vp));
+		assert(vaultAcct.vaultProtocol);
 		assert(vpAcct.protocol.equals(protocol.publicKey));
 	});
 
@@ -740,7 +740,7 @@ describe('driftVaults', () => {
 			userAccounts: [],
 			writableSpotMarketIndexes: [0],
 		});
-		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+		if (vaultAccount.vaultProtocol) {
 			const vaultProtocol = getVaultProtocolAddressSync(
 				managerClient.program.programId,
 				protocolVault
@@ -1143,7 +1143,7 @@ describe('driftVaults', () => {
 			userAccounts: [],
 			writableSpotMarketIndexes: [0],
 		});
-		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+		if (vaultAccount.vaultProtocol) {
 			const vaultProtocol = vdClient.getVaultProtocolAddress(
 				vaultDepositorAccount.vault
 			);
@@ -1245,7 +1245,7 @@ describe('driftVaults', () => {
 			program.programId,
 			protocolVault
 		);
-		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+		if (vaultAccount.vaultProtocol) {
 			remainingAccounts.push({
 				pubkey: vaultProtocol,
 				isSigner: false,

@@ -7,7 +7,7 @@ import {
 	ZERO,
 	BN,
 } from '@drift-labs/sdk';
-import { PublicKey, SystemProgram } from '@solana/web3.js';
+import { PublicKey } from '@solana/web3.js';
 import { DriftVaults } from '../types/drift_vaults';
 import { Vault, VaultAccountEvents, VaultProtocol } from '../types/types';
 import { PollingVaultSubscriber } from '../accountSubscribers';
@@ -94,7 +94,7 @@ export class VaultAccount extends VaultsProgramAccount<
 	} {
 		const accountData = this.accountSubscriber.getAccountAndSlot().data;
 
-		if (accountData.vaultProtocol.equals(SystemProgram.programId)) {
+		if (!accountData.vaultProtocol) {
 			throw new Error('VaultProtocol does not exist for vault');
 		}
 

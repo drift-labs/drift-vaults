@@ -1237,9 +1237,6 @@ export type DriftVaults = {
 					},
 					{
 						name: 'padding';
-						docs: [
-							'[`VaultProtocol`] is 117 bytes with padding to 120 bytes to make it a multiple of 8.'
-						];
 						type: {
 							array: ['u8', 2];
 						};
@@ -1454,11 +1451,14 @@ export type DriftVaults = {
 					},
 					{
 						name: 'vaultProtocol';
-						docs: [
-							'The optional [`VaultProtocol`] account.',
-							'If this is the default Pubkey (system program id) then it is "none".'
-						];
-						type: 'publicKey';
+						docs: ['The optional [`VaultProtocol`] account.'];
+						type: 'bool';
+					},
+					{
+						name: 'padding1';
+						type: {
+							array: ['u8', 7];
+						};
 					},
 					{
 						name: 'padding';
@@ -3250,9 +3250,6 @@ export const IDL: DriftVaults = {
 					},
 					{
 						name: 'padding',
-						docs: [
-							'[`VaultProtocol`] is 117 bytes with padding to 120 bytes to make it a multiple of 8.',
-						],
 						type: {
 							array: ['u8', 2],
 						},
@@ -3467,11 +3464,14 @@ export const IDL: DriftVaults = {
 					},
 					{
 						name: 'vaultProtocol',
-						docs: [
-							'The optional [`VaultProtocol`] account.',
-							'If this is the default Pubkey (system program id) then it is "none".',
-						],
-						type: 'publicKey',
+						docs: ['The optional [`VaultProtocol`] account.'],
+						type: 'bool',
+					},
+					{
+						name: 'padding1',
+						type: {
+							array: ['u8', 7],
+						},
 					},
 					{
 						name: 'padding',
