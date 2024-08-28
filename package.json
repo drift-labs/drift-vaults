@@ -12,8 +12,8 @@
     },
     "devDependencies": {
         "@coral-xyz/anchor": "0.28.0",
-        "@drift-labs/competitions-sdk": "0.2.439",
-        "@drift-labs/sdk": "2.94.0-beta.8",
+        "@drift-labs/competitions-sdk": "0.2.440",
+        "@drift-labs/sdk": "2.94.0-beta.9",
         "@solana/web3.js": "1.73.2",
         "@types/bn.js": "^5.1.0",
         "@types/chai": "^4.3.0",
