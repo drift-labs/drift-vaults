@@ -100,8 +100,8 @@ pub struct Vault {
     /// Whether anybody can be a depositor
     pub permissioned: bool,
     /// The optional [`VaultProtocol`] account.
-    /// If this is the default Pubkey (system program id) then it is "none".
-    pub vault_protocol: Pubkey,
+    pub vault_protocol: bool,
+    pub padding1: [u8; 7],
     pub padding: [u64; 4],
 }
 
@@ -112,7 +112,7 @@ impl Vault {
 }
 
 impl Size for Vault {
-    const SIZE: usize = 528 + 8;
+    const SIZE: usize = 504 + 8;
 }
 const_assert_eq!(Vault::SIZE, std::mem::size_of::<Vault>() + 8);
 
@@ -963,51 +963,27 @@ impl Vault {
             vp.last_protocol_withdraw_request.reset(now)?;
         }
 
-        match vault_protocol {
-            None => {
-                emit!(VaultDepositorRecord {
-                    ts: now,
-                    vault: self.pubkey,
-                    depositor_authority: self.manager,
-                    action: VaultDepositorAction::CancelWithdrawRequest,
-                    amount: 0,
-                    spot_market_index: self.spot_market_index,
-                    vault_equity_before: vault_equity,
-                    vault_shares_before,
-                    user_vault_shares_before,
-                    total_vault_shares_before,
-                    vault_shares_after,
-                    total_vault_shares_after: self.total_shares,
-                    user_vault_shares_after: self.user_shares,
-                    profit_share: 0,
-                    management_fee: management_fee_payment,
-                    management_fee_shares,
-                });
-            }
-            Some(_) => {
-                emit!(VaultDepositorV1Record {
-                    ts: now,
-                    vault: self.pubkey,
-                    depositor_authority: self.manager,
-                    action: VaultDepositorAction::CancelWithdrawRequest,
-                    amount: 0,
-                    spot_market_index: self.spot_market_index,
-                    vault_equity_before: vault_equity,
-                    vault_shares_before,
-                    user_vault_shares_before,
-                    total_vault_shares_before,
-                    vault_shares_after,
-                    total_vault_shares_after: self.total_shares,
-                    user_vault_shares_after: self.user_shares,
-                    protocol_profit_share: 0,
-                    protocol_fee: protocol_fee_payment,
-                    protocol_fee_shares,
-                    manager_profit_share: 0,
-                    management_fee: management_fee_payment,
-                    management_fee_shares,
-                });
-            }
-        }
+        emit!(VaultDepositorV1Record {
+            ts: now,
+            vault: self.pubkey,
+            depositor_authority: self.manager,
+            action: VaultDepositorAction::CancelWithdrawRequest,
+            amount: 0,
+            spot_market_index: self.spot_market_index,
+            vault_equity_before: vault_equity,
+            vault_shares_before,
+            user_vault_shares_before,
+            total_vault_shares_before,
+            vault_shares_after,
+            total_vault_shares_after: self.total_shares,
+            user_vault_shares_after: self.user_shares,
+            protocol_profit_share: 0,
+            protocol_fee: protocol_fee_payment,
+            protocol_fee_shares,
+            manager_profit_share: 0,
+            management_fee: management_fee_payment,
+            management_fee_shares,
+        });
 
         Ok(())
     }
@@ -1090,51 +1066,27 @@ impl Vault {
         }
         let vault_shares_after = self.get_protocol_shares(vault_protocol);
 
-        match vault_protocol {
-            None => {
-                emit!(VaultDepositorRecord {
-                    ts: now,
-                    vault: self.pubkey,
-                    depositor_authority: self.manager,
-                    action: VaultDepositorAction::Withdraw,
-                    amount: 0,
-                    spot_market_index: self.spot_market_index,
-                    vault_equity_before: vault_equity,
-                    vault_shares_before,
-                    user_vault_shares_before,
-                    total_vault_shares_before,
-                    vault_shares_after,
-                    total_vault_shares_after: self.total_shares,
-                    user_vault_shares_after: self.user_shares,
-                    profit_share: 0,
-                    management_fee: management_fee_payment,
-                    management_fee_shares,
-                });
-            }
-            Some(_) => {
-                emit!(VaultDepositorV1Record {
-                    ts: now,
-                    vault: self.pubkey,
-                    depositor_authority: self.manager,
-                    action: VaultDepositorAction::Withdraw,
-                    amount: 0,
-                    spot_market_index: self.spot_market_index,
-                    vault_equity_before: vault_equity,
-                    vault_shares_before,
-                    user_vault_shares_before,
-                    total_vault_shares_before,
-                    vault_shares_after,
-                    total_vault_shares_after: self.total_shares,
-                    user_vault_shares_after: self.user_shares,
-                    protocol_profit_share: 0,
-                    protocol_fee: protocol_fee_payment,
-                    protocol_fee_shares,
-                    manager_profit_share: 0,
-                    management_fee: management_fee_payment,
-                    management_fee_shares,
-                });
-            }
-        }
+        emit!(VaultDepositorV1Record {
+            ts: now,
+            vault: self.pubkey,
+            depositor_authority: self.manager,
+            action: VaultDepositorAction::Withdraw,
+            amount: 0,
+            spot_market_index: self.spot_market_index,
+            vault_equity_before: vault_equity,
+            vault_shares_before,
+            user_vault_shares_before,
+            total_vault_shares_before,
+            vault_shares_after,
+            total_vault_shares_after: self.total_shares,
+            user_vault_shares_after: self.user_shares,
+            protocol_profit_share: 0,
+            protocol_fee: protocol_fee_payment,
+            protocol_fee_shares,
+            manager_profit_share: 0,
+            management_fee: management_fee_payment,
+            management_fee_shares,
+        });
 
         if let Some(vp) = vault_protocol {
             self.total_withdraw_requested = self
@@ -1153,15 +1105,46 @@ impl Vault {
         }
     }
 
-    pub fn validate_vault_protocol(
-        &self,
-        vp: &Option<RefMut<VaultProtocol>>,
-    ) -> std::result::Result<(), ErrorCode> {
-        validate!(
-            (self.vault_protocol == Pubkey::default() && vp.is_none())
-                || (self.vault_protocol != Pubkey::default() && vp.is_some()),
-            ErrorCode::VaultProtocolMissing,
-            "vault protocol missing in remaining accounts"
-        )
+    pub fn validate_vault_protocol(&self, vp: &Option<AccountLoader<VaultProtocol>>) -> Result<()> {
+        match vp {
+            None => {
+                if self.vault_protocol {
+                    // Vault has VaultProtocol but no rem acct provided.
+                    let ec = ErrorCode::VaultProtocolMissing;
+                    msg!("Error {} thrown at {}:{}", ec, file!(), line!());
+                    msg!("VaultProtocol missing in remaining accounts");
+                    Err(anchor_lang::error::Error::from(ec))
+                } else {
+                    // Vault does not have VaultProtocol and none given in rem accts.
+                    Ok(())
+                }
+            }
+            Some(vp) => {
+                if self.vault_protocol {
+                    // Vault has VaultProtocol and rem accts provided one.
+                    // check if PDA matches rem acct given.
+                    let (expected, _) = Pubkey::find_program_address(
+                        &[b"vault_protocol", self.pubkey.as_ref()],
+                        &crate::id(),
+                    );
+                    let actual = vp.to_account_info().key();
+                    if actual != expected {
+                        Err(
+                            anchor_lang::error::Error::from(error::ErrorCode::ConstraintSeeds)
+                                .with_account_name("vault_protocol")
+                                .with_pubkeys((actual, expected)),
+                        )
+                    } else {
+                        Ok(())
+                    }
+                } else {
+                    // Vault does not have VaultProtocol, but rem accts provided one
+                    let ec = ErrorCode::VaultProtocolMissing;
+                    msg!("Error {} thrown at {}:{}", ec, file!(), line!());
+                    msg!("Vault does not have VaultProtocol");
+                    Err(anchor_lang::error::Error::from(ec))
+                }
+            }
+        }
     }
 }

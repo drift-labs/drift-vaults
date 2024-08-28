@@ -26,8 +26,8 @@ pub fn deposit<'c: 'info, 'info>(
 
     // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
     let mut vp = ctx.vault_protocol();
-    let vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
     vault.validate_vault_protocol(&vp)?;
+    let vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
 
     let user = ctx.accounts.drift_user.load()?;
     let spot_market_index = vault.spot_market_index;

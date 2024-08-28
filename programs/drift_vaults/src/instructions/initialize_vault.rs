@@ -64,13 +64,13 @@ pub fn initialize_vault<'c: 'info, 'info>(
         vp.protocol_profit_share = vp_params.protocol_profit_share;
         vp.protocol = vp_params.protocol;
 
-        let (vault_protocol, vp_bump) = Pubkey::find_program_address(
+        let (_, vp_bump) = Pubkey::find_program_address(
             &[b"vault_protocol", ctx.accounts.vault.key().as_ref()],
             ctx.program_id,
         );
         vp.bump = vp_bump;
 
-        vault.vault_protocol = vault_protocol;
+        vault.vault_protocol = true;
     } else {
         validate!(
             params.management_fee < PERCENTAGE_PRECISION_U64.cast()?,
@@ -86,7 +86,7 @@ pub fn initialize_vault<'c: 'info, 'info>(
         )?;
         vault.profit_share = params.profit_share;
 
-        vault.vault_protocol = Pubkey::default();
+        vault.vault_protocol = false;
     }
 
     validate!(

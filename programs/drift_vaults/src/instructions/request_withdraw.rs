@@ -22,8 +22,8 @@ pub fn request_withdraw<'c: 'info, 'info>(
     let user = ctx.accounts.drift_user.load()?;
 
     let mut vp = ctx.vault_protocol();
-    let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
     vault.validate_vault_protocol(&vp)?;
+    let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
 
     let AccountMaps {
         perp_market_map,
