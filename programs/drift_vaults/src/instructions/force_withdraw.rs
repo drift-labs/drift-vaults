@@ -53,13 +53,13 @@ pub fn force_withdraw<'c: 'info, 'info>(
 pub struct ForceWithdraw<'info> {
     #[account(
         mut,
-        constraint = is_manager_for_vault(& vault, & manager) ? || is_delegate_for_vault(& vault, & manager) ?
+        constraint = is_manager_for_vault(&vault, &manager) ? || is_delegate_for_vault(&vault, &manager)?
     )]
     pub vault: AccountLoader<'info, Vault>,
     pub manager: Signer<'info>,
     #[account(
         mut,
-        constraint = is_vault_for_vault_depositor(& vault_depositor, & vault) ?,
+        constraint = is_vault_for_vault_depositor(&vault_depositor, &vault)?,
     )]
     pub vault_depositor: AccountLoader<'info, VaultDepositor>,
     #[account(
@@ -70,13 +70,13 @@ pub struct ForceWithdraw<'info> {
     pub vault_token_account: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
-        constraint = is_user_stats_for_vault(& vault, & drift_user_stats) ?
+        constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?
     )]
     /// CHECK: checked in drift cpi
     pub drift_user_stats: AccountInfo<'info>,
     #[account(
         mut,
-        constraint = is_user_for_vault(& vault, & drift_user.key()) ?
+        constraint = is_user_for_vault(&vault, &drift_user.key())?
     )]
     /// CHECK: checked in drift cpi
     pub drift_user: AccountLoader<'info, User>,

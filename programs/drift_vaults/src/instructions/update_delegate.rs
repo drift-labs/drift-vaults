@@ -33,13 +33,13 @@ pub fn update_delegate<'info>(
 pub struct UpdateDelegate<'info> {
     #[account(
         mut,
-        constraint = is_manager_for_vault(& vault, & manager) ?,
+        constraint = is_manager_for_vault(&vault, &manager)?,
     )]
     pub vault: AccountLoader<'info, Vault>,
     pub manager: Signer<'info>,
     #[account(
         mut,
-        constraint = is_user_for_vault(& vault, & drift_user.key()) ?
+        constraint = is_user_for_vault(&vault, &drift_user.key())?
     )]
     /// CHECK: checked in drift cpi
     pub drift_user: AccountLoader<'info, User>,

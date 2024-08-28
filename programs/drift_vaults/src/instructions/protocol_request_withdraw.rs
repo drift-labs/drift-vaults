@@ -49,19 +49,19 @@ pub fn protocol_request_withdraw<'c: 'info, 'info>(
 pub struct ProtocolRequestWithdraw<'info> {
     #[account(
         mut,
-        constraint = is_protocol_for_vault(& vault, & vault_protocol, & protocol) ?
+        constraint = is_protocol_for_vault(&vault, &vault_protocol, &protocol)?
     )]
     pub vault: AccountLoader<'info, Vault>,
     #[account(
         mut,
-        constraint = is_vault_protocol_for_vault(& vault_protocol, & vault) ?
+        constraint = is_vault_protocol_for_vault(&vault_protocol, &vault)?
     )]
     pub vault_protocol: AccountLoader<'info, VaultProtocol>,
     pub protocol: Signer<'info>,
-    #[account(constraint = is_user_stats_for_vault(& vault, & drift_user_stats) ?)]
+    #[account(constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?)]
     /// CHECK: checked in drift cpi
     pub drift_user_stats: AccountInfo<'info>,
-    #[account(constraint = is_user_for_vault(& vault, & drift_user.key()) ?)]
+    #[account(constraint = is_user_for_vault(&vault, &drift_user.key())?)]
     /// CHECK: checked in drift cpi
     pub drift_user: AccountLoader<'info, User>,
     /// CHECK: checked in drift cpi

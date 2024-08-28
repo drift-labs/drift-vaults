@@ -60,12 +60,12 @@ pub fn protocol_withdraw<'c: 'info, 'info>(
 pub struct ProtocolWithdraw<'info> {
     #[account(
         mut,
-        constraint = is_protocol_for_vault(& vault, & vault_protocol, & protocol) ?
+        constraint = is_protocol_for_vault(&vault, &vault_protocol, &protocol)?
     )]
     pub vault: AccountLoader<'info, Vault>,
     #[account(
         mut,
-        constraint = is_vault_protocol_for_vault(& vault_protocol, & vault) ?
+        constraint = is_vault_protocol_for_vault(&vault_protocol, &vault)?
     )]
     pub vault_protocol: AccountLoader<'info, VaultProtocol>,
     pub protocol: Signer<'info>,
@@ -77,13 +77,13 @@ pub struct ProtocolWithdraw<'info> {
     pub vault_token_account: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
-        constraint = is_user_stats_for_vault(& vault, & drift_user_stats) ?
+        constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?
     )]
     /// CHECK: checked in drift cpi
     pub drift_user_stats: AccountInfo<'info>,
     #[account(
         mut,
-        constraint = is_user_for_vault(& vault, & drift_user.key()) ?
+        constraint = is_user_for_vault(&vault, &drift_user.key())?
     )]
     /// CHECK: checked in drift cpi
     pub drift_user: AccountLoader<'info, User>,
