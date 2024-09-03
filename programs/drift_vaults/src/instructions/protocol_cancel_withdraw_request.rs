@@ -6,9 +6,7 @@ use drift::state::user::User;
 use crate::constraints::{
     is_protocol_for_vault, is_user_for_vault, is_user_stats_for_vault, is_vault_protocol_for_vault,
 };
-use crate::error::ErrorCode;
-use crate::state::{Vault, VaultProtocol};
-use crate::{validate, AccountMapProvider};
+use crate::{AccountMapProvider, Vault, VaultProtocol};
 
 pub fn protocol_cancel_withdraw_request<'c: 'info, 'info>(
     ctx: Context<'_, '_, 'c, 'info, ProtocolCancelWithdrawRequest<'info>>,
@@ -17,13 +15,6 @@ pub fn protocol_cancel_withdraw_request<'c: 'info, 'info>(
     let vault = &mut ctx.accounts.vault.load_mut()?;
 
     let mut vp = Some(ctx.accounts.vault_protocol.load_mut()?);
-    if vp.is_none() {
-        validate!(
-            false,
-            ErrorCode::VaultProtocolMissing,
-            "Protocol cannot cancel with withdraw request for a non-protocol vault"
-        )?;
-    }
 
     let user = ctx.accounts.drift_user.load()?;
 

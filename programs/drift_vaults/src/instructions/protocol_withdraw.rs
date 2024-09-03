@@ -10,9 +10,8 @@ use crate::constraints::{
     is_protocol_for_vault, is_user_for_vault, is_user_stats_for_vault, is_vault_protocol_for_vault,
 };
 use crate::drift_cpi::{TokenTransferCPI, WithdrawCPI};
-use crate::error::ErrorCode;
 use crate::state::{Vault, VaultProtocol};
-use crate::{declare_vault_seeds, validate, AccountMapProvider};
+use crate::{declare_vault_seeds, AccountMapProvider};
 
 pub fn protocol_withdraw<'c: 'info, 'info>(
     ctx: Context<'_, '_, 'c, 'info, ProtocolWithdraw<'info>>,
@@ -24,15 +23,7 @@ pub fn protocol_withdraw<'c: 'info, 'info>(
     let user = ctx.accounts.drift_user.load()?;
     let spot_market_index = vault.spot_market_index;
 
-    // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
     let mut vp = Some(ctx.accounts.vault_protocol.load_mut()?);
-    if vp.is_none() {
-        validate!(
-            false,
-            ErrorCode::VaultProtocolMissing,
-            "Protocol cannot withdraw from a non-protocol vault"
-        )?;
-    }
 
     let AccountMaps {
         perp_market_map,

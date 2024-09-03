@@ -198,8 +198,7 @@ impl Vault {
                         .safe_div(total_fee)?;
                     let protocol_fee_payment = total_fee_payment
                         .min(depositor_equity.saturating_sub(1))
-                        .safe_mul(vp.protocol_fee.cast()?)?
-                        .safe_div(total_fee)?;
+                        .safe_sub(management_fee_payment)?;
 
                     let new_total_shares_factor: u128 = depositor_equity
                         .safe_mul(PERCENTAGE_PRECISION_I128)?
@@ -443,51 +442,26 @@ impl Vault {
         self.total_shares = self.total_shares.safe_add(n_shares)?;
         let vault_shares_after = self.get_manager_shares(vault_protocol)?;
 
-        match vault_protocol {
-            None => {
-                emit!(VaultDepositorRecord {
-                    ts: now,
-                    vault: self.pubkey,
-                    depositor_authority: self.manager,
-                    action: VaultDepositorAction::Deposit,
-                    amount: 0,
-                    spot_market_index: self.spot_market_index,
-                    vault_equity_before: vault_equity,
-                    vault_shares_before,
-                    user_vault_shares_before,
-                    total_vault_shares_before,
-                    vault_shares_after,
-                    total_vault_shares_after: self.total_shares,
-                    user_vault_shares_after: self.user_shares,
-                    profit_share: 0,
-                    management_fee: management_fee_payment,
-                    management_fee_shares,
-                });
-            }
-            Some(_) => {
-                emit!(VaultDepositorV1Record {
-                    ts: now,
-                    vault: self.pubkey,
-                    depositor_authority: self.manager,
-                    action: VaultDepositorAction::Deposit,
-                    amount: 0,
-                    spot_market_index: self.spot_market_index,
-                    vault_equity_before: vault_equity,
-                    vault_shares_before,
-                    user_vault_shares_before,
-                    total_vault_shares_before,
-                    vault_shares_after,
-                    total_vault_shares_after: self.total_shares,
-                    user_vault_shares_after: self.user_shares,
-                    protocol_profit_share: 0,
-                    protocol_fee: protocol_fee_payment,
-                    protocol_fee_shares,
-                    manager_profit_share: 0,
-                    management_fee: management_fee_payment,
-                    management_fee_shares,
-                });
-            }
-        }
+        self.emit_vault_depositor_record(
+            VaultDepositorRecordParams {
+                ts: now,
+                action: VaultDepositorAction::Deposit,
+                amount: 0,
+                vault_equity_before: vault_equity,
+                vault_shares_before,
+                user_vault_shares_before,
+                total_vault_shares_before,
+                vault_shares_after,
+                manager_profit_share: 0,
+                management_fee: management_fee_payment,
+                management_fee_shares,
+            },
+            Some(VaultDepositorRecordProtocolParams {
+                protocol_profit_share: 0,
+                protocol_fee: protocol_fee_payment,
+                protocol_fee_shares,
+            }),
+        )?;
 
         Ok(())
     }
@@ -565,51 +539,26 @@ impl Vault {
 
         let vault_shares_after: u128 = self.get_manager_shares(vault_protocol)?;
 
-        match vault_protocol {
-            None => {
-                emit!(VaultDepositorRecord {
-                    ts: now,
-                    vault: self.pubkey,
-                    depositor_authority: self.manager,
-                    action: VaultDepositorAction::WithdrawRequest,
-                    amount: self.last_manager_withdraw_request.value,
-                    spot_market_index: self.spot_market_index,
-                    vault_equity_before: vault_equity,
-                    vault_shares_before,
-                    user_vault_shares_before,
-                    total_vault_shares_before,
-                    vault_shares_after,
-                    total_vault_shares_after: self.total_shares,
-                    user_vault_shares_after: self.user_shares,
-                    profit_share: 0,
-                    management_fee: management_fee_payment,
-                    management_fee_shares,
-                });
-            }
-            Some(_) => {
-                emit!(VaultDepositorV1Record {
-                    ts: now,
-                    vault: self.pubkey,
-                    depositor_authority: self.manager,
-                    action: VaultDepositorAction::WithdrawRequest,
-                    amount: self.last_manager_withdraw_request.value,
-                    spot_market_index: self.spot_market_index,
-                    vault_equity_before: vault_equity,
-                    vault_shares_before,
-                    user_vault_shares_before,
-                    total_vault_shares_before,
-                    vault_shares_after,
-                    total_vault_shares_after: self.total_shares,
-                    user_vault_shares_after: self.user_shares,
-                    protocol_profit_share: 0,
-                    protocol_fee: protocol_fee_payment,
-                    protocol_fee_shares,
-                    manager_profit_share: 0,
-                    management_fee: management_fee_payment,
-                    management_fee_shares,
-                });
-            }
-        }
+        self.emit_vault_depositor_record(
+            VaultDepositorRecordParams {
+                ts: now,
+                action: VaultDepositorAction::WithdrawRequest,
+                amount: self.last_manager_withdraw_request.value,
+                vault_equity_before: vault_equity,
+                vault_shares_before,
+                user_vault_shares_before,
+                total_vault_shares_before,
+                vault_shares_after,
+                manager_profit_share: 0,
+                management_fee: management_fee_payment,
+                management_fee_shares,
+            },
+            Some(VaultDepositorRecordProtocolParams {
+                protocol_profit_share: 0,
+                protocol_fee: protocol_fee_payment,
+                protocol_fee_shares,
+            }),
+        )?;
 
         Ok(())
     }
@@ -643,51 +592,26 @@ impl Vault {
 
         let vault_shares_after = self.get_manager_shares(vault_protocol)?;
 
-        match vault_protocol {
-            None => {
-                emit!(VaultDepositorRecord {
-                    ts: now,
-                    vault: self.pubkey,
-                    depositor_authority: self.manager,
-                    action: VaultDepositorAction::CancelWithdrawRequest,
-                    amount: 0,
-                    spot_market_index: self.spot_market_index,
-                    vault_equity_before: vault_equity,
-                    vault_shares_before,
-                    user_vault_shares_before,
-                    total_vault_shares_before,
-                    vault_shares_after,
-                    total_vault_shares_after: self.total_shares,
-                    user_vault_shares_after: self.user_shares,
-                    profit_share: 0,
-                    management_fee: management_fee_payment,
-                    management_fee_shares,
-                });
-            }
-            Some(_) => {
-                emit!(VaultDepositorV1Record {
-                    ts: now,
-                    vault: self.pubkey,
-                    depositor_authority: self.manager,
-                    action: VaultDepositorAction::CancelWithdrawRequest,
-                    amount: 0,
-                    spot_market_index: self.spot_market_index,
-                    vault_equity_before: vault_equity,
-                    vault_shares_before,
-                    user_vault_shares_before,
-                    total_vault_shares_before,
-                    vault_shares_after,
-                    total_vault_shares_after: self.total_shares,
-                    user_vault_shares_after: self.user_shares,
-                    protocol_profit_share: 0,
-                    protocol_fee: protocol_fee_payment,
-                    protocol_fee_shares,
-                    manager_profit_share: 0,
-                    management_fee: management_fee_payment,
-                    management_fee_shares,
-                });
-            }
-        }
+        self.emit_vault_depositor_record(
+            VaultDepositorRecordParams {
+                ts: now,
+                action: VaultDepositorAction::CancelWithdrawRequest,
+                amount: 0,
+                vault_equity_before: vault_equity,
+                vault_shares_before,
+                user_vault_shares_before,
+                total_vault_shares_before,
+                vault_shares_after,
+                manager_profit_share: 0,
+                management_fee: management_fee_payment,
+                management_fee_shares,
+            },
+            Some(VaultDepositorRecordProtocolParams {
+                protocol_profit_share: 0,
+                protocol_fee: protocol_fee_payment,
+                protocol_fee_shares,
+            }),
+        )?;
 
         self.total_withdraw_requested = self
             .total_withdraw_requested
@@ -756,51 +680,26 @@ impl Vault {
         self.total_shares = self.total_shares.safe_sub(n_shares)?;
         let vault_shares_after = self.get_manager_shares(vault_protocol)?;
 
-        match vault_protocol {
-            None => {
-                emit!(VaultDepositorRecord {
-                    ts: now,
-                    vault: self.pubkey,
-                    depositor_authority: self.manager,
-                    action: VaultDepositorAction::Withdraw,
-                    amount: 0,
-                    spot_market_index: self.spot_market_index,
-                    vault_equity_before: vault_equity,
-                    vault_shares_before,
-                    user_vault_shares_before,
-                    total_vault_shares_before,
-                    vault_shares_after,
-                    total_vault_shares_after: self.total_shares,
-                    user_vault_shares_after: self.user_shares,
-                    profit_share: 0,
-                    management_fee: management_fee_payment,
-                    management_fee_shares,
-                });
-            }
-            Some(_) => {
-                emit!(VaultDepositorV1Record {
-                    ts: now,
-                    vault: self.pubkey,
-                    depositor_authority: self.manager,
-                    action: VaultDepositorAction::Withdraw,
-                    amount: 0,
-                    spot_market_index: self.spot_market_index,
-                    vault_equity_before: vault_equity,
-                    vault_shares_before,
-                    user_vault_shares_before,
-                    total_vault_shares_before,
-                    vault_shares_after,
-                    total_vault_shares_after: self.total_shares,
-                    user_vault_shares_after: self.user_shares,
-                    protocol_profit_share: 0,
-                    protocol_fee: protocol_fee_payment,
-                    protocol_fee_shares,
-                    manager_profit_share: 0,
-                    management_fee: management_fee_payment,
-                    management_fee_shares,
-                });
-            }
-        }
+        self.emit_vault_depositor_record(
+            VaultDepositorRecordParams {
+                ts: now,
+                action: VaultDepositorAction::Withdraw,
+                amount: 0,
+                vault_equity_before: vault_equity,
+                vault_shares_before,
+                user_vault_shares_before,
+                total_vault_shares_before,
+                vault_shares_after,
+                manager_profit_share: 0,
+                management_fee: management_fee_payment,
+                management_fee_shares,
+            },
+            Some(VaultDepositorRecordProtocolParams {
+                protocol_profit_share: 0,
+                protocol_fee: protocol_fee_payment,
+                protocol_fee_shares,
+            }),
+        )?;
 
         self.total_withdraw_requested = self
             .total_withdraw_requested
@@ -890,28 +789,31 @@ impl Vault {
         }
 
         let vault_shares_after: u128 = self.get_protocol_shares(vault_protocol);
+        let amount = match vault_protocol {
+            None => 0,
+            Some(vp) => vp.last_protocol_withdraw_request.value,
+        };
 
-        emit!(VaultDepositorV1Record {
-            ts: now,
-            vault: self.pubkey,
-            depositor_authority: self.manager,
-            action: VaultDepositorAction::WithdrawRequest,
-            amount: self.last_manager_withdraw_request.value,
-            spot_market_index: self.spot_market_index,
-            vault_equity_before: vault_equity,
-            vault_shares_before,
-            user_vault_shares_before,
-            total_vault_shares_before,
-            vault_shares_after,
-            total_vault_shares_after: self.total_shares,
-            user_vault_shares_after: self.user_shares,
-            protocol_profit_share: 0,
-            protocol_fee: protocol_fee_payment,
-            protocol_fee_shares,
-            manager_profit_share: 0,
-            management_fee: management_fee_payment,
-            management_fee_shares,
-        });
+        self.emit_vault_depositor_record(
+            VaultDepositorRecordParams {
+                ts: now,
+                action: VaultDepositorAction::WithdrawRequest,
+                amount,
+                vault_equity_before: vault_equity,
+                vault_shares_before,
+                user_vault_shares_before,
+                total_vault_shares_before,
+                vault_shares_after,
+                manager_profit_share: 0,
+                management_fee: management_fee_payment,
+                management_fee_shares,
+            },
+            Some(VaultDepositorRecordProtocolParams {
+                protocol_profit_share: 0,
+                protocol_fee: protocol_fee_payment,
+                protocol_fee_shares,
+            }),
+        )?;
 
         Ok(())
     }
@@ -963,27 +865,26 @@ impl Vault {
             vp.last_protocol_withdraw_request.reset(now)?;
         }
 
-        emit!(VaultDepositorV1Record {
-            ts: now,
-            vault: self.pubkey,
-            depositor_authority: self.manager,
-            action: VaultDepositorAction::CancelWithdrawRequest,
-            amount: 0,
-            spot_market_index: self.spot_market_index,
-            vault_equity_before: vault_equity,
-            vault_shares_before,
-            user_vault_shares_before,
-            total_vault_shares_before,
-            vault_shares_after,
-            total_vault_shares_after: self.total_shares,
-            user_vault_shares_after: self.user_shares,
-            protocol_profit_share: 0,
-            protocol_fee: protocol_fee_payment,
-            protocol_fee_shares,
-            manager_profit_share: 0,
-            management_fee: management_fee_payment,
-            management_fee_shares,
-        });
+        self.emit_vault_depositor_record(
+            VaultDepositorRecordParams {
+                ts: now,
+                action: VaultDepositorAction::CancelWithdrawRequest,
+                amount: 0,
+                vault_equity_before: vault_equity,
+                vault_shares_before,
+                user_vault_shares_before,
+                total_vault_shares_before,
+                vault_shares_after,
+                manager_profit_share: 0,
+                management_fee: management_fee_payment,
+                management_fee_shares,
+            },
+            Some(VaultDepositorRecordProtocolParams {
+                protocol_profit_share: 0,
+                protocol_fee: protocol_fee_payment,
+                protocol_fee_shares,
+            }),
+        )?;
 
         Ok(())
     }
@@ -1066,27 +967,26 @@ impl Vault {
         }
         let vault_shares_after = self.get_protocol_shares(vault_protocol);
 
-        emit!(VaultDepositorV1Record {
-            ts: now,
-            vault: self.pubkey,
-            depositor_authority: self.manager,
-            action: VaultDepositorAction::Withdraw,
-            amount: 0,
-            spot_market_index: self.spot_market_index,
-            vault_equity_before: vault_equity,
-            vault_shares_before,
-            user_vault_shares_before,
-            total_vault_shares_before,
-            vault_shares_after,
-            total_vault_shares_after: self.total_shares,
-            user_vault_shares_after: self.user_shares,
-            protocol_profit_share: 0,
-            protocol_fee: protocol_fee_payment,
-            protocol_fee_shares,
-            manager_profit_share: 0,
-            management_fee: management_fee_payment,
-            management_fee_shares,
-        });
+        self.emit_vault_depositor_record(
+            VaultDepositorRecordParams {
+                ts: now,
+                action: VaultDepositorAction::Withdraw,
+                amount: 0,
+                vault_equity_before: vault_equity,
+                vault_shares_before,
+                user_vault_shares_before,
+                total_vault_shares_before,
+                vault_shares_after,
+                manager_profit_share: 0,
+                management_fee: management_fee_payment,
+                management_fee_shares,
+            },
+            Some(VaultDepositorRecordProtocolParams {
+                protocol_profit_share: 0,
+                protocol_fee: protocol_fee_payment,
+                protocol_fee_shares,
+            }),
+        )?;
 
         if let Some(vp) = vault_protocol {
             self.total_withdraw_requested = self
@@ -1096,13 +996,6 @@ impl Vault {
         }
 
         Ok(n_tokens)
-    }
-
-    pub fn profit_share(&self, vault_protocol: &Option<RefMut<VaultProtocol>>) -> u32 {
-        match vault_protocol {
-            None => self.profit_share,
-            Some(vp) => self.profit_share.saturating_add(vp.protocol_profit_share),
-        }
     }
 
     pub fn validate_vault_protocol(&self, vp: &Option<AccountLoader<VaultProtocol>>) -> Result<()> {
@@ -1147,4 +1040,82 @@ impl Vault {
             }
         }
     }
+
+    fn emit_vault_depositor_record(
+        &self,
+        params: VaultDepositorRecordParams,
+        optional_params: Option<VaultDepositorRecordProtocolParams>,
+    ) -> Result<()> {
+        match optional_params {
+            None => {
+                emit!(VaultDepositorRecord {
+                    ts: params.ts,
+                    vault: self.pubkey,
+                    depositor_authority: self.manager,
+                    action: params.action,
+                    amount: params.amount,
+                    spot_market_index: self.spot_market_index,
+                    vault_equity_before: params.vault_equity_before,
+                    vault_shares_before: params.vault_shares_before,
+                    user_vault_shares_before: params.user_vault_shares_before,
+                    total_vault_shares_before: params.total_vault_shares_before,
+                    vault_shares_after: params.vault_shares_after,
+                    total_vault_shares_after: self.total_shares,
+                    user_vault_shares_after: self.user_shares,
+                    profit_share: params.manager_profit_share,
+                    management_fee: params.management_fee,
+                    management_fee_shares: params.management_fee_shares,
+                });
+            }
+            Some(protocol_params) => {
+                emit!(VaultDepositorV1Record {
+                    ts: params.ts,
+                    vault: self.pubkey,
+                    depositor_authority: self.manager,
+                    action: params.action,
+                    amount: params.amount,
+                    spot_market_index: self.spot_market_index,
+                    vault_equity_before: params.vault_equity_before,
+                    vault_shares_before: params.vault_shares_before,
+                    user_vault_shares_before: params.user_vault_shares_before,
+                    total_vault_shares_before: params.total_vault_shares_before,
+                    vault_shares_after: params.vault_shares_after,
+                    total_vault_shares_after: self.total_shares,
+                    user_vault_shares_after: self.user_shares,
+                    manager_profit_share: params.manager_profit_share,
+                    management_fee: params.management_fee,
+                    management_fee_shares: params.management_fee_shares,
+
+                    protocol_profit_share: protocol_params.protocol_profit_share,
+                    protocol_fee: protocol_params.protocol_fee,
+                    protocol_fee_shares: protocol_params.protocol_fee_shares,
+                });
+            }
+        };
+        Ok(())
+    }
+}
+
+struct VaultDepositorRecordParams {
+    pub ts: i64,
+    pub action: VaultDepositorAction,
+    pub amount: u64,
+
+    pub vault_shares_before: u128,
+    pub vault_shares_after: u128,
+
+    pub vault_equity_before: u64,
+
+    pub user_vault_shares_before: u128,
+    pub total_vault_shares_before: u128,
+
+    pub manager_profit_share: u64,
+    pub management_fee: i64,
+    pub management_fee_shares: i64,
+}
+
+struct VaultDepositorRecordProtocolParams {
+    pub protocol_profit_share: u64,
+    pub protocol_fee: i64,
+    pub protocol_fee_shares: i64,
 }

@@ -751,6 +751,8 @@ mod vault_v1_fcn {
         assert_eq!(withdraw, 99999999);
     }
 
+    const USER_SHARES_AFTER_1500_BPS_FEE: u64 = 99_850_025;
+
     #[test]
     fn test_management_and_protocol_fee_v1() {
         let now = 0;
@@ -809,7 +811,82 @@ mod vault_v1_fcn {
         let oo =
             depositor_shares_to_vault_amount(vault.user_shares, vault.total_shares, vault_equity)
                 .unwrap();
-        assert_eq!(oo, 99850025);
+        // 1000 mgmt fee + 500 protocol fee = 1500 bps fee
+        // this is user shares after 1500 bps fee
+        assert_eq!(oo, USER_SHARES_AFTER_1500_BPS_FEE);
+
+        assert_eq!(vault.last_fee_update_ts, now + ONE_YEAR as i64);
+    }
+
+    #[test]
+    fn test_odd_management_and_protocol_fee_v1() {
+        let now = 0;
+        let mut vault = Vault::default();
+        let vp = RefCell::new(VaultProtocol::default());
+        vault.management_fee = 1001; // 10.01 bps
+        vp.borrow_mut().protocol_fee = 499; // 4.99 bps
+
+        let vd =
+            &mut VaultDepositor::new(Pubkey::default(), Pubkey::default(), Pubkey::default(), now);
+        assert_eq!(vault.total_shares, 0);
+        assert_eq!(vault.last_fee_update_ts, 0);
+
+        let mut vault_equity: u64 = 100 * QUOTE_PRECISION_U64;
+        let amount: u64 = 100 * QUOTE_PRECISION_U64;
+        vd.deposit(
+            amount,
+            vault_equity,
+            &mut vault,
+            &mut Some(vp.borrow_mut()),
+            now,
+        )
+        .unwrap();
+        assert_eq!(vault.user_shares, 100000000);
+        assert_eq!(vault.total_shares, 200000000);
+        assert_eq!(vault.last_fee_update_ts, 0);
+        vault_equity += amount;
+
+        let user_eq_before =
+            depositor_shares_to_vault_amount(vault.user_shares, vault.total_shares, vault_equity)
+                .unwrap();
+        assert_eq!(user_eq_before, 100_000_000);
+
+        vault
+            .apply_fee(
+                &mut Some(vp.borrow_mut()),
+                vault_equity,
+                now + ONE_YEAR as i64,
+            )
+            .unwrap();
+        assert_eq!(vault.user_shares, 100_000_000);
+
+        let manager_shares = vault
+            .get_manager_shares(&mut Some(vp.borrow_mut()))
+            .unwrap();
+        println!("manager shares: {}", manager_shares);
+        // 200_400 shares at 1000 point profit share
+        // 200_600 shares at 1001 point profit share
+        // 200_400 / 1000 = 200.4
+        // 200_600 / 1001 = 200.399999 (ends up as 200.4 in the program due to u64 rounding)
+        assert_eq!(manager_shares, 100_000_000 + 200_600);
+
+        let protocol_shares = vault.get_protocol_shares(&mut Some(vp.borrow_mut()));
+        println!("protocol shares: {}", protocol_shares);
+        // 100_000 shares at 500 point profit share
+        // 99_800 shares at 499 point profit share
+        // 100_000 / 500 = 200
+        // 99_800 / 499 = 200
+        assert_eq!(protocol_shares, 99_800);
+
+        assert_eq!(vault.total_shares, 200_000_000 + 200_600 + 99_800);
+        println!("total shares: {}", vault.total_shares);
+
+        let oo =
+            depositor_shares_to_vault_amount(vault.user_shares, vault.total_shares, vault_equity)
+                .unwrap();
+        // 1001 mgmt fee + 499 protocol fee = 1500 bps fee
+        // this is user shares after 1500 bps fee
+        assert_eq!(oo, USER_SHARES_AFTER_1500_BPS_FEE);
 
         assert_eq!(vault.last_fee_update_ts, now + ONE_YEAR as i64);
     }
@@ -1427,7 +1504,7 @@ mod vault_v1_fcn {
         let mut now = 123456789;
         let mut vault = Vault::default();
         let vp = RefCell::new(VaultProtocol::default());
-        vp.borrow_mut().protocol_fee = 100; // .01%
+        vp.borrow_mut().protocol_fee = 100; // .01% (1 bps)
         vp.borrow_mut().protocol_profit_share = 150_000; // 15%
 
         vault.last_fee_update_ts = now;
