@@ -51,6 +51,7 @@ pub fn deposit<'c: 'info, 'info>(
 
     drop(vault);
     drop(user);
+    drop(vp);
 
     ctx.token_transfer(amount)?;
 
