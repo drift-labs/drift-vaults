@@ -185,10 +185,10 @@
     uuid "^8.3.2"
     zstddec "^0.1.0"
 
-"@drift-labs/sdk@2.95.0-beta.15":
-  version "2.95.0-beta.15"
-  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.95.0-beta.15.tgz#46416acae7647b32c56012b7aba6f3f58c97da30"
-  integrity sha512-tmvq8EpEffy8F70ZC8TGjc5cb0OpKkW98CD8hE//ert+RzChH3VDB3g+4Tv+ANjPQ+gNNad4kJnpt0GbamHdjw==
+"@drift-labs/sdk@2.93.0-beta.3":
+  version "2.93.0-beta.3"
+  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.93.0-beta.3.tgz#f139896a469d962fb63775f2f77b0db0040a96f5"
+  integrity sha512-3R59oCUkW5kOG0VIzeXuBj5c4vq2E1SXRGqrrI+l862FnHVKF4eW3CiM5jlnRng5SSuNmSW5/4iTWgOb7OnFng==
   dependencies:
     "@coral-xyz/anchor" "0.28.0"
     "@coral-xyz/anchor-30" "npm:@coral-xyz/anchor@0.30.1"
@@ -200,7 +200,7 @@
     "@pythnetwork/pyth-solana-receiver" "^0.7.0"
     "@solana/spl-token" "0.3.7"
     "@solana/web3.js" "1.92.3"
-    "@switchboard-xyz/on-demand" "1.2.32"
+    "@switchboard-xyz/on-demand" "1.2.30"
     anchor-bankrun "^0.3.0"
     node-cache "^5.1.2"
     rpc-websockets "7.5.1"
@@ -877,10 +877,10 @@
     lodash "^4.17.21"
     protobufjs "^7.2.6"
 
-"@switchboard-xyz/on-demand@1.2.32":
-  version "1.2.32"
-  resolved "https://registry.yarnpkg.com/@switchboard-xyz/on-demand/-/on-demand-1.2.32.tgz#ae68e45ab9cfb5ccc7c8f6d0506dd3ea7024f9ec"
-  integrity sha512-cS/7rkNg1tu6dtypMQZw6avsTF4DbNYOfA8tNq0rjCpipNTtQZp51UtkGSgIu8qfH8ebSBgpPxkUXlWpXYk3CA==
+"@switchboard-xyz/on-demand@1.2.30":
+  version "1.2.30"
+  resolved "https://registry.yarnpkg.com/@switchboard-xyz/on-demand/-/on-demand-1.2.30.tgz#67d342bb939b47ba5308b471d9176dba3e2241ee"
+  integrity sha512-Q3VEJz8CMO+XG6lvWSww+GXnKO0gEJgO1wOj7TzrnfOb1UN0ConoiDue1WmSeflMAY+EIW/pxeQghl+osqHEKA==
   dependencies:
     "@brokerloop/ttlcache" "^3.2.3"
     "@coral-xyz/anchor-30" "npm:@coral-xyz/anchor@0.30.1"
