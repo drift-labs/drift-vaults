@@ -1463,7 +1463,7 @@ export type DriftVaults = {
 					{
 						name: 'padding';
 						type: {
-							array: ['u64', 4];
+							array: ['u64', 7];
 						};
 					}
 				];
@@ -3476,7 +3476,7 @@ export const IDL: DriftVaults = {
 					{
 						name: 'padding',
 						type: {
-							array: ['u64', 4],
+							array: ['u64', 7],
 						},
 					},
 				],
