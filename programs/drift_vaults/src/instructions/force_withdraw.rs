@@ -40,7 +40,9 @@ pub fn force_withdraw<'c: 'info, 'info>(
 
     msg!("force_withdraw_amount: {}", withdraw_amount);
 
+    drop(vault);
     drop(user);
+    drop(vp);
 
     ctx.drift_withdraw(withdraw_amount)?;
 

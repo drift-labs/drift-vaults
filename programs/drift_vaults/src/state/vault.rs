@@ -102,7 +102,7 @@ pub struct Vault {
     /// The optional [`VaultProtocol`] account.
     pub vault_protocol: bool,
     pub padding1: [u8; 7],
-    pub padding: [u64; 4],
+    pub padding: [u64; 7],
 }
 
 impl Vault {
@@ -112,7 +112,7 @@ impl Vault {
 }
 
 impl Size for Vault {
-    const SIZE: usize = 504 + 8;
+    const SIZE: usize = 528 + 8;
 }
 const_assert_eq!(Vault::SIZE, std::mem::size_of::<Vault>() + 8);
 
@@ -456,11 +456,13 @@ impl Vault {
                 management_fee: management_fee_payment,
                 management_fee_shares,
             },
-            Some(VaultDepositorRecordProtocolParams {
-                protocol_profit_share: 0,
-                protocol_fee: protocol_fee_payment,
-                protocol_fee_shares,
-            }),
+            vault_protocol
+                .as_mut()
+                .map(|_| VaultDepositorRecordProtocolParams {
+                    protocol_profit_share: 0,
+                    protocol_fee: protocol_fee_payment,
+                    protocol_fee_shares,
+                }),
         )?;
 
         Ok(())

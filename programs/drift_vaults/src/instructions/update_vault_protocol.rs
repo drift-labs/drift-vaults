@@ -12,13 +12,6 @@ pub fn update_vault_protocol<'c: 'info, 'info>(
 
     // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
     let vp = Some(ctx.accounts.vault_protocol.load_mut()?);
-    if vp.is_none() {
-        validate!(
-            false,
-            ErrorCode::VaultProtocolMissing,
-            "Protocol cannot update vault protocol for a non-protocol vault"
-        )?;
-    }
 
     validate!(!vault.in_liquidation(), ErrorCode::OngoingLiquidation)?;
 
