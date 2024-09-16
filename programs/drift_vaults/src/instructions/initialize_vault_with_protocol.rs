@@ -1,6 +1,3 @@
-use crate::constants::ONE_DAY;
-use crate::drift_cpi::InitializeUserCPI;
-use crate::{error::ErrorCode, validate, Size, Vault};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
 use drift::cpi::accounts::{InitializeUser, InitializeUserStats};
@@ -9,9 +6,14 @@ use drift::math::constants::PERCENTAGE_PRECISION_U64;
 use drift::program::Drift;
 use drift::state::spot_market::SpotMarket;
 
-pub fn initialize_vault<'info>(
-    ctx: Context<'_, '_, '_, 'info, InitializeVault<'info>>,
-    params: VaultParams,
+use crate::constants::ONE_DAY;
+use crate::drift_cpi::InitializeUserCPI;
+use crate::state::{Vault, VaultProtocol};
+use crate::{error::ErrorCode, validate, Size};
+
+pub fn initialize_vault_with_protocol<'c: 'info, 'info>(
+    ctx: Context<'_, '_, 'c, 'info, InitializeVaultWithProtocol<'info>>,
+    params: VaultWithProtocolParams,
 ) -> Result<()> {
     let bump = ctx.bumps.vault;
 
@@ -25,10 +27,12 @@ pub fn initialize_vault<'info>(
     vault.spot_market_index = params.spot_market_index;
     vault.init_ts = Clock::get()?.unix_timestamp;
 
+    let mut vp = ctx.accounts.vault_protocol.load_init()?;
+
     validate!(
         params.redeem_period < ONE_DAY * 90,
         ErrorCode::InvalidVaultInitialization,
-        "redeem period too long"
+        "redeem period must be < 90 days"
     )?;
     vault.redeem_period = params.redeem_period;
 
@@ -36,18 +40,35 @@ pub fn initialize_vault<'info>(
     vault.min_deposit_amount = params.min_deposit_amount;
 
     validate!(
-        params.management_fee < PERCENTAGE_PRECISION_U64.cast()?,
+        params
+            .management_fee
+            .saturating_add(params.vault_protocol.protocol_fee.cast::<i64>()?)
+            < PERCENTAGE_PRECISION_U64.cast()?,
         ErrorCode::InvalidVaultInitialization,
-        "management fee must be < 100%"
+        "management fee plus protocol fee must be < 100%"
     )?;
     vault.management_fee = params.management_fee;
+    vp.protocol_fee = params.vault_protocol.protocol_fee;
 
     validate!(
-        params.profit_share < PERCENTAGE_PRECISION_U64.cast()?,
+        params
+            .profit_share
+            .saturating_add(params.vault_protocol.protocol_profit_share)
+            < PERCENTAGE_PRECISION_U64.cast()?,
         ErrorCode::InvalidVaultInitialization,
-        "profit share must be < 100%"
+        "manager profit share protocol profit share must be < 100%"
     )?;
     vault.profit_share = params.profit_share;
+    vp.protocol_profit_share = params.vault_protocol.protocol_profit_share;
+    vp.protocol = params.vault_protocol.protocol;
+
+    let (_, vp_bump) = Pubkey::find_program_address(
+        &[b"vault_protocol", ctx.accounts.vault.key().as_ref()],
+        ctx.program_id,
+    );
+    vp.bump = vp_bump;
+
+    vault.vault_protocol = true;
 
     validate!(
         params.hurdle_rate == 0,
@@ -59,15 +80,16 @@ pub fn initialize_vault<'info>(
     vault.permissioned = params.permissioned;
 
     drop(vault);
+    drop(vp);
 
-    ctx.drift_initialize_user(params.name, bump)?;
     ctx.drift_initialize_user_stats(params.name, bump)?;
+    ctx.drift_initialize_user(params.name, bump)?;
 
     Ok(())
 }
 
 #[derive(Debug, Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
-pub struct VaultParams {
+pub struct VaultWithProtocolParams {
     pub name: [u8; 32],
     pub redeem_period: i64,
     pub max_tokens: u64,
@@ -77,11 +99,19 @@ pub struct VaultParams {
     pub hurdle_rate: u32,
     pub spot_market_index: u16,
     pub permissioned: bool,
+    pub vault_protocol: VaultProtocolParams,
+}
+
+#[derive(Debug, Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
+pub struct VaultProtocolParams {
+    pub protocol: Pubkey,
+    pub protocol_fee: u64,
+    pub protocol_profit_share: u32,
 }
 
 #[derive(Accounts)]
-#[instruction(params: VaultParams)]
-pub struct InitializeVault<'info> {
+#[instruction(params: VaultWithProtocolParams)]
+pub struct InitializeVaultWithProtocol<'info> {
     #[account(
         init,
         seeds = [b"vault", params.name.as_ref()],
@@ -90,6 +120,16 @@ pub struct InitializeVault<'info> {
         payer = payer
     )]
     pub vault: AccountLoader<'info, Vault>,
+
+    #[account(
+        init,
+        seeds = [b"vault_protocol", vault.key().as_ref()],
+        space = VaultProtocol::SIZE,
+        bump,
+        payer = payer
+    )]
+    pub vault_protocol: AccountLoader<'info, VaultProtocol>,
+
     #[account(
         init,
         seeds = [b"vault_token_account".as_ref(), vault.key().as_ref()],
@@ -125,27 +165,8 @@ pub struct InitializeVault<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-impl<'info> InitializeUserCPI for Context<'_, '_, '_, 'info, InitializeVault<'info>> {
+impl<'info> InitializeUserCPI for Context<'_, '_, '_, 'info, InitializeVaultWithProtocol<'info>> {
     fn drift_initialize_user(&self, name: [u8; 32], bump: u8) -> Result<()> {
-        let signature_seeds = Vault::get_vault_signer_seeds(&name, &bump);
-        let signers = &[&signature_seeds[..]];
-
-        let cpi_program = self.accounts.drift_program.to_account_info().clone();
-        let cpi_accounts = InitializeUserStats {
-            user_stats: self.accounts.drift_user_stats.clone(),
-            state: self.accounts.drift_state.clone(),
-            authority: self.accounts.vault.to_account_info().clone(),
-            payer: self.accounts.payer.to_account_info().clone(),
-            rent: self.accounts.rent.to_account_info().clone(),
-            system_program: self.accounts.system_program.to_account_info().clone(),
-        };
-        let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signers);
-        drift::cpi::initialize_user_stats(cpi_ctx)?;
-
-        Ok(())
-    }
-
-    fn drift_initialize_user_stats(&self, name: [u8; 32], bump: u8) -> Result<()> {
         let signature_seeds = Vault::get_vault_signer_seeds(&name, &bump);
         let signers = &[&signature_seeds[..]];
 
@@ -162,6 +183,25 @@ impl<'info> InitializeUserCPI for Context<'_, '_, '_, 'info, InitializeVault<'in
         let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signers);
         let sub_account_id = 0_u16;
         drift::cpi::initialize_user(cpi_ctx, sub_account_id, name)?;
+
+        Ok(())
+    }
+
+    fn drift_initialize_user_stats(&self, name: [u8; 32], bump: u8) -> Result<()> {
+        let signature_seeds = Vault::get_vault_signer_seeds(&name, &bump);
+        let signers = &[&signature_seeds[..]];
+
+        let cpi_program = self.accounts.drift_program.to_account_info().clone();
+        let cpi_accounts = InitializeUserStats {
+            user_stats: self.accounts.drift_user_stats.clone(),
+            state: self.accounts.drift_state.clone(),
+            authority: self.accounts.vault.to_account_info().clone(),
+            payer: self.accounts.payer.to_account_info().clone(),
+            rent: self.accounts.rent.to_account_info().clone(),
+            system_program: self.accounts.system_program.to_account_info().clone(),
+        };
+        let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signers);
+        drift::cpi::initialize_user_stats(cpi_ctx)?;
 
         Ok(())
     }

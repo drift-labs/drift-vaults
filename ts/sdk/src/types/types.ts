@@ -29,7 +29,19 @@ export type VaultParams = {
 	profitShare: number;
 	hurdleRate: number;
 	permissioned: boolean;
-	vaultProtocol: VaultProtocolParams | null;
+};
+
+export type VaultWithProtocolParams = {
+	name: number[];
+	spotMarketIndex: number;
+	redeemPeriod: BN;
+	maxTokens: BN;
+	minDepositAmount: BN;
+	managementFee: BN;
+	profitShare: number;
+	hurdleRate: number;
+	permissioned: boolean;
+	vaultProtocol: VaultProtocolParams;
 };
 
 export type VaultProtocolParams = {

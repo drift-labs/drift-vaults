@@ -81,6 +81,89 @@ export type DriftVaults = {
 			];
 		},
 		{
+			name: 'initializeVaultWithProtocol';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'vaultProtocol';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'tokenAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUser';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftState';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftSpotMarket';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftSpotMarketMint';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'payer';
+					isMut: true;
+					isSigner: true;
+				},
+				{
+					name: 'rent';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'systemProgram';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftProgram';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'tokenProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [
+				{
+					name: 'params';
+					type: {
+						defined: 'VaultWithProtocolParams';
+					};
+				}
+			];
+		},
+		{
 			name: 'updateDelegate';
 			accounts: [
 				{
@@ -1472,7 +1555,7 @@ export type DriftVaults = {
 	];
 	types: [
 		{
-			name: 'VaultParams';
+			name: 'VaultWithProtocolParams';
 			type: {
 				kind: 'struct';
 				fields: [
@@ -1517,9 +1600,7 @@ export type DriftVaults = {
 					{
 						name: 'vaultProtocol';
 						type: {
-							option: {
-								defined: 'VaultProtocolParams';
-							};
+							defined: 'VaultProtocolParams';
 						};
 					}
 				];
@@ -1541,6 +1622,52 @@ export type DriftVaults = {
 					{
 						name: 'protocolProfitShare';
 						type: 'u32';
+					}
+				];
+			};
+		},
+		{
+			name: 'VaultParams';
+			type: {
+				kind: 'struct';
+				fields: [
+					{
+						name: 'name';
+						type: {
+							array: ['u8', 32];
+						};
+					},
+					{
+						name: 'redeemPeriod';
+						type: 'i64';
+					},
+					{
+						name: 'maxTokens';
+						type: 'u64';
+					},
+					{
+						name: 'managementFee';
+						type: 'i64';
+					},
+					{
+						name: 'minDepositAmount';
+						type: 'u64';
+					},
+					{
+						name: 'profitShare';
+						type: 'u32';
+					},
+					{
+						name: 'hurdleRate';
+						type: 'u32';
+					},
+					{
+						name: 'spotMarketIndex';
+						type: 'u16';
+					},
+					{
+						name: 'permissioned';
+						type: 'bool';
 					}
 				];
 			};
@@ -2089,6 +2216,89 @@ export const IDL: DriftVaults = {
 					name: 'params',
 					type: {
 						defined: 'VaultParams',
+					},
+				},
+			],
+		},
+		{
+			name: 'initializeVaultWithProtocol',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'vaultProtocol',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'tokenAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUser',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftState',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftSpotMarket',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftSpotMarketMint',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'payer',
+					isMut: true,
+					isSigner: true,
+				},
+				{
+					name: 'rent',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'systemProgram',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftProgram',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'tokenProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [
+				{
+					name: 'params',
+					type: {
+						defined: 'VaultWithProtocolParams',
 					},
 				},
 			],
@@ -3485,7 +3695,7 @@ export const IDL: DriftVaults = {
 	],
 	types: [
 		{
-			name: 'VaultParams',
+			name: 'VaultWithProtocolParams',
 			type: {
 				kind: 'struct',
 				fields: [
@@ -3530,9 +3740,7 @@ export const IDL: DriftVaults = {
 					{
 						name: 'vaultProtocol',
 						type: {
-							option: {
-								defined: 'VaultProtocolParams',
-							},
+							defined: 'VaultProtocolParams',
 						},
 					},
 				],
@@ -3554,6 +3762,52 @@ export const IDL: DriftVaults = {
 					{
 						name: 'protocolProfitShare',
 						type: 'u32',
+					},
+				],
+			},
+		},
+		{
+			name: 'VaultParams',
+			type: {
+				kind: 'struct',
+				fields: [
+					{
+						name: 'name',
+						type: {
+							array: ['u8', 32],
+						},
+					},
+					{
+						name: 'redeemPeriod',
+						type: 'i64',
+					},
+					{
+						name: 'maxTokens',
+						type: 'u64',
+					},
+					{
+						name: 'managementFee',
+						type: 'i64',
+					},
+					{
+						name: 'minDepositAmount',
+						type: 'u64',
+					},
+					{
+						name: 'profitShare',
+						type: 'u32',
+					},
+					{
+						name: 'hurdleRate',
+						type: 'u32',
+					},
+					{
+						name: 'spotMarketIndex',
+						type: 'u16',
+					},
+					{
+						name: 'permissioned',
+						type: 'bool',
 					},
 				],
 			},

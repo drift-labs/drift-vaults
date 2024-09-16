@@ -23,6 +23,13 @@ pub mod drift_vaults {
         instructions::initialize_vault(ctx, params)
     }
 
+    pub fn initialize_vault_with_protocol<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, InitializeVaultWithProtocol<'info>>,
+        params: VaultWithProtocolParams,
+    ) -> Result<()> {
+        instructions::initialize_vault_with_protocol(ctx, params)
+    }
+
     pub fn update_delegate<'c: 'info, 'info>(
         ctx: Context<'_, '_, 'c, 'info, UpdateDelegate<'info>>,
         delegate: Pubkey,
