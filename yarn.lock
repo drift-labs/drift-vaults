@@ -185,13 +185,13 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
-"@drift-labs/competitions-sdk@0.2.465":
-  version "0.2.465"
-  resolved "https://registry.yarnpkg.com/@drift-labs/competitions-sdk/-/competitions-sdk-0.2.465.tgz#f748941c35e696d8aeda431793d6edb76a18b35e"
-  integrity sha512-bF1a+W0DkoFPP7EQCpW4b5LtcxFoPDRpV5k1G9CXgFkrUR5Jkk05mZvVrJsaAWkHzHyLKJ2h9bD+t56B4GcFag==
+"@drift-labs/competitions-sdk@0.2.466":
+  version "0.2.466"
+  resolved "https://registry.yarnpkg.com/@drift-labs/competitions-sdk/-/competitions-sdk-0.2.466.tgz#013bfd00038af7bcd8700ba02f1945857460735d"
+  integrity sha512-2LZZVLwYJvLwvrESS3Q9OJCbga8gA5IL+7T6D2byye23kg/RE7udgFlfg7/OCtm4WKXrMfAvBhdXdTMc9S5X+Q==
   dependencies:
     "@coral-xyz/anchor" "^0.26.0"
-    "@drift-labs/sdk" "2.96.0-beta.0"
+    "@drift-labs/sdk" "2.96.0-beta.1"
     "@solana/web3.js" "1.73.2"
     "@switchboard-xyz/solana.js" "^2.7.1"
     cerializr "^3.1.4"
@@ -200,14 +200,15 @@
     ts-node "^10.9.1"
     typescript "^5.1.6"
 
-"@drift-labs/sdk@2.96.0-beta.0":
-  version "2.96.0-beta.0"
-  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.96.0-beta.0.tgz#e52a70a51981451846fc46095d0ceb803282e586"
-  integrity sha512-LLwCJnaSXHS+4OF85wA/8KoiFYzQyPldTq+z4K1PiPRcRkukVAe4SQstAU3xTwoRDvnr6k2mHIZoEmpxpTnBiA==
+"@drift-labs/sdk@2.96.0-beta.1":
+  version "2.96.0-beta.1"
+  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.96.0-beta.1.tgz#f3f378c5109a092669e924e15bcda50e8f3bd93d"
+  integrity sha512-WOvbVY9YCdaA0MkZmAcVFRdDRjzfxYYm6mdWJ8Ha3ZWKAUdsxI0Jy01D75jZ/yP+cLGi0NBiUM4qqf6yMiIucg==
   dependencies:
     "@coral-xyz/anchor" "0.28.0"
     "@coral-xyz/anchor-30" "npm:@coral-xyz/anchor@0.30.1"
     "@ellipsis-labs/phoenix-sdk" "^1.4.2"
+    "@grpc/grpc-js" "^1.11.2"
     "@openbook-dex/openbook-v2" "^0.2.10"
     "@project-serum/serum" "^0.13.38"
     "@pythnetwork/client" "2.5.3"
@@ -216,6 +217,7 @@
     "@solana/spl-token" "0.3.7"
     "@solana/web3.js" "1.92.3"
     "@switchboard-xyz/on-demand" "1.2.32"
+    "@triton-one/yellowstone-grpc" "^0.6.0"
     anchor-bankrun "^0.3.0"
     node-cache "^5.1.2"
     rpc-websockets "7.5.1"
@@ -252,6 +254,14 @@
     js-yaml "^3.13.1"
     minimatch "^3.0.4"
     strip-json-comments "^3.1.1"
+
+"@grpc/grpc-js@^1.11.2", "@grpc/grpc-js@^1.8.0":
+  version "1.11.3"
+  resolved "https://registry.yarnpkg.com/@grpc/grpc-js/-/grpc-js-1.11.3.tgz#a33a472618d166fbb195012ae390dbfc277470ed"
+  integrity sha512-i9UraDzFHMR+Iz/MhFLljT+fCpgxZ3O6CxwGJ8YuNYHJItIHUzKJpW2LvoFZNnGPwqc9iWy9RAucxV0JoR9aUQ==
+  dependencies:
+    "@grpc/proto-loader" "^0.7.13"
+    "@js-sdsl/ordered-map" "^4.4.2"
 
 "@grpc/grpc-js@^1.8.13":
   version "1.10.9"
@@ -1042,6 +1052,13 @@
     cron-validator "^1.3.1"
     dotenv "^16.3.1"
     lodash "^4.17.21"
+
+"@triton-one/yellowstone-grpc@^0.6.0":
+  version "0.6.0"
+  resolved "https://registry.yarnpkg.com/@triton-one/yellowstone-grpc/-/yellowstone-grpc-0.6.0.tgz#9e6376cec8a42284c23dc195df2c3423c87c4f27"
+  integrity sha512-rgdZM2N3U9/d/QKOI5PP+9rSHUl2oSI5Uwzvuss8y/mtTaHFjbOMpXpQXviIeDkusOa+mef4wLYrbjEZCwTXiw==
+  dependencies:
+    "@grpc/grpc-js" "^1.8.0"
 
 "@tsconfig/node10@^1.0.7":
   version "1.0.9"
