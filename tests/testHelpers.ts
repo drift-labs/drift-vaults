@@ -12,6 +12,7 @@ import {
 	createMintToInstruction,
 	createWrappedNativeAccount,
 	getAssociatedTokenAddressSync,
+	getMint
 } from '@solana/spl-token';
 import {
 	Connection,
@@ -52,6 +53,7 @@ import {
 	getTokenAmount,
 	getSignedTokenAmount,
 	TEN,
+	ZERO,
 } from '@drift-labs/sdk';
 import {
 	DriftVaults,
@@ -286,12 +288,12 @@ export async function initializeAndSubscribeDriftClient(
 		oracleInfos,
 		accountSubscription: accountLoader
 			? {
-					type: 'polling',
-					accountLoader,
-			  }
+				type: 'polling',
+				accountLoader,
+			}
 			: {
-					type: 'websocket',
-			  },
+				type: 'websocket',
+			},
 	});
 	await driftClient.subscribe();
 	await driftClient.initializeUserAccount();
@@ -337,7 +339,7 @@ export async function createWSolTokenAccountForUser(
 	await provider.connection.requestAirdrop(
 		userKeypair.publicKey,
 		amount.toNumber() +
-			(await getMinimumBalanceForRentExemptAccount(provider.connection))
+		(await getMinimumBalanceForRentExemptAccount(provider.connection))
 	);
 	return await createWrappedNativeAccount(
 		provider.connection,
@@ -397,7 +399,7 @@ export async function initializeSolSpotMarketMaker(
 	solAccount: PublicKey;
 	usdcAccount: PublicKey;
 	userKeyPair: Keypair;
-	requoteFunc: (bid?: BN, ask?: BN) => Promise<void>;
+	requoteFunc: (bid?: BN, ask?: BN, print?: boolean) => Promise<void>;
 }> {
 	const solDepositAmount = solAmount ?? new BN(10_000 * LAMPORTS_PER_SOL);
 	const usdcDepositAmount = usdcAmount ?? new BN(1_000_000 * 1e6);
@@ -429,40 +431,7 @@ export async function initializeSolSpotMarketMaker(
 	await driftClient.deposit(usdcDepositAmount, 0, usdcAccount);
 	await driftClient.deposit(solDepositAmount, 1, solAccount);
 
-	// const solOracle = driftClient.getOracleDataForSpotMarket(1);
-	// const bidPrice = solOracle.price.sub(
-	// 	new BN(100).mul(solMarket.orderTickSize)
-	// );
-	// const askPrice = solOracle.price.add(
-	// 	new BN(100).mul(solMarket.orderTickSize)
-	// );
-
-	// try {
-	// 	await driftClient.placeOrders([
-	// 		getOrderParams({
-	// 			orderType: OrderType.LIMIT,
-	// 			marketType: MarketType.SPOT,
-	// 			marketIndex: 1,
-	// 			direction: PositionDirection.LONG,
-	// 			price: bidPrice,
-	// 			baseAssetAmount: usdcDepositAmount.mul(BASE_PRECISION).div(bidPrice),
-	// 		}),
-	// 		getOrderParams({
-	// 			orderType: OrderType.LIMIT,
-	// 			marketType: MarketType.SPOT,
-	// 			marketIndex: 1,
-	// 			direction: PositionDirection.SHORT,
-	// 			price: askPrice,
-	// 			baseAssetAmount: solDepositAmount,
-	// 		}),
-	// 	]);
-	// } catch (e) {
-	// 	console.error(e);
-	// }
-
-	// await driftClient.fetchAccounts();
-
-	const requoteFunc = async (bid?: BN, ask?: BN) => {
+	const requoteFunc = async (bid?: BN, ask?: BN, print?: boolean) => {
 		await driftClient.fetchAccounts();
 		const solOracle = driftClient.getOracleDataForSpotMarket(1);
 
@@ -471,31 +440,26 @@ export async function initializeSolSpotMarketMaker(
 		const askPrice =
 			ask ?? solOracle.price.add(new BN(10).mul(solMarket.orderTickSize));
 
-		const usdcPos = driftClient.getUser().getSpotPosition(0);
-		const usdcBal = getSignedTokenAmount(
-			getTokenAmount(usdcPos.scaledBalance, usdcMarket, usdcPos.balanceType),
-			usdcPos.balanceType
-		);
 		const solPos = driftClient.getUser().getSpotPosition(1);
 		const solBal = getSignedTokenAmount(
 			getTokenAmount(solPos.scaledBalance, solMarket, solPos.balanceType),
 			solPos.balanceType
 		);
 
-		const usdcPrec = TEN.pow(new BN(usdcMarket.decimals));
 		const solPrec = TEN.pow(new BN(solMarket.decimals));
 
 		try {
-			// const bidAmount = convertToNumber(usdcBal, usdcPrec) / 10 / convertToNumber(bidPrice)
 			const askAmount = convertToNumber(solBal, solPrec) / 10;
 			const bidAmount = askAmount;
-			console.log(
-				`mm ${driftClient.authority.toBase58()} requoting around ${convertToNumber(
-					solOracle.price
-				)}. bid: ${bidAmount}@$${convertToNumber(
-					bidPrice
-				)}, ask: ${askAmount}@$${convertToNumber(askPrice)}`
-			);
+			if (print) {
+				console.log(
+					`mm ${driftClient.authority.toBase58()} requoting around ${convertToNumber(
+						solOracle.price
+					)}. bid: ${bidAmount}@$${convertToNumber(
+						bidPrice
+					)}, ask: ${askAmount}@$${convertToNumber(askPrice)}`
+				);
+			}
 
 			await driftClient.cancelAndPlaceOrders(
 				{
@@ -630,12 +594,12 @@ export async function initUserAccounts(
 			oracleInfos,
 			accountSubscription: accountLoader
 				? {
-						type: 'polling',
-						accountLoader,
-				  }
+					type: 'polling',
+					accountLoader,
+				}
 				: {
-						type: 'websocket',
-				  },
+					type: 'websocket',
+				},
 		});
 
 		// await driftClient1.initialize(usdcMint.publicKey, false);
@@ -812,9 +776,9 @@ function readBigInt64LE(buffer, offset = 0) {
 		(BigInt(val) << BigInt(32)) +
 		BigInt(
 			first +
-				buffer[++offset] * 2 ** 8 +
-				buffer[++offset] * 2 ** 16 +
-				buffer[++offset] * 2 ** 24
+			buffer[++offset] * 2 ** 8 +
+			buffer[++offset] * 2 ** 16 +
+			buffer[++offset] * 2 ** 24
 		)
 	);
 }
@@ -1178,6 +1142,7 @@ export async function bootstrapSignerClientAndUser(params: {
 	metaplex?: Metaplex;
 }): Promise<{
 	signer: Keypair;
+	wallet: anchor.Wallet;
 	user: User;
 	userUSDCAccount: Keypair;
 	driftClient: DriftClient;
@@ -1217,6 +1182,7 @@ export async function bootstrapSignerClientAndUser(params: {
 		oracleInfos,
 		accountSubscription,
 	});
+	const wallet = new anchor.Wallet(signer);
 	const provider = new anchor.AnchorProvider(
 		payer.connection,
 		new anchor.Wallet(signer),
@@ -1255,10 +1221,100 @@ export async function bootstrapSignerClientAndUser(params: {
 	}
 	return {
 		signer,
+		wallet,
 		user,
 		userUSDCAccount,
 		driftClient,
 		vaultClient,
 		provider,
 	};
+}
+
+export async function getVaultDepositorValue(params: {
+	vaultClient: VaultClient,
+	vault: PublicKey,
+	vaultDepositor: PublicKey,
+	tokenizedVaultDepositor?: PublicKey,
+	tokenizedVaultAta?: PublicKey,
+	print?: boolean,
+}): Promise<{
+	vaultEquity: BN,
+	vaultShares: BN,
+	vaultDepositorShares: BN,
+	vaultDepositorEquity: BN,
+	vaultDepositorShareOfVault: number,
+	tokenizedVaultDepositorEquity?: BN,
+	tokenizedVaultDepositorShareOfVault?: number,
+	ataBalance?: BN,
+	ataShareOfSupply?: number,
+	ataValue?: BN,
+}> {
+	const vaultAccount = await params.vaultClient.getVault(params.vault);
+	const vaultDepositorAccount = await params.vaultClient.program.account.vaultDepositor.fetch(params.vaultDepositor);
+	const tokenizedVaultDepositorAccount = params.tokenizedVaultDepositor ?
+		await params.vaultClient.program.account.tokenizedVaultDepositor.fetch(params.tokenizedVaultDepositor)
+		: undefined;
+
+	const vaultEquity = await params.vaultClient.calculateVaultEquityInDepositAsset({
+		address: params.vault,
+	});
+
+	assert(vaultAccount.sharesBase === vaultDepositorAccount.vaultSharesBase, 'vaultDepositorAccount.vaultSharesBase is not equal to vaultAccount.sharesBase');
+	if (tokenizedVaultDepositorAccount) {
+		assert(tokenizedVaultDepositorAccount.vaultSharesBase === vaultAccount.sharesBase, 'tokenizedVaultDepositorAccount.vaultSharesBase is not equal to vaultAccount.sharesBase');
+	}
+
+
+	let tokenizedVaultDepositorEquity: BN;
+	let tokenizedVaultDepositorShareOfVault: number;
+	let ataBalance: BN;
+	let ataValue: BN;
+	let ataShareOfSupply: number;
+	if (params.tokenizedVaultDepositor) {
+		tokenizedVaultDepositorEquity = vaultEquity.mul(tokenizedVaultDepositorAccount.vaultShares).div(vaultAccount.totalShares);
+		tokenizedVaultDepositorShareOfVault = tokenizedVaultDepositorAccount.vaultShares.toNumber() / vaultAccount.totalShares.toNumber();
+
+		if (params.tokenizedVaultAta) {
+			const ata = await params.vaultClient.driftClient.connection.getTokenAccountBalance(params.tokenizedVaultAta);
+			const mint = await getMint(params.vaultClient.driftClient.connection, tokenizedVaultDepositorAccount.mint);
+			const totalSupply = new BN(mint.supply.toString());
+
+			ataBalance = new BN(ata.value.amount);
+			if (!totalSupply.isZero()) {
+				ataShareOfSupply = ataBalance.toNumber() / totalSupply.toNumber();
+				ataValue = tokenizedVaultDepositorEquity.mul(ataBalance).div(totalSupply);
+			} else {
+				ataShareOfSupply = null;
+				ataValue = null;
+			}
+		}
+	}
+
+	const vaultDepositorEquity = vaultEquity.mul(vaultDepositorAccount.vaultShares).div(vaultAccount.totalShares);
+	const vaultDepositorShareOfVault = vaultDepositorAccount.vaultShares.toNumber() / vaultAccount.totalShares.toNumber()
+
+	if (params.print) {
+		console.log(`Vault:          ${params.vault.toBase58()}`);
+		console.log(`VaultDepositor: ${params.vaultDepositor.toBase58()}`);
+		console.log(`TokenizedVaultDepositor: ${params.tokenizedVaultDepositor?.toBase58()}`);
+		console.log(`  vaultEquity:          ${vaultEquity.toString()}`);
+		console.log(`  vaultDepositorEquity: ${vaultDepositorEquity.toString()}`);
+		console.log(`  vaultDepositorShareOfVault: ${vaultDepositorShareOfVault * 100}%`);
+		console.log(`  tokenizedVaultDepositorEquity:       ${tokenizedVaultDepositorEquity?.toString()}`);
+		console.log(`  tokenizedVaultDepositorShareOfVault: ${tokenizedVaultDepositorShareOfVault * 100}%`);
+		console.log(`  ataBalance: ${ataBalance?.toString()}`);
+		console.log(`  ataValue:   ${ataValue?.toString()}`);
+		console.log(`  ataShareOfSupply: ${ataShareOfSupply * 100}%`);
+	}
+
+	return {
+		vaultEquity,
+		vaultShares: vaultAccount.totalShares,
+		vaultDepositorShares: vaultDepositorAccount.vaultShares,
+		vaultDepositorEquity,
+		vaultDepositorShareOfVault,
+		ataBalance,
+		ataValue,
+		ataShareOfSupply,
+	}
 }

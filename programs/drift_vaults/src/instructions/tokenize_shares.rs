@@ -41,7 +41,7 @@ pub fn tokenize_shares<'info>(
     validate!(
         vault.shares_base == tokenized_vault_depositor.vault_shares_base,
         ErrorCode::InvalidVaultRebase,
-        "Cannot tokenize shares after a rebase, must manually trigger TokenizedVaultDepositor::rebase() ({:?} vs. {:?})",
+        "Vault has rebased, can no longer tokenize shares. Only redeem_tokens() is allowed. (shares base: {:?} vs. {:?})",
         vault.shares_base,
         tokenized_vault_depositor.vault_shares_base
     )?;
@@ -71,6 +71,7 @@ pub fn tokenize_shares<'info>(
 
     let tokens_to_mint = match vp {
         None => {
+            msg!("HEYLLO 10");
             let (shares_transferred, _) = vault_depositor.transfer_shares(
                 &mut *tokenized_vault_depositor,
                 &mut vault,
@@ -80,6 +81,7 @@ pub fn tokenize_shares<'info>(
                 vault_equity,
                 clock.unix_timestamp,
             )?;
+            msg!("HEYLLO 1");
             tokenized_vault_depositor.tokenize_shares(
                 &mut vault,
                 &mut None,
@@ -90,6 +92,7 @@ pub fn tokenize_shares<'info>(
             )?
         }
         Some(vp) => {
+            msg!("HEYLLO 20");
             let (shares_transferred, mut vp) = vault_depositor.transfer_shares(
                 &mut *tokenized_vault_depositor,
                 &mut vault,
@@ -99,6 +102,7 @@ pub fn tokenize_shares<'info>(
                 vault_equity,
                 clock.unix_timestamp,
             )?;
+            msg!("HEYLLO 2");
             tokenized_vault_depositor.tokenize_shares(
                 &mut vault,
                 &mut vp,

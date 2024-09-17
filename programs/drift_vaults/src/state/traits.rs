@@ -156,6 +156,7 @@ pub trait VaultDepositorBase {
         let from_rebase_divisor = self.apply_rebase(vault, vault_protocol, vault_equity)?;
         let to_rebase_divisor = to.apply_rebase(vault, vault_protocol, vault_equity)?;
 
+        msg!("heyy!");
         validate!(
             from_rebase_divisor == to_rebase_divisor,
             ErrorCode::InvalidVaultRebase,
@@ -171,6 +172,7 @@ pub trait VaultDepositorBase {
 
         let from_profit_share: u64 = self.apply_profit_share(vault_equity, vault)?;
         let to_profit_share: u64 = to.apply_profit_share(vault_equity, vault)?;
+        msg!("heyy!");
 
         let (withdraw_value, n_shares) = withdraw_unit.get_withdraw_value_and_shares(
             withdraw_amount,
@@ -179,6 +181,7 @@ pub trait VaultDepositorBase {
             vault.total_shares,
             from_rebase_divisor,
         )?;
+        msg!("heyy!");
 
         validate!(
             n_shares > 0,
@@ -209,6 +212,7 @@ pub trait VaultDepositorBase {
             ErrorCode::InvalidVaultSharesDetected,
             "VaultDepositor: total shares mismatch"
         )?;
+        msg!("heyy!");
 
         emit!(ShareTransferRecord {
             ts: now,

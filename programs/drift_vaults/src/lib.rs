@@ -149,6 +149,18 @@ pub mod drift_vaults {
         instructions::apply_profit_share(ctx)
     }
 
+    pub fn apply_rebase<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, ApplyRebase<'info>>,
+    ) -> Result<()> {
+        instructions::apply_rebase(ctx)
+    }
+
+    pub fn apply_rebase_tokenized_depositor<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, ApplyRebaseTokenizedDepositor<'info>>,
+    ) -> Result<()> {
+        instructions::apply_rebase_tokenized_depositor(ctx)
+    }
+
     pub fn force_withdraw<'c: 'info, 'info>(
         ctx: Context<'_, '_, 'c, 'info, ForceWithdraw<'info>>,
     ) -> Result<()> {

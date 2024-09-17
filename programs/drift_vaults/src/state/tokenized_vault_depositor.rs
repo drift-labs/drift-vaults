@@ -251,6 +251,12 @@ impl TokenizedVaultDepositor {
             vault_shares_before
         )?;
 
+        msg!(
+            "tokenize_shares: shares_transferred: {}, tokenized_vd.last_vault_shares: {}, token_supply_before: {}",
+            shares_transferred,
+            self.last_vault_shares,
+            mint_supply,
+        );
         let tokens_to_mint = vault_amount_to_depositor_shares(
             shares_transferred.cast()?,
             mint_supply.cast()?,

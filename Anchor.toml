@@ -35,4 +35,4 @@ address = "FsJ3A3u2vn5cTVofAjvy6y5kwABJAqYWpe4975bi2epH"
 program = "./deps/pyth.so"
 
 [scripts]
-test = "yarn anchor-tests"
+test = "yarn anchor-tests:tokenize"

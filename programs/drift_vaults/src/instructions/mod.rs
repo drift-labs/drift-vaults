@@ -1,4 +1,6 @@
 pub use apply_profit_share::*;
+pub use apply_rebase::*;
+pub use apply_rebase_tokenized_depositor::*;
 pub use cancel_withdraw_request::*;
 pub use deposit::*;
 pub use force_withdraw::*;
@@ -27,6 +29,8 @@ pub use update_vault_protocol::*;
 pub use withdraw::*;
 
 mod apply_profit_share;
+mod apply_rebase;
+mod apply_rebase_tokenized_depositor;
 mod cancel_withdraw_request;
 pub mod constraints;
 mod deposit;

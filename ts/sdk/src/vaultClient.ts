@@ -895,6 +895,104 @@ export class VaultClient {
 		});
 	}
 
+	public async getApplyRebaseTokenizedDepositorIx(
+		vault: PublicKey,
+		tokenizedVaultDepositor: PublicKey
+	): Promise<TransactionInstruction> {
+		const vaultAccount = await this.program.account.vault.fetch(vault);
+
+		const user = await this.getSubscribedVaultUser(vaultAccount.user);
+
+		const spotMarket = this.driftClient.getSpotMarketAccount(
+			vaultAccount.spotMarketIndex
+		);
+		if (!spotMarket) {
+			throw new Error(
+				`Spot market ${vaultAccount.spotMarketIndex} not found on driftClient`
+			);
+		}
+
+		const remainingAccounts = this.driftClient.getRemainingAccounts({
+			userAccounts: [user.getUserAccount()],
+			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
+		});
+
+		const accounts = {
+			vault,
+			tokenizedVaultDepositor,
+			driftUser: await getUserAccountPublicKey(
+				this.driftClient.program.programId,
+				vault
+			),
+			driftState: await this.driftClient.getStatePublicKey(),
+			driftSigner: this.driftClient.getStateAccount().signer,
+			driftProgram: this.driftClient.program.programId,
+		};
+
+		return this.program.instruction.applyRebaseTokenizedDepositor({
+			accounts: {
+				...accounts,
+			},
+			remainingAccounts,
+		});
+	}
+
+	public async applyRebase(
+		vault: PublicKey,
+		vaultDepositor: PublicKey
+	): Promise<TransactionSignature> {
+		return await this.createAndSendTxn([await this.getApplyRebaseIx(vault, vaultDepositor)]);
+	}
+
+	public async getApplyRebaseIx(
+		vault: PublicKey,
+		vaultDepositor: PublicKey
+	): Promise<TransactionInstruction> {
+		const vaultAccount = await this.program.account.vault.fetch(vault);
+
+		const user = await this.getSubscribedVaultUser(vaultAccount.user);
+
+		const spotMarket = this.driftClient.getSpotMarketAccount(
+			vaultAccount.spotMarketIndex
+		);
+		if (!spotMarket) {
+			throw new Error(
+				`Spot market ${vaultAccount.spotMarketIndex} not found on driftClient`
+			);
+		}
+
+		const remainingAccounts = this.driftClient.getRemainingAccounts({
+			userAccounts: [user.getUserAccount()],
+			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
+		});
+
+		const accounts = {
+			vault,
+			vaultDepositor,
+			driftUser: await getUserAccountPublicKey(
+				this.driftClient.program.programId,
+				vault
+			),
+			driftState: await this.driftClient.getStatePublicKey(),
+			driftSigner: this.driftClient.getStateAccount().signer,
+			driftProgram: this.driftClient.program.programId,
+		};
+
+		return this.program.instruction.applyRebase({
+			accounts: {
+				...accounts,
+			},
+			remainingAccounts,
+		});
+	}
+
+	public async applyRebaseTokenizedDepositor(
+		vault: PublicKey,
+		tokenizedVaultDepositor: PublicKey
+	): Promise<TransactionSignature> {
+		return await this.createAndSendTxn([await this.getApplyRebaseTokenizedDepositorIx(vault, tokenizedVaultDepositor)]);
+	}
+
 	private createInitVaultDepositorIx(vault: PublicKey, authority?: PublicKey) {
 		const vaultDepositor = getVaultDepositorAddressSync(
 			this.program.programId,

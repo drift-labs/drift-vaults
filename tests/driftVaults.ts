@@ -36,25 +36,25 @@ import {
 	calculateLongShortFundingRateAndLiveTwaps,
 	convertPythPrice,
 	convertToNumber,
+	ONE,
 } from '@drift-labs/sdk';
 import {
 	bootstrapSignerClientAndUser,
 	calculateAllPdas,
 	createUserWithUSDCAccount,
-	getTokenAmountAsBN,
 	initializeQuoteSpotMarket,
 	initializeSolSpotMarket,
 	initializeSolSpotMarketMaker,
 	mockOracle,
 	mockUSDCMint,
-	mockUserUSDCAccount,
 	printTxLogs,
 	setFeedPrice,
 	validateTotalUserShares,
 	isDriftInitialized,
 	sleep,
+	getVaultDepositorValue,
 } from './testHelpers';
-import { ConfirmOptions, Keypair, SystemProgram } from '@solana/web3.js';
+import { ConfirmOptions, Keypair, SystemProgram, TransactionMessage, VersionedTransaction } from '@solana/web3.js';
 import { assert } from 'chai';
 import {
 	VaultClient,
@@ -73,7 +73,6 @@ import {
 	getCompetitorAddressSync,
 } from '@drift-labs/competitions-sdk';
 
-import { getMint } from '@solana/spl-token';
 import { Metaplex } from '@metaplex-foundation/js';
 
 // ammInvariant == k == x * y
@@ -2365,139 +2364,159 @@ describe('TestTokenizedDriftVaults', () => {
 			});
 		console.log(`Vault equity 0: ${vaultEquity0.toString()}`);
 
-		// place and take until we're broke
-		try {
+		console.log(`vd0 before rebase:`);
+		await getVaultDepositorValue({
+			vaultClient: vd0Bootstrap.vaultClient,
+			vault: vault,
+			vaultDepositor: vd0VaultDepositor,
+			tokenizedVaultDepositor: tokenizedVaultDepositor,
+			tokenizedVaultAta: vd0VaultTokenAta,
+			print: true,
+		})
+
+		// wash trade until we're broke
+		const doWashTrading = async (startVaultEquity: BN, _stopPnlDiffPct?: number, _maxIters?: number) => {
 			let diff = 1;
 			let i = 0;
-			while (diff > -0.99 && i < 15) {
-				i++;
-				await delegateDriftClient.fetchAccounts();
+			const stopPnlDiffPct = _stopPnlDiffPct ?? -0.999;
+			const maxIters = _maxIters ?? 100;
+			console.log(`Doing some wash trading until we're broke, starting at ${startVaultEquity.toString()} until we're ${stopPnlDiffPct * 100}% down, max ${maxIters} iters`);
+			let vaultEquity = startVaultEquity;
+			while (diff > stopPnlDiffPct && i < maxIters) {
+				try {
+					i++;
+					await delegateDriftClient.fetchAccounts();
 
-				const mmUser = mmDriftClient.getUser();
-				const mmOffer = mmUser
-					.getOpenOrders()
-					.find((o) => o.marketIndex === 1 && isVariant(o.direction, 'short'));
-				const mmBid = mmUser
-					.getOpenOrders()
-					.find((o) => o.marketIndex === 1 && isVariant(o.direction, 'long'));
-				assert(mmOffer !== undefined, 'mm has no offers');
-				assert(mmBid !== undefined, 'mm has no bids');
+					const mmUser = mmDriftClient.getUser();
+					const mmOffer = mmUser
+						.getOpenOrders()
+						.find((o) => o.marketIndex === 1 && isVariant(o.direction, 'short'));
+					const mmBid = mmUser
+						.getOpenOrders()
+						.find((o) => o.marketIndex === 1 && isVariant(o.direction, 'long'));
+					assert(mmOffer !== undefined, 'mm has no offers');
+					assert(mmBid !== undefined, 'mm has no bids');
 
-				const vaultSpotPos0 = delegateDriftClient
-					.getUser(0, vault)
-					.getSpotPosition(0);
-				const vaultUsdcBalance = getTokenAmount(
-					vaultSpotPos0.scaledBalance,
-					usdcSpotMarket,
-					vaultSpotPos0.balanceType
-				)
-					.mul(new BN(90))
-					.div(new BN(100));
+					const vaultSpotPos0 = delegateDriftClient
+						.getUser(0, vault)
+						.getSpotPosition(0);
+					const vaultUsdcBalance = getTokenAmount(
+						vaultSpotPos0.scaledBalance,
+						usdcSpotMarket,
+						vaultSpotPos0.balanceType
+					)
+						.mul(new BN(90))
+						.div(new BN(100));
 
-				const vaultEquity =
-					await managerBootstrap.vaultClient.calculateVaultEquityInDepositAsset(
+					const bidAmount = vaultUsdcBalance
+						.mul(BASE_PRECISION)
+						.div(mmOffer.price);
+
+					await delegateDriftClient.placeAndTakeSpotOrder(
 						{
-							address: vault,
+							orderType: OrderType.LIMIT,
+							marketIndex: 1,
+							baseAssetAmount: bidAmount,
+							price: mmOffer.price,
+							direction: PositionDirection.LONG,
+							immediateOrCancel: true,
+							auctionDuration: 0,
+						},
+						undefined,
+						{
+							maker: mmUser.getUserAccountPublicKey(),
+							makerStats: getUserStatsAccountPublicKey(
+								new PublicKey(DRIFT_PROGRAM_ID),
+								mmDriftClient.authority
+							),
+							makerUserAccount: mmUser.getUserAccount(),
+							order: mmOffer,
 						}
 					);
-				diff = vaultEquity.toNumber() / vaultEquity0.toNumber() - 1;
 
-				if (i % 10 === 0) {
-					console.log(
-						`iter ${i}: Vault equity: ${vaultEquity.toString()} (${diff * 100}%)`
+					if (i % 20 === 0) {
+						vaultEquity =
+							await managerBootstrap.vaultClient.calculateVaultEquityInDepositAsset(
+								{
+									address: vault,
+								}
+							);
+						diff = vaultEquity.toNumber() / startVaultEquity.toNumber() - 1;
+						console.log(
+							`iter ${i}: Vault equity: ${vaultEquity.toString()} (${diff * 100}%)`
+						);
+						console.log(
+							`Selling ${convertToNumber(
+								bidAmount,
+								BASE_PRECISION
+							)} SOL at ${convertToNumber(mmBid.price)}`
+						);
+						console.log(
+							`Buying ${convertToNumber(
+								bidAmount,
+								BASE_PRECISION
+							)} SOL at ${convertToNumber(mmOffer.price)}`
+						);
+					}
+					await delegateDriftClient.placeAndTakeSpotOrder(
+						{
+							orderType: OrderType.LIMIT,
+							marketIndex: 1,
+							baseAssetAmount: bidAmount,
+							price: mmBid.price,
+							direction: PositionDirection.SHORT,
+							immediateOrCancel: true,
+							auctionDuration: 0,
+							reduceOnly: true,
+						},
+						undefined,
+						{
+							maker: mmUser.getUserAccountPublicKey(),
+							makerStats: getUserStatsAccountPublicKey(
+								new PublicKey(DRIFT_PROGRAM_ID),
+								mmDriftClient.authority
+							),
+							makerUserAccount: mmUser.getUserAccount(),
+							order: mmBid,
+						}
 					);
+
+					await requoteFunc(
+						new BN(81 * PRICE_PRECISION.toNumber()),
+						new BN(119 * PRICE_PRECISION.toNumber())
+					);
+				} catch (e) {
+					console.error(e);
+					if (i < 5) {
+						// something wrong if we couldnt even do 1 iter
+						assert(false, 'Failed to place and take orders');
+					}
+					console.log(`Breaking early, probably a margin error, got ${i} iters, pnl diff: ${diff}`)
+					break;
 				}
-
-				const bidAmount = vaultUsdcBalance
-					.mul(BASE_PRECISION)
-					.div(mmOffer.price);
-
-				console.log(
-					`Buying ${convertToNumber(
-						bidAmount,
-						BASE_PRECISION
-					)} SOL at ${convertToNumber(mmOffer.price)}`
-				);
-				await delegateDriftClient.placeAndTakeSpotOrder(
-					{
-						orderType: OrderType.LIMIT,
-						marketIndex: 1,
-						baseAssetAmount: bidAmount,
-						price: mmOffer.price,
-						direction: PositionDirection.LONG,
-						immediateOrCancel: true,
-						auctionDuration: 0,
-					},
-					undefined,
-					{
-						maker: mmUser.getUserAccountPublicKey(),
-						makerStats: getUserStatsAccountPublicKey(
-							new PublicKey(DRIFT_PROGRAM_ID),
-							mmDriftClient.authority
-						),
-						makerUserAccount: mmUser.getUserAccount(),
-						order: mmOffer,
-					}
-				);
-
-				console.log(
-					`Selling ${convertToNumber(
-						bidAmount,
-						BASE_PRECISION
-					)} SOL at ${convertToNumber(mmBid.price)}`
-				);
-				await delegateDriftClient.placeAndTakeSpotOrder(
-					{
-						orderType: OrderType.LIMIT,
-						marketIndex: 1,
-						baseAssetAmount: bidAmount,
-						price: mmBid.price,
-						direction: PositionDirection.SHORT,
-						immediateOrCancel: true,
-						auctionDuration: 0,
-						reduceOnly: true,
-					},
-					undefined,
-					{
-						maker: mmUser.getUserAccountPublicKey(),
-						makerStats: getUserStatsAccountPublicKey(
-							new PublicKey(DRIFT_PROGRAM_ID),
-							mmDriftClient.authority
-						),
-						makerUserAccount: mmUser.getUserAccount(),
-						order: mmBid,
-					}
-				);
-
-				await requoteFunc(
-					new BN(81 * PRICE_PRECISION.toNumber()),
-					new BN(119 * PRICE_PRECISION.toNumber())
-				);
 			}
-		} catch (e) {
-			console.error(e);
-			assert(false, 'Failed to place and take orders');
 		}
+		await doWashTrading(vaultEquity0, -0.999, 100);
 
-		const vaultEquity2 =
+		const vaultEquity1 =
 			await managerBootstrap.vaultClient.calculateVaultEquityInDepositAsset({
 				address: vault,
 			});
 		console.log(
-			`Vault equity 2: ${vaultEquity2.toString()} (${(vaultEquity2.toNumber() / vaultEquity0.toNumber() - 1) * 100
+			`Vault equity 2: ${vaultEquity1.toString()} (${(vaultEquity1.toNumber() / vaultEquity0.toNumber() - 1) * 100
 			}%)`
 		);
 
-		// enter second depositor
+		// enter second depositor and tokenize
+		const {
+			vaultDepositor: vd1VaultDepositor,
+			userVaultTokenAta: vd1VaultTokenAta,
+		} = calculateAllPdas(
+			program.programId,
+			vault,
+			vd1Bootstrap.signer.publicKey
+		);
 		try {
-			const {
-				vaultDepositor: vd1VaultDepositor,
-				userVaultTokenAta: vd1VaultTokenAta,
-			} = calculateAllPdas(
-				program.programId,
-				vault,
-				vd1Bootstrap.signer.publicKey
-			);
 			const dep1Tx = await vd1Bootstrap.vaultClient.deposit(
 				vd1VaultDepositor,
 				usdcAmount,
@@ -2510,18 +2529,56 @@ describe('TestTokenizedDriftVaults', () => {
 			);
 			await printTxLogs(provider.connection, dep1Tx);
 
-			const vault1 = await managerBootstrap.vaultClient.getVault(vault);
-			const vd10 = await program.account.vaultDepositor.fetch(
-				vd1VaultDepositor
-			);
-			const vdt10 = await program.account.tokenizedVaultDepositor.fetch(
-				tokenizedVaultDepositor
-			);
-			assert(vd10.vaultShares.gt(ZERO), 'vd10 has shares');
-			assert(vdt10.vaultShares.gt(ZERO), 'vdt10 has no shares');
-			assert(vd10.vaultSharesBase === vault1.sharesBase, 'vault1 didnt rebase');
-			assert(vd10.vaultSharesBase === 1, 'vd10 didnt rebase');
-			assert(vdt10.vaultSharesBase === 0, 'vdt10 should not have rebased');
+		} catch (e) {
+			console.error(e);
+			assert(false, 'Deposit 2 failed');
+		}
+		const vault1 = await managerBootstrap.vaultClient.getVault(vault);
+		const vd02 = await program.account.vaultDepositor.fetch(
+			vd0VaultDepositor
+		);
+		const vd10 = await program.account.vaultDepositor.fetch(
+			vd1VaultDepositor
+		);
+		const vdt10 = await program.account.tokenizedVaultDepositor.fetch(
+			tokenizedVaultDepositor
+		);
+		assert(vd10.vaultShares.gt(ZERO), 'vd10 has shares');
+		assert(vdt10.vaultShares.gt(ZERO), 'vdt10 has no shares');
+		assert(vd10.vaultSharesBase === vault1.sharesBase, 'vault1 didnt rebase');
+		assert(vd10.vaultSharesBase > 0, 'vd10 didnt rebase');
+		assert(vdt10.vaultSharesBase === 0, 'vdt10 should not have rebased');
+
+		const vaultEquity2 =
+			await managerBootstrap.vaultClient.calculateVaultEquityInDepositAsset({
+				address: vault,
+			});
+
+		// trade another -10%
+		await doWashTrading(vaultEquity2, -0.1, 100);
+
+		try {
+			const rebaseIx = await vd1Bootstrap.vaultClient.getApplyRebaseIx(vault, vd1VaultDepositor);
+			const tx = await vd1Bootstrap.driftClient.sendTransaction(
+				await vd1Bootstrap.driftClient.buildTransaction(
+					rebaseIx,
+					vd1Bootstrap.driftClient.txParams
+				),
+				[],
+				vd1Bootstrap.driftClient.opts
+			)
+			await printTxLogs(provider.connection, tx.txSig);
+
+			const vdtRebaseIx = await managerBootstrap.vaultClient.getApplyRebaseTokenizedDepositorIx(vault, tokenizedVaultDepositor);
+			const tx1 = await managerBootstrap.driftClient.sendTransaction(
+				await managerBootstrap.driftClient.buildTransaction(
+					vdtRebaseIx,
+					managerBootstrap.driftClient.txParams
+				),
+				[],
+				managerBootstrap.driftClient.opts
+			)
+			await printTxLogs(provider.connection, tx1.txSig);
 
 			const dep1TokenizeTx = await vd1Bootstrap.vaultClient.tokenizeShares(
 				vd1VaultDepositor,
@@ -2531,8 +2588,101 @@ describe('TestTokenizedDriftVaults', () => {
 			await printTxLogs(provider.connection, dep1TokenizeTx);
 		} catch (e) {
 			console.error(e);
-			assert(false, 'Deposit 2 failed');
+			assert(false, 'Failed to force vd0 to rebase');
 		}
+
+
+		const vault11 = await managerBootstrap.vaultClient.getVault(vault);
+		const vd11 = await program.account.vaultDepositor.fetch(
+			vd1VaultDepositor
+		);
+		const vdt11 = await program.account.tokenizedVaultDepositor.fetch(
+			tokenizedVaultDepositor
+		);
+		assert(vd11.vaultSharesBase === vault11.sharesBase, 'vault1 didnt rebase');
+		assert(vd11.vaultSharesBase > 0, 'vd11 didnt rebase');
+		assert(vdt11.vaultSharesBase > 0, 'vdt11 didnt rebase');
+
+		const vd0Tokens = await connection.getTokenAccountBalance(vd0VaultTokenAta);
+		const vd1Tokens = await connection.getTokenAccountBalance(vd1VaultTokenAta);
+		console.log(`vd0 vault tokens: ${vd0Tokens.value.uiAmountString}`);
+		console.log(`vd1 vault tokens: ${vd1Tokens.value.uiAmountString}`);
+
+		await validateTotalUserShares(program, vault);
+
+		// force vd0 to rebase
+		try {
+			const rebaseIx = await managerBootstrap.vaultClient.getApplyRebaseIx(vault, vd0VaultDepositor);
+			const tx = await managerBootstrap.driftClient.sendTransaction(
+				await managerBootstrap.driftClient.buildTransaction(
+					rebaseIx,
+					managerBootstrap.driftClient.txParams
+				),
+				[],
+				managerBootstrap.driftClient.opts
+			)
+			await printTxLogs(provider.connection, tx.txSig);
+		} catch (e) {
+			console.error(e);
+			assert(false, 'Failed to force vd0 to rebase');
+		}
+
+		// TODO: test redeeming tokens, make sure correct amounts
+		console.log(`vd0 after rebase:`);
+		const vd0Values0 = await getVaultDepositorValue({
+			vaultClient: vd0Bootstrap.vaultClient,
+			vault: vault,
+			vaultDepositor: vd0VaultDepositor,
+			tokenizedVaultDepositor: tokenizedVaultDepositor,
+			tokenizedVaultAta: vd0VaultTokenAta,
+			print: true,
+		})
+
+		console.log(`vd1 after rebase:`);
+		const vd1Values0 = await getVaultDepositorValue({
+			vaultClient: vd1Bootstrap.vaultClient,
+			vault: vault,
+			vaultDepositor: vd1VaultDepositor,
+			tokenizedVaultDepositor: tokenizedVaultDepositor,
+			tokenizedVaultAta: vd1VaultTokenAta,
+			print: true,
+		})
+
+		const vd0RedeemTx = await vd0Bootstrap.vaultClient.redeemTokens(vd0VaultDepositor, vd0Values0.ataBalance);
+		await printTxLogs(provider.connection, vd0RedeemTx);
+
+		const vd1RedeemTx = await vd1Bootstrap.vaultClient.redeemTokens(vd1VaultDepositor, vd1Values0.ataBalance);
+		await printTxLogs(provider.connection, vd1RedeemTx);
+
+		console.log(`vd0 after redeem:`);
+		const vd0Values1 = await getVaultDepositorValue({
+			vaultClient: vd0Bootstrap.vaultClient,
+			vault: vault,
+			vaultDepositor: vd0VaultDepositor,
+			tokenizedVaultDepositor: tokenizedVaultDepositor,
+			tokenizedVaultAta: vd0VaultTokenAta,
+			print: true,
+		})
+
+		console.log(`vd1 after redeem:`);
+		const vd1Values1 = await getVaultDepositorValue({
+			vaultClient: vd1Bootstrap.vaultClient,
+			vault: vault,
+			vaultDepositor: vd1VaultDepositor,
+			tokenizedVaultDepositor: tokenizedVaultDepositor,
+			tokenizedVaultAta: vd1VaultTokenAta,
+			print: true,
+		})
+		const vdShareOfVault = vd0Values1.vaultDepositorShareOfVault + vd1Values1.vaultDepositorShareOfVault;
+		assert(Math.abs(vdShareOfVault - 1) < 0.000001, `vd0 and vd1 share of vault should be 1, got ${vdShareOfVault}`);
+
+		const vdTotalEquity = vd0Values1.vaultDepositorEquity.add(vd1Values1.vaultDepositorEquity);
+		assert(vdTotalEquity.abs().sub(vd0Values1.vaultEquity).lt(TEN), `vault depositor equity should equal, got totalVdEquity: ${vdTotalEquity.toString()} and vaultEquity: ${vd0Values1.vaultEquity.toString()}`);
+
+		const vd0Pnl = (vd0Values1.vaultDepositorEquity.toNumber() / usdcAmount.toNumber() - 1) * 100;
+		console.log(`vd0 pnl ${vd0Pnl}%`);
+		const vd1Pnl = (vd1Values1.vaultDepositorEquity.toNumber() / usdcAmount.toNumber() - 1) * 100;
+		console.log(`vd1 pnl ${vd1Pnl}%`);
 
 		await validateTotalUserShares(program, vault);
 
