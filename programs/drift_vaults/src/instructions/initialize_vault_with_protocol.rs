@@ -62,10 +62,11 @@ pub fn initialize_vault_with_protocol<'c: 'info, 'info>(
     vp.protocol_profit_share = params.vault_protocol.protocol_profit_share;
     vp.protocol = params.vault_protocol.protocol;
 
-    let (_, vp_bump) = Pubkey::find_program_address(
-        &[b"vault_protocol", ctx.accounts.vault.key().as_ref()],
-        ctx.program_id,
-    );
+    let vp_bump = ctx.bumps.vault_protocol;
+    // let (_, vp_bump) = Pubkey::find_program_address(
+    //     &[b"vault_protocol", ctx.accounts.vault.key().as_ref()],
+    //     ctx.program_id,
+    // );
     vp.bump = vp_bump;
 
     vault.vault_protocol = true;
