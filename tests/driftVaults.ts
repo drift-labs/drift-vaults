@@ -1232,6 +1232,20 @@ describe('driftVaults', () => {
 			console.log('failed to withdraw:', e);
 			assert(false);
 		}
+
+		const vpAcctAfterWithdraw = await program.account.vaultProtocol.fetch(
+			getVaultProtocolAddressSync(
+				managerClient.program.programId,
+				protocolVault
+			)
+		);
+		const vpSharesAfterWithdraw =
+			vpAcctAfterWithdraw.protocolProfitAndFeeShares;
+		console.log(
+			'vault protocol shares after withdraw request:',
+			vpSharesAfterWithdraw.toNumber()
+		);
+		assert(vpSharesAfterWithdraw.eq(new BN(994_133)));
 	});
 
 	it('Protocol Withdraw Profit Share', async () => {
@@ -1321,5 +1335,18 @@ describe('driftVaults', () => {
 			console.log('failed to withdraw:', e);
 			assert(false);
 		}
+
+		const vpAcctAfterWithdraw = await program.account.vaultProtocol.fetch(
+			vaultProtocol
+		);
+		const vpSharesAfterWithdraw =
+			vpAcctAfterWithdraw.protocolProfitAndFeeShares;
+		console.log(
+			'vault protocol shares after withdraw:',
+			vpSharesAfterWithdraw.toNumber()
+		);
+		// f64 to u64 conversion rounds down to not withdraw more equity than available,
+		// so 1 share is left behind
+		assert(vpSharesAfterWithdraw.eq(new BN(1)));
 	});
 });

@@ -255,6 +255,7 @@ impl VaultDepositor {
         let vault_shares_before = self.checked_vault_shares(vault)?;
         let total_vault_shares_before = vault.total_shares;
         let user_vault_shares_before = vault.user_shares;
+        let protocol_shares_before = vault.get_protocol_shares(vault_protocol);
 
         let VaultFee {
             management_fee_payment,
@@ -279,6 +280,7 @@ impl VaultDepositor {
         vault.user_shares = vault.user_shares.safe_add(n_shares)?;
 
         let vault_shares_after = self.checked_vault_shares(vault)?;
+        let protocol_shares_after = vault.get_protocol_shares(vault_protocol);
 
         match vault_protocol {
             None => {
@@ -322,6 +324,8 @@ impl VaultDepositor {
                     manager_profit_share,
                     management_fee: management_fee_payment,
                     management_fee_shares,
+                    protocol_shares_before,
+                    protocol_shares_after,
                 });
             }
         }
@@ -347,6 +351,8 @@ impl VaultDepositor {
         } = vault.apply_fee(vault_protocol, vault_equity, now)?;
         let (manager_profit_share, protocol_profit_share) =
             self.apply_profit_share(vault_equity, vault, vault_protocol)?;
+        msg!("manager_profit_share: {}", manager_profit_share);
+        msg!("protocol_profit_share: {}", protocol_profit_share);
 
         let (withdraw_value, n_shares) = withdraw_unit.get_withdraw_value_and_shares(
             withdraw_amount,
@@ -365,6 +371,7 @@ impl VaultDepositor {
         let vault_shares_before: u128 = self.checked_vault_shares(vault)?;
         let total_vault_shares_before = vault.total_shares;
         let user_vault_shares_before = vault.user_shares;
+        let protocol_shares_before = vault.get_protocol_shares(vault_protocol);
 
         self.last_withdraw_request.set(
             vault_shares_before,
@@ -376,6 +383,7 @@ impl VaultDepositor {
         vault.total_withdraw_requested = vault.total_withdraw_requested.safe_add(withdraw_value)?;
 
         let vault_shares_after = self.checked_vault_shares(vault)?;
+        let protocol_shares_after = vault.get_protocol_shares(vault_protocol);
 
         match vault_protocol {
             None => {
@@ -419,6 +427,8 @@ impl VaultDepositor {
                     manager_profit_share,
                     management_fee: management_fee_payment,
                     management_fee_shares,
+                    protocol_shares_before,
+                    protocol_shares_after,
                 });
             }
         }
@@ -438,6 +448,7 @@ impl VaultDepositor {
         let vault_shares_before: u128 = self.checked_vault_shares(vault)?;
         let total_vault_shares_before = vault.total_shares;
         let user_vault_shares_before = vault.user_shares;
+        let protocol_shares_before = vault.get_protocol_shares(vault_protocol);
 
         let VaultFee {
             management_fee_payment,
@@ -454,7 +465,14 @@ impl VaultDepositor {
         vault.total_shares = vault.total_shares.safe_sub(vault_shares_lost)?;
         vault.user_shares = vault.user_shares.safe_sub(vault_shares_lost)?;
 
+        if let Some(vp) = vault_protocol {
+            vp.protocol_profit_and_fee_shares = vp
+                .protocol_profit_and_fee_shares
+                .safe_sub(vault_shares_lost)?;
+        }
+
         let vault_shares_after = self.checked_vault_shares(vault)?;
+        let protocol_shares_after = vault.get_protocol_shares(vault_protocol);
 
         match vault_protocol {
             None => {
@@ -498,6 +516,8 @@ impl VaultDepositor {
                     manager_profit_share: 0,
                     management_fee: management_fee_payment,
                     management_fee_shares,
+                    protocol_shares_before,
+                    protocol_shares_after,
                 });
             }
         }
@@ -526,6 +546,7 @@ impl VaultDepositor {
         let vault_shares_before: u128 = self.checked_vault_shares(vault)?;
         let total_vault_shares_before = vault.total_shares;
         let user_vault_shares_before = vault.user_shares;
+        let protocol_shares_before = vault.get_protocol_shares(vault_protocol);
 
         let n_shares = self.last_withdraw_request.shares;
 
@@ -580,6 +601,7 @@ impl VaultDepositor {
         self.last_withdraw_request.reset(now)?;
 
         let vault_shares_after = self.checked_vault_shares(vault)?;
+        let protocol_shares_after = vault.get_protocol_shares(vault_protocol);
 
         match vault_protocol {
             None => {
@@ -623,6 +645,8 @@ impl VaultDepositor {
                     manager_profit_share: 0,
                     management_fee: management_fee_payment,
                     management_fee_shares,
+                    protocol_shares_before,
+                    protocol_shares_after,
                 });
             }
         }
@@ -704,10 +728,12 @@ impl VaultDepositor {
         let vault_shares_before = self.checked_vault_shares(vault)?;
         let total_vault_shares_before = vault.total_shares;
         let user_vault_shares_before = vault.user_shares;
+        let protocol_shares_before = vault.get_protocol_shares(vault_protocol);
 
         let (manager_profit_share, protocol_profit_share) =
             self.apply_profit_share(vault_equity, vault, vault_protocol)?;
         let profit_share = manager_profit_share.saturating_add(protocol_profit_share);
+        let protocol_shares_after = vault.get_protocol_shares(vault_protocol);
 
         match vault_protocol {
             None => {
@@ -751,6 +777,8 @@ impl VaultDepositor {
                     manager_profit_share,
                     management_fee: management_fee_payment,
                     management_fee_shares,
+                    protocol_shares_before,
+                    protocol_shares_after,
                 });
             }
         }

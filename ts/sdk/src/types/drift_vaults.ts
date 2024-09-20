@@ -1987,6 +1987,16 @@ export type DriftVaults = {
 					index: false;
 				},
 				{
+					name: 'protocolSharesBefore';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'protocolSharesAfter';
+					type: 'u128';
+					index: false;
+				},
+				{
 					name: 'protocolProfitShare';
 					type: 'u64';
 					index: false;
@@ -4123,6 +4133,16 @@ export const IDL: DriftVaults = {
 				},
 				{
 					name: 'totalVaultSharesAfter',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'protocolSharesBefore',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'protocolSharesAfter',
 					type: 'u128',
 					index: false,
 				},

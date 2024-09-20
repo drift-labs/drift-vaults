@@ -429,7 +429,7 @@ impl Vault {
 
         let user_vault_shares_before = self.user_shares;
         let total_vault_shares_before = self.total_shares;
-        let vault_shares_before = self.get_manager_shares(vault_protocol)?;
+        let vault_shares_before: u128 = self.get_manager_shares(vault_protocol)?;
         let protocol_shares_before = self.get_protocol_shares(vault_protocol);
 
         let n_shares =
@@ -509,7 +509,7 @@ impl Vault {
             protocol_fee_shares,
         } = self.apply_fee(vault_protocol, vault_equity, now)?;
 
-        let vault_shares_before = self.get_manager_shares(vault_protocol)?;
+        let vault_shares_before: u128 = self.get_manager_shares(vault_protocol)?;
         let protocol_shares_before = self.get_protocol_shares(vault_protocol);
 
         let (withdraw_value, n_shares) = withdraw_unit.get_withdraw_value_and_shares(
@@ -545,7 +545,7 @@ impl Vault {
         )?;
         self.total_withdraw_requested = self.total_withdraw_requested.safe_add(withdraw_value)?;
 
-        let vault_shares_after = self.get_manager_shares(vault_protocol)?;
+        let vault_shares_after: u128 = self.get_manager_shares(vault_protocol)?;
         let protocol_shares_after = self.get_protocol_shares(vault_protocol);
 
         self.emit_vault_depositor_record(
@@ -583,7 +583,7 @@ impl Vault {
     ) -> Result<()> {
         self.apply_rebase(vault_protocol, vault_equity)?;
 
-        let vault_shares_before = self.get_manager_shares(vault_protocol)?;
+        let vault_shares_before: u128 = self.get_manager_shares(vault_protocol)?;
         let total_vault_shares_before = self.total_shares;
         let user_vault_shares_before = self.user_shares;
         let protocol_shares_before = self.get_protocol_shares(vault_protocol);
@@ -602,6 +602,12 @@ impl Vault {
         self.total_shares = self.total_shares.safe_sub(vault_shares_lost)?;
 
         self.user_shares = self.user_shares.safe_sub(vault_shares_lost)?;
+
+        if let Some(vp) = vault_protocol {
+            vp.protocol_profit_and_fee_shares = vp
+                .protocol_profit_and_fee_shares
+                .safe_sub(vault_shares_lost)?;
+        }
 
         let vault_shares_after = self.get_manager_shares(vault_protocol)?;
         let protocol_shares_after = self.get_protocol_shares(vault_protocol);
@@ -656,7 +662,7 @@ impl Vault {
             protocol_fee_shares,
         } = self.apply_fee(vault_protocol, vault_equity, now)?;
 
-        let vault_shares_before = self.get_manager_shares(vault_protocol)?;
+        let vault_shares_before: u128 = self.get_manager_shares(vault_protocol)?;
         let total_vault_shares_before = self.total_shares;
         let user_vault_shares_before = self.user_shares;
         let protocol_shares_before = self.get_protocol_shares(vault_protocol);
@@ -779,7 +785,7 @@ impl Vault {
             protocol_fee_shares,
         } = self.apply_fee(vault_protocol, vault_equity, now)?;
 
-        let vault_shares_before = self.get_manager_shares(vault_protocol)?;
+        let vault_shares_before: u128 = self.get_manager_shares(vault_protocol)?;
         let protocol_shares_before = self.get_protocol_shares(vault_protocol);
 
         let (withdraw_value, n_shares) = withdraw_unit.get_withdraw_value_and_shares(
@@ -799,7 +805,7 @@ impl Vault {
         let total_vault_shares_before = self.total_shares;
         let user_vault_shares_before = self.user_shares;
 
-        let vault_shares_after = self.get_manager_shares(vault_protocol)?;
+        let vault_shares_after: u128 = self.get_manager_shares(vault_protocol)?;
         let protocol_shares_after = self.get_protocol_shares(vault_protocol);
 
         if let Some(vp) = vault_protocol {
@@ -859,7 +865,7 @@ impl Vault {
 
         self.apply_rebase(vault_protocol, vault_equity)?;
 
-        let vault_shares_before = self.get_manager_shares(vault_protocol)?;
+        let vault_shares_before: u128 = self.get_manager_shares(vault_protocol)?;
         let total_vault_shares_before = self.total_shares;
         let user_vault_shares_before = self.user_shares;
         let protocol_shares_before = self.get_protocol_shares(vault_protocol);
@@ -887,13 +893,17 @@ impl Vault {
                 .safe_sub(vp.last_protocol_withdraw_request.value)?;
             vp.last_protocol_withdraw_request.reset(now)?;
 
-            // todo: sub from vp.protocol_profit_and_fee_shares
-            // vp.protocol_profit_and_fee_shares = vp
-            //     .protocol_profit_and_fee_shares
-            //     .safe_sub(vault_shares_lost)?;
+            vp.protocol_profit_and_fee_shares = vp
+                .protocol_profit_and_fee_shares
+                .safe_sub(vault_shares_lost)?;
 
-            let vault_shares_after = self.get_manager_shares(vault_protocol)?;
-            let protocol_shares_after = self.get_protocol_shares(vault_protocol);
+            // get_manager_shares logic but doesn't need Option<RefMut<VaultProtocol>>
+            let vault_shares_after = self
+                .total_shares
+                .safe_sub(self.user_shares)?
+                .safe_sub(vp.protocol_profit_and_fee_shares)?;
+            // get_protocol_shares logic but doesn't need Option<RefMut<VaultProtocol>>
+            let protocol_shares_after = vp.protocol_profit_and_fee_shares;
 
             self.emit_vault_depositor_record(
                 VaultDepositorRecordParams {
@@ -951,7 +961,7 @@ impl Vault {
             protocol_fee_shares,
         } = self.apply_fee(vault_protocol, vault_equity, now)?;
 
-        let vault_shares_before = self.get_manager_shares(vault_protocol)?;
+        let vault_shares_before: u128 = self.get_manager_shares(vault_protocol)?;
         let total_vault_shares_before = self.total_shares;
         let user_vault_shares_before = self.user_shares;
         let protocol_shares_before = self.get_protocol_shares(vault_protocol);
@@ -977,7 +987,7 @@ impl Vault {
         };
 
         validate!(
-            vault_shares_before >= n_shares,
+            protocol_shares_before >= n_shares,
             ErrorCode::InsufficientVaultShares
         )?;
 
@@ -996,12 +1006,18 @@ impl Vault {
         )?;
 
         self.total_shares = self.total_shares.safe_sub(n_shares)?;
-        let vault_shares_after = self.get_manager_shares(vault_protocol)?;
-        let protocol_shares_after = self.get_protocol_shares(vault_protocol);
 
         if let Some(vp) = vault_protocol {
             vp.protocol_profit_and_fee_shares =
                 vp.protocol_profit_and_fee_shares.safe_sub(n_shares)?;
+
+            // get_manager_shares but doesn't need Option<RefMut<VaultProtocol>>
+            let vault_shares_after = self
+                .total_shares
+                .safe_sub(self.user_shares)?
+                .safe_sub(vp.protocol_profit_and_fee_shares)?;
+            // get_protocol_shares but doesn't need Option<RefMut<VaultProtocol>>
+            let protocol_shares_after = vp.protocol_profit_and_fee_shares;
 
             self.emit_vault_depositor_record(
                 VaultDepositorRecordParams {
