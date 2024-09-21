@@ -1277,6 +1277,13 @@ describe('driftVaults', () => {
 		// 10% of protocolVault depositor's ~$10.04 profit
 		assert(withdrawAmount.toNumber() / QUOTE_PRECISION.toNumber() === 1.004114);
 
+		const totalVaultSharesBefore = vaultAccount.totalShares;
+		console.log(
+			'total vault shares before protocol withdraw:',
+			totalVaultSharesBefore.toNumber()
+		);
+		assert(totalVaultSharesBefore.eq(new BN(994134)));
+
 		try {
 			await protocolClient.program.methods
 				.protocolRequestWithdraw(withdrawAmount, WithdrawUnit.TOKEN)
@@ -1294,22 +1301,22 @@ describe('driftVaults', () => {
 			assert(false);
 		}
 
-		const vpAccountAfter = await program.account.vaultProtocol.fetch(
+		const vpAccountAfterRequest = await program.account.vaultProtocol.fetch(
 			vaultProtocol
 		);
 		console.log(
 			'protocol withdraw shares:',
-			vpAccountAfter.lastProtocolWithdrawRequest.shares.toNumber()
-		);
-		console.log(
-			'protocol withdraw value:',
-			vpAccountAfter.lastProtocolWithdrawRequest.value.toNumber()
+			vpAccountAfterRequest.lastProtocolWithdrawRequest.shares.toNumber()
 		);
 		assert(
-			vpAccountAfter.lastProtocolWithdrawRequest.shares.eq(new BN(994_132))
+			vpAccountAfterRequest.lastProtocolWithdrawRequest.shares.eq(
+				new BN(994_132)
+			)
 		);
 		assert(
-			vpAccountAfter.lastProtocolWithdrawRequest.value.eq(new BN(1_004_114))
+			vpAccountAfterRequest.lastProtocolWithdrawRequest.value.eq(
+				new BN(1_004_114)
+			)
 		);
 
 		try {
@@ -1346,7 +1353,24 @@ describe('driftVaults', () => {
 			vpSharesAfterWithdraw.toNumber()
 		);
 		// f64 to u64 conversion rounds down to not withdraw more equity than available,
-		// so 1 share is left behind
+		// so 1 share is left behind.
+		// this is the "slight round of out favor" mentioned in the Rust tests by bigz
 		assert(vpSharesAfterWithdraw.eq(new BN(1)));
+
+		const vaultAccountAfter = await program.account.vault.fetch(protocolVault);
+		const totalVaultShareAfter = vaultAccountAfter.totalShares;
+		console.log(
+			'user shares after withdraw:',
+			vaultAccountAfter.userShares.toNumber()
+		);
+		console.log(
+			'total vault shares after protocol withdraw:',
+			totalVaultShareAfter.toNumber()
+		);
+		assert(vaultAccountAfter.userShares.eq(new BN(1)));
+		const totalSharesAfterProtocolWithdraw = totalVaultSharesBefore.sub(
+			vpAccountAfterRequest.lastProtocolWithdrawRequest.shares
+		);
+		assert(totalSharesAfterProtocolWithdraw.eq(new BN(2)));
 	});
 });
