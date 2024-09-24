@@ -1,12 +1,13 @@
-use crate::constraints::{is_manager_for_vault, is_user_for_vault};
-use crate::cpi::UpdateUserMarginTradingEnabledCPI;
-use crate::error::ErrorCode;
-use crate::Vault;
-use crate::{declare_vault_seeds, validate};
 use anchor_lang::prelude::*;
 use drift::cpi::accounts::UpdateUser;
 use drift::program::Drift;
 use drift::state::user::User;
+
+use crate::constraints::{is_manager_for_vault, is_user_for_vault};
+use crate::drift_cpi::UpdateUserMarginTradingEnabledCPI;
+use crate::error::ErrorCode;
+use crate::Vault;
+use crate::{declare_vault_seeds, validate};
 
 pub fn update_margin_trading_enabled<'info>(
     ctx: Context<'_, '_, '_, 'info, UpdateMarginTradingEnabled<'info>>,

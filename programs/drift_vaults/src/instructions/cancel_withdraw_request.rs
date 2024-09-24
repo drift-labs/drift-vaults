@@ -6,15 +6,21 @@ use drift::state::user::User;
 use crate::constraints::{
     is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
 };
+use crate::state::{Vault, VaultProtocolProvider};
 use crate::AccountMapProvider;
-use crate::{Vault, VaultDepositor};
+use crate::VaultDepositor;
 
 pub fn cancel_withdraw_request<'c: 'info, 'info>(
     ctx: Context<'_, '_, 'c, 'info, CancelWithdrawRequest<'info>>,
 ) -> Result<()> {
     let clock = &Clock::get()?;
-    let vault = &mut ctx.accounts.vault.load_mut()?;
+    let mut vault = ctx.accounts.vault.load_mut()?;
     let mut vault_depositor = ctx.accounts.vault_depositor.load_mut()?;
+
+    // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
+    let mut vp = ctx.vault_protocol();
+    vault.validate_vault_protocol(&vp)?;
+    let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
 
     let user = ctx.accounts.drift_user.load()?;
 
@@ -22,12 +28,17 @@ pub fn cancel_withdraw_request<'c: 'info, 'info>(
         perp_market_map,
         spot_market_map,
         mut oracle_map,
-    } = ctx.load_maps(clock.slot, None)?;
+    } = ctx.load_maps(clock.slot, None, vp.is_some())?;
 
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
-    vault_depositor.cancel_withdraw_request(vault_equity.cast()?, vault, clock.unix_timestamp)?;
+    vault_depositor.cancel_withdraw_request(
+        vault_equity.cast()?,
+        &mut vault,
+        &mut vp,
+        clock.unix_timestamp,
+    )?;
 
     Ok(())
 }
@@ -40,7 +51,7 @@ pub struct CancelWithdrawRequest<'info> {
         mut,
         seeds = [b"vault_depositor", vault.key().as_ref(), authority.key().as_ref()],
         bump,
-        constraint = is_authority_for_vault_depositor(&vault_depositor, &authority)?,
+        constraint = is_authority_for_vault_depositor(&vault_depositor, &authority)?
     )]
     pub vault_depositor: AccountLoader<'info, VaultDepositor>,
     pub authority: Signer<'info>,

@@ -1,7 +1,3 @@
-use crate::constraints::*;
-use crate::cpi::{TokenTransferCPI, WithdrawCPI};
-use crate::{declare_vault_seeds, AccountMapProvider};
-use crate::{Vault, VaultDepositor};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Transfer};
 use anchor_spl::token::{Token, TokenAccount};
@@ -10,12 +6,22 @@ use drift::instructions::optional_accounts::AccountMaps;
 use drift::program::Drift;
 use drift::state::user::User;
 
+use crate::constraints::*;
+use crate::drift_cpi::{TokenTransferCPI, WithdrawCPI};
+use crate::state::{Vault, VaultDepositor, VaultProtocolProvider};
+use crate::{declare_vault_seeds, AccountMapProvider};
+
 pub fn force_withdraw<'c: 'info, 'info>(
     ctx: Context<'_, '_, 'c, 'info, ForceWithdraw<'info>>,
 ) -> Result<()> {
     let clock = &Clock::get()?;
     let mut vault = ctx.accounts.vault.load_mut()?;
     let mut vault_depositor = ctx.accounts.vault_depositor.load_mut()?;
+
+    // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
+    let mut vp = ctx.vault_protocol();
+    vault.validate_vault_protocol(&vp)?;
+    let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
 
     let user = ctx.accounts.drift_user.load()?;
     let spot_market_index = vault.spot_market_index;
@@ -24,18 +30,19 @@ pub fn force_withdraw<'c: 'info, 'info>(
         perp_market_map,
         spot_market_map,
         mut oracle_map,
-    } = ctx.load_maps(clock.slot, Some(spot_market_index))?;
+    } = ctx.load_maps(clock.slot, Some(spot_market_index), vp.is_some())?;
 
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
     let (withdraw_amount, _) =
-        vault_depositor.withdraw(vault_equity, &mut vault, clock.unix_timestamp)?;
+        vault_depositor.withdraw(vault_equity, &mut vault, &mut vp, clock.unix_timestamp)?;
 
     msg!("force_withdraw_amount: {}", withdraw_amount);
 
     drop(vault);
     drop(user);
+    drop(vp);
 
     ctx.drift_withdraw(withdraw_amount)?;
 

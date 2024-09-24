@@ -1,30 +1,29 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Token, TokenAccount, Transfer};
-use drift::cpi::accounts::Deposit as DriftDeposit;
+use anchor_spl::token::{self, Transfer};
+use anchor_spl::token::{Token, TokenAccount};
+use drift::cpi::accounts::Withdraw as DriftWithdraw;
 use drift::instructions::optional_accounts::AccountMaps;
 use drift::program::Drift;
 use drift::state::user::User;
 
-use crate::constraints::{is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault};
-use crate::drift_cpi::{DepositCPI, TokenTransferCPI};
-use crate::state::{Vault, VaultProtocolProvider};
+use crate::constraints::{
+    is_protocol_for_vault, is_user_for_vault, is_user_stats_for_vault, is_vault_protocol_for_vault,
+};
+use crate::drift_cpi::{TokenTransferCPI, WithdrawCPI};
+use crate::state::{Vault, VaultProtocol};
 use crate::{declare_vault_seeds, AccountMapProvider};
 
-pub fn manager_deposit<'c: 'info, 'info>(
-    ctx: Context<'_, '_, 'c, 'info, ManagerDeposit<'info>>,
-    amount: u64,
+pub fn protocol_withdraw<'c: 'info, 'info>(
+    ctx: Context<'_, '_, 'c, 'info, ProtocolWithdraw<'info>>,
 ) -> Result<()> {
     let clock = &Clock::get()?;
-
     let mut vault = ctx.accounts.vault.load_mut()?;
-
-    // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
-    let mut vp = ctx.vault_protocol();
-    vault.validate_vault_protocol(&vp)?;
-    let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
+    let now = clock.unix_timestamp;
 
     let user = ctx.accounts.drift_user.load()?;
     let spot_market_index = vault.spot_market_index;
+
+    let mut vp = Some(ctx.accounts.vault_protocol.load_mut()?);
 
     let AccountMaps {
         perp_market_map,
@@ -35,27 +34,32 @@ pub fn manager_deposit<'c: 'info, 'info>(
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
-    vault.manager_deposit(&mut vp, amount, vault_equity, clock.unix_timestamp)?;
+    let protocol_withdraw_amount = vault.protocol_withdraw(&mut vp, vault_equity, now)?;
 
     drop(vault);
     drop(user);
     drop(vp);
 
-    ctx.token_transfer(amount)?;
+    ctx.drift_withdraw(protocol_withdraw_amount)?;
 
-    ctx.drift_deposit(amount)?;
+    ctx.token_transfer(protocol_withdraw_amount)?;
 
     Ok(())
 }
 
 #[derive(Accounts)]
-pub struct ManagerDeposit<'info> {
+pub struct ProtocolWithdraw<'info> {
     #[account(
         mut,
-        constraint = is_manager_for_vault(&vault, &manager)?
+        constraint = is_protocol_for_vault(&vault, &vault_protocol, &protocol)?
     )]
     pub vault: AccountLoader<'info, Vault>,
-    pub manager: Signer<'info>,
+    #[account(
+        mut,
+        constraint = is_vault_protocol_for_vault(&vault_protocol, &vault)?
+    )]
+    pub vault_protocol: AccountLoader<'info, VaultProtocol>,
+    pub protocol: Signer<'info>,
     #[account(
         mut,
         seeds = [b"vault_token_account".as_ref(), vault.key().as_ref()],
@@ -81,9 +85,11 @@ pub struct ManagerDeposit<'info> {
         token::mint = vault_token_account.mint
     )]
     pub drift_spot_market_vault: Box<Account<'info, TokenAccount>>,
+    /// CHECK: checked in drift cpi
+    pub drift_signer: AccountInfo<'info>,
     #[account(
         mut,
-        token::authority = manager,
+        token::authority = protocol,
         token::mint = vault_token_account.mint
     )]
     pub user_token_account: Box<Account<'info, TokenAccount>>,
@@ -91,44 +97,48 @@ pub struct ManagerDeposit<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, ManagerDeposit<'info>> {
-    fn token_transfer(&self, amount: u64) -> Result<()> {
-        let cpi_accounts = Transfer {
-            from: self.accounts.user_token_account.to_account_info().clone(),
-            to: self.accounts.vault_token_account.to_account_info().clone(),
-            authority: self.accounts.manager.to_account_info().clone(),
-        };
-        let token_program = self.accounts.token_program.to_account_info().clone();
-        let cpi_context = CpiContext::new(token_program, cpi_accounts);
-
-        token::transfer(cpi_context, amount)?;
-
-        Ok(())
-    }
-}
-
-impl<'info> DepositCPI for Context<'_, '_, '_, 'info, ManagerDeposit<'info>> {
-    fn drift_deposit(&self, amount: u64) -> Result<()> {
+impl<'info> WithdrawCPI for Context<'_, '_, '_, 'info, ProtocolWithdraw<'info>> {
+    fn drift_withdraw(&self, amount: u64) -> Result<()> {
         declare_vault_seeds!(self.accounts.vault, seeds);
         let spot_market_index = self.accounts.vault.load()?.spot_market_index;
 
-        let cpi_program = self.accounts.drift_program.to_account_info().clone();
-        let cpi_accounts = DriftDeposit {
-            state: self.accounts.drift_state.clone(),
+        let cpi_accounts = DriftWithdraw {
+            state: self.accounts.drift_state.to_account_info().clone(),
             user: self.accounts.drift_user.to_account_info().clone(),
-            user_stats: self.accounts.drift_user_stats.clone(),
+            user_stats: self.accounts.drift_user_stats.to_account_info().clone(),
             authority: self.accounts.vault.to_account_info().clone(),
             spot_market_vault: self
                 .accounts
                 .drift_spot_market_vault
                 .to_account_info()
                 .clone(),
+            drift_signer: self.accounts.drift_signer.to_account_info().clone(),
             user_token_account: self.accounts.vault_token_account.to_account_info().clone(),
             token_program: self.accounts.token_program.to_account_info().clone(),
         };
-        let cpi_context = CpiContext::new_with_signer(cpi_program, cpi_accounts, seeds)
+
+        let drift_program = self.accounts.drift_program.to_account_info().clone();
+        let cpi_context = CpiContext::new_with_signer(drift_program, cpi_accounts, seeds)
             .with_remaining_accounts(self.remaining_accounts.into());
-        drift::cpi::deposit(cpi_context, spot_market_index, amount, false)?;
+        drift::cpi::withdraw(cpi_context, spot_market_index, amount, false)?;
+
+        Ok(())
+    }
+}
+
+impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, ProtocolWithdraw<'info>> {
+    fn token_transfer(&self, amount: u64) -> Result<()> {
+        declare_vault_seeds!(self.accounts.vault, seeds);
+
+        let cpi_accounts = Transfer {
+            from: self.accounts.vault_token_account.to_account_info().clone(),
+            to: self.accounts.user_token_account.to_account_info().clone(),
+            authority: self.accounts.vault.to_account_info().clone(),
+        };
+        let token_program = self.accounts.token_program.to_account_info().clone();
+        let cpi_context = CpiContext::new_with_signer(token_program, cpi_accounts, seeds);
+
+        token::transfer(cpi_context, amount)?;
 
         Ok(())
     }

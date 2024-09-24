@@ -1,28 +1,23 @@
 use anchor_lang::prelude::*;
 use drift::instructions::optional_accounts::AccountMaps;
-use drift::program::Drift;
 use drift::state::user::User;
 
 use crate::constraints::{
-    is_delegate_for_vault, is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault,
-    is_vault_for_vault_depositor,
+    is_protocol_for_vault, is_user_for_vault, is_user_stats_for_vault, is_vault_protocol_for_vault,
 };
-use crate::state::{Vault, VaultProtocolProvider};
-use crate::AccountMapProvider;
-use crate::VaultDepositor;
+use crate::{AccountMapProvider, Vault, VaultProtocol, WithdrawUnit};
 
-pub fn apply_profit_share<'c: 'info, 'info>(
-    ctx: Context<'_, '_, 'c, 'info, ApplyProfitShare<'info>>,
+pub fn protocol_request_withdraw<'c: 'info, 'info>(
+    ctx: Context<'_, '_, 'c, 'info, ProtocolRequestWithdraw<'info>>,
+    withdraw_amount: u64,
+    withdraw_unit: WithdrawUnit,
 ) -> Result<()> {
     let clock = &Clock::get()?;
-
     let mut vault = ctx.accounts.vault.load_mut()?;
-    let mut vault_depositor = ctx.accounts.vault_depositor.load_mut()?;
+    let now = clock.unix_timestamp;
 
     // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
-    let mut vp = ctx.vault_protocol();
-    vault.validate_vault_protocol(&vp)?;
-    let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
+    let mut vp = Some(ctx.accounts.vault_protocol.load_mut()?);
 
     let user = ctx.accounts.drift_user.load()?;
     let spot_market_index = vault.spot_market_index;
@@ -36,39 +31,34 @@ pub fn apply_profit_share<'c: 'info, 'info>(
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
-    vault_depositor.apply_profit_share(vault_equity, &mut vault, &mut vp)?;
+    vault.protocol_request_withdraw(&mut vp, withdraw_amount, withdraw_unit, vault_equity, now)?;
 
     Ok(())
 }
 
 #[derive(Accounts)]
-pub struct ApplyProfitShare<'info> {
+pub struct ProtocolRequestWithdraw<'info> {
     #[account(
         mut,
-        constraint = is_manager_for_vault(&vault, &manager)? || is_delegate_for_vault(&vault, &manager)?
+        constraint = is_protocol_for_vault(&vault, &vault_protocol, &protocol)?
     )]
     pub vault: AccountLoader<'info, Vault>,
     #[account(
         mut,
-        constraint = is_vault_for_vault_depositor(&vault_depositor, &vault)?
+        constraint = is_vault_protocol_for_vault(&vault_protocol, &vault)?
     )]
-    pub vault_depositor: AccountLoader<'info, VaultDepositor>,
-    pub manager: Signer<'info>,
+    pub vault_protocol: AccountLoader<'info, VaultProtocol>,
+    pub protocol: Signer<'info>,
     #[account(
-        mut,
         constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?
     )]
     /// CHECK: checked in drift cpi
     pub drift_user_stats: AccountInfo<'info>,
     #[account(
-        mut,
         constraint = is_user_for_vault(&vault, &drift_user.key())?
     )]
     /// CHECK: checked in drift cpi
     pub drift_user: AccountLoader<'info, User>,
     /// CHECK: checked in drift cpi
     pub drift_state: AccountInfo<'info>,
-    /// CHECK: checked in drift cpi
-    pub drift_signer: AccountInfo<'info>,
-    pub drift_program: Program<'info, Drift>,
 }
