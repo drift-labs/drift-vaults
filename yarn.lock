@@ -185,13 +185,13 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
-"@drift-labs/competitions-sdk@0.2.470":
-  version "0.2.470"
-  resolved "https://registry.yarnpkg.com/@drift-labs/competitions-sdk/-/competitions-sdk-0.2.470.tgz#023b2d3cbae16dbfd598d257683387ad2127fd65"
-  integrity sha512-8/NwSPj+fp4mVWNC2M2cR9BncofL70Lxhg4t7ZHP+ObXQ463zhzuVUJwXb5yEwRkuQVH4VULFAuoRdwFQ4DrIA==
+"@drift-labs/competitions-sdk@0.2.472":
+  version "0.2.472"
+  resolved "https://registry.yarnpkg.com/@drift-labs/competitions-sdk/-/competitions-sdk-0.2.472.tgz#ba5f2eccdb7d202570abd4324fef0e954e921d66"
+  integrity sha512-MUMFQ8mdyxTDzXj38y9VYQrjtVvq+JqGLcuzvfbpHxfkVlWcOeck/0G/u/BzdTwtc3a7wNw1/AbjphAJMNrTng==
   dependencies:
     "@coral-xyz/anchor" "^0.26.0"
-    "@drift-labs/sdk" "2.96.0-beta.9"
+    "@drift-labs/sdk" "2.96.0-beta.11"
     "@solana/web3.js" "1.73.2"
     "@switchboard-xyz/solana.js" "^2.7.1"
     cerializr "^3.1.4"
@@ -200,15 +200,15 @@
     ts-node "^10.9.1"
     typescript "^5.1.6"
 
-"@drift-labs/sdk@2.96.0-beta.9":
-  version "2.96.0-beta.9"
-  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.96.0-beta.9.tgz#7f38549ac07ad2c8d8aa760aa25e8174689bc820"
-  integrity sha512-9573Fqdx6oA5pEEUGDg4kF52AiVxj9LPFrVbgoz/Ogf5vzFbWqlbcOVlDzVcf+jktZYlW633R6DLA027hX8klA==
+"@drift-labs/sdk@2.96.0-beta.11":
+  version "2.96.0-beta.11"
+  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.96.0-beta.11.tgz#0cf482ac35741d9b1cdf5a2e1e26cb7b7e49dbbb"
+  integrity sha512-OKq01bsuYdyZREfvVe6vvj1UEROWPbaQsMkF+xCkqcsOLTy8h6212Hx983lN+O7KS4o0m0c3JjSYTIkebN2e5g==
   dependencies:
     "@coral-xyz/anchor" "0.28.0"
     "@coral-xyz/anchor-30" "npm:@coral-xyz/anchor@0.30.1"
     "@ellipsis-labs/phoenix-sdk" "^1.4.2"
-    "@openbook-dex/openbook-v2" "^0.2.10"
+    "@openbook-dex/openbook-v2" "0.2.10"
     "@project-serum/serum" "^0.13.38"
     "@pythnetwork/client" "2.5.3"
     "@pythnetwork/price-service-sdk" "^1.7.1"
@@ -436,7 +436,7 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
-"@openbook-dex/openbook-v2@^0.2.10":
+"@openbook-dex/openbook-v2@0.2.10":
   version "0.2.10"
   resolved "https://registry.yarnpkg.com/@openbook-dex/openbook-v2/-/openbook-v2-0.2.10.tgz#a5cfcd30ce827ecd446b76429a5e41baa23a318c"
   integrity sha512-JOroVQHeia+RbghpluDJB5psUIhdhYRPLu0zWoG0h5vgDU4SjXwlcC+LJiIa2HVPasvZjWuCtlKWFyrOS75lOA==
