@@ -2,9 +2,7 @@
 
 soon^TM
 
-
 [did you see the CLI?](./ts/sdk/README.md) and the [wiki?](https://github.com/drift-labs/drift-vaults/wiki)
-
 
 # Development
 
@@ -28,11 +26,14 @@ rustup override set 1.70.0
 sh -c "$(curl -sSfL https://release.solana.com/v1.16.27/install)"
 ```
 
-If on Mac and getting this error: 
+If on Mac and getting this error:
+
 ```shell
 Error: failed to start validator: Failed to create ledger at test-ledger: blockstore error
 ```
+
 then run these commands:
+
 ```shell
 brew install gnu-tar
 # Put this in ~/.zshrc 
@@ -40,8 +41,16 @@ export PATH="/opt/homebrew/opt/gnu-tar/libexec/gnubin:$PATH"
 ```
 
 ## Run tests
+
 ```shell
 yarn && cd ts/sdk && yarn && yarn build && cd ..
 
 export ANCHOR_WALLET=~/.config/solana/id.json && anchor test
+```
+
+For ease-of-use you can run the following script to build and test instead:
+
+```shell
+chmod +x ./test.sh
+./test.sh
 ```
