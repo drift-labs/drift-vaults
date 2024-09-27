@@ -1,4 +1,4 @@
-import { BASE_PRECISION, BN, DriftClient, OraclePriceData, PRICE_PRECISION, QUOTE_PRECISION, SpotMarketAccount, TEN, User, Wallet, WhileValidTxSender, convertToNumber, getSignedTokenAmount, getTokenAmount, loadKeypair } from "@drift-labs/sdk";
+import { BASE_PRECISION, BN, DriftClient, DriftEnv, OraclePriceData, PRICE_PRECISION, QUOTE_PRECISION, SpotMarketAccount, TEN, User, Wallet, WhileValidTxSender, convertToNumber, getSignedTokenAmount, getTokenAmount, loadKeypair } from "@drift-labs/sdk";
 import { VAULT_PROGRAM_ID, Vault, VaultClient, VaultDepositor, decodeName } from "../src";
 import { Command } from "commander";
 import { Connection, Keypair } from "@solana/web3.js";
@@ -139,10 +139,11 @@ export async function getCommandContext(program: Command, needToSign: boolean): 
         commitment: opts.commitment,
     });
 
+    const driftEnv = process.env.DRIFT_ENV ?? "mainnet-beta";
     const driftClient = new DriftClient({
         connection,
         wallet,
-        env: "mainnet-beta",
+        env: driftEnv as DriftEnv,
         opts: {
             commitment: opts.commitment,
             skipPreflight: false,
