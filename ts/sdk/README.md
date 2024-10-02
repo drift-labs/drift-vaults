@@ -92,3 +92,4 @@ yarn cli view-vault --vault-address=<VAULT_ADDRESS>
 
 yarn cli view-vault-depositor --vault-depositor-address=<VAULT_DEPOSITOR_ADDRESS>
 ```
+
