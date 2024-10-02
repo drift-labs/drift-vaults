@@ -185,10 +185,10 @@
     uuid "^8.3.2"
     zstddec "^0.1.0"
 
-"@drift-labs/sdk@2.96.0-beta.19":
-  version "2.96.0-beta.19"
-  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.96.0-beta.19.tgz#d867b4323a935b4d8896b70344e5a55bd9c0fcbe"
-  integrity sha512-/6CNQkR+FEZvYqq/VOavnCjtY2FPBaMNY+dmS8Y1JRXOmL7jzkk80DYz9hGDuPbS3K7xQvY5IMBmeZXwXWGEiw==
+"@drift-labs/sdk@2.96.0-beta.20":
+  version "2.96.0-beta.20"
+  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.96.0-beta.20.tgz#f56aa375965246a86e5bd4171b1dd24ed261c05b"
+  integrity sha512-ckbS4gF70wZBvkBsScEJf4MJWXckBI5tX9SSSLeEx24/C+aOVKtgK5pWP+l8ozMTkR8Mv/Wwuh55vdO/4Z6P8w==
   dependencies:
     "@coral-xyz/anchor" "0.28.0"
     "@coral-xyz/anchor-30" "npm:@coral-xyz/anchor@0.30.1"
