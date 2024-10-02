@@ -185,13 +185,13 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
-"@drift-labs/competitions-sdk@0.2.476":
-  version "0.2.476"
-  resolved "https://registry.yarnpkg.com/@drift-labs/competitions-sdk/-/competitions-sdk-0.2.476.tgz#aca88fc9244b342ee18679f19ef8196f8f1b8f38"
-  integrity sha512-mOtyib6sHpcFLp4II8Y0a2YjxzNtgbe51vMnpZsNE3whRceHGjRxWlSV2VfS2XJjwJw+8yubxs3uDELJUPAwNQ==
+"@drift-labs/competitions-sdk@0.2.477":
+  version "0.2.477"
+  resolved "https://registry.yarnpkg.com/@drift-labs/competitions-sdk/-/competitions-sdk-0.2.477.tgz#3757eed09a733c8ab9ab5545ed968a260ee45cc0"
+  integrity sha512-DGJ9QopEdMkYbB1eQhfiKF+oZIzpbvbDJh/IEjcqB1brYDXJ/ZK6kjQTQsh4JlXzSIUz0Na7z3lLZHasHKBEtA==
   dependencies:
     "@coral-xyz/anchor" "^0.26.0"
-    "@drift-labs/sdk" "2.96.0-beta.15"
+    "@drift-labs/sdk" "2.96.0-beta.16"
     "@solana/web3.js" "1.73.2"
     "@switchboard-xyz/solana.js" "^2.7.1"
     cerializr "^3.1.4"
@@ -200,10 +200,10 @@
     ts-node "^10.9.1"
     typescript "^5.1.6"
 
-"@drift-labs/sdk@2.96.0-beta.15":
-  version "2.96.0-beta.15"
-  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.96.0-beta.15.tgz#22257e012e05ff1286625e28856eba096ec4a0b1"
-  integrity sha512-yNFznyY8OPQ9R6YxauYN1JG0yyrsSwUHimJB7UqBevLBNgA3UFCIC2FARSii2JNCBBnfU+9f0BRhCW4f2vI5Pg==
+"@drift-labs/sdk@2.96.0-beta.16":
+  version "2.96.0-beta.16"
+  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.96.0-beta.16.tgz#cfb5cc6ede051dd53a7de204303b16ede3344f27"
+  integrity sha512-MySKyviafQlbNUXyLSxtx0yDjWmYa6l2vcB7Djsy4j7nlIcNo99RbFMNzS/Ylfbd94WkUuyezsY+Tw0h1ILDug==
   dependencies:
     "@coral-xyz/anchor" "0.28.0"
     "@coral-xyz/anchor-30" "npm:@coral-xyz/anchor@0.30.1"
@@ -215,7 +215,7 @@
     "@pythnetwork/pyth-solana-receiver" "^0.7.0"
     "@solana/spl-token" "0.3.7"
     "@solana/web3.js" "1.92.3"
-    "@switchboard-xyz/on-demand" "1.2.32"
+    "@switchboard-xyz/on-demand" "1.2.42"
     anchor-bankrun "^0.3.0"
     node-cache "^5.1.2"
     rpc-websockets "7.5.1"
@@ -998,10 +998,10 @@
     protobufjs "^7.2.4"
     yaml "^2.2.1"
 
-"@switchboard-xyz/common@^2.4.5":
-  version "2.4.5"
-  resolved "https://registry.yarnpkg.com/@switchboard-xyz/common/-/common-2.4.5.tgz#d6298ab4838172a1cde7012b63514dd00b9d616d"
-  integrity sha512-6OYdLsilVW7PFjLIzK8LKnOQW0EgQHgaMzEraTx/X8bRXQnJmi2XT3I+ZoNUejvo6cwQ9NNYXWQIjSpQgYYeGQ==
+"@switchboard-xyz/common@^2.5.0":
+  version "2.5.0"
+  resolved "https://registry.yarnpkg.com/@switchboard-xyz/common/-/common-2.5.0.tgz#15f60abd0c2503d855caf6f120ed98f8f0dd9d25"
+  integrity sha512-BgQTvqOZGZxMSscy2x3GHrs2/BRhFf55t7QrqVdED1KneCP0KgcZn436GjGttc61nP2i8Yd7VoJzTNksezn2kA==
   dependencies:
     "@solana/web3.js" "^1.93.0"
     axios "^1.7.2"
@@ -1010,19 +1010,21 @@
     bs58 "^5.0.0"
     cron-validator "^1.3.1"
     decimal.js "^10.4.3"
+    js-sha256 "^0.11.0"
     lodash "^4.17.21"
     protobufjs "^7.2.6"
+    yaml "^2.5.0"
 
-"@switchboard-xyz/on-demand@1.2.32":
-  version "1.2.32"
-  resolved "https://registry.yarnpkg.com/@switchboard-xyz/on-demand/-/on-demand-1.2.32.tgz#ae68e45ab9cfb5ccc7c8f6d0506dd3ea7024f9ec"
-  integrity sha512-cS/7rkNg1tu6dtypMQZw6avsTF4DbNYOfA8tNq0rjCpipNTtQZp51UtkGSgIu8qfH8ebSBgpPxkUXlWpXYk3CA==
+"@switchboard-xyz/on-demand@1.2.42":
+  version "1.2.42"
+  resolved "https://registry.yarnpkg.com/@switchboard-xyz/on-demand/-/on-demand-1.2.42.tgz#1ec8ae18381baa66e20341648a1cdbd3c30efc8f"
+  integrity sha512-Q2qMpBM95RIDhGWA5vqRrAySRYncWKa7QWpAwLaIu5xPZMlSqNo12+lX30fUnqTWVeIXey/rp/3n6yOJLBsjjA==
   dependencies:
     "@brokerloop/ttlcache" "^3.2.3"
     "@coral-xyz/anchor-30" "npm:@coral-xyz/anchor@0.30.1"
     "@solana/web3.js" "^1.95.0"
     "@solworks/soltoolkit-sdk" "^0.0.23"
-    "@switchboard-xyz/common" "^2.4.5"
+    "@switchboard-xyz/common" "^2.5.0"
     axios "^1.7.4"
     big.js "^6.2.1"
     bs58 "^5.0.0"
@@ -2523,6 +2525,11 @@ jito-ts@^3.0.1:
     node-fetch "^2.6.7"
     superstruct "^1.0.3"
 
+js-sha256@^0.11.0:
+  version "0.11.0"
+  resolved "https://registry.yarnpkg.com/js-sha256/-/js-sha256-0.11.0.tgz#256a921d9292f7fe98905face82e367abaca9576"
+  integrity sha512-6xNlKayMZvds9h1Y1VWc0fQHQ82BxTXizWPEtEeGvmOUYpBRy4gbWroHLpzowe6xiQhHpelCQiE7HEdznyBL9Q==
+
 js-sha256@^0.9.0:
   version "0.9.0"
   resolved "https://registry.npmjs.org/js-sha256/-/js-sha256-0.9.0.tgz"
@@ -3533,6 +3540,11 @@ yaml@^2.2.1:
   version "2.3.3"
   resolved "https://registry.yarnpkg.com/yaml/-/yaml-2.3.3.tgz#01f6d18ef036446340007db8e016810e5d64aad9"
   integrity sha512-zw0VAJxgeZ6+++/su5AFoqBbZbrEakwu+X0M5HmcwUiBL7AzcuPKjj5we4xfQLp78LkEMpD0cOnUhmgOVy3KdQ==
+
+yaml@^2.5.0:
+  version "2.5.1"
+  resolved "https://registry.yarnpkg.com/yaml/-/yaml-2.5.1.tgz#c9772aacf62cb7494a95b0c4f1fb065b563db130"
+  integrity sha512-bLQOjaX/ADgQ20isPJRvF0iRUHIxVhYvr53Of7wGcWlO2jvtUlH5m87DsmulFVxRpNLOnI4tB6p/oh8D7kpn9Q==
 
 yargs-parser@20.2.4:
   version "20.2.4"
