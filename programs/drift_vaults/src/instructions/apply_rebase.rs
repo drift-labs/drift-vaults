@@ -49,11 +49,15 @@ pub fn apply_rebase<'c: 'info, 'info>(
 pub struct ApplyRebase<'info> {
     #[account(mut)]
     pub vault: AccountLoader<'info, Vault>,
-    #[account(mut,
-  constraint = is_vault_for_vault_depositor(& vault_depositor, & vault) ?)]
+    #[account(
+        mut,
+        constraint = is_vault_for_vault_depositor(& vault_depositor, & vault)?
+    )]
     pub vault_depositor: AccountLoader<'info, VaultDepositor>,
-    #[account(mut,
-  constraint = is_user_for_vault(& vault, & drift_user.key()) ?)]
+    #[account(
+        mut,
+        constraint = is_user_for_vault(& vault, & drift_user.key())?
+    )]
     /// CHECK: checked in drift cpi
     pub drift_user: AccountLoader<'info, User>,
     /// CHECK: checked in drift cpi

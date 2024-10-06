@@ -36,8 +36,10 @@ pub fn manager_cancel_withdraw_request<'c: 'info, 'info>(
 
 #[derive(Accounts)]
 pub struct ManagerCancelWithdrawRequest<'info> {
-    #[account(mut,
-  constraint = is_manager_for_vault(& vault, & manager) ?)]
+    #[account(
+        mut,
+        constraint = is_manager_for_vault(& vault, & manager)?
+    )]
     pub vault: AccountLoader<'info, Vault>,
     pub manager: Signer<'info>,
     #[account(constraint = is_user_stats_for_vault(& vault, & drift_user_stats) ?)]

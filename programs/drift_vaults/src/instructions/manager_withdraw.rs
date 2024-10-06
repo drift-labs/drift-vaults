@@ -50,8 +50,10 @@ pub fn manager_withdraw<'c: 'info, 'info>(
 
 #[derive(Accounts)]
 pub struct ManagerWithdraw<'info> {
-    #[account(mut,
-  constraint = is_manager_for_vault(& vault, & manager) ?)]
+    #[account(
+        mut,
+        constraint = is_manager_for_vault(& vault, & manager)?
+    )]
     pub vault: AccountLoader<'info, Vault>,
     pub manager: Signer<'info>,
     #[account(
@@ -60,24 +62,31 @@ pub struct ManagerWithdraw<'info> {
       bump,
     )]
     pub vault_token_account: Box<Account<'info, TokenAccount>>,
-    #[account(mut,
-  constraint = is_user_stats_for_vault(& vault, & drift_user_stats) ?)]
+    #[account(
+        mut,
+        constraint = is_user_stats_for_vault(& vault, & drift_user_stats)?
+    )]
     /// CHECK: checked in drift cpi
     pub drift_user_stats: AccountInfo<'info>,
-    #[account(mut,
-  constraint = is_user_for_vault(& vault, & drift_user.key()) ?)]
+    #[account(
+        constraint = is_user_for_vault(& vault, & drift_user.key())?
+    )]
     /// CHECK: checked in drift cpi
     pub drift_user: AccountLoader<'info, User>,
     /// CHECK: checked in drift cpi
     pub drift_state: AccountInfo<'info>,
-    #[account(mut,
-  token::mint = vault_token_account.mint)]
+    #[account(
+        mut,
+        token::mint = vault_token_account.mint
+    )]
     pub drift_spot_market_vault: Box<Account<'info, TokenAccount>>,
     /// CHECK: checked in drift cpi
     pub drift_signer: AccountInfo<'info>,
-    #[account(mut,
-  token::authority = manager,
-  token::mint = vault_token_account.mint)]
+    #[account(
+        mut,
+        token::authority = manager,
+        token::mint = vault_token_account.mint
+    )]
     pub user_token_account: Box<Account<'info, TokenAccount>>,
     pub drift_program: Program<'info, Drift>,
     pub token_program: Program<'info, Token>,

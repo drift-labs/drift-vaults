@@ -55,11 +55,15 @@ pub fn apply_rebase_tokenized_depositor<'c: 'info, 'info>(
 pub struct ApplyRebaseTokenizedDepositor<'info> {
     #[account(mut)]
     pub vault: AccountLoader<'info, Vault>,
-    #[account(mut,
-  constraint = is_tokenized_depositor_for_vault(& tokenized_vault_depositor, & vault) ?)]
+    #[account(
+        mut,
+        constraint = is_tokenized_depositor_for_vault(& tokenized_vault_depositor, & vault)?
+    )]
     pub tokenized_vault_depositor: AccountLoader<'info, TokenizedVaultDepositor>,
-    #[account(mut,
-  constraint = is_user_for_vault(& vault, & drift_user.key()) ?)]
+    #[account(
+        mut,
+        constraint = is_user_for_vault(& vault, & drift_user.key())?
+    )]
     /// CHECK: checked in drift cpi
     pub drift_user: AccountLoader<'info, User>,
     /// CHECK: checked in drift cpi

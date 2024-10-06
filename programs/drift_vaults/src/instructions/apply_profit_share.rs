@@ -43,19 +43,27 @@ pub fn apply_profit_share<'c: 'info, 'info>(
 
 #[derive(Accounts)]
 pub struct ApplyProfitShare<'info> {
-    #[account(mut,
-  constraint = is_manager_for_vault(& vault, & manager) ? || is_delegate_for_vault(& vault, & manager) ?)]
+    #[account(
+        mut,
+        constraint = is_manager_for_vault(& vault, & manager) ? || is_delegate_for_vault(& vault, & manager) ?
+    )]
     pub vault: AccountLoader<'info, Vault>,
-    #[account(mut,
-  constraint = is_vault_for_vault_depositor(& vault_depositor, & vault) ?)]
+    #[account(
+        mut,
+        constraint = is_vault_for_vault_depositor(& vault_depositor, & vault) ?
+    )]
     pub vault_depositor: AccountLoader<'info, VaultDepositor>,
     pub manager: Signer<'info>,
-    #[account(mut,
-  constraint = is_user_stats_for_vault(& vault, & drift_user_stats) ?)]
+    #[account(
+        mut,
+        constraint = is_user_stats_for_vault(& vault, & drift_user_stats)?
+    )]
     /// CHECK: checked in drift cpi
     pub drift_user_stats: AccountInfo<'info>,
-    #[account(mut,
-  constraint = is_user_for_vault(& vault, & drift_user.key()) ?)]
+    #[account(
+        mut,
+        constraint = is_user_for_vault(& vault, & drift_user.key()) ?
+    )]
     /// CHECK: checked in drift cpi
     pub drift_user: AccountLoader<'info, User>,
     /// CHECK: checked in drift cpi
