@@ -25,12 +25,16 @@ pub fn update_margin_trading_enabled<'info>(
 
 #[derive(Accounts)]
 pub struct UpdateMarginTradingEnabled<'info> {
-    #[account(mut,
-  constraint = is_manager_for_vault(& vault, & manager) ?,)]
+    #[account(
+        mut,
+        constraint = is_manager_for_vault(&vault, &manager)?,
+    )]
     pub vault: AccountLoader<'info, Vault>,
     pub manager: Signer<'info>,
-    #[account(mut,
-  constraint = is_user_for_vault(& vault, & drift_user.key()) ?)]
+    #[account(
+        mut,
+        constraint = is_user_for_vault(&vault, &drift_user.key())?
+    )]
     /// CHECK: checked in drift cpi
     pub drift_user: AccountLoader<'info, User>,
     pub drift_program: Program<'info, Drift>,

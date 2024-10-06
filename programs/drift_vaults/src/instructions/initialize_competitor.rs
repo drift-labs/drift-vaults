@@ -19,7 +19,8 @@ pub fn initialize_competitor<'info>(
 pub struct InitializeCompetitor<'info> {
     #[account(
         mut,
-        constraint = is_manager_for_vault(& vault, & manager) ?,)]
+        constraint = is_manager_for_vault(&vault, &manager)?,
+    )]
     pub vault: AccountLoader<'info, Vault>,
     pub manager: Signer<'info>,
     #[account(mut)]
@@ -40,7 +41,8 @@ pub struct InitializeCompetitor<'info> {
     pub drift_competitions: AccountInfo<'info>,
     #[account(
         mut,
-        constraint = is_user_stats_for_vault(& vault, & drift_user_stats.to_account_info()) ?)]
+        constraint = is_user_stats_for_vault(&vault, &drift_user_stats.to_account_info())?
+    )]
     /// CHECK: checked in drift cpi
     pub drift_user_stats: AccountLoader<'info, UserStats>,
     pub drift_competitions_program: Program<'info, DriftCompetitions>,

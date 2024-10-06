@@ -40,6 +40,7 @@ pub fn force_withdraw<'c: 'info, 'info>(
 
     msg!("force_withdraw_amount: {}", withdraw_amount);
 
+    drop(vault);
     drop(user);
     drop(vp);
 
@@ -54,29 +55,30 @@ pub fn force_withdraw<'c: 'info, 'info>(
 pub struct ForceWithdraw<'info> {
     #[account(
         mut,
-        constraint = is_manager_for_vault(& vault, & manager) ? || is_delegate_for_vault(& vault, & manager) ?
+        constraint = is_manager_for_vault(&vault, &manager)? || is_delegate_for_vault(&vault, &manager)?
     )]
     pub vault: AccountLoader<'info, Vault>,
     pub manager: Signer<'info>,
     #[account(
         mut,
-        constraint = is_vault_for_vault_depositor(& vault_depositor, & vault) ?
+        constraint = is_vault_for_vault_depositor(&vault_depositor, &vault)?,
     )]
     pub vault_depositor: AccountLoader<'info, VaultDepositor>,
     #[account(
         mut,
         seeds = [b"vault_token_account".as_ref(), vault.key().as_ref()],
-        bump
+        bump,
     )]
     pub vault_token_account: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
-        constraint = is_user_stats_for_vault(& vault, & drift_user_stats)?
+        constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?
     )]
     /// CHECK: checked in drift cpi
     pub drift_user_stats: AccountInfo<'info>,
     #[account(
-        constraint = is_user_for_vault(& vault, & drift_user.key())?
+        mut,
+        constraint = is_user_for_vault(&vault, &drift_user.key())?
     )]
     /// CHECK: checked in drift cpi
     pub drift_user: AccountLoader<'info, User>,
@@ -89,7 +91,8 @@ pub struct ForceWithdraw<'info> {
     pub drift_spot_market_vault: Box<Account<'info, TokenAccount>>,
     /// CHECK: checked in drift cpi
     pub drift_signer: AccountInfo<'info>,
-    #[account(mut,
+    #[account(
+        mut,
         token::authority = vault_depositor.load()?.authority,
         token::mint = vault_token_account.mint
     )]

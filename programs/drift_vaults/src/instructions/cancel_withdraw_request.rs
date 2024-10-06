@@ -56,12 +56,12 @@ pub struct CancelWithdrawRequest<'info> {
     pub vault_depositor: AccountLoader<'info, VaultDepositor>,
     pub authority: Signer<'info>,
     #[account(
-        constraint = is_user_stats_for_vault(& vault, & drift_user_stats)?
+        constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?
     )]
     /// CHECK: checked in drift cpi
     pub drift_user_stats: AccountInfo<'info>,
     #[account(
-        constraint = is_user_for_vault(& vault, & drift_user.key())?
+        constraint = is_user_for_vault(&vault, &drift_user.key())?
     )]
     /// CHECK: checked in drift cpi
     pub drift_user: AccountLoader<'info, User>,

@@ -42,7 +42,7 @@ pub struct ResetDelegate<'info> {
     pub authority: Signer<'info>,
     #[account(
         mut,
-        constraint = is_user_for_vault(& vault, & drift_user.key()) ?
+        constraint = is_user_for_vault(&vault, &drift_user.key())?
     )]
     /// CHECK: checked in drift cpi
     pub drift_user: AccountLoader<'info, User>,

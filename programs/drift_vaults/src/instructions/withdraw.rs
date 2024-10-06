@@ -70,34 +70,46 @@ pub fn withdraw<'c: 'info, 'info>(ctx: Context<'_, '_, 'c, 'info, Withdraw<'info
 pub struct Withdraw<'info> {
     #[account(mut)]
     pub vault: AccountLoader<'info, Vault>,
-    #[account(mut,
+    #[account(
+        mut,
   seeds = [b"vault_depositor", vault.key().as_ref(), authority.key().as_ref()],
   bump,
-  constraint = is_authority_for_vault_depositor(& vault_depositor, & authority) ?,)]
+        constraint = is_authority_for_vault_depositor(&vault_depositor, &authority)?,
+    )]
     pub vault_depositor: AccountLoader<'info, VaultDepositor>,
     pub authority: Signer<'info>,
-    #[account(mut,
+    #[account(
+        mut,
   seeds = [b"vault_token_account".as_ref(), vault.key().as_ref()],
-  bump,)]
+        bump,
+    )]
     pub vault_token_account: Box<Account<'info, TokenAccount>>,
-    #[account(mut,
-  constraint = is_user_stats_for_vault(& vault, & drift_user_stats) ?)]
+    #[account(
+        mut,
+        constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?
+    )]
     /// CHECK: checked in drift cpi
     pub drift_user_stats: AccountInfo<'info>,
-    #[account(mut,
-  constraint = is_user_for_vault(& vault, & drift_user.key()) ?)]
+    #[account(
+        mut,
+        constraint = is_user_for_vault(&vault, &drift_user.key())?
+    )]
     /// CHECK: checked in drift cpi
     pub drift_user: AccountLoader<'info, User>,
     /// CHECK: checked in drift cpi
     pub drift_state: AccountInfo<'info>,
-    #[account(mut,
-  token::mint = vault_token_account.mint)]
+    #[account(
+        mut,
+        token::mint = vault_token_account.mint
+    )]
     pub drift_spot_market_vault: Box<Account<'info, TokenAccount>>,
     /// CHECK: checked in drift cpi
     pub drift_signer: AccountInfo<'info>,
-    #[account(mut,
-  token::authority = authority,
-  token::mint = vault_token_account.mint)]
+    #[account(
+        mut,
+        token::authority = authority,
+        token::mint = vault_token_account.mint
+    )]
     pub user_token_account: Box<Account<'info, TokenAccount>>,
     pub drift_program: Program<'info, Drift>,
     pub token_program: Program<'info, Token>,
