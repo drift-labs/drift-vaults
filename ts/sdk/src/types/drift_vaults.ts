@@ -1408,6 +1408,95 @@ export type DriftVaults = {
 	];
 	accounts: [
 		{
+			name: 'tokenizedVaultDepositor';
+			type: {
+				kind: 'struct';
+				fields: [
+					{
+						name: 'vault';
+						docs: ['The vault deposited into'];
+						type: 'publicKey';
+					},
+					{
+						name: 'pubkey';
+						docs: [
+							"The vault depositor account's pubkey. It is a pda of vault"
+						];
+						type: 'publicKey';
+					},
+					{
+						name: 'mint';
+						docs: [
+							'The token mint for tokenized shares owned by this VaultDepositor'
+						];
+						type: 'publicKey';
+					},
+					{
+						name: 'vaultShares';
+						docs: [
+							"share of vault owned by this depositor. vault_shares / vault.total_shares is depositor's ownership of vault_equity"
+						];
+						type: 'u128';
+					},
+					{
+						name: 'lastVaultShares';
+						docs: [
+							'stores the vault_shares from the most recent liquidity event (redeem or issuance) before a spl token',
+							'CPI is done, used to track invariants'
+						];
+						type: 'u128';
+					},
+					{
+						name: 'lastValidTs';
+						docs: ['creation ts of vault depositor'];
+						type: 'i64';
+					},
+					{
+						name: 'netDeposits';
+						docs: ['lifetime net deposits of vault depositor for the vault'];
+						type: 'i64';
+					},
+					{
+						name: 'totalDeposits';
+						docs: ['lifetime total deposits'];
+						type: 'u64';
+					},
+					{
+						name: 'totalWithdraws';
+						docs: ['lifetime total withdraws'];
+						type: 'u64';
+					},
+					{
+						name: 'cumulativeProfitShareAmount';
+						docs: [
+							'the token amount of gains the vault depositor has paid performance fees on'
+						];
+						type: 'i64';
+					},
+					{
+						name: 'profitShareFeePaid';
+						type: 'u64';
+					},
+					{
+						name: 'vaultSharesBase';
+						docs: ['the exponent for vault_shares decimal places'];
+						type: 'u32';
+					},
+					{
+						name: 'bump';
+						docs: ['The bump for the vault pda'];
+						type: 'u8';
+					},
+					{
+						name: 'padding';
+						type: {
+							array: ['u8', 3];
+						};
+					}
+				];
+			};
+		},
+		{
 			name: 'vaultDepositor';
 			type: {
 				kind: 'struct';
@@ -1797,6 +1886,30 @@ export type DriftVaults = {
 		}
 	];
 	types: [
+		{
+			name: 'InitializeTokenizedVaultDepositorParams';
+			type: {
+				kind: 'struct';
+				fields: [
+					{
+						name: 'tokenName';
+						type: 'string';
+					},
+					{
+						name: 'tokenSymbol';
+						type: 'string';
+					},
+					{
+						name: 'tokenUri';
+						type: 'string';
+					},
+					{
+						name: 'decimals';
+						type: 'u8';
+					}
+				];
+			};
+		},
 		{
 			name: 'VaultWithProtocolParams';
 			type: {
@@ -2276,6 +2389,61 @@ export type DriftVaults = {
 					index: false;
 				}
 			];
+		},
+		{
+			name: 'ShareTransferRecord';
+			fields: [
+				{
+					name: 'ts';
+					type: 'i64';
+					index: false;
+				},
+				{
+					name: 'vault';
+					type: 'publicKey';
+					index: false;
+				},
+				{
+					name: 'fromVaultDepositor';
+					type: 'publicKey';
+					index: false;
+				},
+				{
+					name: 'toVaultDepositor';
+					type: 'publicKey';
+					index: false;
+				},
+				{
+					name: 'shares';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'value';
+					type: 'u64';
+					index: false;
+				},
+				{
+					name: 'fromDepositorSharesBefore';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'fromDepositorSharesAfter';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'toDepositorSharesBefore';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'toDepositorSharesAfter';
+					type: 'u128';
+					index: false;
+				}
+			];
 		}
 	];
 	errors: [
@@ -2393,6 +2561,11 @@ export type DriftVaults = {
 			code: 6022;
 			name: 'VaultProtocolMissing';
 			msg: 'VaultProtocolMissing';
+		},
+		{
+			code: 6023;
+			name: 'InvalidTokenization';
+			msg: 'InvalidTokenization';
 		}
 	];
 };
@@ -3807,6 +3980,95 @@ export const IDL: DriftVaults = {
 	],
 	accounts: [
 		{
+			name: 'tokenizedVaultDepositor',
+			type: {
+				kind: 'struct',
+				fields: [
+					{
+						name: 'vault',
+						docs: ['The vault deposited into'],
+						type: 'publicKey',
+					},
+					{
+						name: 'pubkey',
+						docs: [
+							"The vault depositor account's pubkey. It is a pda of vault",
+						],
+						type: 'publicKey',
+					},
+					{
+						name: 'mint',
+						docs: [
+							'The token mint for tokenized shares owned by this VaultDepositor',
+						],
+						type: 'publicKey',
+					},
+					{
+						name: 'vaultShares',
+						docs: [
+							"share of vault owned by this depositor. vault_shares / vault.total_shares is depositor's ownership of vault_equity",
+						],
+						type: 'u128',
+					},
+					{
+						name: 'lastVaultShares',
+						docs: [
+							'stores the vault_shares from the most recent liquidity event (redeem or issuance) before a spl token',
+							'CPI is done, used to track invariants',
+						],
+						type: 'u128',
+					},
+					{
+						name: 'lastValidTs',
+						docs: ['creation ts of vault depositor'],
+						type: 'i64',
+					},
+					{
+						name: 'netDeposits',
+						docs: ['lifetime net deposits of vault depositor for the vault'],
+						type: 'i64',
+					},
+					{
+						name: 'totalDeposits',
+						docs: ['lifetime total deposits'],
+						type: 'u64',
+					},
+					{
+						name: 'totalWithdraws',
+						docs: ['lifetime total withdraws'],
+						type: 'u64',
+					},
+					{
+						name: 'cumulativeProfitShareAmount',
+						docs: [
+							'the token amount of gains the vault depositor has paid performance fees on',
+						],
+						type: 'i64',
+					},
+					{
+						name: 'profitShareFeePaid',
+						type: 'u64',
+					},
+					{
+						name: 'vaultSharesBase',
+						docs: ['the exponent for vault_shares decimal places'],
+						type: 'u32',
+					},
+					{
+						name: 'bump',
+						docs: ['The bump for the vault pda'],
+						type: 'u8',
+					},
+					{
+						name: 'padding',
+						type: {
+							array: ['u8', 3],
+						},
+					},
+				],
+			},
+		},
+		{
 			name: 'vaultDepositor',
 			type: {
 				kind: 'struct',
@@ -4196,6 +4458,30 @@ export const IDL: DriftVaults = {
 		},
 	],
 	types: [
+		{
+			name: 'InitializeTokenizedVaultDepositorParams',
+			type: {
+				kind: 'struct',
+				fields: [
+					{
+						name: 'tokenName',
+						type: 'string',
+					},
+					{
+						name: 'tokenSymbol',
+						type: 'string',
+					},
+					{
+						name: 'tokenUri',
+						type: 'string',
+					},
+					{
+						name: 'decimals',
+						type: 'u8',
+					},
+				],
+			},
+		},
 		{
 			name: 'VaultWithProtocolParams',
 			type: {
@@ -4676,6 +4962,61 @@ export const IDL: DriftVaults = {
 				},
 			],
 		},
+		{
+			name: 'ShareTransferRecord',
+			fields: [
+				{
+					name: 'ts',
+					type: 'i64',
+					index: false,
+				},
+				{
+					name: 'vault',
+					type: 'publicKey',
+					index: false,
+				},
+				{
+					name: 'fromVaultDepositor',
+					type: 'publicKey',
+					index: false,
+				},
+				{
+					name: 'toVaultDepositor',
+					type: 'publicKey',
+					index: false,
+				},
+				{
+					name: 'shares',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'value',
+					type: 'u64',
+					index: false,
+				},
+				{
+					name: 'fromDepositorSharesBefore',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'fromDepositorSharesAfter',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'toDepositorSharesBefore',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'toDepositorSharesAfter',
+					type: 'u128',
+					index: false,
+				},
+			],
+		},
 	],
 	errors: [
 		{
@@ -4792,6 +5133,11 @@ export const IDL: DriftVaults = {
 			code: 6022,
 			name: 'VaultProtocolMissing',
 			msg: 'VaultProtocolMissing',
+		},
+		{
+			code: 6023,
+			name: 'InvalidTokenization',
+			msg: 'InvalidTokenization',
 		},
 	],
 };

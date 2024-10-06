@@ -24,7 +24,7 @@ use crate::events::VaultDepositorAction;
 use crate::state::events::{VaultDepositorRecord, VaultDepositorV1Record};
 use crate::state::withdraw_request::WithdrawRequest;
 use crate::state::withdraw_unit::WithdrawUnit;
-use crate::state::{Vault, VaultFee, VaultProtocol};
+use crate::state::{Vault, VaultFee, VaultProtocol, VaultDepositorBase};
 use crate::validate;
 use crate::Size;
 

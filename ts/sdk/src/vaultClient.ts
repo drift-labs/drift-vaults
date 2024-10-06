@@ -57,6 +57,9 @@ import {
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
 import { UserMapConfig } from '@drift-labs/sdk/lib/userMap/userMapConfig';
 import { calculateRealizedVaultDepositorEquity } from './math';
+import { Metaplex } from '@metaplex-foundation/js';
+import { getOrCreateATAInstruction } from './utils';
+
 
 export type TxParams = {
 	cuLimit?: number;

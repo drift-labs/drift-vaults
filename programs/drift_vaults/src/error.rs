@@ -55,8 +55,6 @@ pub enum ErrorCode {
     VaultProtocolMissing,
     #[msg("InvalidTokenization")]
     InvalidTokenization,
-    #[msg("VaultProtocolMissing")]
-    VaultProtocolMissing,
 }
 
 impl From<DriftErrorCode> for ErrorCode {

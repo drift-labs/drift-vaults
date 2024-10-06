@@ -45,5 +45,5 @@ Setup deps:
 yarn && cd ts/sdk && yarn && yarn build && cd ..
 
 # can be any valid key
-export ANCHOR_WALLET=~/.config/solana/id.json && anchor test
+ANCHOR_WALLET=~/.config/solana/id.json && anchor test
 ```

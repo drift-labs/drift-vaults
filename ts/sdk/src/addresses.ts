@@ -54,3 +54,26 @@ export function getVaultProtocolAddressSync(
 		programId
 	)[0];
 }
+
+export function getTokenizedVaultAddressSync(
+	programId: PublicKey,
+	vault: PublicKey
+): PublicKey {
+	return PublicKey.findProgramAddressSync(
+		[
+			Buffer.from(anchor.utils.bytes.utf8.encode('tokenized_vault_depositor')),
+			vault.toBuffer(),
+		],
+		programId
+	)[0];
+}
+
+export function getTokenizedVaultMintAddressSync(
+	programId: PublicKey,
+	vault: PublicKey
+): PublicKey {
+	return PublicKey.findProgramAddressSync(
+		[Buffer.from(anchor.utils.bytes.utf8.encode('mint')), vault.toBuffer()],
+		programId
+	)[0];
+}

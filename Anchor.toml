@@ -35,4 +35,4 @@ address = "PwDiXFxQsGra4sFFTT8r1QWRMd4vfumiWC1jfWNfdYT"
 filename = "./deps/metaplex/PwDiXFxQsGra4sFFTT8r1QWRMd4vfumiWC1jfWNfdYT.json"
 
 [scripts]
-test = "yarn anchor-tests:tokenize"
+test = "yarn anchor-tests"
