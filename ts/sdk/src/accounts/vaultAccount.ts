@@ -94,7 +94,7 @@ export class VaultAccount extends VaultsProgramAccount<
 	} {
 		const accountData = this.accountSubscriber.getAccountAndSlot().data;
 
-		if (accountData.vaultProtocol.equals(SystemProgram.programId)) {
+		if (!accountData.vaultProtocol) {
 			throw new Error('VaultProtocol does not exist for vault');
 		}
 

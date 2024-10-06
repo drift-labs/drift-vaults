@@ -29,7 +29,19 @@ export type VaultParams = {
 	profitShare: number;
 	hurdleRate: number;
 	permissioned: boolean;
-	vaultProtocol: VaultProtocolParams | null;
+};
+
+export type VaultWithProtocolParams = {
+	name: number[];
+	spotMarketIndex: number;
+	redeemPeriod: BN;
+	maxTokens: BN;
+	minDepositAmount: BN;
+	managementFee: BN;
+	profitShare: number;
+	hurdleRate: number;
+	permissioned: boolean;
+	vaultProtocol: VaultProtocolParams;
 };
 
 export type VaultProtocolParams = {
@@ -89,8 +101,7 @@ export type Vault = {
 	bump: number;
 	permissioned: boolean;
 	lastManagerWithdrawRequest: WithdrawRequest;
-	/// If this is the default Pubkey (also equal to the SystemProgram) then it does not exist.
-	vaultProtocol: PublicKey;
+	vaultProtocol: boolean;
 };
 
 export type VaultDepositor = {
@@ -147,9 +158,13 @@ export interface VaultsProgramAccountSubscriber<
 	isSubscribed: boolean;
 
 	subscribe(): Promise<boolean>;
+
 	fetch(): Promise<void>;
+
 	updateData(account: Account, slot: number): void;
+
 	unsubscribe(): Promise<void>;
+
 	getAccountAndSlot(): DataAndSlot<Account>;
 }
 

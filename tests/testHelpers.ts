@@ -42,30 +42,8 @@ import {
 	MarketStatus,
 	DriftClient,
 	DriftClientConfig,
-	getOrderParams,
-	OrderType,
-	MarketType,
-	PositionDirection,
-	BASE_PRECISION,
-	parseLogs,
-	convertToNumber,
-	TWO,
-	getTokenAmount,
-	getSignedTokenAmount,
-	TEN,
-	ZERO,
 } from '@drift-labs/sdk';
-import {
-	DriftVaults,
-	getVaultDepositorAddressSync,
-	IDL,
-	VaultClient,
-} from '../ts/sdk';
-import {
-	getTokenizedVaultAddressSync,
-	getTokenizedVaultMintAddressSync,
-} from '../ts/sdk/src';
-import { Metaplex } from '@metaplex-foundation/js';
+import { IDL, VaultClient } from '../ts/sdk';
 
 export async function mockOracle(
 	price: number = 50 * 10e7,
@@ -1057,79 +1035,6 @@ export async function initializeSolSpotMarket(
 	return txSig;
 }
 
-export function calculateAllPdas(
-	vaultProgramId: PublicKey,
-	vault: PublicKey,
-	vaultDepositorAuthority: PublicKey
-): {
-	vaultDepositor: PublicKey;
-	tokenizedVaultDepositor: PublicKey;
-	mintAddress: PublicKey;
-	userVaultTokenAta: PublicKey;
-	vaultTokenizedTokenAta: PublicKey;
-} {
-	const mintAddress = getTokenizedVaultMintAddressSync(vaultProgramId, vault);
-
-	return {
-		vaultDepositor: getVaultDepositorAddressSync(
-			vaultProgramId,
-			vault,
-			vaultDepositorAuthority
-		),
-		tokenizedVaultDepositor: getTokenizedVaultAddressSync(
-			vaultProgramId,
-			vault
-		),
-		mintAddress,
-		userVaultTokenAta: getAssociatedTokenAddressSync(
-			mintAddress,
-			vaultDepositorAuthority,
-			true
-		),
-		vaultTokenizedTokenAta: getAssociatedTokenAddressSync(
-			mintAddress,
-			vault,
-			true
-		),
-	};
-}
-
-export async function validateTotalUserShares(
-	program: anchor.Program<DriftVaults>,
-	vault: PublicKey
-) {
-	const vaultAccount = await program.account.vault.fetch(vault);
-	const allVds = await program.account.vaultDepositor.all([
-		{
-			memcmp: {
-				offset: 8,
-				bytes: vault.toBase58(),
-			},
-		},
-	]);
-	const allTvds = await program.account.tokenizedVaultDepositor.all([
-		{
-			memcmp: {
-				offset: 8,
-				bytes: vault.toBase58(),
-			},
-		},
-	]);
-	const vdSharesTotal = allVds.reduce(
-		(acc, vd) => acc.add(vd.account.vaultShares),
-		new BN(0)
-	);
-	const tvdSharesTotal = allTvds.reduce(
-		(acc, vd) => acc.add(vd.account.vaultShares),
-		new BN(0)
-	);
-
-	assert(
-		tvdSharesTotal.add(vdSharesTotal).eq(vaultAccount.userShares),
-		`vdSharesTotal (${vdSharesTotal.toString()}) + tvdSharesTotal (${tvdSharesTotal.toString()}) != vault.userShares (${vaultAccount.userShares.toString()})`
-	);
-}
-
 export async function bootstrapSignerClientAndUser(params: {
 	payer: AnchorProvider;
 	programId: PublicKey;
@@ -1139,10 +1044,8 @@ export async function bootstrapSignerClientAndUser(params: {
 	vaultClientCliMode?: boolean;
 	skipUser?: boolean;
 	driftClientConfig?: Omit<DriftClientConfig, 'connection' | 'wallet'>;
-	metaplex?: Metaplex;
 }): Promise<{
 	signer: Keypair;
-	wallet: anchor.Wallet;
 	user: User;
 	userUSDCAccount: Keypair;
 	driftClient: DriftClient;
@@ -1169,6 +1072,7 @@ export async function bootstrapSignerClientAndUser(params: {
 
 	const signer = Keypair.generate();
 	await payer.connection.requestAirdrop(signer.publicKey, LAMPORTS_PER_SOL);
+	await sleep(1000);
 
 	const driftClient = new DriftClient({
 		connection: payer.connection,
@@ -1182,7 +1086,6 @@ export async function bootstrapSignerClientAndUser(params: {
 		oracleInfos,
 		accountSubscription,
 	});
-	const wallet = new anchor.Wallet(signer);
 	const provider = new anchor.AnchorProvider(
 		payer.connection,
 		new anchor.Wallet(signer),
@@ -1193,7 +1096,6 @@ export async function bootstrapSignerClientAndUser(params: {
 		driftClient,
 		program,
 		cliMode: vaultClientCliMode ?? true,
-		metaplex: params.metaplex,
 	});
 	const userUSDCAccount = await mockUserUSDCAccount(
 		usdcMint,
@@ -1221,100 +1123,10 @@ export async function bootstrapSignerClientAndUser(params: {
 	}
 	return {
 		signer,
-		wallet,
 		user,
 		userUSDCAccount,
 		driftClient,
 		vaultClient,
 		provider,
 	};
-}
-
-export async function getVaultDepositorValue(params: {
-	vaultClient: VaultClient,
-	vault: PublicKey,
-	vaultDepositor: PublicKey,
-	tokenizedVaultDepositor?: PublicKey,
-	tokenizedVaultAta?: PublicKey,
-	print?: boolean,
-}): Promise<{
-	vaultEquity: BN,
-	vaultShares: BN,
-	vaultDepositorShares: BN,
-	vaultDepositorEquity: BN,
-	vaultDepositorShareOfVault: number,
-	tokenizedVaultDepositorEquity?: BN,
-	tokenizedVaultDepositorShareOfVault?: number,
-	ataBalance?: BN,
-	ataShareOfSupply?: number,
-	ataValue?: BN,
-}> {
-	const vaultAccount = await params.vaultClient.getVault(params.vault);
-	const vaultDepositorAccount = await params.vaultClient.program.account.vaultDepositor.fetch(params.vaultDepositor);
-	const tokenizedVaultDepositorAccount = params.tokenizedVaultDepositor ?
-		await params.vaultClient.program.account.tokenizedVaultDepositor.fetch(params.tokenizedVaultDepositor)
-		: undefined;
-
-	const vaultEquity = await params.vaultClient.calculateVaultEquityInDepositAsset({
-		address: params.vault,
-	});
-
-	assert(vaultAccount.sharesBase === vaultDepositorAccount.vaultSharesBase, 'vaultDepositorAccount.vaultSharesBase is not equal to vaultAccount.sharesBase');
-	if (tokenizedVaultDepositorAccount) {
-		assert(tokenizedVaultDepositorAccount.vaultSharesBase === vaultAccount.sharesBase, 'tokenizedVaultDepositorAccount.vaultSharesBase is not equal to vaultAccount.sharesBase');
-	}
-
-
-	let tokenizedVaultDepositorEquity: BN;
-	let tokenizedVaultDepositorShareOfVault: number;
-	let ataBalance: BN;
-	let ataValue: BN;
-	let ataShareOfSupply: number;
-	if (params.tokenizedVaultDepositor) {
-		tokenizedVaultDepositorEquity = vaultEquity.mul(tokenizedVaultDepositorAccount.vaultShares).div(vaultAccount.totalShares);
-		tokenizedVaultDepositorShareOfVault = tokenizedVaultDepositorAccount.vaultShares.toNumber() / vaultAccount.totalShares.toNumber();
-
-		if (params.tokenizedVaultAta) {
-			const ata = await params.vaultClient.driftClient.connection.getTokenAccountBalance(params.tokenizedVaultAta);
-			const mint = await getMint(params.vaultClient.driftClient.connection, tokenizedVaultDepositorAccount.mint);
-			const totalSupply = new BN(mint.supply.toString());
-
-			ataBalance = new BN(ata.value.amount);
-			if (!totalSupply.isZero()) {
-				ataShareOfSupply = ataBalance.toNumber() / totalSupply.toNumber();
-				ataValue = tokenizedVaultDepositorEquity.mul(ataBalance).div(totalSupply);
-			} else {
-				ataShareOfSupply = null;
-				ataValue = null;
-			}
-		}
-	}
-
-	const vaultDepositorEquity = vaultEquity.mul(vaultDepositorAccount.vaultShares).div(vaultAccount.totalShares);
-	const vaultDepositorShareOfVault = vaultDepositorAccount.vaultShares.toNumber() / vaultAccount.totalShares.toNumber()
-
-	if (params.print) {
-		console.log(`Vault:          ${params.vault.toBase58()}`);
-		console.log(`VaultDepositor: ${params.vaultDepositor.toBase58()}`);
-		console.log(`TokenizedVaultDepositor: ${params.tokenizedVaultDepositor?.toBase58()}`);
-		console.log(`  vaultEquity:          ${vaultEquity.toString()}`);
-		console.log(`  vaultDepositorEquity: ${vaultDepositorEquity.toString()}`);
-		console.log(`  vaultDepositorShareOfVault: ${vaultDepositorShareOfVault * 100}%`);
-		console.log(`  tokenizedVaultDepositorEquity:       ${tokenizedVaultDepositorEquity?.toString()}`);
-		console.log(`  tokenizedVaultDepositorShareOfVault: ${tokenizedVaultDepositorShareOfVault * 100}%`);
-		console.log(`  ataBalance: ${ataBalance?.toString()}`);
-		console.log(`  ataValue:   ${ataValue?.toString()}`);
-		console.log(`  ataShareOfSupply: ${ataShareOfSupply * 100}%`);
-	}
-
-	return {
-		vaultEquity,
-		vaultShares: vaultAccount.totalShares,
-		vaultDepositorShares: vaultDepositorAccount.vaultShares,
-		vaultDepositorEquity,
-		vaultDepositorShareOfVault,
-		ataBalance,
-		ataValue,
-		ataShareOfSupply,
-	}
 }

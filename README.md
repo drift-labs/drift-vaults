@@ -28,14 +28,6 @@ rustup override set 1.70.0
 sh -c "$(curl -sSfL https://release.solana.com/v1.16.27/install)"
 ```
 
-* `gcc-12` (https://solana.stackexchange.com/a/6989)
-```
-brew install gcc@12
-
-# update CPATH
-sudo echo 'export CPATH="/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include"' >> ~/.zshrc
-```
-
 ## Run tests
 If on Mac and getting this error:
 ```shell
@@ -53,10 +45,5 @@ Setup deps:
 yarn && cd ts/sdk && yarn && yarn build && cd ..
 
 # can be any valid key
-export ANCHOR_WALLET=~/.config/solana/id.json
-```
-
-Run all tests:
-```shell
-anchor test
+export ANCHOR_WALLET=~/.config/solana/id.json && anchor test
 ```

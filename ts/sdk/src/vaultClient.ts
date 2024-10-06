@@ -51,13 +51,12 @@ import {
 	VaultParams,
 	VaultProtocol,
 	VaultProtocolParams,
+	VaultWithProtocolParams,
 	WithdrawUnit,
 } from './types/types';
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
 import { UserMapConfig } from '@drift-labs/sdk/lib/userMap/userMapConfig';
-import { Metaplex } from '@metaplex-foundation/js';
 import { calculateRealizedVaultDepositorEquity } from './math';
-import { getOrCreateATAInstruction } from './utils';
 
 export type TxParams = {
 	cuLimit?: number;
@@ -385,9 +384,9 @@ export class VaultClient {
 		}
 
 		let vaultProtocol: VaultProtocol | undefined = undefined;
-		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+		if (vaultAccount.vaultProtocol) {
 			vaultProtocol = await this.program.account.vaultProtocol.fetch(
-				vaultAccount.vaultProtocol
+				this.getVaultProtocolAddress(vaultAccount.pubkey)
 			);
 		}
 
@@ -443,15 +442,7 @@ export class VaultClient {
 		permissioned: boolean;
 		vaultProtocol?: VaultProtocolParams;
 	}): Promise<TransactionSignature> {
-		// This is a workaround to make client backwards compatible.
-		// VaultProtocol is optionally undefined, but the anchor type is optionally null.
-		// Old clients will default to undefined which prevents old clients from having to pass in a null value.
-		// Instead, we can cast to null internally.
-		const _params: VaultParams = {
-			...params,
-			vaultProtocol: params.vaultProtocol ? params.vaultProtocol : null,
-		};
-
+		const { vaultProtocol: vaultProtocolParams, ...vaultParams } = params;
 		const vault = getVaultAddressSync(this.program.programId, params.name);
 		const tokenAccount = getTokenVaultAddressSync(
 			this.program.programId,
@@ -488,19 +479,16 @@ export class VaultClient {
 			driftProgram: this.driftClient.program.programId,
 		};
 
-		if (params.vaultProtocol) {
+		if (vaultProtocolParams) {
 			const vaultProtocol = this.getVaultProtocolAddress(
 				getVaultAddressSync(this.program.programId, params.name)
 			);
-			const remainingAccounts: AccountMeta[] = [
-				{
-					pubkey: vaultProtocol,
-					isSigner: false,
-					isWritable: true,
-				},
-			];
+			const _params: VaultWithProtocolParams = {
+				...vaultParams,
+				vaultProtocol: vaultProtocolParams,
+			};
 			return await this.program.methods
-				.initializeVault(_params)
+				.initializeVaultWithProtocol(_params)
 				.preInstructions([
 					ComputeBudgetProgram.setComputeUnitLimit({
 						units: 400_000,
@@ -509,10 +497,13 @@ export class VaultClient {
 						microLamports: 300_000,
 					}),
 				])
-				.accounts(accounts)
-				.remainingAccounts(remainingAccounts)
+				.accounts({
+					...accounts,
+					vaultProtocol,
+				})
 				.rpc();
 		} else {
+			const _params: VaultParams = vaultParams;
 			return await this.program.methods
 				.initializeVault(_params)
 				.preInstructions([
@@ -605,7 +596,7 @@ export class VaultClient {
 			userAccounts: [user.getUserAccount()],
 			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
 		});
-		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+		if (vaultAccount.vaultProtocol) {
 			const vaultProtocol = this.getVaultProtocolAddress(vault);
 			remainingAccounts.push({
 				pubkey: vaultProtocol,
@@ -660,7 +651,7 @@ export class VaultClient {
 			userAccounts: [user.getUserAccount()],
 			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
 		});
-		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+		if (vaultAccount.vaultProtocol) {
 			const vaultProtocol = this.getVaultProtocolAddress(vault);
 			remainingAccounts.push({
 				pubkey: vaultProtocol,
@@ -732,7 +723,7 @@ export class VaultClient {
 		const remainingAccounts = this.driftClient.getRemainingAccounts({
 			userAccounts: [user.getUserAccount()],
 		});
-		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+		if (vaultAccount.vaultProtocol) {
 			const vaultProtocol = this.getVaultProtocolAddress(vault);
 			remainingAccounts.push({
 				pubkey: vaultProtocol,
@@ -776,7 +767,7 @@ export class VaultClient {
 			userAccounts: [user.getUserAccount()],
 			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
 		});
-		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+		if (vaultAccount.vaultProtocol) {
 			const vaultProtocol = this.getVaultProtocolAddress(vault);
 			remainingAccounts.push({
 				pubkey: vaultProtocol,
@@ -1332,7 +1323,7 @@ export class VaultClient {
 			userAccounts: [user.getUserAccount()],
 			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
 		});
-		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+		if (vaultAccount.vaultProtocol) {
 			const vaultProtocol = this.getVaultProtocolAddress(vaultPubKey);
 			remainingAccounts.push({
 				pubkey: vaultProtocol,
@@ -1494,7 +1485,7 @@ export class VaultClient {
 		const remainingAccounts = this.driftClient.getRemainingAccounts({
 			userAccounts: [user.getUserAccount()],
 		});
-		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+		if (vaultAccount.vaultProtocol) {
 			const vaultProtocol = this.getVaultProtocolAddress(
 				vaultDepositorAccount.vault
 			);
@@ -1678,7 +1669,7 @@ export class VaultClient {
 			userAccounts: [user.getUserAccount()],
 			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
 		});
-		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+		if (vaultAccount.vaultProtocol) {
 			const vaultProtocol = this.getVaultProtocolAddress(
 				vaultDepositorAccount.vault
 			);
@@ -1780,7 +1771,7 @@ export class VaultClient {
 		const remainingAccounts = this.driftClient.getRemainingAccounts({
 			userAccounts: [user.getUserAccount()],
 		});
-		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+		if (vaultAccount.vaultProtocol) {
 			const vaultProtocol = this.getVaultProtocolAddress(
 				vaultDepositorAccount.vault
 			);
@@ -2044,7 +2035,7 @@ export class VaultClient {
 			userAccounts: [user.getUserAccount()],
 			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
 		});
-		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+		if (vaultAccount.vaultProtocol) {
 			const vaultProtocol = this.getVaultProtocolAddress(vault);
 			remainingAccounts.push({
 				pubkey: vaultProtocol,
@@ -2116,7 +2107,7 @@ export class VaultClient {
 		const remainingAccounts = this.driftClient.getRemainingAccounts({
 			userAccounts: [user.getUserAccount()],
 		});
-		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+		if (vaultAccount.vaultProtocol) {
 			const vaultProtocol = this.getVaultProtocolAddress(vault);
 			remainingAccounts.push({
 				pubkey: vaultProtocol,
@@ -2160,7 +2151,7 @@ export class VaultClient {
 			userAccounts: [user.getUserAccount()],
 			writableSpotMarketIndexes: [vaultAccount.spotMarketIndex],
 		});
-		if (!vaultAccount.vaultProtocol.equals(SystemProgram.programId)) {
+		if (vaultAccount.vaultProtocol) {
 			const vaultProtocol = this.getVaultProtocolAddress(vault);
 			remainingAccounts.push({
 				pubkey: vaultProtocol,

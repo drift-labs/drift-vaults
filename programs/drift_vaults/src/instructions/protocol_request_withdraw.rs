@@ -5,9 +5,7 @@ use drift::state::user::User;
 use crate::constraints::{
     is_protocol_for_vault, is_user_for_vault, is_user_stats_for_vault, is_vault_protocol_for_vault,
 };
-use crate::error::ErrorCode;
-use crate::{validate, AccountMapProvider};
-use crate::{Vault, VaultProtocol, WithdrawUnit};
+use crate::{AccountMapProvider, Vault, VaultProtocol, WithdrawUnit};
 
 pub fn protocol_request_withdraw<'c: 'info, 'info>(
     ctx: Context<'_, '_, 'c, 'info, ProtocolRequestWithdraw<'info>>,
@@ -20,13 +18,6 @@ pub fn protocol_request_withdraw<'c: 'info, 'info>(
 
     // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
     let mut vp = Some(ctx.accounts.vault_protocol.load_mut()?);
-    if vp.is_none() {
-        validate!(
-            false,
-            ErrorCode::VaultProtocolMissing,
-            "Protocol cannot request withdraw from a non-protocol vault"
-        )?;
-    }
 
     let user = ctx.accounts.drift_user.load()?;
     let spot_market_index = vault.spot_market_index;
@@ -47,17 +38,25 @@ pub fn protocol_request_withdraw<'c: 'info, 'info>(
 
 #[derive(Accounts)]
 pub struct ProtocolRequestWithdraw<'info> {
-    #[account(mut,
-  constraint = is_protocol_for_vault(& vault, & vault_protocol, & protocol) ?)]
+    #[account(
+        mut,
+        constraint = is_protocol_for_vault(&vault, &vault_protocol, &protocol)?
+    )]
     pub vault: AccountLoader<'info, Vault>,
-    #[account(mut,
-  constraint = is_vault_protocol_for_vault(& vault_protocol, & vault) ?)]
+    #[account(
+        mut,
+        constraint = is_vault_protocol_for_vault(&vault_protocol, &vault)?
+    )]
     pub vault_protocol: AccountLoader<'info, VaultProtocol>,
     pub protocol: Signer<'info>,
-    #[account(constraint = is_user_stats_for_vault(& vault, & drift_user_stats) ?)]
+    #[account(
+        constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?
+    )]
     /// CHECK: checked in drift cpi
     pub drift_user_stats: AccountInfo<'info>,
-    #[account(constraint = is_user_for_vault(& vault, & drift_user.key()) ?)]
+    #[account(
+        constraint = is_user_for_vault(&vault, &drift_user.key())?
+    )]
     /// CHECK: checked in drift cpi
     pub drift_user: AccountLoader<'info, User>,
     /// CHECK: checked in drift cpi

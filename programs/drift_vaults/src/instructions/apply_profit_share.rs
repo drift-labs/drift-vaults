@@ -7,9 +7,9 @@ use crate::constraints::{
     is_delegate_for_vault, is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault,
     is_vault_for_vault_depositor,
 };
-use crate::error::ErrorCode;
-use crate::{validate, AccountMapProvider};
-use crate::{Vault, VaultDepositor, VaultProtocolProvider};
+use crate::state::{Vault, VaultProtocolProvider};
+use crate::AccountMapProvider;
+use crate::VaultDepositor;
 
 pub fn apply_profit_share<'c: 'info, 'info>(
     ctx: Context<'_, '_, 'c, 'info, ApplyProfitShare<'info>>,
@@ -20,16 +20,9 @@ pub fn apply_profit_share<'c: 'info, 'info>(
     let mut vault_depositor = ctx.accounts.vault_depositor.load_mut()?;
 
     // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
-    // let mut vp = ctx.vault_protocol().map(|vp| vp.load_mut()).transpose()?;
     let mut vp = ctx.vault_protocol();
-    let vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
-
-    validate!(
-        (vault.vault_protocol == Pubkey::default() && vp.is_none())
-            || (vault.vault_protocol != Pubkey::default() && vp.is_some()),
-        ErrorCode::VaultProtocolMissing,
-        "vault protocol missing in remaining accounts"
-    )?;
+    vault.validate_vault_protocol(&vp)?;
+    let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
 
     let user = ctx.accounts.drift_user.load()?;
     let spot_market_index = vault.spot_market_index;
@@ -43,10 +36,7 @@ pub fn apply_profit_share<'c: 'info, 'info>(
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
-    match vp {
-        None => vault_depositor.apply_profit_share(vault_equity, &mut vault, &mut None)?,
-        Some(vp) => vault_depositor.apply_profit_share(vault_equity, &mut vault, &mut Some(vp))?,
-    };
+    vault_depositor.apply_profit_share(vault_equity, &mut vault, &mut vp)?;
 
     Ok(())
 }

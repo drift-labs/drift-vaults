@@ -12,13 +12,6 @@ pub fn update_vault_protocol<'c: 'info, 'info>(
 
     // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
     let vp = Some(ctx.accounts.vault_protocol.load_mut()?);
-    if vp.is_none() {
-        validate!(
-            false,
-            ErrorCode::VaultProtocolMissing,
-            "Protocol cannot update vault protocol for a non-protocol vault"
-        )?;
-    }
 
     validate!(!vault.in_liquidation(), ErrorCode::OngoingLiquidation)?;
 
@@ -55,11 +48,15 @@ pub struct UpdateVaultProtocolParams {
 
 #[derive(Accounts)]
 pub struct UpdateVaultProtocol<'info> {
-    #[account(mut,
-  constraint = is_protocol_for_vault(& vault, & vault_protocol, & protocol) ?)]
+    #[account(
+        mut,
+        constraint = is_protocol_for_vault(&vault, &vault_protocol, &protocol)?
+    )]
     pub vault: AccountLoader<'info, Vault>,
     pub protocol: Signer<'info>,
-    #[account(mut,
-  constraint = is_vault_protocol_for_vault(& vault_protocol, & vault) ?)]
+    #[account(
+        mut,
+        constraint = is_vault_protocol_for_vault(&vault_protocol, &vault)?
+    )]
     pub vault_protocol: AccountLoader<'info, VaultProtocol>,
 }

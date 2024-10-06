@@ -26,10 +26,12 @@ pub struct InitializeCompetitor<'info> {
     pub rent: Sysvar<'info, Rent>,
     pub system_program: Program<'info, System>,
 
-    #[account(mut,
-  seeds = [b"competitor", drift_competitions.key().as_ref(), vault.key().as_ref()],
-  bump,
-  seeds::program = drift_competitions_program.key(),)]
+    #[account(
+        mut,
+        seeds = [b"competitor", drift_competitions.key().as_ref(), vault.key().as_ref()],
+        bump,
+        seeds::program = drift_competitions_program.key(),
+    )]
     /// CHECK: checked in drift cpi
     pub competitor: AccountInfo<'info>,
     #[account(mut)]

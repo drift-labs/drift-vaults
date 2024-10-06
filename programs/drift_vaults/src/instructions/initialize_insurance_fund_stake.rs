@@ -30,7 +30,7 @@ pub struct InitializeInsuranceFundStake<'info> {
     pub system_program: Program<'info, System>,
 
     #[account(
-        constraint = is_spot_market_for_vault(&vault, &drift_spot_market, market_index)?,
+        constraint = is_spot_market_for_vault(&vault, &drift_spot_market, market_index)?
     )]
     pub drift_spot_market: AccountLoader<'info, SpotMarket>,
     /// CHECK: checked in drift cpi

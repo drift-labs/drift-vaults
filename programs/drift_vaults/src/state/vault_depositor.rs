@@ -1,7 +1,3 @@
-use crate::error::ErrorCode;
-use crate::state::withdraw_request::WithdrawRequest;
-use crate::state::withdraw_unit::WithdrawUnit;
-use crate::{validate, Size, VaultDepositorBase};
 use std::cell::RefMut;
 
 use anchor_lang::prelude::*;
@@ -9,13 +5,6 @@ use drift::controller::spot_balance::update_spot_balances;
 use drift::error::ErrorCode as DriftErrorCode;
 use drift::math::casting::Cast;
 use drift::math::constants::PERCENTAGE_PRECISION;
-
-use crate::state::vault_protocol::{VaultFee, VaultProtocol};
-use crate::state::Vault;
-use static_assertions::const_assert_eq;
-
-use crate::events::{VaultDepositorAction, VaultDepositorRecord, VaultDepositorV1Record};
-
 use drift::math::insurance::{
     if_shares_to_vault_amount as depositor_shares_to_vault_amount,
     vault_amount_to_if_shares as vault_amount_to_depositor_shares,
@@ -28,6 +17,16 @@ use drift::state::spot_market::SpotBalanceType;
 use drift::state::spot_market_map::SpotMarketMap;
 use drift::state::user::User;
 use drift_macros::assert_no_slop;
+use static_assertions::const_assert_eq;
+
+use crate::error::ErrorCode;
+use crate::events::VaultDepositorAction;
+use crate::state::events::{VaultDepositorRecord, VaultDepositorV1Record};
+use crate::state::withdraw_request::WithdrawRequest;
+use crate::state::withdraw_unit::WithdrawUnit;
+use crate::state::{Vault, VaultFee, VaultProtocol};
+use crate::validate;
+use crate::Size;
 
 #[assert_no_slop]
 #[account(zero_copy(unsafe))]
@@ -229,13 +228,12 @@ impl VaultDepositor {
     }
 
     pub fn apply_rebase(
-        self: &mut VaultDepositor,
+        &mut self,
         vault: &mut Vault,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
         vault_equity: u64,
     ) -> Result<Option<u128>> {
         vault.apply_rebase(vault_protocol, vault_equity)?;
-
         let mut rebase_divisor = None;
 
         if vault.shares_base != self.vault_shares_base {
@@ -252,7 +250,7 @@ impl VaultDepositor {
             msg!(
                 "rebasing vault depositor: base: {} -> {} ",
                 self.vault_shares_base,
-                vault.shares_base,
+                vault.shares_base
             );
 
             self.vault_shares_base = vault.shares_base;
@@ -269,6 +267,7 @@ impl VaultDepositor {
             self.update_vault_shares(new_vault_shares, vault)?;
 
             self.last_withdraw_request.rebase(_rebase_divisor)?;
+
             rebase_divisor = Some(_rebase_divisor);
         }
 
@@ -358,6 +357,7 @@ impl VaultDepositor {
         let vault_shares_before = self.checked_vault_shares(vault)?;
         let total_vault_shares_before = vault.total_shares;
         let user_vault_shares_before = vault.user_shares;
+        let protocol_shares_before = vault.get_protocol_shares(vault_protocol);
 
         let VaultFee {
             management_fee_payment,
@@ -382,6 +382,7 @@ impl VaultDepositor {
         vault.user_shares = vault.user_shares.safe_add(n_shares)?;
 
         let vault_shares_after = self.checked_vault_shares(vault)?;
+        let protocol_shares_after = vault.get_protocol_shares(vault_protocol);
 
         match vault_protocol {
             None => {
@@ -425,6 +426,8 @@ impl VaultDepositor {
                     manager_profit_share,
                     management_fee: management_fee_payment,
                     management_fee_shares,
+                    protocol_shares_before,
+                    protocol_shares_after,
                 });
             }
         }
@@ -450,6 +453,8 @@ impl VaultDepositor {
         } = vault.apply_fee(vault_protocol, vault_equity, now)?;
         let (manager_profit_share, protocol_profit_share) =
             self.apply_profit_share(vault_equity, vault, vault_protocol)?;
+        msg!("manager_profit_share: {}", manager_profit_share);
+        msg!("protocol_profit_share: {}", protocol_profit_share);
 
         let (withdraw_value, n_shares) = withdraw_unit.get_withdraw_value_and_shares(
             withdraw_amount,
@@ -468,6 +473,7 @@ impl VaultDepositor {
         let vault_shares_before: u128 = self.checked_vault_shares(vault)?;
         let total_vault_shares_before = vault.total_shares;
         let user_vault_shares_before = vault.user_shares;
+        let protocol_shares_before = vault.get_protocol_shares(vault_protocol);
 
         self.last_withdraw_request.set(
             vault_shares_before,
@@ -479,6 +485,7 @@ impl VaultDepositor {
         vault.total_withdraw_requested = vault.total_withdraw_requested.safe_add(withdraw_value)?;
 
         let vault_shares_after = self.checked_vault_shares(vault)?;
+        let protocol_shares_after = vault.get_protocol_shares(vault_protocol);
 
         match vault_protocol {
             None => {
@@ -522,6 +529,8 @@ impl VaultDepositor {
                     manager_profit_share,
                     management_fee: management_fee_payment,
                     management_fee_shares,
+                    protocol_shares_before,
+                    protocol_shares_after,
                 });
             }
         }
@@ -541,6 +550,7 @@ impl VaultDepositor {
         let vault_shares_before: u128 = self.checked_vault_shares(vault)?;
         let total_vault_shares_before = vault.total_shares;
         let user_vault_shares_before = vault.user_shares;
+        let protocol_shares_before = vault.get_protocol_shares(vault_protocol);
 
         let VaultFee {
             management_fee_payment,
@@ -557,7 +567,14 @@ impl VaultDepositor {
         vault.total_shares = vault.total_shares.safe_sub(vault_shares_lost)?;
         vault.user_shares = vault.user_shares.safe_sub(vault_shares_lost)?;
 
+        if let Some(vp) = vault_protocol {
+            vp.protocol_profit_and_fee_shares = vp
+                .protocol_profit_and_fee_shares
+                .safe_sub(vault_shares_lost)?;
+        }
+
         let vault_shares_after = self.checked_vault_shares(vault)?;
+        let protocol_shares_after = vault.get_protocol_shares(vault_protocol);
 
         match vault_protocol {
             None => {
@@ -601,6 +618,8 @@ impl VaultDepositor {
                     manager_profit_share: 0,
                     management_fee: management_fee_payment,
                     management_fee_shares,
+                    protocol_shares_before,
+                    protocol_shares_after,
                 });
             }
         }
@@ -629,6 +648,7 @@ impl VaultDepositor {
         let vault_shares_before: u128 = self.checked_vault_shares(vault)?;
         let total_vault_shares_before = vault.total_shares;
         let user_vault_shares_before = vault.user_shares;
+        let protocol_shares_before = vault.get_protocol_shares(vault_protocol);
 
         let n_shares = self.last_withdraw_request.shares;
 
@@ -683,6 +703,7 @@ impl VaultDepositor {
         self.last_withdraw_request.reset(now)?;
 
         let vault_shares_after = self.checked_vault_shares(vault)?;
+        let protocol_shares_after = vault.get_protocol_shares(vault_protocol);
 
         match vault_protocol {
             None => {
@@ -726,6 +747,8 @@ impl VaultDepositor {
                     manager_profit_share: 0,
                     management_fee: management_fee_payment,
                     management_fee_shares,
+                    protocol_shares_before,
+                    protocol_shares_after,
                 });
             }
         }
@@ -807,10 +830,12 @@ impl VaultDepositor {
         let vault_shares_before = self.checked_vault_shares(vault)?;
         let total_vault_shares_before = vault.total_shares;
         let user_vault_shares_before = vault.user_shares;
+        let protocol_shares_before = vault.get_protocol_shares(vault_protocol);
 
         let (manager_profit_share, protocol_profit_share) =
             self.apply_profit_share(vault_equity, vault, vault_protocol)?;
         let profit_share = manager_profit_share.saturating_add(protocol_profit_share);
+        let protocol_shares_after = vault.get_protocol_shares(vault_protocol);
 
         match vault_protocol {
             None => {
@@ -854,6 +879,8 @@ impl VaultDepositor {
                     manager_profit_share,
                     management_fee: management_fee_payment,
                     management_fee_shares,
+                    protocol_shares_before,
+                    protocol_shares_after,
                 });
             }
         }

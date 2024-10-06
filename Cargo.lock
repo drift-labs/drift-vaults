@@ -1045,13 +1045,46 @@ dependencies = [
  "num-traits",
  "phoenix-v1",
  "pyth-client",
- "pyth-solana-receiver-sdk",
- "pythnet-sdk",
+ "pyth-solana-receiver-sdk 0.3.0 (git+https://github.com/drift-labs/pyth-crosschain?rev=04cf2c)",
+ "pythnet-sdk 2.1.0 (git+https://github.com/drift-labs/pyth-crosschain?rev=04cf2c)",
  "serum_dex",
  "solana-program",
  "solana-security-txt",
  "static_assertions",
- "switchboard",
+ "switchboard 0.1.0 (git+https://github.com/drift-labs/protocol-v2.git?rev=v2.85.1)",
+ "thiserror",
+ "uint",
+]
+
+[[package]]
+name = "drift"
+version = "2.95.0"
+source = "git+https://github.com/drift-labs/protocol-v2.git?rev=v2.95.0#41d25949c64b79edcb819bbcd3a3b0962ea320e5"
+dependencies = [
+ "ahash 0.8.6",
+ "anchor-lang",
+ "anchor-spl",
+ "arrayref",
+ "base64 0.13.0",
+ "borsh 0.10.3",
+ "bytemuck",
+ "byteorder",
+ "drift-macros",
+ "enumflags2",
+ "num-derive 0.3.3",
+ "num-integer",
+ "num-traits",
+ "openbook-v2-light",
+ "phoenix-v1",
+ "pyth-client",
+ "pyth-solana-receiver-sdk 0.3.0 (git+https://github.com/drift-labs/pyth-crosschain?rev=3e8a24ecd0bcf22b787313e2020f4186bb22c729)",
+ "pythnet-sdk 2.1.0 (git+https://github.com/drift-labs/pyth-crosschain?rev=3e8a24ecd0bcf22b787313e2020f4186bb22c729)",
+ "serum_dex",
+ "solana-program",
+ "solana-security-txt",
+ "static_assertions",
+ "switchboard 0.1.0 (git+https://github.com/drift-labs/protocol-v2.git?rev=v2.95.0)",
+ "switchboard-on-demand",
  "thiserror",
  "uint",
 ]
@@ -1065,7 +1098,7 @@ dependencies = [
  "anchor-lang",
  "anchor-spl",
  "bytemuck",
- "drift",
+ "drift 2.85.1",
  "drift-macros",
  "getrandom 0.2.9",
  "static_assertions",
@@ -1089,7 +1122,7 @@ dependencies = [
  "anchor-lang",
  "anchor-spl",
  "bytemuck",
- "drift",
+ "drift 2.95.0",
  "drift-competitions",
  "drift-macros",
  "static_assertions",
@@ -1888,7 +1921,7 @@ version = "3.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ba8ee05284d79b367ae8966d558e1a305a781fc80c9df51f37775169117ba64f"
 dependencies = [
- "borsh 0.10.3",
+ "borsh 0.9.3",
  "num-derive 0.3.3",
  "num-traits",
  "solana-program",
@@ -2100,6 +2133,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 
 [[package]]
+name = "openbook-v2-light"
+version = "0.1.0"
+source = "git+https://github.com/drift-labs/protocol-v2.git?rev=v2.95.0#41d25949c64b79edcb819bbcd3a3b0962ea320e5"
+dependencies = [
+ "anchor-lang",
+ "borsh 0.10.3",
+ "bytemuck",
+]
+
+[[package]]
 name = "parking_lot"
 version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2297,7 +2340,18 @@ source = "git+https://github.com/drift-labs/pyth-crosschain?rev=04cf2c#04cf2c016
 dependencies = [
  "anchor-lang",
  "hex",
- "pythnet-sdk",
+ "pythnet-sdk 2.1.0 (git+https://github.com/drift-labs/pyth-crosschain?rev=04cf2c)",
+ "solana-program",
+]
+
+[[package]]
+name = "pyth-solana-receiver-sdk"
+version = "0.3.0"
+source = "git+https://github.com/drift-labs/pyth-crosschain?rev=3e8a24ecd0bcf22b787313e2020f4186bb22c729#3e8a24ecd0bcf22b787313e2020f4186bb22c729"
+dependencies = [
+ "anchor-lang",
+ "hex",
+ "pythnet-sdk 2.1.0 (git+https://github.com/drift-labs/pyth-crosschain?rev=3e8a24ecd0bcf22b787313e2020f4186bb22c729)",
  "solana-program",
 ]
 
@@ -2305,6 +2359,27 @@ dependencies = [
 name = "pythnet-sdk"
 version = "2.1.0"
 source = "git+https://github.com/drift-labs/pyth-crosschain?rev=04cf2c#04cf2c01642a2ce0a0f620652034755d3e81d576"
+dependencies = [
+ "anchor-lang",
+ "bincode",
+ "borsh 0.10.3",
+ "bytemuck",
+ "byteorder",
+ "fast-math",
+ "hex",
+ "proc-macro2",
+ "rustc_version 0.4.0",
+ "serde",
+ "sha3 0.10.8",
+ "slow_primes",
+ "solana-program",
+ "thiserror",
+]
+
+[[package]]
+name = "pythnet-sdk"
+version = "2.1.0"
+source = "git+https://github.com/drift-labs/pyth-crosschain?rev=3e8a24ecd0bcf22b787313e2020f4186bb22c729#3e8a24ecd0bcf22b787313e2020f4186bb22c729"
 dependencies = [
  "anchor-lang",
  "bincode",
@@ -3622,6 +3697,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "switchboard"
+version = "0.1.0"
+source = "git+https://github.com/drift-labs/protocol-v2.git?rev=v2.95.0#41d25949c64b79edcb819bbcd3a3b0962ea320e5"
+dependencies = [
+ "anchor-lang",
+]
+
+[[package]]
 name = "switchboard-common"
 version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3634,6 +3717,16 @@ dependencies = [
  "serde_json",
  "sha2 0.10.8",
  "sha3 0.10.8",
+]
+
+[[package]]
+name = "switchboard-on-demand"
+version = "0.1.0"
+source = "git+https://github.com/drift-labs/protocol-v2.git?rev=v2.95.0#41d25949c64b79edcb819bbcd3a3b0962ea320e5"
+dependencies = [
+ "anchor-lang",
+ "bytemuck",
+ "solana-program",
 ]
 
 [[package]]

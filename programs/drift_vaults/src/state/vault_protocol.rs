@@ -38,7 +38,6 @@ pub struct VaultProtocol {
     pub protocol_profit_share: u32,
     pub bump: u8,
     pub version: u8,
-    /// [`VaultProtocol`] is 117 bytes with padding to 120 bytes to make it a multiple of 8.
     pub padding: [u8; 2],
 }
 

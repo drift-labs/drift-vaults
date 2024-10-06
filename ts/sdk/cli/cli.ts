@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 import {
     initVault,
     viewVault,
@@ -23,7 +25,6 @@ import {
 
 import { Command, Option } from 'commander';
 import { viewVaultDepositor } from "./commands/viewVaultDepositor";
-require('dotenv').config();
 
 const program = new Command();
 program
