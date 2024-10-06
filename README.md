@@ -1,4 +1,4 @@
-# Drift Vaults
+# tDrift Vaults
 
 soon^TM
 
@@ -12,19 +12,51 @@ soon^TM
 * rust 1.70.0
 * solana 1.16.27
 
-```
+```shell
+# if you don't have avm, install it here:
+# https://book.anchor-lang.com/getting_started/installation.html
 avm use 0.29.0
-rustup default 1.70.0
+
+# if on Apple Silicon:
+# rustup override set 1.70.0-x86_64-apple-darwin
+# else
+rustup override set 1.70.0
+
+# if you already have solana:
+# solana-install init 1.16.27
+# else:
 sh -c "$(curl -sSfL https://release.solana.com/v1.16.27/install)"
 ```
 
-## Run tests
+* `gcc-12` (https://solana.stackexchange.com/a/6989)
 ```
-cd ts/sdk
-yarn
-yarn build
+brew install gcc@12
 
-cd ..
+# update CPATH
+sudo echo 'export CPATH="/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/include"' >> ~/.zshrc
+```
+
+## Run tests
+If on Mac and getting this error:
+```shell
+Error: failed to start validator: Failed to create ledger at test-ledger: blockstore error
+```
+then run these commands:
+```shell
+brew install gnu-tar
+# Put this in ~/.zshrc
+export PATH="/opt/homebrew/opt/gnu-tar/libexec/gnubin:$PATH"
+```
+
+Setup deps:
+```shell
+yarn && cd ts/sdk && yarn && yarn build && cd ..
+
+# can be any valid key
 export ANCHOR_WALLET=~/.config/solana/id.json
+```
+
+Run all tests:
+```shell
 anchor test
 ```

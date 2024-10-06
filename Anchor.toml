@@ -1,8 +1,11 @@
 [features]
 seeds = false
 skip-lint = false
+
 [programs.localnet]
 drift_vaults = "vAuLTsyrvSfZRuRB3XgvkPwNGgYSs9YRYymVebLKoxR"
+drift = "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
+pyth = "FsJ3A3u2vn5cTVofAjvy6y5kwABJAqYWpe4975bi2epH"
 
 [registry]
 url = "https://api.apr.dev"
@@ -19,5 +22,17 @@ program = "./deps/drift.so"
 address = "DraWMeQX9LfzQQSYoeBwHAgM5JcqFkgrX7GbTfjzVMVL"
 program = "./deps/drift_competitions.so"
 
+[[test.genesis]]
+address = "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
+program = "./deps/metaplex/metaplex.so"
+
+[[test.validator.account]]
+address = "PwDiXFxQsGra4sFFTT8r1QWRMd4vfumiWC1jfWNfdYT"
+filename = "./deps/metaplex/PwDiXFxQsGra4sFFTT8r1QWRMd4vfumiWC1jfWNfdYT.json"
+
+[[test.genesis]]
+address = "FsJ3A3u2vn5cTVofAjvy6y5kwABJAqYWpe4975bi2epH"
+program = "./deps/pyth.so"
+
 [scripts]
-test = "yarn anchor-tests"
+test = "yarn anchor-tests:tokenize"

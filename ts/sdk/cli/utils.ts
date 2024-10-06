@@ -113,6 +113,7 @@ export function printVaultDepositor(vaultDepositor: VaultDepositor) {
 export async function getCommandContext(program: Command, needToSign: boolean): Promise<{
     driftClient: DriftClient,
     driftVault: VaultClient,
+    wallet: Wallet,
 }> {
 
     const opts = program.opts();
@@ -173,5 +174,6 @@ export async function getCommandContext(program: Command, needToSign: boolean): 
     return {
         driftClient,
         driftVault,
+        wallet,
     };
 }

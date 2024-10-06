@@ -11,10 +11,13 @@ import {
 	createInitializeAccountInstruction,
 	createMintToInstruction,
 	createWrappedNativeAccount,
+	getAssociatedTokenAddressSync,
+	getMint
 } from '@solana/spl-token';
 import {
 	Connection,
 	Keypair,
+	LAMPORTS_PER_SOL,
 	PublicKey,
 	sendAndConfirmTransaction,
 	SystemProgram,
@@ -37,12 +40,38 @@ import {
 	User,
 	OracleSource,
 	MarketStatus,
+	DriftClient,
+	DriftClientConfig,
+	getOrderParams,
+	OrderType,
+	MarketType,
+	PositionDirection,
+	BASE_PRECISION,
+	parseLogs,
+	convertToNumber,
+	TWO,
+	getTokenAmount,
+	getSignedTokenAmount,
+	TEN,
+	ZERO,
 } from '@drift-labs/sdk';
+import {
+	DriftVaults,
+	getVaultDepositorAddressSync,
+	IDL,
+	VaultClient,
+} from '../ts/sdk';
+import {
+	getTokenizedVaultAddressSync,
+	getTokenizedVaultMintAddressSync,
+} from '../ts/sdk/src';
+import { Metaplex } from '@metaplex-foundation/js';
 
 export async function mockOracle(
 	price: number = 50 * 10e7,
 	expo = -7,
-	confidence?: number
+	confidence?: number,
+	tokenFeed?: Keypair
 ): Promise<PublicKey> {
 	// default: create a $50 coin oracle
 	const program = anchor.workspace.Pyth;
@@ -53,11 +82,13 @@ export async function mockOracle(
 			preflightCommitment: 'confirmed',
 		})
 	);
+
 	const priceFeedAddress = await createPriceFeed({
 		oracleProgram: program,
 		initPrice: price,
 		expo: expo,
 		confidence,
+		tokenFeed,
 	});
 
 	const feedData = await getFeedData(program, priceFeedAddress);
@@ -69,9 +100,18 @@ export async function mockOracle(
 	return priceFeedAddress;
 }
 
-export async function mockUSDCMint(provider: Provider): Promise<Keypair> {
-	const fakeUSDCMint = anchor.web3.Keypair.generate();
+export async function mockUSDCMint(
+	provider: Provider,
+	mint?: Keypair
+): Promise<Keypair> {
+	let fakeUSDCMint: Keypair;
+	if (mint) {
+		fakeUSDCMint = mint;
+	} else {
+		fakeUSDCMint = anchor.web3.Keypair.generate();
+	}
 	const createUSDCMintAccountIx = SystemProgram.createAccount({
+		// @ts-ignore
 		fromPubkey: provider.wallet.publicKey,
 		newAccountPubkey: fakeUSDCMint.publicKey,
 		lamports: await getMinimumBalanceForRentExemptMint(provider.connection),
@@ -115,10 +155,12 @@ export async function mockUserUSDCAccount(
 	const fakeUSDCTx = new Transaction();
 
 	if (owner === undefined) {
+		// @ts-ignore
 		owner = provider.wallet.publicKey;
 	}
 
 	const createUSDCTokenAccountIx = SystemProgram.createAccount({
+		// @ts-ignore
 		fromPubkey: provider.wallet.publicKey,
 		newAccountPubkey: userUSDCAccount.publicKey,
 		lamports: await getMinimumBalanceForRentExemptAccount(provider.connection),
@@ -134,7 +176,7 @@ export async function mockUserUSDCAccount(
 	);
 	fakeUSDCTx.add(initUSDCTokenAccountIx);
 
-	const mintToUserAccountTx = await createMintToInstruction(
+	const mintToUserAccountTx = createMintToInstruction(
 		fakeUSDCMint.publicKey,
 		userUSDCAccount.publicKey,
 		// @ts-ignore
@@ -143,18 +185,22 @@ export async function mockUserUSDCAccount(
 	);
 	fakeUSDCTx.add(mintToUserAccountTx);
 
-	const _fakeUSDCTxResult = await sendAndConfirmTransaction(
-		provider.connection,
-		fakeUSDCTx,
-		// @ts-ignore
-		[provider.wallet.payer, userUSDCAccount],
-		{
-			skipPreflight: false,
-			commitment: 'recent',
-			preflightCommitment: 'recent',
-		}
-	);
-	return userUSDCAccount;
+	try {
+		const _fakeUSDCTxResult = await sendAndConfirmTransaction(
+			provider.connection,
+			fakeUSDCTx,
+			// @ts-ignore
+			[provider.wallet.payer, userUSDCAccount],
+			{
+				skipPreflight: false,
+				commitment: 'recent',
+				preflightCommitment: 'recent',
+			}
+		);
+		return userUSDCAccount;
+	} catch (e) {
+		console.log('failed to create mock user USDC account:', e);
+	}
 }
 
 export async function mintUSDCToUser(
@@ -209,6 +255,17 @@ export async function createUSDCAccountForUser(
 	return userUSDCAccount.publicKey;
 }
 
+export async function isDriftInitialized(driftClient: DriftClient) {
+	const stateAccountRPCResponse =
+		await driftClient.connection.getParsedAccountInfo(
+			await driftClient.getStatePublicKey()
+		);
+	if (stateAccountRPCResponse.value !== null) {
+		return true;
+	}
+	return false;
+}
+
 export async function initializeAndSubscribeDriftClient(
 	connection: Connection,
 	program: Program,
@@ -231,12 +288,12 @@ export async function initializeAndSubscribeDriftClient(
 		oracleInfos,
 		accountSubscription: accountLoader
 			? {
-					type: 'polling',
-					accountLoader,
-			  }
+				type: 'polling',
+				accountLoader,
+			}
 			: {
-					type: 'websocket',
-			  },
+				type: 'websocket',
+			},
 	});
 	await driftClient.subscribe();
 	await driftClient.initializeUserAccount();
@@ -260,6 +317,7 @@ export async function createUserWithUSDCAccount(
 		usdcMint,
 		usdcAmount
 	);
+
 	const driftClient = await initializeAndSubscribeDriftClient(
 		provider.connection,
 		chProgram,
@@ -281,7 +339,7 @@ export async function createWSolTokenAccountForUser(
 	await provider.connection.requestAirdrop(
 		userKeypair.publicKey,
 		amount.toNumber() +
-			(await getMinimumBalanceForRentExemptAccount(provider.connection))
+		(await getMinimumBalanceForRentExemptAccount(provider.connection))
 	);
 	return await createWrappedNativeAccount(
 		provider.connection,
@@ -328,15 +386,135 @@ export async function createUserWithUSDCAndWSOLAccount(
 	return [driftClient, solAccount, usdcAccount, userKeyPair];
 }
 
+export async function initializeSolSpotMarketMaker(
+	provider: AnchorProvider,
+	usdcMint: Keypair,
+	chProgram: Program,
+	oracleInfos: OracleInfo[] = [],
+	solAmount?: BN,
+	usdcAmount?: BN,
+	accountLoader?: BulkAccountLoader
+): Promise<{
+	driftClient: TestClient;
+	solAccount: PublicKey;
+	usdcAccount: PublicKey;
+	userKeyPair: Keypair;
+	requoteFunc: (bid?: BN, ask?: BN, print?: boolean) => Promise<void>;
+}> {
+	const solDepositAmount = solAmount ?? new BN(10_000 * LAMPORTS_PER_SOL);
+	const usdcDepositAmount = usdcAmount ?? new BN(1_000_000 * 1e6);
+
+	const [driftClient, solAccount, usdcAccount, userKeyPair] =
+		await createUserWithUSDCAndWSOLAccount(
+			provider,
+			usdcMint,
+			chProgram,
+			solDepositAmount,
+			usdcDepositAmount,
+			[],
+			[0, 1],
+			oracleInfos,
+			accountLoader
+		);
+	await driftClient.updateUserMarginTradingEnabled([
+		{
+			marginTradingEnabled: true,
+			subAccountId: 0,
+		},
+	]);
+
+	const usdcMarket = driftClient.getSpotMarketAccount(0);
+	assert(usdcMarket !== undefined, 'usdcMarket was not initialized');
+	const solMarket = driftClient.getSpotMarketAccount(1);
+	assert(solMarket !== undefined, 'solMarket was not initialized');
+
+	await driftClient.deposit(usdcDepositAmount, 0, usdcAccount);
+	await driftClient.deposit(solDepositAmount, 1, solAccount);
+
+	const requoteFunc = async (bid?: BN, ask?: BN, print?: boolean) => {
+		await driftClient.fetchAccounts();
+		const solOracle = driftClient.getOracleDataForSpotMarket(1);
+
+		const bidPrice =
+			bid ?? solOracle.price.sub(new BN(10).mul(solMarket.orderTickSize));
+		const askPrice =
+			ask ?? solOracle.price.add(new BN(10).mul(solMarket.orderTickSize));
+
+		const solPos = driftClient.getUser().getSpotPosition(1);
+		const solBal = getSignedTokenAmount(
+			getTokenAmount(solPos.scaledBalance, solMarket, solPos.balanceType),
+			solPos.balanceType
+		);
+
+		const solPrec = TEN.pow(new BN(solMarket.decimals));
+
+		try {
+			const askAmount = convertToNumber(solBal, solPrec) / 10;
+			const bidAmount = askAmount;
+			if (print) {
+				console.log(
+					`mm ${driftClient.authority.toBase58()} requoting around ${convertToNumber(
+						solOracle.price
+					)}. bid: ${bidAmount}@$${convertToNumber(
+						bidPrice
+					)}, ask: ${askAmount}@$${convertToNumber(askPrice)}`
+				);
+			}
+
+			await driftClient.cancelAndPlaceOrders(
+				{
+					marketType: MarketType.SPOT,
+					marketIndex: 1,
+				},
+				[
+					getOrderParams({
+						orderType: OrderType.LIMIT,
+						marketType: MarketType.SPOT,
+						marketIndex: 1,
+						direction: PositionDirection.LONG,
+						price: bidPrice,
+						baseAssetAmount: new BN(bidAmount * solPrec.toNumber()),
+					}),
+					getOrderParams({
+						orderType: OrderType.LIMIT,
+						marketType: MarketType.SPOT,
+						marketIndex: 1,
+						direction: PositionDirection.SHORT,
+						price: askPrice,
+						baseAssetAmount: new BN(askAmount * solPrec.toNumber()),
+					}),
+				]
+			);
+		} catch (e) {
+			console.error(e);
+			throw new Error(`mm failed to requote`);
+		}
+	};
+
+	return {
+		driftClient,
+		solAccount,
+		usdcAccount,
+		userKeyPair,
+		requoteFunc,
+	};
+}
+
 export async function printTxLogs(
 	connection: Connection,
-	txSig: TransactionSignature
+	txSig: TransactionSignature,
+	dumpEvents: boolean = false,
+	driftProgram?: Program
 ): Promise<void> {
-	console.log(
-		'tx logs',
-		(await connection.getTransaction(txSig, { commitment: 'confirmed' })).meta
-			.logMessages
-	);
+	const tx = await connection.getTransaction(txSig, {
+		commitment: 'confirmed',
+	});
+	console.log('tx logs', tx.meta.logMessages);
+	if (dumpEvents) {
+		for (const e of parseLogs(driftProgram, tx.meta.logMessages)) {
+			console.log(JSON.stringify(e));
+		}
+	}
 }
 
 export async function mintToInsuranceFund(
@@ -416,12 +594,12 @@ export async function initUserAccounts(
 			oracleInfos,
 			accountSubscription: accountLoader
 				? {
-						type: 'polling',
-						accountLoader,
-				  }
+					type: 'polling',
+					accountLoader,
+				}
 				: {
-						type: 'websocket',
-				  },
+					type: 'websocket',
+				},
 		});
 
 		// await driftClient1.initialize(usdcMint.publicKey, false);
@@ -460,40 +638,45 @@ export async function initUserAccounts(
 const empty32Buffer = buffer.Buffer.alloc(32);
 const PKorNull = (data) =>
 	data.equals(empty32Buffer) ? null : new anchor.web3.PublicKey(data);
+
 export const createPriceFeed = async ({
 	oracleProgram,
 	initPrice,
 	confidence = undefined,
 	expo = -4,
+	tokenFeed,
 }: {
 	oracleProgram: Program;
 	initPrice: number;
 	confidence?: number;
 	expo?: number;
+	tokenFeed?: Keypair;
 }): Promise<PublicKey> => {
 	const conf = new BN(confidence) || new BN((initPrice / 10) * 10 ** -expo);
-	const collateralTokenFeed = new anchor.web3.Account();
-	await oracleProgram.rpc.initialize(
-		new BN(initPrice * 10 ** -expo),
-		expo,
-		conf,
-		{
-			accounts: { price: collateralTokenFeed.publicKey },
-			signers: [collateralTokenFeed],
-			instructions: [
-				anchor.web3.SystemProgram.createAccount({
-					fromPubkey: oracleProgram.provider.wallet.publicKey,
-					newAccountPubkey: collateralTokenFeed.publicKey,
-					space: 3312,
-					lamports:
-						await oracleProgram.provider.connection.getMinimumBalanceForRentExemption(
-							3312
-						),
-					programId: oracleProgram.programId,
-				}),
-			],
-		}
-	);
+	let collateralTokenFeed: Keypair;
+	if (tokenFeed) {
+		collateralTokenFeed = tokenFeed;
+	} else {
+		collateralTokenFeed = Keypair.generate();
+	}
+	await oracleProgram.methods
+		.initialize(new BN(initPrice * 10 ** -expo), expo, conf)
+		.accounts({ price: collateralTokenFeed.publicKey })
+		.signers([collateralTokenFeed])
+		.preInstructions([
+			anchor.web3.SystemProgram.createAccount({
+				// @ts-ignore
+				fromPubkey: oracleProgram.provider.wallet.publicKey,
+				newAccountPubkey: collateralTokenFeed.publicKey,
+				space: 3312,
+				lamports:
+					await oracleProgram.provider.connection.getMinimumBalanceForRentExemption(
+						3312
+					),
+				programId: oracleProgram.programId,
+			}),
+		])
+		.rpc();
 	return collateralTokenFeed.publicKey;
 };
 
@@ -593,9 +776,9 @@ function readBigInt64LE(buffer, offset = 0) {
 		(BigInt(val) << BigInt(32)) +
 		BigInt(
 			first +
-				buffer[++offset] * 2 ** 8 +
-				buffer[++offset] * 2 ** 16 +
-				buffer[++offset] * 2 ** 24
+			buffer[++offset] * 2 ** 8 +
+			buffer[++offset] * 2 ** 16 +
+			buffer[++offset] * 2 ** 24
 		)
 	);
 }
@@ -872,4 +1055,266 @@ export async function initializeSolSpotMarket(
 	);
 	await admin.updateSpotMarketStatus(marketIndex, MarketStatus.ACTIVE);
 	return txSig;
+}
+
+export function calculateAllPdas(
+	vaultProgramId: PublicKey,
+	vault: PublicKey,
+	vaultDepositorAuthority: PublicKey
+): {
+	vaultDepositor: PublicKey;
+	tokenizedVaultDepositor: PublicKey;
+	mintAddress: PublicKey;
+	userVaultTokenAta: PublicKey;
+	vaultTokenizedTokenAta: PublicKey;
+} {
+	const mintAddress = getTokenizedVaultMintAddressSync(vaultProgramId, vault);
+
+	return {
+		vaultDepositor: getVaultDepositorAddressSync(
+			vaultProgramId,
+			vault,
+			vaultDepositorAuthority
+		),
+		tokenizedVaultDepositor: getTokenizedVaultAddressSync(
+			vaultProgramId,
+			vault
+		),
+		mintAddress,
+		userVaultTokenAta: getAssociatedTokenAddressSync(
+			mintAddress,
+			vaultDepositorAuthority,
+			true
+		),
+		vaultTokenizedTokenAta: getAssociatedTokenAddressSync(
+			mintAddress,
+			vault,
+			true
+		),
+	};
+}
+
+export async function validateTotalUserShares(
+	program: anchor.Program<DriftVaults>,
+	vault: PublicKey
+) {
+	const vaultAccount = await program.account.vault.fetch(vault);
+	const allVds = await program.account.vaultDepositor.all([
+		{
+			memcmp: {
+				offset: 8,
+				bytes: vault.toBase58(),
+			},
+		},
+	]);
+	const allTvds = await program.account.tokenizedVaultDepositor.all([
+		{
+			memcmp: {
+				offset: 8,
+				bytes: vault.toBase58(),
+			},
+		},
+	]);
+	const vdSharesTotal = allVds.reduce(
+		(acc, vd) => acc.add(vd.account.vaultShares),
+		new BN(0)
+	);
+	const tvdSharesTotal = allTvds.reduce(
+		(acc, vd) => acc.add(vd.account.vaultShares),
+		new BN(0)
+	);
+
+	assert(
+		tvdSharesTotal.add(vdSharesTotal).eq(vaultAccount.userShares),
+		`vdSharesTotal (${vdSharesTotal.toString()}) + tvdSharesTotal (${tvdSharesTotal.toString()}) != vault.userShares (${vaultAccount.userShares.toString()})`
+	);
+}
+
+export async function bootstrapSignerClientAndUser(params: {
+	payer: AnchorProvider;
+	programId: PublicKey;
+	usdcMint: Keypair;
+	usdcAmount: BN;
+	depositCollateral?: boolean;
+	vaultClientCliMode?: boolean;
+	skipUser?: boolean;
+	driftClientConfig?: Omit<DriftClientConfig, 'connection' | 'wallet'>;
+	metaplex?: Metaplex;
+}): Promise<{
+	signer: Keypair;
+	wallet: anchor.Wallet;
+	user: User;
+	userUSDCAccount: Keypair;
+	driftClient: DriftClient;
+	vaultClient: VaultClient;
+	provider: AnchorProvider;
+}> {
+	const {
+		payer,
+		programId,
+		usdcMint,
+		usdcAmount,
+		depositCollateral,
+		vaultClientCliMode,
+		driftClientConfig,
+	} = params;
+	const {
+		accountSubscription,
+		opts,
+		activeSubAccountId,
+		perpMarketIndexes,
+		spotMarketIndexes,
+		oracleInfos,
+	} = driftClientConfig;
+
+	const signer = Keypair.generate();
+	await payer.connection.requestAirdrop(signer.publicKey, LAMPORTS_PER_SOL);
+
+	const driftClient = new DriftClient({
+		connection: payer.connection,
+		wallet: new Wallet(signer),
+		opts: {
+			commitment: 'confirmed',
+		},
+		activeSubAccountId,
+		perpMarketIndexes,
+		spotMarketIndexes,
+		oracleInfos,
+		accountSubscription,
+	});
+	const wallet = new anchor.Wallet(signer);
+	const provider = new anchor.AnchorProvider(
+		payer.connection,
+		new anchor.Wallet(signer),
+		opts
+	);
+	const program = new Program(IDL, programId, provider);
+	const vaultClient = new VaultClient({
+		driftClient,
+		program,
+		cliMode: vaultClientCliMode ?? true,
+		metaplex: params.metaplex,
+	});
+	const userUSDCAccount = await mockUserUSDCAccount(
+		usdcMint,
+		usdcAmount,
+		payer,
+		signer.publicKey
+	);
+	await driftClient.subscribe();
+	if (depositCollateral) {
+		await driftClient.initializeUserAccountAndDepositCollateral(
+			usdcAmount,
+			userUSDCAccount.publicKey,
+			0,
+			activeSubAccountId
+		);
+	} else {
+		await driftClient.initializeUserAccount(activeSubAccountId ?? 0);
+	}
+	const user = new User({
+		driftClient,
+		userAccountPublicKey: await driftClient.getUserAccountPublicKey(),
+	});
+	if (!params.skipUser) {
+		await user.subscribe();
+	}
+	return {
+		signer,
+		wallet,
+		user,
+		userUSDCAccount,
+		driftClient,
+		vaultClient,
+		provider,
+	};
+}
+
+export async function getVaultDepositorValue(params: {
+	vaultClient: VaultClient,
+	vault: PublicKey,
+	vaultDepositor: PublicKey,
+	tokenizedVaultDepositor?: PublicKey,
+	tokenizedVaultAta?: PublicKey,
+	print?: boolean,
+}): Promise<{
+	vaultEquity: BN,
+	vaultShares: BN,
+	vaultDepositorShares: BN,
+	vaultDepositorEquity: BN,
+	vaultDepositorShareOfVault: number,
+	tokenizedVaultDepositorEquity?: BN,
+	tokenizedVaultDepositorShareOfVault?: number,
+	ataBalance?: BN,
+	ataShareOfSupply?: number,
+	ataValue?: BN,
+}> {
+	const vaultAccount = await params.vaultClient.getVault(params.vault);
+	const vaultDepositorAccount = await params.vaultClient.program.account.vaultDepositor.fetch(params.vaultDepositor);
+	const tokenizedVaultDepositorAccount = params.tokenizedVaultDepositor ?
+		await params.vaultClient.program.account.tokenizedVaultDepositor.fetch(params.tokenizedVaultDepositor)
+		: undefined;
+
+	const vaultEquity = await params.vaultClient.calculateVaultEquityInDepositAsset({
+		address: params.vault,
+	});
+
+	assert(vaultAccount.sharesBase === vaultDepositorAccount.vaultSharesBase, 'vaultDepositorAccount.vaultSharesBase is not equal to vaultAccount.sharesBase');
+	if (tokenizedVaultDepositorAccount) {
+		assert(tokenizedVaultDepositorAccount.vaultSharesBase === vaultAccount.sharesBase, 'tokenizedVaultDepositorAccount.vaultSharesBase is not equal to vaultAccount.sharesBase');
+	}
+
+
+	let tokenizedVaultDepositorEquity: BN;
+	let tokenizedVaultDepositorShareOfVault: number;
+	let ataBalance: BN;
+	let ataValue: BN;
+	let ataShareOfSupply: number;
+	if (params.tokenizedVaultDepositor) {
+		tokenizedVaultDepositorEquity = vaultEquity.mul(tokenizedVaultDepositorAccount.vaultShares).div(vaultAccount.totalShares);
+		tokenizedVaultDepositorShareOfVault = tokenizedVaultDepositorAccount.vaultShares.toNumber() / vaultAccount.totalShares.toNumber();
+
+		if (params.tokenizedVaultAta) {
+			const ata = await params.vaultClient.driftClient.connection.getTokenAccountBalance(params.tokenizedVaultAta);
+			const mint = await getMint(params.vaultClient.driftClient.connection, tokenizedVaultDepositorAccount.mint);
+			const totalSupply = new BN(mint.supply.toString());
+
+			ataBalance = new BN(ata.value.amount);
+			if (!totalSupply.isZero()) {
+				ataShareOfSupply = ataBalance.toNumber() / totalSupply.toNumber();
+				ataValue = tokenizedVaultDepositorEquity.mul(ataBalance).div(totalSupply);
+			} else {
+				ataShareOfSupply = null;
+				ataValue = null;
+			}
+		}
+	}
+
+	const vaultDepositorEquity = vaultEquity.mul(vaultDepositorAccount.vaultShares).div(vaultAccount.totalShares);
+	const vaultDepositorShareOfVault = vaultDepositorAccount.vaultShares.toNumber() / vaultAccount.totalShares.toNumber()
+
+	if (params.print) {
+		console.log(`Vault:          ${params.vault.toBase58()}`);
+		console.log(`VaultDepositor: ${params.vaultDepositor.toBase58()}`);
+		console.log(`TokenizedVaultDepositor: ${params.tokenizedVaultDepositor?.toBase58()}`);
+		console.log(`  vaultEquity:          ${vaultEquity.toString()}`);
+		console.log(`  vaultDepositorEquity: ${vaultDepositorEquity.toString()}`);
+		console.log(`  vaultDepositorShareOfVault: ${vaultDepositorShareOfVault * 100}%`);
+		console.log(`  tokenizedVaultDepositorEquity:       ${tokenizedVaultDepositorEquity?.toString()}`);
+		console.log(`  tokenizedVaultDepositorShareOfVault: ${tokenizedVaultDepositorShareOfVault * 100}%`);
+		console.log(`  ataBalance: ${ataBalance?.toString()}`);
+		console.log(`  ataValue:   ${ataValue?.toString()}`);
+		console.log(`  ataShareOfSupply: ${ataShareOfSupply * 100}%`);
+	}
+
+	return {
+		vaultEquity,
+		vaultShares: vaultAccount.totalShares,
+		vaultDepositorShares: vaultDepositorAccount.vaultShares,
+		vaultDepositorEquity,
+		vaultDepositorShareOfVault,
+		ataBalance,
+		ataValue,
+		ataShareOfSupply,
+	}
 }
