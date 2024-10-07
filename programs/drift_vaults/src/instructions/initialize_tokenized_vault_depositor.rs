@@ -14,7 +14,9 @@ pub fn initialize_tokenized_vault_depositor(
     params: InitializeTokenizedVaultDepositorParams,
 ) -> Result<()> {
     let mut tokenized_vault_depositor = ctx.accounts.vault_depositor.load_init()?;
+    let vault = ctx.accounts.vault.load()?;
     tokenized_vault_depositor.vault = ctx.accounts.vault.key();
+    tokenized_vault_depositor.vault_shares_base = vault.shares_base;
     tokenized_vault_depositor.pubkey = ctx.accounts.vault_depositor.key();
     tokenized_vault_depositor.mint = ctx.accounts.mint_account.key();
     tokenized_vault_depositor.bump = ctx.bumps.vault_depositor;
@@ -68,7 +70,7 @@ pub struct InitializeTokenizedVaultDepositor<'info> {
     pub vault_depositor: AccountLoader<'info, TokenizedVaultDepositor>,
     #[account(
         init,
-        seeds = [b"mint", vault.key().as_ref()],
+        seeds = [b"mint", vault.key().as_ref(), vault.load()?.shares_base.to_string().as_bytes().as_ref()],
         bump,
         payer = payer,
         mint::decimals = params.decimals,

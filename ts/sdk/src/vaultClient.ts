@@ -1062,6 +1062,7 @@ export class VaultClient {
 		tokenSymbol: string;
 		tokenUri: string;
 		decimals?: number;
+		sharesBase?: number;
 	}): Promise<TransactionSignature> {
 		if (!this.metaplex) {
 			throw new Error(
@@ -1070,7 +1071,8 @@ export class VaultClient {
 		}
 
 		let spotMarketDecimals = 6;
-		if (params.decimals === undefined) {
+		let sharesBase = 0;
+		if (params.decimals === undefined || params.sharesBase === undefined) {
 			const vault = await this.program.account.vault.fetch(params.vault);
 			const spotMarketAccount = this.driftClient.getSpotMarketAccount(
 				vault.spotMarketIndex
@@ -1081,11 +1083,13 @@ export class VaultClient {
 				);
 			}
 			spotMarketDecimals = spotMarketAccount.decimals;
+			sharesBase = vault.sharesBase;
 		}
 
 		const mintAddress = getTokenizedVaultMintAddressSync(
 			this.program.programId,
-			params.vault
+			params.vault,
+			sharesBase
 		);
 
 		const accounts = {

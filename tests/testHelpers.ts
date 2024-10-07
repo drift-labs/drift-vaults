@@ -42,8 +42,28 @@ import {
 	MarketStatus,
 	DriftClient,
 	DriftClientConfig,
+	getSignedTokenAmount,
+	getTokenAmount,
+	TEN,
+	convertToNumber,
+	getOrderParams,
+	MarketType,
+	OrderType,
+	PositionDirection,
+	parseLogs,
+	isVariant,
+	BASE_PRECISION,
+	getUserStatsAccountPublicKey,
+	DRIFT_PROGRAM_ID,
 } from '@drift-labs/sdk';
-import { IDL, VaultClient } from '../ts/sdk';
+import {
+	DriftVaults,
+	getTokenizedVaultAddressSync,
+	getTokenizedVaultMintAddressSync,
+	getVaultDepositorAddressSync,
+	IDL,
+	VaultClient,
+} from '../ts/sdk';
 import { Metaplex } from '@metaplex-foundation/js';
 
 export async function mockOracle(
@@ -1233,13 +1253,26 @@ export async function getVaultDepositorValue(params: {
 		console.log(
 			`TokenizedVaultDepositor: ${params.tokenizedVaultDepositor?.toBase58()}`
 		);
-		console.log(`  vaultEquity:          ${vaultEquity.toString()}`);
-		console.log(`  vaultDepositorEquity: ${vaultDepositorEquity.toString()}`);
+		console.log(
+			`  vaultEquity:          ${convertToNumber(
+				vaultEquity,
+				QUOTE_PRECISION
+			).toString()}`
+		);
+		console.log(
+			`  vaultDepositorEquity: ${convertToNumber(
+				vaultDepositorEquity,
+				QUOTE_PRECISION
+			).toString()}`
+		);
 		console.log(
 			`  vaultDepositorShareOfVault: ${vaultDepositorShareOfVault * 100}%`
 		);
 		console.log(
-			`  tokenizedVaultDepositorEquity:       ${tokenizedVaultDepositorEquity?.toString()}`
+			`  tokenizedVaultDepositorEquity:       ${convertToNumber(
+				tokenizedVaultDepositorEquity,
+				QUOTE_PRECISION
+			).toString()}`
 		);
 		console.log(
 			`  tokenizedVaultDepositorShareOfVault: ${
@@ -1247,7 +1280,9 @@ export async function getVaultDepositorValue(params: {
 			}%`
 		);
 		console.log(`  ataBalance: ${ataBalance?.toString()}`);
-		console.log(`  ataValue:   ${ataValue?.toString()}`);
+		console.log(
+			`  ataValue:   ${convertToNumber(ataValue, QUOTE_PRECISION).toString()}`
+		);
 		console.log(`  ataShareOfSupply: ${ataShareOfSupply * 100}%`);
 	}
 
@@ -1261,4 +1296,234 @@ export async function getVaultDepositorValue(params: {
 		ataValue,
 		ataShareOfSupply,
 	};
+}
+
+export function calculateAllTokenizedVaultPdas(
+	vaultProgramId: PublicKey,
+	vault: PublicKey,
+	vaultDepositorAuthority: PublicKey
+): {
+	vaultDepositor: PublicKey;
+	tokenizedVaultDepositor: PublicKey;
+	mintAddress: PublicKey;
+	userVaultTokenAta: PublicKey;
+	vaultTokenizedTokenAta: PublicKey;
+} {
+	const mintAddress = getTokenizedVaultMintAddressSync(vaultProgramId, vault);
+
+	return {
+		vaultDepositor: getVaultDepositorAddressSync(
+			vaultProgramId,
+			vault,
+			vaultDepositorAuthority
+		),
+		tokenizedVaultDepositor: getTokenizedVaultAddressSync(
+			vaultProgramId,
+			vault
+		),
+		mintAddress,
+		userVaultTokenAta: getAssociatedTokenAddressSync(
+			mintAddress,
+			vaultDepositorAuthority,
+			true
+		),
+		vaultTokenizedTokenAta: getAssociatedTokenAddressSync(
+			mintAddress,
+			vault,
+			true
+		),
+	};
+}
+
+export async function validateTotalUserShares(
+	program: anchor.Program<DriftVaults>,
+	vault: PublicKey
+) {
+	const vaultAccount = await program.account.vault.fetch(vault);
+	const allVds = await program.account.vaultDepositor.all([
+		{
+			memcmp: {
+				offset: 8,
+				bytes: vault.toBase58(),
+			},
+		},
+	]);
+	const allTvds = await program.account.tokenizedVaultDepositor.all([
+		{
+			memcmp: {
+				offset: 8,
+				bytes: vault.toBase58(),
+			},
+		},
+	]);
+	const vdSharesTotal = allVds.reduce(
+		(acc, vd) => acc.add(vd.account.vaultShares),
+		new BN(0)
+	);
+	const tvdSharesTotal = allTvds.reduce(
+		(acc, vd) => acc.add(vd.account.vaultShares),
+		new BN(0)
+	);
+
+	assert(
+		tvdSharesTotal.add(vdSharesTotal).eq(vaultAccount.userShares),
+		`vdSharesTotal (${vdSharesTotal.toString()}) + tvdSharesTotal (${tvdSharesTotal.toString()}) != vault.userShares (${vaultAccount.userShares.toString()})`
+	);
+}
+
+export async function doWashTrading({
+	mmDriftClient,
+	traderDriftClient,
+	vaultClient,
+	vaultAddress,
+	startVaultEquity,
+	stopPnlDiffPct,
+	maxIters,
+	traderAuthority,
+	traderSubAccount = 0,
+	mmRequoteFunc,
+}: {
+	mmDriftClient: DriftClient;
+	traderDriftClient: DriftClient;
+	vaultClient: VaultClient;
+	vaultAddress: PublicKey;
+	startVaultEquity: BN;
+	stopPnlDiffPct?: number;
+	maxIters?: number;
+	traderAuthority: PublicKey;
+	traderSubAccount?: number;
+	mmRequoteFunc: (price: BN, size: BN) => Promise<void>;
+}) {
+	let diff = 1;
+	let i = 0;
+	stopPnlDiffPct = stopPnlDiffPct ?? -0.999;
+	maxIters = maxIters ?? 100;
+	console.log(
+		`Doing some wash trading until we're broke, starting at ${convertToNumber(
+			startVaultEquity,
+			QUOTE_PRECISION
+		).toString()}, trading until we're ${
+			stopPnlDiffPct * 100
+		}% down, max ${maxIters} iters`
+	);
+	let vaultEquity = startVaultEquity;
+
+	const usdcSpotMarket = mmDriftClient.getSpotMarketAccount(0);
+	if (!usdcSpotMarket) {
+		throw new Error('No USDC spot market at idx 0, misconfigured?');
+	}
+
+	while (diff > stopPnlDiffPct && i < maxIters) {
+		try {
+			i++;
+			await traderDriftClient.fetchAccounts();
+
+			const mmUser = mmDriftClient.getUser();
+			const mmOffer = mmUser
+				.getOpenOrders()
+				.find((o) => o.marketIndex === 1 && isVariant(o.direction, 'short'));
+			const mmBid = mmUser
+				.getOpenOrders()
+				.find((o) => o.marketIndex === 1 && isVariant(o.direction, 'long'));
+			assert(mmOffer !== undefined, 'mm has no offers');
+			assert(mmBid !== undefined, 'mm has no bids');
+
+			const vaultSpotPos0 = traderDriftClient
+				.getUser(traderSubAccount, traderAuthority)
+				.getSpotPosition(0);
+			const vaultUsdcBalance = getTokenAmount(
+				vaultSpotPos0.scaledBalance,
+				usdcSpotMarket,
+				vaultSpotPos0.balanceType
+			)
+				.mul(new BN(90))
+				.div(new BN(100));
+
+			const bidAmount = vaultUsdcBalance.mul(BASE_PRECISION).div(mmOffer.price);
+
+			await traderDriftClient.placeAndTakeSpotOrder(
+				{
+					orderType: OrderType.LIMIT,
+					marketIndex: 1,
+					baseAssetAmount: bidAmount,
+					price: mmOffer.price,
+					direction: PositionDirection.LONG,
+					immediateOrCancel: true,
+					auctionDuration: 0,
+				},
+				undefined,
+				{
+					maker: mmUser.getUserAccountPublicKey(),
+					makerStats: getUserStatsAccountPublicKey(
+						new PublicKey(DRIFT_PROGRAM_ID),
+						mmDriftClient.authority
+					),
+					makerUserAccount: mmUser.getUserAccount(),
+					order: mmOffer,
+				}
+			);
+
+			if (i % 20 === 0) {
+				vaultEquity = await vaultClient.calculateVaultEquityInDepositAsset({
+					address: vaultAddress,
+				});
+				diff = vaultEquity.toNumber() / startVaultEquity.toNumber() - 1;
+				console.log(
+					`iter ${i}: Vault equity: ${convertToNumber(
+						vaultEquity,
+						QUOTE_PRECISION
+					).toString()} (${diff * 100}%)`
+				);
+				console.log(
+					`Selling ${convertToNumber(
+						bidAmount,
+						BASE_PRECISION
+					)} SOL at ${convertToNumber(mmBid.price)}`
+				);
+				console.log(
+					`Buying ${convertToNumber(
+						bidAmount,
+						BASE_PRECISION
+					)} SOL at ${convertToNumber(mmOffer.price)}`
+				);
+			}
+			await traderDriftClient.placeAndTakeSpotOrder(
+				{
+					orderType: OrderType.LIMIT,
+					marketIndex: 1,
+					baseAssetAmount: bidAmount,
+					price: mmBid.price,
+					direction: PositionDirection.SHORT,
+					immediateOrCancel: true,
+					auctionDuration: 0,
+					reduceOnly: true,
+				},
+				undefined,
+				{
+					maker: mmUser.getUserAccountPublicKey(),
+					makerStats: getUserStatsAccountPublicKey(
+						new PublicKey(DRIFT_PROGRAM_ID),
+						mmDriftClient.authority
+					),
+					makerUserAccount: mmUser.getUserAccount(),
+					order: mmBid,
+				}
+			);
+
+			await mmRequoteFunc(
+				new BN(95 * PRICE_PRECISION.toNumber()),
+				new BN(105 * PRICE_PRECISION.toNumber())
+			);
+		} catch (e) {
+			console.error(e);
+			if (i < 5) {
+				// something wrong if we couldnt even do 1 iter
+				assert(false, 'Failed to place and take orders');
+			}
+			console.log(
+				`Breaking early, probably a margin error, got ${i} iters, pnl diff: ${diff}`
+			);
+			break;
+		}
+	}
 }

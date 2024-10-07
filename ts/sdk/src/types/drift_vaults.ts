@@ -1479,7 +1479,11 @@ export type DriftVaults = {
 					},
 					{
 						name: 'vaultSharesBase';
-						docs: ['the exponent for vault_shares decimal places'];
+						docs: [
+							'The exponent for vault_shares decimal places at the time the tokenized vault depositor was initialized.',
+							'If the vault undergoes a rebase, this TokenizedVaultDepositor can no longer issue new tokens, only redeem',
+							'is possible.'
+						];
 						type: 'u32';
 					},
 					{
@@ -4051,7 +4055,11 @@ export const IDL: DriftVaults = {
 					},
 					{
 						name: 'vaultSharesBase',
-						docs: ['the exponent for vault_shares decimal places'],
+						docs: [
+							'The exponent for vault_shares decimal places at the time the tokenized vault depositor was initialized.',
+							'If the vault undergoes a rebase, this TokenizedVaultDepositor can no longer issue new tokens, only redeem',
+							'is possible.',
+						],
 						type: 'u32',
 					},
 					{

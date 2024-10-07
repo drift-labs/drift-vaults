@@ -70,10 +70,15 @@ export function getTokenizedVaultAddressSync(
 
 export function getTokenizedVaultMintAddressSync(
 	programId: PublicKey,
-	vault: PublicKey
+	vault: PublicKey,
+	sharesBase: number
 ): PublicKey {
 	return PublicKey.findProgramAddressSync(
-		[Buffer.from(anchor.utils.bytes.utf8.encode('mint')), vault.toBuffer()],
+		[
+			Buffer.from(anchor.utils.bytes.utf8.encode('mint')),
+			vault.toBuffer(),
+			Buffer.from(sharesBase.toString()),
+		],
 		programId
 	)[0];
 }

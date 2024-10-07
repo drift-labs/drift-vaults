@@ -143,10 +143,10 @@ impl Vault {
                 .safe_div(ONE_YEAR.cast()?)?
                 .min(depositor_equity.saturating_sub(1));
 
-                    let new_total_shares_factor: u128 = depositor_equity
-                        .safe_mul(PERCENTAGE_PRECISION_I128)?
-                        .safe_div(depositor_equity.safe_sub(management_fee_payment)?)?
-                        .cast()?;
+            let new_total_shares_factor: u128 = depositor_equity
+                .safe_mul(PERCENTAGE_PRECISION_I128)?
+                .safe_div(depositor_equity.safe_sub(management_fee_payment)?)?
+                .cast()?;
 
             let new_total_shares = vault
                 .total_shares

@@ -13,6 +13,8 @@ use drift::instructions::optional_accounts::AccountMaps;
 use drift::math::safe_math::SafeMath;
 use drift::state::user::User;
 
+use super::constraints::is_vault_shares_base_for_tokenized_depositor;
+
 pub fn tokenize_shares<'info>(
     ctx: Context<'_, '_, 'info, 'info, TokenizeShares<'info>>,
     amount: u64,
@@ -30,7 +32,7 @@ pub fn tokenize_shares<'info>(
     // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
     let mut vp = ctx.vault_protocol();
     vault.validate_vault_protocol(&vp)?;
-    let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
+    let vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
 
     validate!(
         vault.shares_base == tokenized_vault_depositor.vault_shares_base,
@@ -65,7 +67,6 @@ pub fn tokenize_shares<'info>(
 
     let tokens_to_mint = match vp {
         None => {
-            msg!("HEYLLO 10");
             let (shares_transferred, _) = vault_depositor.transfer_shares(
                 &mut *tokenized_vault_depositor,
                 &mut vault,
@@ -75,7 +76,6 @@ pub fn tokenize_shares<'info>(
                 vault_equity,
                 clock.unix_timestamp,
             )?;
-            msg!("HEYLLO 1");
             tokenized_vault_depositor.tokenize_shares(
                 &mut vault,
                 &mut None,
@@ -86,7 +86,6 @@ pub fn tokenize_shares<'info>(
             )?
         }
         Some(vp) => {
-            msg!("HEYLLO 20");
             let (shares_transferred, mut vp) = vault_depositor.transfer_shares(
                 &mut *tokenized_vault_depositor,
                 &mut vault,
@@ -96,7 +95,6 @@ pub fn tokenize_shares<'info>(
                 vault_equity,
                 clock.unix_timestamp,
             )?;
-            msg!("HEYLLO 2");
             tokenized_vault_depositor.tokenize_shares(
                 &mut vault,
                 &mut vp,
@@ -169,6 +167,7 @@ pub struct TokenizeShares<'info> {
     #[account(
 		mut,
 		constraint = is_tokenized_depositor_for_vault(&tokenized_vault_depositor, &vault)?,
+		constraint = is_vault_shares_base_for_tokenized_depositor(&vault.load()?.shares_base, &tokenized_vault_depositor)?,
 	)]
     pub tokenized_vault_depositor: AccountLoader<'info, TokenizedVaultDepositor>,
     #[account(

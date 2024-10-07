@@ -22,33 +22,35 @@ use drift_macros::assert_no_slop;
 #[repr(C)]
 pub struct TokenizedVaultDepositor {
     /// The vault deposited into
-    pub vault: Pubkey, // 32
+    pub vault: Pubkey,
     /// The vault depositor account's pubkey. It is a pda of vault
-    pub pubkey: Pubkey, // 32
+    pub pubkey: Pubkey,
     /// The token mint for tokenized shares owned by this VaultDepositor
-    pub mint: Pubkey, // 32
+    pub mint: Pubkey,
     /// share of vault owned by this depositor. vault_shares / vault.total_shares is depositor's ownership of vault_equity
-    vault_shares: u128, // 16
+    vault_shares: u128,
     /// stores the vault_shares from the most recent liquidity event (redeem or issuance) before a spl token
     /// CPI is done, used to track invariants
-    last_vault_shares: u128, // 16
+    last_vault_shares: u128,
     /// creation ts of vault depositor
-    pub last_valid_ts: i64, // 8
+    pub last_valid_ts: i64,
     /// lifetime net deposits of vault depositor for the vault
-    pub net_deposits: i64, // 8
+    pub net_deposits: i64,
 
     /// lifetime total deposits
-    pub total_deposits: u64, // 8
+    pub total_deposits: u64,
     /// lifetime total withdraws
-    pub total_withdraws: u64, // 8
+    pub total_withdraws: u64,
     /// the token amount of gains the vault depositor has paid performance fees on
-    pub cumulative_profit_share_amount: i64, // 8
-    pub profit_share_fee_paid: u64, // 8
-    /// the exponent for vault_shares decimal places
-    pub vault_shares_base: u32, // 4
+    pub cumulative_profit_share_amount: i64,
+    pub profit_share_fee_paid: u64,
+    /// The exponent for vault_shares decimal places at the time the tokenized vault depositor was initialized.
+    /// If the vault undergoes a rebase, this TokenizedVaultDepositor can no longer issue new tokens, only redeem
+    /// is possible.
+    pub vault_shares_base: u32,
     /// The bump for the vault pda
-    pub bump: u8, // 1
-    pub padding: [u8; 3],           // 3
+    pub bump: u8,
+    pub padding: [u8; 3],
 }
 
 impl Size for TokenizedVaultDepositor {
