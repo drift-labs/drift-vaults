@@ -60,7 +60,6 @@ import { calculateRealizedVaultDepositorEquity } from './math';
 import { Metaplex } from '@metaplex-foundation/js';
 import { getOrCreateATAInstruction } from './utils';
 
-
 export type TxParams = {
 	cuLimit?: number;
 	cuPriceMicroLamports?: number;
@@ -935,7 +934,9 @@ export class VaultClient {
 		vault: PublicKey,
 		vaultDepositor: PublicKey
 	): Promise<TransactionSignature> {
-		return await this.createAndSendTxn([await this.getApplyRebaseIx(vault, vaultDepositor)]);
+		return await this.createAndSendTxn([
+			await this.getApplyRebaseIx(vault, vaultDepositor),
+		]);
 	}
 
 	public async getApplyRebaseIx(
@@ -984,7 +985,12 @@ export class VaultClient {
 		vault: PublicKey,
 		tokenizedVaultDepositor: PublicKey
 	): Promise<TransactionSignature> {
-		return await this.createAndSendTxn([await this.getApplyRebaseTokenizedDepositorIx(vault, tokenizedVaultDepositor)]);
+		return await this.createAndSendTxn([
+			await this.getApplyRebaseTokenizedDepositorIx(
+				vault,
+				tokenizedVaultDepositor
+			),
+		]);
 	}
 
 	private createInitVaultDepositorIx(vault: PublicKey, authority?: PublicKey) {
