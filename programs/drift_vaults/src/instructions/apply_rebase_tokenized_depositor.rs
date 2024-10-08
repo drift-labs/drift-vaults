@@ -4,10 +4,8 @@ use drift::program::Drift;
 use drift::state::user::User;
 
 use crate::constraints::{is_tokenized_depositor_for_vault, is_user_for_vault};
-use crate::error::ErrorCode;
 use crate::state::traits::VaultDepositorBase;
-use crate::{validate, AccountMapProvider};
-use crate::{TokenizedVaultDepositor, Vault, VaultProtocolProvider};
+use crate::{AccountMapProvider, TokenizedVaultDepositor, Vault, VaultProtocolProvider};
 
 pub fn apply_rebase_tokenized_depositor<'c: 'info, 'info>(
     ctx: Context<'_, '_, 'c, 'info, ApplyRebaseTokenizedDepositor<'info>>,
@@ -19,7 +17,7 @@ pub fn apply_rebase_tokenized_depositor<'c: 'info, 'info>(
     // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
     let mut vp = ctx.vault_protocol();
     vault.validate_vault_protocol(&vp)?;
-    let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
+    let vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
 
     let user = ctx.accounts.drift_user.load()?;
     let spot_market_index = vault.spot_market_index;

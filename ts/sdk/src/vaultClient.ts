@@ -27,12 +27,9 @@ import {
 	getVaultProtocolAddressSync,
 } from './addresses';
 import {
-	AccountMeta,
 	AddressLookupTableAccount,
 	ComputeBudgetProgram,
-	Keypair,
 	PublicKey,
-	Signer,
 	SystemProgram,
 	SYSVAR_RENT_PUBKEY,
 	Transaction,
@@ -1141,7 +1138,8 @@ export class VaultClient {
 	public async createTokenizeSharesIx(
 		vaultDepositor: PublicKey,
 		amount: BN,
-		unit: WithdrawUnit
+		unit: WithdrawUnit,
+		mint?: PublicKey
 	): Promise<TransactionInstruction[]> {
 		const vaultDepositorAccount =
 			await this.program.account.vaultDepositor.fetch(vaultDepositor);
@@ -1149,10 +1147,13 @@ export class VaultClient {
 			vaultDepositorAccount.vault
 		);
 
-		const mint = getTokenizedVaultMintAddressSync(
-			this.program.programId,
-			vaultDepositorAccount.vault
-		);
+		mint =
+			mint ??
+			getTokenizedVaultMintAddressSync(
+				this.program.programId,
+				vaultDepositorAccount.vault,
+				vaultAccount.sharesBase
+			);
 
 		const userAta = getAssociatedTokenAddressSync(
 			mint,
@@ -1211,9 +1212,15 @@ export class VaultClient {
 		vaultDepositor: PublicKey,
 		amount: BN,
 		unit: WithdrawUnit,
+		mint?: PublicKey,
 		txParams?: TxParams
 	): Promise<TransactionSignature> {
-		const ixs = await this.createTokenizeSharesIx(vaultDepositor, amount, unit);
+		const ixs = await this.createTokenizeSharesIx(
+			vaultDepositor,
+			amount,
+			unit,
+			mint
+		);
 		if (this.cliMode) {
 			try {
 				const tx = new Transaction().add(...ixs);
@@ -1235,7 +1242,8 @@ export class VaultClient {
 
 	public async createRedeemTokensIx(
 		vaultDepositor: PublicKey,
-		tokensToBurn: BN
+		tokensToBurn: BN,
+		mint?: PublicKey
 	): Promise<TransactionInstruction> {
 		const vaultDepositorAccount =
 			await this.program.account.vaultDepositor.fetch(vaultDepositor);
@@ -1243,10 +1251,13 @@ export class VaultClient {
 			vaultDepositorAccount.vault
 		);
 
-		const mint = getTokenizedVaultMintAddressSync(
-			this.program.programId,
-			vaultDepositorAccount.vault
-		);
+		mint =
+			mint ??
+			getTokenizedVaultMintAddressSync(
+				this.program.programId,
+				vaultDepositorAccount.vault,
+				vaultAccount.sharesBase
+			);
 
 		const userAta = getAssociatedTokenAddressSync(
 			mint,
@@ -1286,12 +1297,25 @@ export class VaultClient {
 			.instruction();
 	}
 
+	/**
+	 * Redeems tokens from the vault.
+	 * @param vaultDepositor
+	 * @param tokensToBurn
+	 * @param mint optionally provide a mint, or infer the mint from the current vault share base
+	 * @param txParams
+	 * @returns
+	 */
 	public async redeemTokens(
 		vaultDepositor: PublicKey,
 		tokensToBurn: BN,
+		mint?: PublicKey,
 		txParams?: TxParams
 	): Promise<TransactionSignature> {
-		const ix = await this.createRedeemTokensIx(vaultDepositor, tokensToBurn);
+		const ix = await this.createRedeemTokensIx(
+			vaultDepositor,
+			tokensToBurn,
+			mint
+		);
 		if (this.cliMode) {
 			try {
 				const tx = new Transaction().add(ix);

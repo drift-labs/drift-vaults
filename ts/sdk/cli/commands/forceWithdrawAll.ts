@@ -4,8 +4,7 @@ import {
     Command
 } from "commander";
 import { getCommandContext } from "../utils";
-import { getVaultDepositorAddressSync } from "../../src/addresses";
-import { VAULT_PROGRAM_ID, VaultDepositor } from "../../src";
+import { VaultDepositor } from "../../src";
 import {
     BN,
     convertToNumber

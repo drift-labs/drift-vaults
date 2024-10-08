@@ -4,9 +4,7 @@ use drift::program::Drift;
 use drift::state::user::User;
 
 use crate::constraints::{is_user_for_vault, is_vault_for_vault_depositor};
-use crate::error::ErrorCode;
-use crate::{validate, AccountMapProvider, VaultDepositor};
-use crate::{Vault, VaultProtocolProvider};
+use crate::{AccountMapProvider, Vault, VaultDepositor, VaultProtocolProvider};
 
 pub fn apply_rebase<'c: 'info, 'info>(
     ctx: Context<'_, '_, 'c, 'info, ApplyRebase<'info>>,
@@ -19,7 +17,7 @@ pub fn apply_rebase<'c: 'info, 'info>(
     // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
     let mut vp = ctx.vault_protocol();
     vault.validate_vault_protocol(&vp)?;
-    let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
+    let vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
 
     let user = ctx.accounts.drift_user.load()?;
     let spot_market_index = vault.spot_market_index;

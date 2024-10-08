@@ -6,10 +6,8 @@ import { VaultClient } from './vaultClient';
 import * as anchor from '@coral-xyz/anchor';
 import { VAULT_PROGRAM_ID } from './types/types';
 import {
-	ASSOCIATED_TOKEN_PROGRAM_ID,
 	createAssociatedTokenAccountInstruction,
 	getAssociatedTokenAddress,
-	TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
 
 export const getDriftVaultProgram = (

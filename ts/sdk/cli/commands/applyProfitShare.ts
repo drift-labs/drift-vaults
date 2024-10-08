@@ -1,4 +1,4 @@
-import { ComputeBudgetProgram, PublicKey, SendTransactionError, TransactionInstruction, TransactionMessage, VersionedTransaction, VersionedTransactionResponse } from "@solana/web3.js";
+import { ComputeBudgetProgram, PublicKey, SendTransactionError, TransactionInstruction, TransactionMessage, VersionedTransaction } from "@solana/web3.js";
 import {
     OptionValues,
     Command

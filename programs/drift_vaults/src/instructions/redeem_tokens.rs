@@ -29,7 +29,7 @@ pub fn redeem_tokens<'info>(
     // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
     let mut vp = ctx.vault_protocol();
     vault.validate_vault_protocol(&vp)?;
-    let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
+    let vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
 
     let manager_shares_before = vault.total_shares.safe_sub(vault.user_shares)?;
     let total_shares_before = vault_depositor
@@ -172,8 +172,6 @@ pub struct RedeemTokens<'info> {
     pub tokenized_vault_depositor: AccountLoader<'info, TokenizedVaultDepositor>,
     #[account(
         mut,
-        seeds = [b"mint", vault.key().as_ref()],
-        bump,
         mint::authority = vault.key(),
 		constraint = is_mint_for_tokenized_depositor(&mint.key(), &tokenized_vault_depositor)?,
     )]

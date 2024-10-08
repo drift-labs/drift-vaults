@@ -77,7 +77,7 @@ export function getTokenizedVaultMintAddressSync(
 		[
 			Buffer.from(anchor.utils.bytes.utf8.encode('mint')),
 			vault.toBuffer(),
-			Buffer.from(sharesBase.toString()),
+			Buffer.from(anchor.utils.bytes.utf8.encode(sharesBase.toString())),
 		],
 		programId
 	)[0];

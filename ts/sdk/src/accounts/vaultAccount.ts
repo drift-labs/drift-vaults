@@ -7,7 +7,7 @@ import {
 	ZERO,
 	BN,
 } from '@drift-labs/sdk';
-import { PublicKey, SystemProgram } from '@solana/web3.js';
+import { PublicKey } from '@solana/web3.js';
 import { DriftVaults } from '../types/drift_vaults';
 import { Vault, VaultAccountEvents, VaultProtocol } from '../types/types';
 import { PollingVaultSubscriber } from '../accountSubscribers';
