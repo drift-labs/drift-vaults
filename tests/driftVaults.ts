@@ -2350,8 +2350,6 @@ describe('TestTokenizedDriftVaults', () => {
 		});
 	});
 
-	async function initVTokenizedVaultAndTradeUntilRebase(vaultName: string) {}
-
 	/**
 	 * 1. initialize a new tokenized vault
 	 * 2. vd0 deposits and tokenizes shares
@@ -2363,7 +2361,6 @@ describe('TestTokenizedDriftVaults', () => {
 	 * 8. can deposit and tokenize with new tokenized vd
 	 */
 	it('Disallow tokenize after vault rebases, allow redeeming tokens', async () => {
-		const vaultName = `test tokenize post rebase`;
 		const { driftClient: mmDriftClient, requoteFunc } =
 			await initializeSolSpotMarketMaker(
 				provider,
@@ -2384,6 +2381,7 @@ describe('TestTokenizedDriftVaults', () => {
 				bulkAccountLoader
 			);
 
+		const vaultName = `test tokenize post rebase`;
 		const vault = getVaultAddressSync(program.programId, encodeName(vaultName));
 
 		await managerClient.initializeVault({
