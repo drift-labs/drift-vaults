@@ -191,11 +191,11 @@ describe('driftVaults', () => {
 		}
 		await adminClient.subscribe();
 
-		const perpMarketIndexes = [0];
-		const spotMarketIndexes = [0];
-		const oracleInfos = [
-			{ publicKey: solPerpOracle, source: OracleSource.PYTH },
-		];
+		// const perpMarketIndexes = [0];
+		// const spotMarketIndexes = [0, 1];
+		// const oracleInfos = [
+		// 	{ publicKey: solPerpOracle, source: OracleSource.PYTH },
+		// ];
 
 		// init vault manager
 		const bootstrapManager = await bootstrapSignerClientAndUser({
@@ -2011,8 +2011,8 @@ describe('TestTokenizedDriftVaults', () => {
 		await setFeedPrice(anchor.workspace.Pyth, solStartPrice, solPerpOracle);
 
 		const usdcDepositAmount = new BN(10000 * 10 ** 6);
-		const usdcSpotMarket = adminClient.getSpotMarketAccount(0);
-		const solSpotMarket = adminClient.getSpotMarketAccount(1);
+		const usdcSpotMarket = managerDriftClient.getSpotMarketAccount(0);
+		const solSpotMarket = managerDriftClient.getSpotMarketAccount(1);
 
 		const bulkAccountLoader = new BulkAccountLoader(connection, 'confirmed', 1);
 		const [driftClient, usdcAccount, kp] = await createUserWithUSDCAccount(
