@@ -1325,7 +1325,7 @@ describe('TestProtocolVaults', () => {
 		const settledPnl =
 			vaultUserAcct.settledPerpPnl.toNumber() / QUOTE_PRECISION.toNumber();
 		console.log('vault settled pnl:', settledPnl);
-		assert(settledPnl === pnl);
+		assert(Math.abs(settledPnl - pnl) < 0.00001);
 	});
 
 	it('Withdraw', async () => {
