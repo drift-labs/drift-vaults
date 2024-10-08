@@ -2,9 +2,9 @@ use crate::constraints::{
     is_ata, is_authority_for_vault_depositor, is_mint_for_tokenized_depositor,
     is_tokenized_depositor_for_vault, is_user_for_vault,
 };
-use crate::drift_cpi::{BurnTokensCPI, TokenTransferCPI};
 use crate::error::ErrorCode;
 use crate::state::traits::VaultDepositorBase;
+use crate::token_cpi::{BurnTokensCPI, TokenTransferCPI};
 use crate::{validate, AccountMapProvider};
 use crate::{TokenizedVaultDepositor, Vault, VaultDepositor, VaultProtocolProvider, WithdrawUnit};
 use anchor_lang::prelude::*;
@@ -177,9 +177,9 @@ pub struct RedeemTokens<'info> {
     )]
     pub mint: Account<'info, Mint>,
     #[account(
-        mut,
-        token::authority = authority,
-        token::mint = tokenized_vault_depositor.load()?.mint
+    mut,
+    token::authority = authority,
+    token::mint = tokenized_vault_depositor.load()?.mint
     )]
     pub user_token_account: Account<'info, TokenAccount>,
     #[account(

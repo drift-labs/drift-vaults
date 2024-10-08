@@ -2,9 +2,9 @@ use crate::constraints::{
     is_authority_for_vault_depositor, is_mint_for_tokenized_depositor,
     is_tokenized_depositor_for_vault, is_user_for_vault,
 };
-use crate::drift_cpi::MintTokensCPI;
 use crate::error::ErrorCode;
 use crate::state::traits::VaultDepositorBase;
+use crate::token_cpi::MintTokensCPI;
 use crate::{validate, AccountMapProvider};
 use crate::{TokenizedVaultDepositor, Vault, VaultDepositor, VaultProtocolProvider, WithdrawUnit};
 use anchor_lang::prelude::*;

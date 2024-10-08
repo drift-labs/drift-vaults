@@ -6,8 +6,9 @@ use drift::program::Drift;
 use drift::state::user::User;
 
 use crate::constraints::{is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault};
-use crate::drift_cpi::{DepositCPI, TokenTransferCPI};
+use crate::drift_cpi::DepositCPI;
 use crate::state::{Vault, VaultProtocolProvider};
+use crate::token_cpi::TokenTransferCPI;
 use crate::{declare_vault_seeds, AccountMapProvider};
 
 pub fn manager_deposit<'c: 'info, 'info>(

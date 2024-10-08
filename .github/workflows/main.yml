@@ -34,7 +34,7 @@ jobs:
       - name: Cargo fmt
         run: cargo fmt -- --check
       - name: Cargo clippy
-        run: cargo clippy -p drift@2.95.0
+        run: cargo clippy -p drift-vaults
   unit:
     name: Unit tests
     runs-on: ubicloud

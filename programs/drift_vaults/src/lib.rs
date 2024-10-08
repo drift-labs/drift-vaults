@@ -9,6 +9,7 @@ mod instructions;
 pub mod macros;
 mod state;
 mod tests;
+mod token_cpi;
 
 declare_id!("vAuLTsyrvSfZRuRB3XgvkPwNGgYSs9YRYymVebLKoxR");
 

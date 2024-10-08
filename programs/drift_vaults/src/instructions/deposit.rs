@@ -8,9 +8,10 @@ use drift::state::user::User;
 use crate::constraints::{
     is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
 };
-use crate::drift_cpi::{DepositCPI, TokenTransferCPI};
+use crate::drift_cpi::DepositCPI;
 use crate::error::ErrorCode;
 use crate::state::{Vault, VaultDepositor, VaultProtocolProvider};
+use crate::token_cpi::TokenTransferCPI;
 use crate::{declare_vault_seeds, implement_deposit, validate, AccountMapProvider};
 
 pub fn deposit<'c: 'info, 'info>(
