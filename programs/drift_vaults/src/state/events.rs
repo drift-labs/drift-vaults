@@ -87,7 +87,6 @@ pub struct ShareTransferRecord {
     pub vault: Pubkey,
     pub from_vault_depositor: Pubkey,
     pub to_vault_depositor: Pubkey,
-
     pub shares: u128,
     pub value: u64,
     pub from_depositor_shares_before: u128,
