@@ -3,17 +3,20 @@ use crate::error::VaultResult;
 use crate::{validate, Vault};
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program;
+use bytemuck::Zeroable;
 use drift::math::insurance::{
     if_shares_to_vault_amount as depositor_shares_to_vault_amount,
     vault_amount_to_if_shares as vault_amount_to_depositor_shares,
 };
 use drift::math::safe_math::SafeMath;
-use drift_vaults_macros::assert_no_hidden_padding;
+use drift_macros::assert_no_slop;
 use solana_program::msg;
 use static_assertions::const_assert_eq;
 
-#[assert_no_hidden_padding]
-#[derive(Default, AnchorSerialize, AnchorDeserialize, Copy, Clone, Eq, PartialEq, Debug)]
+#[assert_no_slop]
+#[derive(
+    Default, AnchorSerialize, AnchorDeserialize, Copy, Clone, Eq, PartialEq, Debug, Zeroable,
+)]
 pub struct WithdrawRequest {
     /// request shares of vault withdraw
     pub shares: u128,

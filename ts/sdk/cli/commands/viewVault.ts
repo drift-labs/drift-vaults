@@ -4,7 +4,6 @@ import {
     Command
 } from "commander";
 import { getCommandContext, printVault } from "../utils";
-import { QUOTE_PRECISION, convertToNumber } from "@drift-labs/sdk";
 
 export const viewVault = async (program: Command, cmdOpts: OptionValues) => {
 
@@ -17,14 +16,24 @@ export const viewVault = async (program: Command, cmdOpts: OptionValues) => {
     }
 
     const {
-        driftVault
-    } = await getCommandContext(program, true);
+        driftVault,
+        driftClient,
+    } = await getCommandContext(program, false);
 
-    const vault = await driftVault.getVault(address);
-    printVault(vault);
+
+    const vaultAndSlot = await driftVault.getVaultAndSlot(address);
+    const vault = vaultAndSlot.vault;
+    const spotMarket = driftClient.getSpotMarketAccount(vault.spotMarketIndex);
+    if (!spotMarket) {
+        throw new Error(`Spot market ${vault.spotMarketIndex} not found`);
+    }
+    const spotOracle = driftClient.getOracleDataForSpotMarket(vault.spotMarketIndex);
+    if (!spotOracle) {
+        throw new Error(`Spot oracle ${vault.spotMarketIndex} not found`);
+    }
     const vaultEquity = await driftVault.calculateVaultEquity({
         vault,
     });
-    console.log(`vaultEquity: ${convertToNumber(vaultEquity, QUOTE_PRECISION)}`);
-    console.log("Done!");
+    await printVault(vaultAndSlot.slot, driftClient, vault, vaultEquity, spotMarket, spotOracle);
 };
+

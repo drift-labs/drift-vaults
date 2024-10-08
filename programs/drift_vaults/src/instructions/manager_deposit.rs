@@ -1,7 +1,3 @@
-use crate::constraints::{is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault};
-use crate::cpi::{DepositCPI, TokenTransferCPI};
-use crate::Vault;
-use crate::{declare_vault_seeds, AccountMapProvider};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 use drift::cpi::accounts::Deposit as DriftDeposit;
@@ -9,13 +5,23 @@ use drift::instructions::optional_accounts::AccountMaps;
 use drift::program::Drift;
 use drift::state::user::User;
 
-pub fn manager_deposit<'info>(
-    ctx: Context<'_, '_, '_, 'info, ManagerDeposit<'info>>,
+use crate::constraints::{is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault};
+use crate::drift_cpi::{DepositCPI, TokenTransferCPI};
+use crate::state::{Vault, VaultProtocolProvider};
+use crate::{declare_vault_seeds, AccountMapProvider};
+
+pub fn manager_deposit<'c: 'info, 'info>(
+    ctx: Context<'_, '_, 'c, 'info, ManagerDeposit<'info>>,
     amount: u64,
 ) -> Result<()> {
     let clock = &Clock::get()?;
 
     let mut vault = ctx.accounts.vault.load_mut()?;
+
+    // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
+    let mut vp = ctx.vault_protocol();
+    vault.validate_vault_protocol(&vp)?;
+    let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
 
     let user = ctx.accounts.drift_user.load()?;
     let spot_market_index = vault.spot_market_index;
@@ -24,15 +30,16 @@ pub fn manager_deposit<'info>(
         perp_market_map,
         spot_market_map,
         mut oracle_map,
-    } = ctx.load_maps(clock.slot, Some(spot_market_index))?;
+    } = ctx.load_maps(clock.slot, Some(spot_market_index), vp.is_some())?;
 
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
-    vault.manager_deposit(amount, vault_equity, clock.unix_timestamp)?;
+    vault.manager_deposit(&mut vp, amount, vault_equity, clock.unix_timestamp)?;
 
     drop(vault);
     drop(user);
+    drop(vp);
 
     ctx.token_transfer(amount)?;
 

@@ -1,0 +1,29 @@
+{
+	"compilerOptions": {
+		"types": [
+			"mocha"
+		],
+		"module": "commonjs",
+		"target": "es2019",
+		"esModuleInterop": true,
+		"preserveConstEnums": true,
+		"sourceMap": true,
+		"resolveJsonModule": true,
+		"skipLibCheck": true,
+		"experimentalDecorators": true,
+		"emitDecoratorMetadata": true,
+		"baseUrl": ".",
+		"rootDirs": [
+			"src"
+		],
+		"outDir": "./lib",
+		"strict": false
+	},
+	"include": [
+		"src/**/*"
+	],
+	"exclude": [
+		"node_modules",
+		"src/**/*.test.ts"
+	]
+}

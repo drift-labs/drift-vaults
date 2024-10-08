@@ -1,17 +1,20 @@
-use crate::constraints::{
-    is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
-};
-use crate::cpi::{UpdateUserDelegateCPI, UpdateUserReduceOnlyCPI};
-use crate::{declare_vault_seeds, implement_update_user_delegate_cpi};
-use crate::{implement_update_user_reduce_only_cpi, AccountMapProvider};
-use crate::{Vault, VaultDepositor};
 use anchor_lang::prelude::*;
 use drift::cpi::accounts::UpdateUser;
 use drift::instructions::optional_accounts::AccountMaps;
 use drift::program::Drift;
 use drift::state::user::User;
 
-pub fn liquidate<'info>(ctx: Context<'_, '_, '_, 'info, Liquidate<'info>>) -> Result<()> {
+use crate::constraints::{
+    is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
+};
+use crate::drift_cpi::{UpdateUserDelegateCPI, UpdateUserReduceOnlyCPI};
+use crate::state::{Vault, VaultDepositor, VaultProtocolProvider};
+use crate::{declare_vault_seeds, implement_update_user_delegate_cpi};
+use crate::{implement_update_user_reduce_only_cpi, AccountMapProvider};
+
+pub fn liquidate<'c: 'info, 'info>(
+    ctx: Context<'_, '_, 'c, 'info, Liquidate<'info>>,
+) -> Result<()> {
     let clock = &Clock::get()?;
     let now = Clock::get()?.unix_timestamp;
 
@@ -19,11 +22,16 @@ pub fn liquidate<'info>(ctx: Context<'_, '_, '_, 'info, Liquidate<'info>>) -> Re
     let mut vault = ctx.accounts.vault.load_mut()?;
     let vault_depositor = ctx.accounts.vault_depositor.load()?;
 
+    // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
+    let mut vp = ctx.vault_protocol();
+    vault.validate_vault_protocol(&vp)?;
+    let vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
+
     let AccountMaps {
         perp_market_map,
         spot_market_map,
         mut oracle_map,
-    } = ctx.load_maps(clock.slot, Some(vault.spot_market_index))?;
+    } = ctx.load_maps(clock.slot, Some(vault.spot_market_index), vp.is_some())?;
 
     // 1. Check the vault depositor has waited the redeem period
     vault_depositor
@@ -47,6 +55,7 @@ pub fn liquidate<'info>(ctx: Context<'_, '_, '_, 'info, Liquidate<'info>>) -> Re
 
     drop(user);
     drop(vault);
+    drop(vp);
 
     ctx.drift_update_user_delegate(vault_depositor.authority)?;
     ctx.drift_update_user_reduce_only(true)?;

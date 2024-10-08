@@ -1,5 +1,10 @@
-import { BN, Program } from '@coral-xyz/anchor';
-import { BulkAccountLoader, PERCENTAGE_PRECISION, ZERO } from '@drift-labs/sdk';
+import { Program } from '@coral-xyz/anchor';
+import {
+	BN,
+	BulkAccountLoader,
+	PERCENTAGE_PRECISION,
+	ZERO,
+} from '@drift-labs/sdk';
 import { PublicKey } from '@solana/web3.js';
 import { DriftVaults } from '../types/drift_vaults';
 import { VaultDepositor, VaultDepositorAccountEvents } from '../types/types';

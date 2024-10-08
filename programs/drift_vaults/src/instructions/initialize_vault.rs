@@ -1,5 +1,5 @@
 use crate::constants::ONE_DAY;
-use crate::cpi::InitializeUserCPI;
+use crate::drift_cpi::InitializeUserCPI;
 use crate::{error::ErrorCode, validate, Size, Vault};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{Mint, Token, TokenAccount};
@@ -13,7 +13,7 @@ pub fn initialize_vault<'info>(
     ctx: Context<'_, '_, '_, 'info, InitializeVault<'info>>,
     params: VaultParams,
 ) -> Result<()> {
-    let bump = ctx.bumps.get("vault").ok_or(ErrorCode::Default)?;
+    let bump = ctx.bumps.vault;
 
     let mut vault = ctx.accounts.vault.load_init()?;
     vault.name = params.name;
@@ -55,13 +55,13 @@ pub fn initialize_vault<'info>(
         "hurdle rate not implemented"
     )?;
     vault.hurdle_rate = params.hurdle_rate;
-    vault.bump = *bump;
+    vault.bump = bump;
     vault.permissioned = params.permissioned;
 
     drop(vault);
 
-    ctx.drift_initialize_user(params.name, *bump)?;
-    ctx.drift_initialize_user_stats(params.name, *bump)?;
+    ctx.drift_initialize_user(params.name, bump)?;
+    ctx.drift_initialize_user_stats(params.name, bump)?;
 
     Ok(())
 }

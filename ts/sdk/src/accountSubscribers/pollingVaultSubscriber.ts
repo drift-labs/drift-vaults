@@ -41,14 +41,15 @@ export class PollingVaultSubscriber
 
 	async fetch(): Promise<void> {
 		await this.accountLoader.load();
-		const { buffer, slot } = this.accountLoader.getBufferAndSlot(this.pubkey);
+		const bufferAndSlot = this.accountLoader.getBufferAndSlot(this.pubkey);
+		if (!bufferAndSlot) return;
 		const currentSlot = this.account?.slot ?? 0;
-		if (buffer && slot > currentSlot) {
+		if (bufferAndSlot.buffer && bufferAndSlot.slot > currentSlot) {
 			const account = this.program.account.vault.coder.accounts.decode(
 				'vault',
-				buffer
+				bufferAndSlot.buffer
 			);
-			this.account = { data: account, slot };
+			this.account = { data: account, slot: bufferAndSlot.slot };
 		}
 	}
 

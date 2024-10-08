@@ -81,6 +81,89 @@ export type DriftVaults = {
 			];
 		},
 		{
+			name: 'initializeVaultWithProtocol';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'vaultProtocol';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'tokenAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUser';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftState';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftSpotMarket';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftSpotMarketMint';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'payer';
+					isMut: true;
+					isSigner: true;
+				},
+				{
+					name: 'rent';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'systemProgram';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftProgram';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'tokenProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [
+				{
+					name: 'params';
+					type: {
+						defined: 'VaultWithProtocolParams';
+					};
+				}
+			];
+		},
+		{
 			name: 'updateDelegate';
 			accounts: [
 				{
@@ -139,6 +222,34 @@ export type DriftVaults = {
 				{
 					name: 'enabled';
 					type: 'bool';
+				}
+			];
+		},
+		{
+			name: 'updateVaultProtocol';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'protocol';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'vaultProtocol';
+					isMut: true;
+					isSigner: false;
+				}
+			];
+			args: [
+				{
+					name: 'params';
+					type: {
+						defined: 'UpdateVaultProtocolParams';
+					};
 				}
 			];
 		},
@@ -789,6 +900,267 @@ export type DriftVaults = {
 				}
 			];
 			args: [];
+		},
+		{
+			name: 'initializeInsuranceFundStake';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'payer';
+					isMut: true;
+					isSigner: true;
+				},
+				{
+					name: 'rent';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'systemProgram';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftSpotMarket';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'insuranceFundStake';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftState';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [
+				{
+					name: 'marketIndex';
+					type: 'u16';
+				}
+			];
+		},
+		{
+			name: 'initializeCompetitor';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'payer';
+					isMut: true;
+					isSigner: true;
+				},
+				{
+					name: 'rent';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'systemProgram';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'competitor';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftCompetitions';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftCompetitionsProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [];
+		},
+		{
+			name: 'protocolRequestWithdraw';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'vaultProtocol';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'protocol';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftUser';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftState';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [
+				{
+					name: 'withdrawAmount';
+					type: 'u64';
+				},
+				{
+					name: 'withdrawUnit';
+					type: {
+						defined: 'WithdrawUnit';
+					};
+				}
+			];
+		},
+		{
+			name: 'protocolCancelWithdrawRequest';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'vaultProtocol';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'protocol';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftUser';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftState';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [];
+		},
+		{
+			name: 'protocolWithdraw';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'vaultProtocol';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'protocol';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'vaultTokenAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUser';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftState';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftSpotMarketVault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftSigner';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'userTokenAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftProgram';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'tokenProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [];
 		}
 	];
 	accounts: [
@@ -880,6 +1252,82 @@ export type DriftVaults = {
 			};
 		},
 		{
+			name: 'vaultProtocol';
+			type: {
+				kind: 'struct';
+				fields: [
+					{
+						name: 'protocol';
+						docs: [
+							'The protocol, company, or entity that services the product using this vault.',
+							'The protocol is not allowed to deposit into the vault but can profit share and collect annual fees just like the manager.'
+						];
+						type: 'publicKey';
+					},
+					{
+						name: 'protocolProfitAndFeeShares';
+						docs: [
+							'The shares from profit share and annual fee unclaimed by the protocol.'
+						];
+						type: 'u128';
+					},
+					{
+						name: 'protocolFee';
+						docs: [
+							'The annual fee charged on deposits by the protocol (traditional hedge funds typically charge 2% per year on assets under management).',
+							"Unlike the management fee this can't be negative."
+						];
+						type: 'u64';
+					},
+					{
+						name: 'protocolTotalWithdraws';
+						docs: ['Total withdraws for the protocol'];
+						type: 'u64';
+					},
+					{
+						name: 'protocolTotalFee';
+						docs: [
+							'Total fee charged by the protocol (annual management fee + profit share).',
+							"Unlike the management fee this can't be negative."
+						];
+						type: 'u64';
+					},
+					{
+						name: 'protocolTotalProfitShare';
+						docs: ['Total profit share charged by the protocol'];
+						type: 'u64';
+					},
+					{
+						name: 'lastProtocolWithdrawRequest';
+						type: {
+							defined: 'WithdrawRequest';
+						};
+					},
+					{
+						name: 'protocolProfitShare';
+						docs: [
+							'Percentage the protocol charges on all profits realized by depositors: PERCENTAGE_PRECISION'
+						];
+						type: 'u32';
+					},
+					{
+						name: 'bump';
+						type: 'u8';
+					},
+					{
+						name: 'version';
+						type: 'u8';
+					},
+					{
+						name: 'padding';
+						type: {
+							array: ['u8', 2];
+						};
+					}
+				];
+			};
+		},
+		{
 			name: 'vault';
 			type: {
 				kind: 'struct';
@@ -928,7 +1376,7 @@ export type DriftVaults = {
 						name: 'delegate';
 						docs: [
 							'The vaults designated delegate for drift user account',
-							'Can differ from actual user delegate if vault is in liquidation'
+							'can differ from actual user delegate if vault is in liquidation'
 						];
 						type: 'publicKey';
 					},
@@ -940,97 +1388,104 @@ export type DriftVaults = {
 					{
 						name: 'userShares';
 						docs: [
-							'the sum of all shares held by the users (vault depositors)'
+							'The sum of all shares held by the users (vault depositors)'
 						];
 						type: 'u128';
 					},
 					{
 						name: 'totalShares';
-						docs: ['the sum of all shares (including vault manager)'];
+						docs: [
+							'The sum of all shares: deposits from users, manager deposits, manager profit/fee, and protocol profit/fee.',
+							'The manager deposits are total_shares - user_shares - protocol_profit_and_fee_shares.'
+						];
 						type: 'u128';
 					},
 					{
 						name: 'lastFeeUpdateTs';
-						docs: ['last fee update unix timestamp'];
+						docs: ['Last fee update unix timestamp'];
 						type: 'i64';
 					},
 					{
 						name: 'liquidationStartTs';
-						docs: ['When the liquidation start'];
+						docs: ['When the liquidation starts'];
 						type: 'i64';
 					},
 					{
 						name: 'redeemPeriod';
 						docs: [
-							'the period (in seconds) that a vault depositor must wait after requesting a withdraw to complete withdraw'
+							'The period (in seconds) that a vault depositor must wait after requesting a withdrawal to finalize withdrawal.',
+							'Currently, the maximum is 90 days.'
 						];
 						type: 'i64';
 					},
 					{
 						name: 'totalWithdrawRequested';
-						docs: ['the sum of all outstanding withdraw requests'];
+						docs: ['The sum of all outstanding withdraw requests'];
 						type: 'u64';
 					},
 					{
 						name: 'maxTokens';
 						docs: [
-							'max token capacity, once hit/passed vault will reject new deposits (updateable)'
+							'Max token capacity, once hit/passed vault will reject new deposits (updatable)'
 						];
 						type: 'u64';
 					},
 					{
 						name: 'managementFee';
-						docs: ['manager fee'];
+						docs: [
+							'The annual fee charged on deposits by the manager.',
+							'Traditional funds typically charge 2% per year on assets under management.'
+						];
 						type: 'i64';
 					},
 					{
 						name: 'initTs';
-						docs: ['timestamp vault initialized'];
+						docs: ['Timestamp vault initialized'];
 						type: 'i64';
 					},
 					{
 						name: 'netDeposits';
-						docs: ['the net deposits for the vault'];
+						docs: ['The net deposits for the vault'];
 						type: 'i64';
 					},
 					{
 						name: 'managerNetDeposits';
-						docs: ['the net deposits for the vault manager'];
+						docs: ['The net deposits for the manager'];
 						type: 'i64';
 					},
 					{
 						name: 'totalDeposits';
-						docs: ['total deposits'];
+						docs: ['Total deposits'];
 						type: 'u64';
 					},
 					{
 						name: 'totalWithdraws';
-						docs: ['total withdraws'];
+						docs: ['Total withdraws'];
 						type: 'u64';
 					},
 					{
 						name: 'managerTotalDeposits';
-						docs: ['total deposits for the vault manager'];
+						docs: ['Total deposits for the manager'];
 						type: 'u64';
 					},
 					{
 						name: 'managerTotalWithdraws';
-						docs: ['total withdraws for the vault manager'];
+						docs: ['Total withdraws for the manager'];
 						type: 'u64';
 					},
 					{
 						name: 'managerTotalFee';
-						docs: ['total mgmt fee charged by vault manager'];
+						docs: ['Total management fee accrued by the manager'];
 						type: 'i64';
 					},
 					{
 						name: 'managerTotalProfitShare';
-						docs: ['total profit share charged by vault manager'];
+						docs: ['Total profit share accrued by the manager'];
 						type: 'u64';
 					},
 					{
 						name: 'minDepositAmount';
-						docs: ['the minimum deposit amount'];
+						docs: ['The minimum deposit amount'];
 						type: 'u64';
 					},
 					{
@@ -1042,21 +1497,21 @@ export type DriftVaults = {
 					{
 						name: 'sharesBase';
 						docs: [
-							'the base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)'
+							'The base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)'
 						];
 						type: 'u32';
 					},
 					{
 						name: 'profitShare';
 						docs: [
-							"percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION"
+							'Percentage the manager charges on all profits realized by depositors: PERCENTAGE_PRECISION'
 						];
 						type: 'u32';
 					},
 					{
 						name: 'hurdleRate';
 						docs: [
-							'vault admin only collect incentive fees during periods when returns are higher than this amount: PERCENTAGE_PRECISION'
+							'Vault manager only collect incentive fees during periods when returns are higher than this amount: PERCENTAGE_PRECISION'
 						];
 						type: 'u32';
 					},
@@ -1074,13 +1529,24 @@ export type DriftVaults = {
 					},
 					{
 						name: 'permissioned';
-						docs: ['Whether or not anybody can be a depositor'];
+						docs: ['Whether anybody can be a depositor'];
 						type: 'bool';
+					},
+					{
+						name: 'vaultProtocol';
+						docs: ['The optional [`VaultProtocol`] account.'];
+						type: 'bool';
+					},
+					{
+						name: 'padding1';
+						type: {
+							array: ['u8', 7];
+						};
 					},
 					{
 						name: 'padding';
 						type: {
-							array: ['u64', 8];
+							array: ['u64', 7];
 						};
 					}
 				];
@@ -1088,6 +1554,78 @@ export type DriftVaults = {
 		}
 	];
 	types: [
+		{
+			name: 'VaultWithProtocolParams';
+			type: {
+				kind: 'struct';
+				fields: [
+					{
+						name: 'name';
+						type: {
+							array: ['u8', 32];
+						};
+					},
+					{
+						name: 'redeemPeriod';
+						type: 'i64';
+					},
+					{
+						name: 'maxTokens';
+						type: 'u64';
+					},
+					{
+						name: 'managementFee';
+						type: 'i64';
+					},
+					{
+						name: 'minDepositAmount';
+						type: 'u64';
+					},
+					{
+						name: 'profitShare';
+						type: 'u32';
+					},
+					{
+						name: 'hurdleRate';
+						type: 'u32';
+					},
+					{
+						name: 'spotMarketIndex';
+						type: 'u16';
+					},
+					{
+						name: 'permissioned';
+						type: 'bool';
+					},
+					{
+						name: 'vaultProtocol';
+						type: {
+							defined: 'VaultProtocolParams';
+						};
+					}
+				];
+			};
+		},
+		{
+			name: 'VaultProtocolParams';
+			type: {
+				kind: 'struct';
+				fields: [
+					{
+						name: 'protocol';
+						type: 'publicKey';
+					},
+					{
+						name: 'protocolFee';
+						type: 'u64';
+					},
+					{
+						name: 'protocolProfitShare';
+						type: 'u32';
+					}
+				];
+			};
+		},
 		{
 			name: 'VaultParams';
 			type: {
@@ -1130,6 +1668,26 @@ export type DriftVaults = {
 					{
 						name: 'permissioned';
 						type: 'bool';
+					}
+				];
+			};
+		},
+		{
+			name: 'UpdateVaultProtocolParams';
+			type: {
+				kind: 'struct';
+				fields: [
+					{
+						name: 'protocolFee';
+						type: {
+							option: 'u64';
+						};
+					},
+					{
+						name: 'protocolProfitShare';
+						type: {
+							option: 'u32';
+						};
 					}
 				];
 			};
@@ -1357,6 +1915,118 @@ export type DriftVaults = {
 					index: false;
 				}
 			];
+		},
+		{
+			name: 'VaultDepositorV1Record';
+			fields: [
+				{
+					name: 'ts';
+					type: 'i64';
+					index: false;
+				},
+				{
+					name: 'vault';
+					type: 'publicKey';
+					index: false;
+				},
+				{
+					name: 'depositorAuthority';
+					type: 'publicKey';
+					index: false;
+				},
+				{
+					name: 'action';
+					type: {
+						defined: 'VaultDepositorAction';
+					};
+					index: false;
+				},
+				{
+					name: 'amount';
+					type: 'u64';
+					index: false;
+				},
+				{
+					name: 'spotMarketIndex';
+					type: 'u16';
+					index: false;
+				},
+				{
+					name: 'vaultSharesBefore';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'vaultSharesAfter';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'vaultEquityBefore';
+					type: 'u64';
+					index: false;
+				},
+				{
+					name: 'userVaultSharesBefore';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'totalVaultSharesBefore';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'userVaultSharesAfter';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'totalVaultSharesAfter';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'protocolSharesBefore';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'protocolSharesAfter';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'protocolProfitShare';
+					type: 'u64';
+					index: false;
+				},
+				{
+					name: 'protocolFee';
+					type: 'i64';
+					index: false;
+				},
+				{
+					name: 'protocolFeeShares';
+					type: 'i64';
+					index: false;
+				},
+				{
+					name: 'managerProfitShare';
+					type: 'u64';
+					index: false;
+				},
+				{
+					name: 'managementFee';
+					type: 'i64';
+					index: false;
+				},
+				{
+					name: 'managementFeeShares';
+					type: 'i64';
+					index: false;
+				}
+			];
 		}
 	];
 	errors: [
@@ -1469,6 +2139,11 @@ export type DriftVaults = {
 			code: 6021;
 			name: 'OngoingLiquidation';
 			msg: 'OngoingLiquidation';
+		},
+		{
+			code: 6022;
+			name: 'VaultProtocolMissing';
+			msg: 'VaultProtocolMissing';
 		}
 	];
 };
@@ -1556,6 +2231,89 @@ export const IDL: DriftVaults = {
 			],
 		},
 		{
+			name: 'initializeVaultWithProtocol',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'vaultProtocol',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'tokenAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUser',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftState',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftSpotMarket',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftSpotMarketMint',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'payer',
+					isMut: true,
+					isSigner: true,
+				},
+				{
+					name: 'rent',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'systemProgram',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftProgram',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'tokenProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [
+				{
+					name: 'params',
+					type: {
+						defined: 'VaultWithProtocolParams',
+					},
+				},
+			],
+		},
+		{
 			name: 'updateDelegate',
 			accounts: [
 				{
@@ -1614,6 +2372,34 @@ export const IDL: DriftVaults = {
 				{
 					name: 'enabled',
 					type: 'bool',
+				},
+			],
+		},
+		{
+			name: 'updateVaultProtocol',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'protocol',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'vaultProtocol',
+					isMut: true,
+					isSigner: false,
+				},
+			],
+			args: [
+				{
+					name: 'params',
+					type: {
+						defined: 'UpdateVaultProtocolParams',
+					},
 				},
 			],
 		},
@@ -2265,6 +3051,267 @@ export const IDL: DriftVaults = {
 			],
 			args: [],
 		},
+		{
+			name: 'initializeInsuranceFundStake',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'payer',
+					isMut: true,
+					isSigner: true,
+				},
+				{
+					name: 'rent',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'systemProgram',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftSpotMarket',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'insuranceFundStake',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftState',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [
+				{
+					name: 'marketIndex',
+					type: 'u16',
+				},
+			],
+		},
+		{
+			name: 'initializeCompetitor',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'payer',
+					isMut: true,
+					isSigner: true,
+				},
+				{
+					name: 'rent',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'systemProgram',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'competitor',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftCompetitions',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftCompetitionsProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [],
+		},
+		{
+			name: 'protocolRequestWithdraw',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'vaultProtocol',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'protocol',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftUser',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftState',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [
+				{
+					name: 'withdrawAmount',
+					type: 'u64',
+				},
+				{
+					name: 'withdrawUnit',
+					type: {
+						defined: 'WithdrawUnit',
+					},
+				},
+			],
+		},
+		{
+			name: 'protocolCancelWithdrawRequest',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'vaultProtocol',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'protocol',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftUser',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftState',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [],
+		},
+		{
+			name: 'protocolWithdraw',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'vaultProtocol',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'protocol',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'vaultTokenAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUser',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftState',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftSpotMarketVault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftSigner',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'userTokenAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftProgram',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'tokenProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [],
+		},
 	],
 	accounts: [
 		{
@@ -2355,6 +3402,82 @@ export const IDL: DriftVaults = {
 			},
 		},
 		{
+			name: 'vaultProtocol',
+			type: {
+				kind: 'struct',
+				fields: [
+					{
+						name: 'protocol',
+						docs: [
+							'The protocol, company, or entity that services the product using this vault.',
+							'The protocol is not allowed to deposit into the vault but can profit share and collect annual fees just like the manager.',
+						],
+						type: 'publicKey',
+					},
+					{
+						name: 'protocolProfitAndFeeShares',
+						docs: [
+							'The shares from profit share and annual fee unclaimed by the protocol.',
+						],
+						type: 'u128',
+					},
+					{
+						name: 'protocolFee',
+						docs: [
+							'The annual fee charged on deposits by the protocol (traditional hedge funds typically charge 2% per year on assets under management).',
+							"Unlike the management fee this can't be negative.",
+						],
+						type: 'u64',
+					},
+					{
+						name: 'protocolTotalWithdraws',
+						docs: ['Total withdraws for the protocol'],
+						type: 'u64',
+					},
+					{
+						name: 'protocolTotalFee',
+						docs: [
+							'Total fee charged by the protocol (annual management fee + profit share).',
+							"Unlike the management fee this can't be negative.",
+						],
+						type: 'u64',
+					},
+					{
+						name: 'protocolTotalProfitShare',
+						docs: ['Total profit share charged by the protocol'],
+						type: 'u64',
+					},
+					{
+						name: 'lastProtocolWithdrawRequest',
+						type: {
+							defined: 'WithdrawRequest',
+						},
+					},
+					{
+						name: 'protocolProfitShare',
+						docs: [
+							'Percentage the protocol charges on all profits realized by depositors: PERCENTAGE_PRECISION',
+						],
+						type: 'u32',
+					},
+					{
+						name: 'bump',
+						type: 'u8',
+					},
+					{
+						name: 'version',
+						type: 'u8',
+					},
+					{
+						name: 'padding',
+						type: {
+							array: ['u8', 2],
+						},
+					},
+				],
+			},
+		},
+		{
 			name: 'vault',
 			type: {
 				kind: 'struct',
@@ -2403,7 +3526,7 @@ export const IDL: DriftVaults = {
 						name: 'delegate',
 						docs: [
 							'The vaults designated delegate for drift user account',
-							'Can differ from actual user delegate if vault is in liquidation',
+							'can differ from actual user delegate if vault is in liquidation',
 						],
 						type: 'publicKey',
 					},
@@ -2415,97 +3538,104 @@ export const IDL: DriftVaults = {
 					{
 						name: 'userShares',
 						docs: [
-							'the sum of all shares held by the users (vault depositors)',
+							'The sum of all shares held by the users (vault depositors)',
 						],
 						type: 'u128',
 					},
 					{
 						name: 'totalShares',
-						docs: ['the sum of all shares (including vault manager)'],
+						docs: [
+							'The sum of all shares: deposits from users, manager deposits, manager profit/fee, and protocol profit/fee.',
+							'The manager deposits are total_shares - user_shares - protocol_profit_and_fee_shares.',
+						],
 						type: 'u128',
 					},
 					{
 						name: 'lastFeeUpdateTs',
-						docs: ['last fee update unix timestamp'],
+						docs: ['Last fee update unix timestamp'],
 						type: 'i64',
 					},
 					{
 						name: 'liquidationStartTs',
-						docs: ['When the liquidation start'],
+						docs: ['When the liquidation starts'],
 						type: 'i64',
 					},
 					{
 						name: 'redeemPeriod',
 						docs: [
-							'the period (in seconds) that a vault depositor must wait after requesting a withdraw to complete withdraw',
+							'The period (in seconds) that a vault depositor must wait after requesting a withdrawal to finalize withdrawal.',
+							'Currently, the maximum is 90 days.',
 						],
 						type: 'i64',
 					},
 					{
 						name: 'totalWithdrawRequested',
-						docs: ['the sum of all outstanding withdraw requests'],
+						docs: ['The sum of all outstanding withdraw requests'],
 						type: 'u64',
 					},
 					{
 						name: 'maxTokens',
 						docs: [
-							'max token capacity, once hit/passed vault will reject new deposits (updateable)',
+							'Max token capacity, once hit/passed vault will reject new deposits (updatable)',
 						],
 						type: 'u64',
 					},
 					{
 						name: 'managementFee',
-						docs: ['manager fee'],
+						docs: [
+							'The annual fee charged on deposits by the manager.',
+							'Traditional funds typically charge 2% per year on assets under management.',
+						],
 						type: 'i64',
 					},
 					{
 						name: 'initTs',
-						docs: ['timestamp vault initialized'],
+						docs: ['Timestamp vault initialized'],
 						type: 'i64',
 					},
 					{
 						name: 'netDeposits',
-						docs: ['the net deposits for the vault'],
+						docs: ['The net deposits for the vault'],
 						type: 'i64',
 					},
 					{
 						name: 'managerNetDeposits',
-						docs: ['the net deposits for the vault manager'],
+						docs: ['The net deposits for the manager'],
 						type: 'i64',
 					},
 					{
 						name: 'totalDeposits',
-						docs: ['total deposits'],
+						docs: ['Total deposits'],
 						type: 'u64',
 					},
 					{
 						name: 'totalWithdraws',
-						docs: ['total withdraws'],
+						docs: ['Total withdraws'],
 						type: 'u64',
 					},
 					{
 						name: 'managerTotalDeposits',
-						docs: ['total deposits for the vault manager'],
+						docs: ['Total deposits for the manager'],
 						type: 'u64',
 					},
 					{
 						name: 'managerTotalWithdraws',
-						docs: ['total withdraws for the vault manager'],
+						docs: ['Total withdraws for the manager'],
 						type: 'u64',
 					},
 					{
 						name: 'managerTotalFee',
-						docs: ['total mgmt fee charged by vault manager'],
+						docs: ['Total management fee accrued by the manager'],
 						type: 'i64',
 					},
 					{
 						name: 'managerTotalProfitShare',
-						docs: ['total profit share charged by vault manager'],
+						docs: ['Total profit share accrued by the manager'],
 						type: 'u64',
 					},
 					{
 						name: 'minDepositAmount',
-						docs: ['the minimum deposit amount'],
+						docs: ['The minimum deposit amount'],
 						type: 'u64',
 					},
 					{
@@ -2517,21 +3647,21 @@ export const IDL: DriftVaults = {
 					{
 						name: 'sharesBase',
 						docs: [
-							'the base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)',
+							'The base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)',
 						],
 						type: 'u32',
 					},
 					{
 						name: 'profitShare',
 						docs: [
-							"percentage of gains for vault admin upon depositor's realize/withdraw: PERCENTAGE_PRECISION",
+							'Percentage the manager charges on all profits realized by depositors: PERCENTAGE_PRECISION',
 						],
 						type: 'u32',
 					},
 					{
 						name: 'hurdleRate',
 						docs: [
-							'vault admin only collect incentive fees during periods when returns are higher than this amount: PERCENTAGE_PRECISION',
+							'Vault manager only collect incentive fees during periods when returns are higher than this amount: PERCENTAGE_PRECISION',
 						],
 						type: 'u32',
 					},
@@ -2549,13 +3679,24 @@ export const IDL: DriftVaults = {
 					},
 					{
 						name: 'permissioned',
-						docs: ['Whether or not anybody can be a depositor'],
+						docs: ['Whether anybody can be a depositor'],
 						type: 'bool',
+					},
+					{
+						name: 'vaultProtocol',
+						docs: ['The optional [`VaultProtocol`] account.'],
+						type: 'bool',
+					},
+					{
+						name: 'padding1',
+						type: {
+							array: ['u8', 7],
+						},
 					},
 					{
 						name: 'padding',
 						type: {
-							array: ['u64', 8],
+							array: ['u64', 7],
 						},
 					},
 				],
@@ -2563,6 +3704,78 @@ export const IDL: DriftVaults = {
 		},
 	],
 	types: [
+		{
+			name: 'VaultWithProtocolParams',
+			type: {
+				kind: 'struct',
+				fields: [
+					{
+						name: 'name',
+						type: {
+							array: ['u8', 32],
+						},
+					},
+					{
+						name: 'redeemPeriod',
+						type: 'i64',
+					},
+					{
+						name: 'maxTokens',
+						type: 'u64',
+					},
+					{
+						name: 'managementFee',
+						type: 'i64',
+					},
+					{
+						name: 'minDepositAmount',
+						type: 'u64',
+					},
+					{
+						name: 'profitShare',
+						type: 'u32',
+					},
+					{
+						name: 'hurdleRate',
+						type: 'u32',
+					},
+					{
+						name: 'spotMarketIndex',
+						type: 'u16',
+					},
+					{
+						name: 'permissioned',
+						type: 'bool',
+					},
+					{
+						name: 'vaultProtocol',
+						type: {
+							defined: 'VaultProtocolParams',
+						},
+					},
+				],
+			},
+		},
+		{
+			name: 'VaultProtocolParams',
+			type: {
+				kind: 'struct',
+				fields: [
+					{
+						name: 'protocol',
+						type: 'publicKey',
+					},
+					{
+						name: 'protocolFee',
+						type: 'u64',
+					},
+					{
+						name: 'protocolProfitShare',
+						type: 'u32',
+					},
+				],
+			},
+		},
 		{
 			name: 'VaultParams',
 			type: {
@@ -2605,6 +3818,26 @@ export const IDL: DriftVaults = {
 					{
 						name: 'permissioned',
 						type: 'bool',
+					},
+				],
+			},
+		},
+		{
+			name: 'UpdateVaultProtocolParams',
+			type: {
+				kind: 'struct',
+				fields: [
+					{
+						name: 'protocolFee',
+						type: {
+							option: 'u64',
+						},
+					},
+					{
+						name: 'protocolProfitShare',
+						type: {
+							option: 'u32',
+						},
 					},
 				],
 			},
@@ -2833,6 +4066,118 @@ export const IDL: DriftVaults = {
 				},
 			],
 		},
+		{
+			name: 'VaultDepositorV1Record',
+			fields: [
+				{
+					name: 'ts',
+					type: 'i64',
+					index: false,
+				},
+				{
+					name: 'vault',
+					type: 'publicKey',
+					index: false,
+				},
+				{
+					name: 'depositorAuthority',
+					type: 'publicKey',
+					index: false,
+				},
+				{
+					name: 'action',
+					type: {
+						defined: 'VaultDepositorAction',
+					},
+					index: false,
+				},
+				{
+					name: 'amount',
+					type: 'u64',
+					index: false,
+				},
+				{
+					name: 'spotMarketIndex',
+					type: 'u16',
+					index: false,
+				},
+				{
+					name: 'vaultSharesBefore',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'vaultSharesAfter',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'vaultEquityBefore',
+					type: 'u64',
+					index: false,
+				},
+				{
+					name: 'userVaultSharesBefore',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'totalVaultSharesBefore',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'userVaultSharesAfter',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'totalVaultSharesAfter',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'protocolSharesBefore',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'protocolSharesAfter',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'protocolProfitShare',
+					type: 'u64',
+					index: false,
+				},
+				{
+					name: 'protocolFee',
+					type: 'i64',
+					index: false,
+				},
+				{
+					name: 'protocolFeeShares',
+					type: 'i64',
+					index: false,
+				},
+				{
+					name: 'managerProfitShare',
+					type: 'u64',
+					index: false,
+				},
+				{
+					name: 'managementFee',
+					type: 'i64',
+					index: false,
+				},
+				{
+					name: 'managementFeeShares',
+					type: 'i64',
+					index: false,
+				},
+			],
+		},
 	],
 	errors: [
 		{
@@ -2944,6 +4289,11 @@ export const IDL: DriftVaults = {
 			code: 6021,
 			name: 'OngoingLiquidation',
 			msg: 'OngoingLiquidation',
+		},
+		{
+			code: 6022,
+			name: 'VaultProtocolMissing',
+			msg: 'VaultProtocolMissing',
 		},
 	],
 };

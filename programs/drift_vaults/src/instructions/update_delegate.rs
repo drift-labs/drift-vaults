@@ -1,11 +1,12 @@
-use crate::constraints::{is_manager_for_vault, is_user_for_vault};
-use crate::cpi::UpdateUserDelegateCPI;
-use crate::Vault;
-use crate::{declare_vault_seeds, implement_update_user_delegate_cpi};
 use anchor_lang::prelude::*;
 use drift::cpi::accounts::UpdateUser;
 use drift::program::Drift;
 use drift::state::user::User;
+
+use crate::constraints::{is_manager_for_vault, is_user_for_vault};
+use crate::drift_cpi::UpdateUserDelegateCPI;
+use crate::Vault;
+use crate::{declare_vault_seeds, implement_update_user_delegate_cpi};
 
 pub fn update_delegate<'info>(
     ctx: Context<'_, '_, '_, 'info, UpdateDelegate<'info>>,

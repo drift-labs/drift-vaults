@@ -13,13 +13,13 @@ defaults:
 
 env:
   CARGO_TERM_COLOR: always
-  RUST_TOOLCHAIN: 1.60.0
-  SOLANA_VERSION: '1.13.7'
+  RUST_TOOLCHAIN: 1.70.0
+  SOLANA_VERSION: "1.16.27"
 
 jobs:
   fmt-clippy:
     name: fmt & clippy
-    runs-on: ubuntu-latest
+    runs-on: ubicloud
     steps:
       - uses: actions/checkout@v2
       - name: Install Rust nightly
@@ -37,7 +37,7 @@ jobs:
         run: cargo clippy -p drift
   unit:
     name: Unit tests
-    runs-on: ubuntu-latest
+    runs-on: ubicloud
     steps:
       - uses: actions/checkout@v2
       - name: Install Rust toolchain
@@ -53,36 +53,37 @@ jobs:
       - name: Run unit tests
         run: cargo test --lib # run unit tests
   yarn-prettier:
-    runs-on: ubuntu-latest
+    runs-on: ubicloud
     steps:
       - uses: actions/checkout@v2
       - name: Setup node
         uses: actions/setup-node@v2
         with:
-          node-version: '16.x'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: "18.x"
+          registry-url: "https://registry.npmjs.org"
       - name: Install yarn
         run: yarn
       - name: Run prettier
         run: yarn prettify
   yarn-lint:
-    runs-on: ubuntu-latest
+    runs-on: ubicloud
     steps:
       - uses: actions/checkout@v2
       - name: Setup node
         uses: actions/setup-node@v2
         with:
-          node-version: '16.x'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: "18.x"
+          registry-url: "https://registry.npmjs.org"
       - name: Install yarn
         run: yarn
       - name: Run lint
         run: yarn lint
   anchor-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubicloud
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout main
+        uses: actions/checkout@v3
 
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
@@ -93,18 +94,18 @@ jobs:
       - name: Cache build artefacts
         uses: Swatinem/rust-cache@v1
         with:
-          cache-on-failure: 'true'
+          cache-on-failure: "true"
 
       - uses: ./.github/actions/setup-solana/
 
       - name: install anchor cli
-        run: cargo install --git https://github.com/coral-xyz/anchor --tag v0.26.0 anchor-cli --locked
+        run: cargo install --git https://github.com/coral-xyz/anchor --tag v0.29.0 anchor-cli --locked
 
       - name: Setup node
         uses: actions/setup-node@v2
         with:
-          node-version: '16.x'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: "18.x"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Setup yarn
         run: npm install -g yarn
@@ -121,7 +122,31 @@ jobs:
           npm install --global mocha
 
       - name: build sdk
-        run: cd ts/sdk/ && yarn && tsc && cd ../..
+        run: |
+          yarn
+          tsc
+        working-directory: ts/sdk
 
       - name: run anchor tests
         run: anchor test
+  verified-build:
+    name: Build Verifiable Artifact
+    runs-on: ubicloud
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install Solana Verify
+        run: |
+          cargo install solana-verify
+          solana-verify --version
+
+      - name: Verifiable Build
+        run: |
+          solana-verify build --library-name drift_vaults --base-image ellipsislabs/solana:1.16.6
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: build
+          path: target/deploy/drift_vaults.so

@@ -4,14 +4,19 @@ use drift::math::casting::Cast;
 use drift::state::user::User;
 
 use crate::constraints::{is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault};
+use crate::state::{Vault, VaultProtocolProvider};
 use crate::AccountMapProvider;
-use crate::Vault;
 
-pub fn manager_cancel_withdraw_request<'info>(
-    ctx: Context<'_, '_, '_, 'info, ManagerCancelWithdrawRequest<'info>>,
+pub fn manager_cancel_withdraw_request<'c: 'info, 'info>(
+    ctx: Context<'_, '_, 'c, 'info, ManagerCancelWithdrawRequest<'info>>,
 ) -> Result<()> {
     let clock = &Clock::get()?;
     let vault = &mut ctx.accounts.vault.load_mut()?;
+
+    // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
+    let mut vp = ctx.vault_protocol();
+    vault.validate_vault_protocol(&vp)?;
+    let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
 
     let user = ctx.accounts.drift_user.load()?;
 
@@ -19,12 +24,12 @@ pub fn manager_cancel_withdraw_request<'info>(
         perp_market_map,
         spot_market_map,
         mut oracle_map,
-    } = ctx.load_maps(clock.slot, None)?;
+    } = ctx.load_maps(clock.slot, None, vp.is_some())?;
 
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
-    vault.manager_cancel_withdraw_request(vault_equity.cast()?, clock.unix_timestamp)?;
+    vault.manager_cancel_withdraw_request(&mut vp, vault_equity.cast()?, clock.unix_timestamp)?;
 
     Ok(())
 }

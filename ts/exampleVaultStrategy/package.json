@@ -1,0 +1,35 @@
+{
+	"name": "@drift-labs/example-vault-strategy",
+	"version": "0.0.0",
+	"author": "pwhan",
+	"main": "lib/index.js",
+	"license": "Apache-2.0",
+	"dependencies": {
+		"@drift-labs/sdk": "2.42.0-beta.10",
+		"dotenv": "^10.0.0"
+	},
+	"devDependencies": {
+		"@types/node": "^20.8.7",
+		"@typescript-eslint/eslint-plugin": "^5.59.11",
+		"@typescript-eslint/parser": "^4.28.0",
+		"eslint": "^7.29.0",
+		"eslint-config-prettier": "^8.3.0",
+		"eslint-plugin-prettier": "^3.4.0",
+		"prettier": "3.0.1",
+		"ts-node": "^10.9.1"
+	},
+	"scripts": {
+		"build": "yarn clean && tsc",
+		"clean": "rm -rf lib",
+		"start": "node lib/index.js",
+		"dev": "NODE_OPTIONS=--max-old-space-size=8192 ts-node src/index.ts",
+		"prettify": "prettier --check './src/**/*.ts'",
+		"prettify:fix": "prettier --write './src/**/*.ts'",
+		"lint": "eslint . --ext ts --quiet",
+		"lint:fix": "eslint . --ext ts --fix",
+		"test": "mocha -r ts-node/register ./src/**/*.test.ts"
+	},
+	"engines": {
+		"node": ">=18"
+	}
+}

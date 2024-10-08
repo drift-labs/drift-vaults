@@ -5,9 +5,19 @@
 		"esModuleInterop": true,
 		"declaration": true,
 		"outDir": "./lib",
+		"rootDirs": [
+			"src",
+			"cli"
+		],
 		"resolveJsonModule": true,
-		"skipLibCheck": true
+		"skipLibCheck": true,
+		"strict": true
 	},
-	"include": ["src"],
-	"exclude": ["node_modules", "tests"]
+	"include": [
+		"src/**/*"
+	],
+	"exclude": [
+		"node_modules",
+		"tests"
+	]
 }

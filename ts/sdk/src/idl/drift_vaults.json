@@ -1540,8 +1540,5 @@
       "name": "OngoingLiquidation",
       "msg": "OngoingLiquidation"
     }
-  ],
-  "metadata": {
-    "address": "vAuLTsyrvSfZRuRB3XgvkPwNGgYSs9YRYymVebLKoxR"
-  }
+  ]
 }

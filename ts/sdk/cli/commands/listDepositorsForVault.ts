@@ -29,5 +29,4 @@ export const listDepositorsForVault = async (program: Command, cmdOpts: OptionVa
         console.log(vaultDepositor.publicKey.toBase58());
     });
     // printVaultDepositor(vaultDepositor);
-    console.log("Done!");
 };

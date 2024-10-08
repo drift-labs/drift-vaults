@@ -33,5 +33,4 @@ export const viewVaultDepositor = async (program: Command, cmdOpts: OptionValues
 
     const vaultDepositor = await driftVault.getVaultDepositor(vaultDepositorAddress);
     printVaultDepositor(vaultDepositor);
-    console.log("Done!");
 };

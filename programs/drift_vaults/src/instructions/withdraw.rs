@@ -1,12 +1,3 @@
-use crate::constraints::{
-    is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
-};
-use crate::cpi::{TokenTransferCPI, UpdateUserDelegateCPI, UpdateUserReduceOnlyCPI, WithdrawCPI};
-use crate::{
-    declare_vault_seeds, implement_update_user_delegate_cpi, implement_update_user_reduce_only_cpi,
-    AccountMapProvider,
-};
-use crate::{Vault, VaultDepositor};
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Transfer};
 use anchor_spl::token::{Token, TokenAccount};
@@ -15,10 +6,27 @@ use drift::instructions::optional_accounts::AccountMaps;
 use drift::program::Drift;
 use drift::state::user::User;
 
-pub fn withdraw<'info>(ctx: Context<'_, '_, '_, 'info, Withdraw<'info>>) -> Result<()> {
+use crate::constraints::{
+    is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
+};
+use crate::drift_cpi::{
+    TokenTransferCPI, UpdateUserDelegateCPI, UpdateUserReduceOnlyCPI, WithdrawCPI,
+};
+use crate::state::{Vault, VaultDepositor, VaultProtocolProvider};
+use crate::{
+    declare_vault_seeds, implement_update_user_delegate_cpi, implement_update_user_reduce_only_cpi,
+    implement_withdraw, AccountMapProvider,
+};
+
+pub fn withdraw<'c: 'info, 'info>(ctx: Context<'_, '_, 'c, 'info, Withdraw<'info>>) -> Result<()> {
     let clock = &Clock::get()?;
     let mut vault = ctx.accounts.vault.load_mut()?;
     let mut vault_depositor = ctx.accounts.vault_depositor.load_mut()?;
+
+    // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
+    let mut vp = ctx.vault_protocol();
+    vault.validate_vault_protocol(&vp)?;
+    let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
 
     let user = ctx.accounts.drift_user.load()?;
     let spot_market_index = vault.spot_market_index;
@@ -27,18 +35,19 @@ pub fn withdraw<'info>(ctx: Context<'_, '_, '_, 'info, Withdraw<'info>>) -> Resu
         perp_market_map,
         spot_market_map,
         mut oracle_map,
-    } = ctx.load_maps(clock.slot, Some(spot_market_index))?;
+    } = ctx.load_maps(clock.slot, Some(spot_market_index), vp.is_some())?;
 
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
     let (user_withdraw_amount, finishing_liquidation) =
-        vault_depositor.withdraw(vault_equity, &mut vault, clock.unix_timestamp)?;
+        vault_depositor.withdraw(vault_equity, &mut vault, &mut vp, clock.unix_timestamp)?;
 
     msg!("user_withdraw_amount: {}", user_withdraw_amount);
 
     drop(vault);
     drop(user);
+    drop(vp);
 
     ctx.drift_withdraw(user_withdraw_amount)?;
 
@@ -108,29 +117,7 @@ pub struct Withdraw<'info> {
 
 impl<'info> WithdrawCPI for Context<'_, '_, '_, 'info, Withdraw<'info>> {
     fn drift_withdraw(&self, amount: u64) -> Result<()> {
-        declare_vault_seeds!(self.accounts.vault, seeds);
-        let spot_market_index = self.accounts.vault.load()?.spot_market_index;
-
-        let cpi_accounts = DriftWithdraw {
-            state: self.accounts.drift_state.to_account_info().clone(),
-            user: self.accounts.drift_user.to_account_info().clone(),
-            user_stats: self.accounts.drift_user_stats.to_account_info().clone(),
-            authority: self.accounts.vault.to_account_info().clone(),
-            spot_market_vault: self
-                .accounts
-                .drift_spot_market_vault
-                .to_account_info()
-                .clone(),
-            drift_signer: self.accounts.drift_signer.to_account_info().clone(),
-            user_token_account: self.accounts.vault_token_account.to_account_info().clone(),
-            token_program: self.accounts.token_program.to_account_info().clone(),
-        };
-
-        let drift_program = self.accounts.drift_program.to_account_info().clone();
-        let cpi_context = CpiContext::new_with_signer(drift_program, cpi_accounts, seeds)
-            .with_remaining_accounts(self.remaining_accounts.into());
-        drift::cpi::withdraw(cpi_context, spot_market_index, amount, false)?;
-
+        implement_withdraw!(self, amount);
         Ok(())
     }
 }
