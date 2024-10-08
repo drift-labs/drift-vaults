@@ -1634,7 +1634,7 @@ describe('TestTokenizedDriftVaults', () => {
 			payer: provider,
 			programId: program.programId,
 			usdcMint,
-			usdcAmount,
+			usdcAmount: new BN(10).mul(usdcAmount),
 			driftClientConfig: {
 				accountSubscription: {
 					type: 'websocket',
@@ -1653,7 +1653,7 @@ describe('TestTokenizedDriftVaults', () => {
 			payer: provider,
 			programId: program.programId,
 			usdcMint,
-			usdcAmount,
+			usdcAmount: new BN(10).mul(usdcAmount),
 			driftClientConfig: {
 				accountSubscription: {
 					type: 'websocket',
@@ -1700,6 +1700,29 @@ describe('TestTokenizedDriftVaults', () => {
 		await vd1Client.unsubscribe();
 		await vd1DriftClient.unsubscribe();
 	});
+
+	async function fetchAccountStates(
+		vaultAddress?: PublicKey,
+		vaultDepositorAddress?: PublicKey,
+		tokenizedVaultDepositorAddress?: PublicKey
+	) {
+		const vault = vaultAddress
+			? await program.account.vault.fetch(vaultAddress)
+			: undefined;
+		const vaultDepositor = vaultDepositorAddress
+			? await program.account.vaultDepositor.fetch(vaultDepositorAddress)
+			: undefined;
+		const tokenizedVaultDepositor = tokenizedVaultDepositorAddress
+			? await program.account.tokenizedVaultDepositor.fetch(
+					tokenizedVaultDepositorAddress
+			  )
+			: undefined;
+		return {
+			vault,
+			vaultDepositor,
+			tokenizedVaultDepositor,
+		};
+	}
 
 	it('Initialize TokenizedVaultDepositor', async () => {
 		try {
@@ -2327,38 +2350,20 @@ describe('TestTokenizedDriftVaults', () => {
 		});
 	});
 
+	async function initVTokenizedVaultAndTradeUntilRebase(vaultName: string) {}
+
 	/**
 	 * 1. initialize a new tokenized vault
 	 * 2. vd0 deposits and tokenizes shares
 	 * 3. vault trades until down 99.9% (rebase factor 0 -> 2)
 	 * 4. vd1 deposits but cannot tokenize
 	 * 5. vault trades until down another 10%
-	 * 5. vd0 can still redeem tokens
+	 * 6. vd0 can still redeem tokens
+	 * 7. can initialize another tokenized vault with new base
+	 * 8. can deposit and tokenize with new tokenized vd
 	 */
 	it('Disallow tokenize after vault rebases, allow redeeming tokens', async () => {
-		const fetchStates = async (
-			vaultAddress?: PublicKey,
-			vaultDepositorAddress?: PublicKey,
-			tokenizedVaultDepositorAddress?: PublicKey
-		) => {
-			const vault = vaultAddress
-				? await program.account.vault.fetch(vaultAddress)
-				: undefined;
-			const vaultDepositor = vaultDepositorAddress
-				? await program.account.vaultDepositor.fetch(vaultDepositorAddress)
-				: undefined;
-			const tokenizedVaultDepositor = tokenizedVaultDepositorAddress
-				? await program.account.tokenizedVaultDepositor.fetch(
-						tokenizedVaultDepositorAddress
-				  )
-				: undefined;
-			return {
-				vault,
-				vaultDepositor,
-				tokenizedVaultDepositor,
-			};
-		};
-
+		const vaultName = `test tokenize post rebase`;
 		const { driftClient: mmDriftClient, requoteFunc } =
 			await initializeSolSpotMarketMaker(
 				provider,
@@ -2379,7 +2384,6 @@ describe('TestTokenizedDriftVaults', () => {
 				bulkAccountLoader
 			);
 
-		const vaultName = `test tokenize post rebase`;
 		const vault = getVaultAddressSync(program.programId, encodeName(vaultName));
 
 		await managerClient.initializeVault({
@@ -2396,7 +2400,7 @@ describe('TestTokenizedDriftVaults', () => {
 		await managerClient.updateDelegate(vault, managerSigner.publicKey);
 		await managerClient.updateMarginTradingEnabled(vault, true);
 
-		const { vault: vault_0 } = await fetchStates(vault);
+		const { vault: vault_0 } = await fetchAccountStates(vault);
 
 		const {
 			vaultDepositor: vd0VaultDepositor,
@@ -2430,7 +2434,7 @@ describe('TestTokenizedDriftVaults', () => {
 		);
 		await validateTotalUserShares(program, vault);
 
-		const { vaultDepositor: vd00 } = await fetchStates(
+		const { vaultDepositor: vd00 } = await fetchAccountStates(
 			undefined,
 			vd0VaultDepositor,
 			undefined
@@ -2443,10 +2447,14 @@ describe('TestTokenizedDriftVaults', () => {
 		);
 
 		const {
-			vault: vault0,
+			vault: vault_1,
 			vaultDepositor: vd01,
 			tokenizedVaultDepositor: vdt01,
-		} = await fetchStates(vault, vd0VaultDepositor, tokenizedVaultDepositor);
+		} = await fetchAccountStates(
+			vault,
+			vd0VaultDepositor,
+			tokenizedVaultDepositor
+		);
 
 		const vdTokens00 = await connection.getTokenAccountBalance(
 			vd0VaultTokenAta
@@ -2457,7 +2465,7 @@ describe('TestTokenizedDriftVaults', () => {
 		assert(vd01.vaultShares.eq(ZERO), 'vd01 has shares');
 		assert(vdt01.vaultShares.gt(ZERO), 'vdt01 has no shares');
 		assert(vd01.vaultSharesBase === 0, 'vd01 rebased');
-		assert(vd01.vaultSharesBase === vault0.sharesBase, 'vault rebased');
+		assert(vd01.vaultSharesBase === vault_1.sharesBase, 'vault rebased');
 		assert(vdTokens00.value.uiAmount > 0, 'vd0 tokens');
 
 		await managerDriftClient.addAndSubscribeToUsers(vault);
@@ -2538,19 +2546,9 @@ describe('TestTokenizedDriftVaults', () => {
 		);
 		await printTxLogs(provider.connection, dep1Tx);
 
-		// const vault1 = await managerClient.getVault(vault);
-		// const vd02 = await program.account.vaultDepositor.fetch(vd0VaultDepositor);
-		// const vd10 = await program.account.vaultDepositor.fetch(vd1VaultDepositor);
-		// const vdt10 = await program.account.tokenizedVaultDepositor.fetch(
-		// 	tokenizedVaultDepositor
-		// );
-
-		const {
-			vault: vault1,
-			// vaultDepositor: vd02,
-			tokenizedVaultDepositor: vdt10,
-		} = await fetchStates(vault, undefined, tokenizedVaultDepositor);
-		const { vaultDepositor: vd10 } = await fetchStates(
+		const { vault: vault_2, tokenizedVaultDepositor: vdt10 } =
+			await fetchAccountStates(vault, undefined, tokenizedVaultDepositor);
+		const { vaultDepositor: vd10 } = await fetchAccountStates(
 			undefined,
 			vd1VaultDepositor,
 			undefined
@@ -2558,7 +2556,7 @@ describe('TestTokenizedDriftVaults', () => {
 
 		assert(vd10.vaultShares.gt(ZERO), 'vd10 has shares');
 		assert(vdt10.vaultShares.gt(ZERO), 'vdt10 has no shares');
-		assert(vd10.vaultSharesBase === vault1.sharesBase, 'vault1 didnt rebase');
+		assert(vd10.vaultSharesBase === vault_2.sharesBase, 'vault1 didnt rebase');
 		assert(vd10.vaultSharesBase > 0, 'vd10 didnt rebase');
 		assert(vdt10.vaultSharesBase === 0, 'vdt10 should not have rebased');
 
@@ -2605,13 +2603,17 @@ describe('TestTokenizedDriftVaults', () => {
 		await printTxLogs(provider.connection, tx1.txSig);
 
 		const {
-			vault: vault11,
+			vault: vault_3,
 			vaultDepositor: vd11,
 			tokenizedVaultDepositor: vdt11,
-		} = await fetchStates(vault, vd1VaultDepositor, tokenizedVaultDepositor);
+		} = await fetchAccountStates(
+			vault,
+			vd1VaultDepositor,
+			tokenizedVaultDepositor
+		);
 
-		assert(vault11.sharesBase > vault0.sharesBase, 'vault11 didnt rebase');
-		assert(vd11.vaultSharesBase === vault11.sharesBase, 'vault1 didnt rebase');
+		assert(vault_3.sharesBase > vault_1.sharesBase, 'vault11 didnt rebase');
+		assert(vd11.vaultSharesBase === vault_3.sharesBase, 'vault1 didnt rebase');
 		assert(vd11.vaultSharesBase > 0, 'vd11 didnt rebase');
 		assert(vdt11.vaultSharesBase > 0, 'vdt11 didnt rebase');
 
@@ -2662,15 +2664,10 @@ describe('TestTokenizedDriftVaults', () => {
 			print: true,
 		});
 
-		const initialMint = getTokenizedVaultMintAddressSync(
-			program.programId,
-			vault,
-			vault0.sharesBase
-		);
 		const vd0RedeemTx = await vd0Client.redeemTokens(
 			vd0VaultDepositor,
 			vd0Values0.ataBalance,
-			initialMint
+			vault_1.sharesBase
 		);
 		await printTxLogs(provider.connection, vd0RedeemTx);
 
@@ -2722,5 +2719,87 @@ describe('TestTokenizedDriftVaults', () => {
 		console.log(`vd0 pnl ${vd0Pnl}%`);
 
 		await validateTotalUserShares(program, vault);
+
+		// check that we can inialize another tokenized vault with a new shares base
+		const {
+			tokenizedVaultDepositor: tokenizedVaultDepositor2,
+			userVaultTokenAta: vd0VaultTokenAta2,
+		} = calculateAllTokenizedVaultPdas(
+			program.programId,
+			vault,
+			vd0Signer.publicKey,
+			vault_3.sharesBase
+		);
+		try {
+			console.log(
+				`Initializing tokenized vault for vault with shares base: ${
+					vault_3.sharesBase
+				}: ${tokenizedVaultDepositor2.toBase58()}`
+			);
+			await managerClient.initializeTokenizedVaultDepositor({
+				vault,
+				tokenName: 'Tokenized Vault 2',
+				tokenSymbol: 'TV2',
+				tokenUri: '',
+				decimals: 6,
+			});
+
+			assert(
+				(await vd0DriftClient.connection.getAccountInfo(
+					tokenizedVaultDepositor2
+				)) !== null,
+				'tokenized vault 2 should exist'
+			);
+		} catch (e) {
+			console.error(e);
+			assert(
+				false,
+				'Failed to initialize another tokenized vault, after rebase'
+			);
+		}
+
+		// vd0 deposits and tokenizes again
+		try {
+			await vd0Client.deposit(
+				vd0VaultDepositor,
+				usdcAmount,
+				undefined,
+				undefined,
+				vd0UsdcAccount
+			);
+			await validateTotalUserShares(program, vault);
+
+			const { vaultDepositor: vd00 } = await fetchAccountStates(
+				undefined,
+				vd0VaultDepositor,
+				undefined
+			);
+
+			await vd0Client.tokenizeShares(
+				vd0VaultDepositor,
+				vd00.vaultShares,
+				WithdrawUnit.SHARES
+			);
+
+			const { ataValue } = await getVaultDepositorValue({
+				vaultClient: vd0Client,
+				vault: vault,
+				vaultDepositor: vd0VaultDepositor,
+				tokenizedVaultDepositor: tokenizedVaultDepositor2,
+				tokenizedVaultAta: vd0VaultTokenAta2,
+				print: true,
+			});
+
+			// vd equity + new deposit = total token value
+			assert(vd0Values1.vaultDepositorEquity.add(usdcAmount).eq(ataValue));
+
+			await validateTotalUserShares(program, vault);
+		} catch (e) {
+			console.error(e);
+			assert(
+				false,
+				'vd0 Failed to deposit and tokenize again to new tokenized vault'
+			);
+		}
 	});
 });

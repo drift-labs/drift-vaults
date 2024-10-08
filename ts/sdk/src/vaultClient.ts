@@ -1093,7 +1093,8 @@ export class VaultClient {
 			vault: params.vault,
 			vaultDepositor: getTokenizedVaultAddressSync(
 				this.program.programId,
-				params.vault
+				params.vault,
+				sharesBase
 			),
 			mintAccount: mintAddress,
 			metadataAccount: this.metaplex.nfts().pdas().metadata({
@@ -1194,7 +1195,8 @@ export class VaultClient {
 					vaultDepositor,
 					tokenizedVaultDepositor: getTokenizedVaultAddressSync(
 						this.program.programId,
-						vaultDepositorAccount.vault
+						vaultDepositorAccount.vault,
+						vaultAccount.sharesBase
 					),
 					mint,
 					userTokenAccount: userAta,
@@ -1243,7 +1245,7 @@ export class VaultClient {
 	public async createRedeemTokensIx(
 		vaultDepositor: PublicKey,
 		tokensToBurn: BN,
-		mint?: PublicKey
+		sharesBase?: number
 	): Promise<TransactionInstruction> {
 		const vaultDepositorAccount =
 			await this.program.account.vaultDepositor.fetch(vaultDepositor);
@@ -1251,13 +1253,11 @@ export class VaultClient {
 			vaultDepositorAccount.vault
 		);
 
-		mint =
-			mint ??
-			getTokenizedVaultMintAddressSync(
-				this.program.programId,
-				vaultDepositorAccount.vault,
-				vaultAccount.sharesBase
-			);
+		const mint = getTokenizedVaultMintAddressSync(
+			this.program.programId,
+			vaultDepositorAccount.vault,
+			sharesBase ?? vaultAccount.sharesBase
+		);
 
 		const userAta = getAssociatedTokenAddressSync(
 			mint,
@@ -1285,7 +1285,8 @@ export class VaultClient {
 				vaultDepositor,
 				tokenizedVaultDepositor: getTokenizedVaultAddressSync(
 					this.program.programId,
-					vaultDepositorAccount.vault
+					vaultDepositorAccount.vault,
+					sharesBase ?? vaultAccount.sharesBase
 				),
 				mint,
 				userTokenAccount: userAta,
@@ -1308,13 +1309,13 @@ export class VaultClient {
 	public async redeemTokens(
 		vaultDepositor: PublicKey,
 		tokensToBurn: BN,
-		mint?: PublicKey,
+		sharesBase?: number,
 		txParams?: TxParams
 	): Promise<TransactionSignature> {
 		const ix = await this.createRedeemTokensIx(
 			vaultDepositor,
 			tokensToBurn,
-			mint
+			sharesBase
 		);
 		if (this.cliMode) {
 			try {

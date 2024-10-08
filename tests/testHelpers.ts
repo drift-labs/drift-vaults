@@ -1328,7 +1328,8 @@ export function calculateAllTokenizedVaultPdas(
 		),
 		tokenizedVaultDepositor: getTokenizedVaultAddressSync(
 			vaultProgramId,
-			vault
+			vault,
+			vaultSharesBase
 		),
 		mintAddress,
 		userVaultTokenAta: getAssociatedTokenAddressSync(

@@ -57,12 +57,14 @@ export function getVaultProtocolAddressSync(
 
 export function getTokenizedVaultAddressSync(
 	programId: PublicKey,
-	vault: PublicKey
+	vault: PublicKey,
+	sharesBase: number
 ): PublicKey {
 	return PublicKey.findProgramAddressSync(
 		[
 			Buffer.from(anchor.utils.bytes.utf8.encode('tokenized_vault_depositor')),
 			vault.toBuffer(),
+			Buffer.from(anchor.utils.bytes.utf8.encode(sharesBase.toString())),
 		],
 		programId
 	)[0];

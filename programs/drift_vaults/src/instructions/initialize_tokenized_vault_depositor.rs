@@ -62,7 +62,7 @@ pub struct InitializeTokenizedVaultDepositor<'info> {
     pub vault: AccountLoader<'info, Vault>,
     #[account(
         init,
-        seeds = [b"tokenized_vault_depositor", vault.key().as_ref()],
+        seeds = [b"tokenized_vault_depositor", vault.key().as_ref(), vault.load()?.shares_base.to_string().as_bytes().as_ref()],
         space = TokenizedVaultDepositor::SIZE,
         bump,
         payer = payer
