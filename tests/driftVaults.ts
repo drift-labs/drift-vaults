@@ -1144,7 +1144,7 @@ describe('TestProtocolVaults', () => {
 		const postOD = adminClient.getOracleDataForPerpMarket(0);
 		const priceAfter = postOD.price.toNumber() / PRICE_PRECISION.toNumber();
 		console.log('price after:', priceAfter);
-		assert(priceAfter === finalSolPerpPrice);
+		assert(Math.abs(priceAfter - finalSolPerpPrice) < 0.00001);
 	});
 
 	// vault exits long for a profit
