@@ -3,20 +3,18 @@ use drift::instructions::optional_accounts::AccountMaps;
 use drift::math::casting::Cast;
 use drift::state::user::User;
 
-use crate::constraints::{is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault};
-use crate::state::{Vault, VaultProtocolProvider};
-use crate::AccountMapProvider;
+use crate::constraints::{
+    is_protocol_for_vault, is_user_for_vault, is_user_stats_for_vault, is_vault_protocol_for_vault,
+};
+use crate::{AccountMapProvider, Vault, VaultProtocol};
 
-pub fn manager_cancel_withdraw_request<'c: 'info, 'info>(
-    ctx: Context<'_, '_, 'c, 'info, ManagerCancelWithdrawRequest<'info>>,
+pub fn protocol_cancel_withdraw_request<'c: 'info, 'info>(
+    ctx: Context<'_, '_, 'c, 'info, ProtocolCancelWithdrawRequest<'info>>,
 ) -> Result<()> {
     let clock = &Clock::get()?;
     let vault = &mut ctx.accounts.vault.load_mut()?;
 
-    // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
-    let mut vp = ctx.vault_protocol();
-    vault.validate_vault_protocol(&vp)?;
-    let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
+    let mut vp = Some(ctx.accounts.vault_protocol.load_mut()?);
 
     let user = ctx.accounts.drift_user.load()?;
 
@@ -29,19 +27,24 @@ pub fn manager_cancel_withdraw_request<'c: 'info, 'info>(
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
-    vault.manager_cancel_withdraw_request(&mut vp, vault_equity.cast()?, clock.unix_timestamp)?;
+    vault.protocol_cancel_withdraw_request(&mut vp, vault_equity.cast()?, clock.unix_timestamp)?;
 
     Ok(())
 }
 
 #[derive(Accounts)]
-pub struct ManagerCancelWithdrawRequest<'info> {
+pub struct ProtocolCancelWithdrawRequest<'info> {
     #[account(
         mut,
-        constraint = is_manager_for_vault(&vault, &manager)?
+        constraint = is_protocol_for_vault(&vault, &vault_protocol, &protocol)?
     )]
     pub vault: AccountLoader<'info, Vault>,
-    pub manager: Signer<'info>,
+    #[account(
+        mut,
+        constraint = is_vault_protocol_for_vault(&vault_protocol, &vault)?
+    )]
+    pub vault_protocol: AccountLoader<'info, VaultProtocol>,
+    pub protocol: Signer<'info>,
     #[account(
         constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?
     )]

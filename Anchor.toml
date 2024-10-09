@@ -1,8 +1,11 @@
 [features]
 seeds = false
 skip-lint = false
+
 [programs.localnet]
 drift_vaults = "vAuLTsyrvSfZRuRB3XgvkPwNGgYSs9YRYymVebLKoxR"
+drift = "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
+pyth = "FsJ3A3u2vn5cTVofAjvy6y5kwABJAqYWpe4975bi2epH"
 
 [registry]
 url = "https://api.apr.dev"
@@ -18,6 +21,10 @@ program = "./deps/drift.so"
 [[test.genesis]]
 address = "DraWMeQX9LfzQQSYoeBwHAgM5JcqFkgrX7GbTfjzVMVL"
 program = "./deps/drift_competitions.so"
+
+[[test.genesis]]
+address = "FsJ3A3u2vn5cTVofAjvy6y5kwABJAqYWpe4975bi2epH"
+program = "./deps/pyth.so"
 
 [scripts]
 test = "yarn anchor-tests"

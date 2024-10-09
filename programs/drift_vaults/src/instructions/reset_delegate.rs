@@ -1,14 +1,16 @@
-use crate::constraints::is_user_for_vault;
-use crate::cpi::{UpdateUserDelegateCPI, UpdateUserReduceOnlyCPI};
-use crate::error::ErrorCode;
-use crate::{
-    declare_vault_seeds, implement_update_user_delegate_cpi, implement_update_user_reduce_only_cpi,
-};
-use crate::{validate, Vault};
 use anchor_lang::prelude::*;
 use drift::cpi::accounts::UpdateUser;
 use drift::program::Drift;
 use drift::state::user::User;
+
+use crate::constraints::is_user_for_vault;
+use crate::drift_cpi::{UpdateUserDelegateCPI, UpdateUserReduceOnlyCPI};
+use crate::error::ErrorCode;
+use crate::state::Vault;
+use crate::validate;
+use crate::{
+    declare_vault_seeds, implement_update_user_delegate_cpi, implement_update_user_reduce_only_cpi,
+};
 
 pub fn reset_delegate<'info>(ctx: Context<'_, '_, '_, 'info, ResetDelegate<'info>>) -> Result<()> {
     let mut vault = ctx.accounts.vault.load_mut()?;

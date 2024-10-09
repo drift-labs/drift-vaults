@@ -1,11 +1,12 @@
-use crate::constraints::{is_manager_for_vault, is_user_stats_for_vault};
-use crate::cpi::InitializeCompetitorCPI;
-use crate::declare_vault_seeds;
-use crate::Vault;
 use anchor_lang::prelude::*;
 use drift::state::user::UserStats;
 use drift_competitions::cpi::accounts::InitializeCompetitor as DriftCompetitionInitializeCompetitor;
 use drift_competitions::program::DriftCompetitions;
+
+use crate::constraints::{is_manager_for_vault, is_user_stats_for_vault};
+use crate::declare_vault_seeds;
+use crate::drift_cpi::InitializeCompetitorCPI;
+use crate::Vault;
 
 pub fn initialize_competitor<'info>(
     ctx: Context<'_, '_, '_, 'info, InitializeCompetitor<'info>>,
@@ -29,7 +30,7 @@ pub struct InitializeCompetitor<'info> {
 
     #[account(
         mut,
-        seeds = [b"competitor",  drift_competitions.key().as_ref(), vault.key().as_ref()],
+        seeds = [b"competitor", drift_competitions.key().as_ref(), vault.key().as_ref()],
         bump,
         seeds::program = drift_competitions_program.key(),
     )]

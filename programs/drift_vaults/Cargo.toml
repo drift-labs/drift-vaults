@@ -14,10 +14,11 @@ cpi = ["no-entrypoint"]
 default = []
 
 [dependencies]
-anchor-lang = "0.27.0"
-anchor-spl = "0.27.0"
-drift = { git = "https://github.com/drift-labs/protocol-v2.git", tag = "v2.71.0", features = ["cpi", "mainnet-beta"], default-features = false}
-drift-competitions = { git = "https://github.com/drift-labs/drift-competitions.git", rev = "678c7a", features = ["cpi"]}
+anchor-lang = "0.29.0"
+anchor-spl = "0.29.0"
+drift = { git = "https://github.com/drift-labs/protocol-v2.git", rev = "v2.95.0", features = ["cpi", "mainnet-beta"], default-features = false}
+drift-competitions = { git = "https://github.com/drift-labs/drift-competitions.git", rev = "122523", features = ["cpi"]}
 bytemuck = { version = "1.4.0" }
 static_assertions = "1.1.0"
 drift-macros = { git = "https://github.com/drift-labs/drift-macros.git", rev = "c57d87" }
+ahash = "=0.8.6"

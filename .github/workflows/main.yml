@@ -13,13 +13,13 @@ defaults:
 
 env:
   CARGO_TERM_COLOR: always
-  RUST_TOOLCHAIN: 1.67.0
-  SOLANA_VERSION: "1.14.16"
+  RUST_TOOLCHAIN: 1.70.0
+  SOLANA_VERSION: "1.16.27"
 
 jobs:
   fmt-clippy:
     name: fmt & clippy
-    runs-on: ubuntu-latest
+    runs-on: ubicloud
     steps:
       - uses: actions/checkout@v2
       - name: Install Rust nightly
@@ -37,7 +37,7 @@ jobs:
         run: cargo clippy -p drift
   unit:
     name: Unit tests
-    runs-on: ubuntu-latest
+    runs-on: ubicloud
     steps:
       - uses: actions/checkout@v2
       - name: Install Rust toolchain
@@ -53,7 +53,7 @@ jobs:
       - name: Run unit tests
         run: cargo test --lib # run unit tests
   yarn-prettier:
-    runs-on: ubuntu-latest
+    runs-on: ubicloud
     steps:
       - uses: actions/checkout@v2
       - name: Setup node
@@ -66,7 +66,7 @@ jobs:
       - name: Run prettier
         run: yarn prettify
   yarn-lint:
-    runs-on: ubuntu-latest
+    runs-on: ubicloud
     steps:
       - uses: actions/checkout@v2
       - name: Setup node
@@ -79,7 +79,7 @@ jobs:
       - name: Run lint
         run: yarn lint
   anchor-tests:
-    runs-on: ubuntu-latest
+    runs-on: ubicloud
     timeout-minutes: 60
     steps:
       - name: Checkout main
@@ -99,7 +99,7 @@ jobs:
       - uses: ./.github/actions/setup-solana/
 
       - name: install anchor cli
-        run: cargo install --git https://github.com/coral-xyz/anchor --tag v0.26.0 anchor-cli --locked
+        run: cargo install --git https://github.com/coral-xyz/anchor --tag v0.29.0 anchor-cli --locked
 
       - name: Setup node
         uses: actions/setup-node@v2
@@ -131,7 +131,7 @@ jobs:
         run: anchor test
   verified-build:
     name: Build Verifiable Artifact
-    runs-on: ubuntu-latest
+    runs-on: ubicloud
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -143,7 +143,7 @@ jobs:
 
       - name: Verifiable Build
         run: |
-          solana-verify build --library-name drift_vaults
+          solana-verify build --library-name drift_vaults --base-image ellipsislabs/solana:1.16.6
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
