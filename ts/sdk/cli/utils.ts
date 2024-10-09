@@ -5,6 +5,9 @@ import { Connection, Keypair } from "@solana/web3.js";
 import { AnchorProvider, Wallet as AnchorWallet } from "@coral-xyz/anchor";
 import * as anchor from '@coral-xyz/anchor';
 import { IDL } from "../src/types/drift_vaults";
+import { getLedgerWallet } from "./ledgerWallet";
+import fs from 'fs';
+
 
 export async function printVault(slot: number, driftClient: DriftClient, vault: Vault, vaultEquity: BN, spotMarket: SpotMarketAccount, spotOracle: OraclePriceData) {
 
@@ -117,23 +120,35 @@ export async function getCommandContext(program: Command, needToSign: boolean): 
 
     const opts = program.opts();
 
-    let keypair: Keypair;
-    if (needToSign) {
+    let wallet: Wallet;
+    const isLedgerUrl = opts.keypair.startsWith('usb://ledger');
+    console.log("isLedgerUrl:", isLedgerUrl);
+
+    if (isLedgerUrl || fs.existsSync(opts.keypair)) {
+        console.log("opts.keypair:", opts.keypair);
+    } else {
+        console.log("opts.keypair:", opts.keypair.replace(/./g, '*'));
+    }
+
+    wallet = new Wallet(Keypair.generate());
+
+    if (isLedgerUrl) {
+        wallet = await getLedgerWallet(opts.keypair) as unknown as Wallet;
+    } else if (opts.keypair) {
         try {
-            console.log(opts.keypair);
-            keypair = loadKeypair(opts.keypair as string);
+            const keypair = loadKeypair(opts.keypair as string);
+            wallet = new Wallet(keypair);
         } catch (e) {
             console.error(`Need to provide a valid keypair: ${e}`);
             process.exit(1);
         }
     } else {
-        keypair = Keypair.generate();
+        if (needToSign) {
+            throw new Error("Need to provide a keypair.");
+        }
     }
 
-    const wallet = new Wallet(keypair);
-    if (needToSign) {
-        console.log(`Signing wallet address: `, wallet.publicKey.toBase58());
-    }
+    console.log(`Loaded wallet address: ${wallet.publicKey.toBase58()}`);
 
     const connection = new Connection(opts.url, {
         commitment: opts.commitment,
