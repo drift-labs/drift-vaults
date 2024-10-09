@@ -143,9 +143,7 @@ export async function getCommandContext(program: Command, needToSign: boolean): 
         }
     }
 
-    if (needToSign) {
-        console.log(`Signing wallet address: `, wallet.publicKey.toBase58());
-    }
+    console.log(`Loaded wallet address: ${wallet.publicKey.toBase58()}`);
 
     const connection = new Connection(opts.url, {
         commitment: opts.commitment,
