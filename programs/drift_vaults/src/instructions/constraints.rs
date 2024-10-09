@@ -46,17 +46,14 @@ pub fn is_delegate_for_vault(vault: &AccountLoader<Vault>, signer: &Signer) -> R
     Ok(vault.load()?.delegate.eq(signer.key))
 }
 
-pub fn is_user_for_vault(
-    vault: &AccountLoader<Vault>,
-    user_key: &Pubkey,
-) -> anchor_lang::Result<bool> {
+pub fn is_user_for_vault(vault: &AccountLoader<Vault>, user_key: &Pubkey) -> Result<bool> {
     Ok(vault.load()?.user.eq(user_key))
 }
 
 pub fn is_user_stats_for_vault(
     vault: &AccountLoader<Vault>,
     user_stats: &AccountInfo,
-) -> anchor_lang::Result<bool> {
+) -> Result<bool> {
     Ok(vault.load()?.user_stats.eq(user_stats.key))
 }
 
