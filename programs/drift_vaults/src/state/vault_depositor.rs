@@ -24,7 +24,7 @@ use crate::events::VaultDepositorAction;
 use crate::state::events::{VaultDepositorRecord, VaultDepositorV1Record};
 use crate::state::withdraw_request::WithdrawRequest;
 use crate::state::withdraw_unit::WithdrawUnit;
-use crate::state::{Vault, VaultFee, VaultProtocol};
+use crate::state::{Vault, VaultDepositorBase, VaultFee, VaultProtocol};
 use crate::validate;
 use crate::Size;
 
@@ -68,6 +68,104 @@ const_assert_eq!(
     VaultDepositor::SIZE,
     std::mem::size_of::<VaultDepositor>() + 8
 );
+
+impl VaultDepositorBase for VaultDepositor {
+    fn apply_rebase(
+        self: &mut VaultDepositor,
+        vault: &mut Vault,
+        vault_protocol: &mut Option<RefMut<VaultProtocol>>,
+        vault_equity: u64,
+    ) -> Result<Option<u128>> {
+        vault.apply_rebase(vault_protocol, vault_equity)?;
+
+        let mut rebase_divisor = None;
+
+        if vault.shares_base != self.vault_shares_base {
+            validate!(
+                vault.shares_base > self.vault_shares_base,
+                ErrorCode::InvalidVaultRebase,
+                "Rebase expo out of bounds"
+            )?;
+
+            let expo_diff = (vault.shares_base - self.vault_shares_base).cast::<u32>()?;
+
+            let _rebase_divisor = 10_u128.pow(expo_diff);
+
+            msg!(
+                "rebasing vault depositor: base: {} -> {} ",
+                self.vault_shares_base,
+                vault.shares_base,
+            );
+
+            self.vault_shares_base = vault.shares_base;
+
+            let old_vault_shares = self.unchecked_vault_shares();
+            let new_vault_shares = old_vault_shares.safe_div(_rebase_divisor)?;
+
+            msg!(
+                "rebasing vault depositor: shares {} -> {} ",
+                old_vault_shares,
+                new_vault_shares
+            );
+
+            self.update_vault_shares(new_vault_shares, vault)?;
+
+            self.last_withdraw_request.rebase(_rebase_divisor)?;
+
+            rebase_divisor = Some(_rebase_divisor);
+        }
+
+        validate!(
+            self.vault_shares_base == vault.shares_base,
+            ErrorCode::InvalidVaultRebase,
+            "vault depositor shares_base != vault shares_base"
+        )?;
+
+        Ok(rebase_divisor)
+    }
+
+    fn get_authority(&self) -> Pubkey {
+        self.authority
+    }
+    fn get_pubkey(&self) -> Pubkey {
+        self.pubkey
+    }
+
+    fn get_vault_shares(&self) -> u128 {
+        self.vault_shares
+    }
+    fn set_vault_shares(&mut self, shares: u128) {
+        self.vault_shares = shares;
+    }
+
+    fn get_vault_shares_base(&self) -> u32 {
+        self.vault_shares_base
+    }
+    fn set_vault_shares_base(&mut self, base: u32) {
+        self.vault_shares_base = base;
+    }
+
+    fn get_net_deposits(&self) -> i64 {
+        self.net_deposits
+    }
+    fn set_net_deposits(&mut self, amount: i64) {
+        self.net_deposits = amount;
+    }
+
+    fn get_cumulative_profit_share_amount(&self) -> i64 {
+        self.cumulative_profit_share_amount
+    }
+    fn set_cumulative_profit_share_amount(&mut self, amount: i64) {
+        self.cumulative_profit_share_amount = amount;
+    }
+
+    fn get_profit_share_fee_paid(&self) -> u64 {
+        self.profit_share_fee_paid
+    }
+    fn set_profit_share_fee_paid(&mut self, amount: u64) {
+        self.profit_share_fee_paid = amount;
+    }
+}
 
 impl VaultDepositor {
     pub fn new(vault: Pubkey, pubkey: Pubkey, authority: Pubkey, now: i64) -> Self {
@@ -160,7 +258,11 @@ impl VaultDepositor {
             let old_vault_shares = self.unchecked_vault_shares();
             let new_vault_shares = old_vault_shares.safe_div(_rebase_divisor)?;
 
-            msg!("rebasing vault depositor: shares -> {} ", new_vault_shares);
+            msg!(
+                "rebasing vault depositor: shares {} -> {} ",
+                old_vault_shares,
+                new_vault_shares
+            );
 
             self.update_vault_shares(new_vault_shares, vault)?;
 
@@ -357,7 +459,7 @@ impl VaultDepositor {
         let (withdraw_value, n_shares) = withdraw_unit.get_withdraw_value_and_shares(
             withdraw_amount,
             vault_equity,
-            self.vault_shares,
+            self.get_vault_shares(),
             vault.total_shares,
             rebase_divisor,
         )?;
@@ -581,7 +683,7 @@ impl VaultDepositor {
         );
         msg!(
             "vault_shares={}, last_withdraw_request_shares={}",
-            self.vault_shares,
+            self.get_vault_shares(),
             self.last_withdraw_request.shares
         );
 

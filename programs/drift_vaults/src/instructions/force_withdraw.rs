@@ -7,8 +7,9 @@ use drift::program::Drift;
 use drift::state::user::User;
 
 use crate::constraints::*;
-use crate::drift_cpi::{TokenTransferCPI, WithdrawCPI};
+use crate::drift_cpi::WithdrawCPI;
 use crate::state::{Vault, VaultDepositor, VaultProtocolProvider};
+use crate::token_cpi::TokenTransferCPI;
 use crate::{declare_vault_seeds, AccountMapProvider};
 
 pub fn force_withdraw<'c: 'info, 'info>(
