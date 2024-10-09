@@ -46,18 +46,15 @@ pub fn is_delegate_for_vault(vault: &AccountLoader<Vault>, signer: &Signer) -> R
     Ok(vault.load()?.delegate.eq(signer.key))
 }
 
-pub fn is_user_for_vault(
-    vault_depositor: &AccountLoader<Vault>,
-    user_key: &Pubkey,
-) -> Result<bool> {
-    Ok(vault_depositor.load()?.user.eq(user_key))
+pub fn is_user_for_vault(vault: &AccountLoader<Vault>, user_key: &Pubkey) -> Result<bool> {
+    Ok(vault.load()?.user.eq(user_key))
 }
 
 pub fn is_user_stats_for_vault(
-    vault_depositor: &AccountLoader<Vault>,
+    vault: &AccountLoader<Vault>,
     user_stats: &AccountInfo,
 ) -> Result<bool> {
-    Ok(vault_depositor.load()?.user_stats.eq(user_stats.key))
+    Ok(vault.load()?.user_stats.eq(user_stats.key))
 }
 
 pub fn is_spot_market_for_vault(
