@@ -40,7 +40,7 @@ async function getPublicKey(
     (account !== undefined ? `/${account}` : '') +
     (change !== undefined ? `/${change}` : '');
 
-  let { address } = await new Solana(transport).getAddress(path);
+  const { address } = await new Solana(transport).getAddress(path);
   return new PublicKey(new Uint8Array(address));
 }
 
@@ -64,7 +64,7 @@ export async function getLedgerWallet(url = ''): Promise<Wallet> {
     const devices = getDevices();
     let correctDeviceFound = false;
 
-    for (let device of devices) {
+    for (const device of devices) {
       // Wallet id is the public key of the device (with no account or change)
       const connectedWalletId = await getPublicKey(
         transport,

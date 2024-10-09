@@ -122,6 +122,7 @@ export async function getCommandContext(program: Command, needToSign: boolean): 
 
     let wallet: Wallet;
     const isLedgerUrl = opts.keypair.startsWith('usb://ledger');
+    console.log("isLedgerUrl:", isLedgerUrl);
 
     if (isLedgerUrl || fs.existsSync(opts.keypair)) {
         console.log("opts.keypair:", opts.keypair);
@@ -129,17 +130,21 @@ export async function getCommandContext(program: Command, needToSign: boolean): 
         console.log("opts.keypair:", opts.keypair.replace(/./g, '*'));
     }
 
-    if (!needToSign) {
-        wallet = new Wallet(Keypair.generate());
-    } else if (isLedgerUrl) {
+    wallet = new Wallet(Keypair.generate());
+
+    if (isLedgerUrl) {
         wallet = await getLedgerWallet(opts.keypair) as unknown as Wallet;
-    } else {
+    } else if (opts.keypair) {
         try {
             const keypair = loadKeypair(opts.keypair as string);
             wallet = new Wallet(keypair);
         } catch (e) {
             console.error(`Need to provide a valid keypair: ${e}`);
             process.exit(1);
+        }
+    } else {
+        if (needToSign) {
+            throw new Error("Need to provide a keypair.");
         }
     }
 
