@@ -11,7 +11,7 @@ import type { Wallet } from '@drift-labs/sdk';
 
 // Follows solana cli url format
 // usb://<MANUFACTURER>[/<WALLET_ID>][?key=<ACCOUNT>[/<CHANGE>]]
-// See: https://docs.solana.com/wallet-guide/hardware-wallets#specify-a-keypair-url
+// See: https://docs.solanalabs.com/cli/intro#hardware-wallet
 export const parseKeypairUrl = (
   url = ''
 ): {
@@ -49,7 +49,7 @@ async function getPublicKey(
  * This only works in an nodejs environment, based on the transport used
  *
  * Key derivation path is set based on:
- * https://docs.solana.com/wallet-guide/hardware-wallets
+ * See: https://docs.solanalabs.com/cli/intro#hardware-wallet
  */
 export async function getLedgerWallet(url = ''): Promise<Wallet> {
   const { account, change, walletId } = parseKeypairUrl(url);

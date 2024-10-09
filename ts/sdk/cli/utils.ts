@@ -6,6 +6,8 @@ import { AnchorProvider } from "@coral-xyz/anchor";
 import * as anchor from '@coral-xyz/anchor';
 import { IDL } from "../src/types/drift_vaults";
 import { getLedgerWallet } from "./ledgerWallet";
+import fs from 'fs';
+
 
 export async function printVault(slot: number, driftClient: DriftClient, vault: Vault, vaultEquity: BN, spotMarket: SpotMarketAccount, spotOracle: OraclePriceData) {
 
@@ -119,13 +121,20 @@ export async function getCommandContext(program: Command, needToSign: boolean): 
     const opts = program.opts();
 
     let wallet: Wallet;
+    const isLedgerUrl = opts.keypair.startsWith('usb://ledger');
+
+    if (isLedgerUrl || fs.existsSync(opts.keypair)) {
+        console.log("opts.keypair:", opts.keypair);
+    } else {
+        console.log("opts.keypair:", opts.keypair.replace(/./g, '*'));
+    }
+
     if (!needToSign) {
         wallet = new Wallet(Keypair.generate());
-    } else if (opts.keypair.startsWith('usb://ledger')) {
+    } else if (isLedgerUrl) {
         wallet = await getLedgerWallet(opts.keypair) as unknown as Wallet;
     } else {
         try {
-            console.log(opts.keypair);
             const keypair = loadKeypair(opts.keypair as string);
             wallet = new Wallet(keypair);
         } catch (e) {
