@@ -8,8 +8,8 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "0.28.0",
-    "@drift-labs/competitions-sdk": "0.2.386",
-    "@drift-labs/sdk": "2.97.0-beta.22",
+    "@drift-labs/competitions-sdk": "0.2.519",
+    "@drift-labs/sdk": "2.97.0-beta.29",
     "@ledgerhq/hw-app-solana": "^7.1.1",
     "@ledgerhq/hw-transport": "^6.30.1",
     "@ledgerhq/hw-transport-node-hid": "^6.28.1",

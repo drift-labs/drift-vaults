@@ -49,7 +49,7 @@ import {
 	WithdrawUnit,
 } from './types/types';
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
-import { UserMapConfig } from '@drift-labs/sdk/lib/userMap/userMapConfig';
+import { UserMapConfig } from '@drift-labs/sdk';
 import { calculateRealizedVaultDepositorEquity } from './math';
 
 export type TxParams = {
