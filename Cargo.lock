@@ -1058,8 +1058,8 @@ dependencies = [
 
 [[package]]
 name = "drift"
-version = "2.95.0"
-source = "git+https://github.com/drift-labs/protocol-v2.git?rev=v2.95.0#41d25949c64b79edcb819bbcd3a3b0962ea320e5"
+version = "2.96.0"
+source = "git+https://github.com/drift-labs/protocol-v2.git?rev=v2.96.0#44fd13f7baa904669a8ec5754188358c62f38a30"
 dependencies = [
  "ahash 0.8.6",
  "anchor-lang",
@@ -1083,7 +1083,7 @@ dependencies = [
  "solana-program",
  "solana-security-txt",
  "static_assertions",
- "switchboard 0.1.0 (git+https://github.com/drift-labs/protocol-v2.git?rev=v2.95.0)",
+ "switchboard 0.1.0 (git+https://github.com/drift-labs/protocol-v2.git?rev=v2.96.0)",
  "switchboard-on-demand",
  "thiserror",
  "uint",
@@ -1122,7 +1122,7 @@ dependencies = [
  "anchor-lang",
  "anchor-spl",
  "bytemuck",
- "drift 2.95.0",
+ "drift 2.96.0",
  "drift-competitions",
  "drift-macros",
  "static_assertions",
@@ -2135,7 +2135,7 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 [[package]]
 name = "openbook-v2-light"
 version = "0.1.0"
-source = "git+https://github.com/drift-labs/protocol-v2.git?rev=v2.95.0#41d25949c64b79edcb819bbcd3a3b0962ea320e5"
+source = "git+https://github.com/drift-labs/protocol-v2.git?rev=v2.96.0#44fd13f7baa904669a8ec5754188358c62f38a30"
 dependencies = [
  "anchor-lang",
  "borsh 0.10.3",
@@ -3690,7 +3690,7 @@ dependencies = [
 [[package]]
 name = "switchboard"
 version = "0.1.0"
-source = "git+https://github.com/drift-labs/protocol-v2.git?rev=v2.95.0#41d25949c64b79edcb819bbcd3a3b0962ea320e5"
+source = "git+https://github.com/drift-labs/protocol-v2.git?rev=v2.96.0#44fd13f7baa904669a8ec5754188358c62f38a30"
 dependencies = [
  "anchor-lang",
 ]
@@ -3713,7 +3713,7 @@ dependencies = [
 [[package]]
 name = "switchboard-on-demand"
 version = "0.1.0"
-source = "git+https://github.com/drift-labs/protocol-v2.git?rev=v2.95.0#41d25949c64b79edcb819bbcd3a3b0962ea320e5"
+source = "git+https://github.com/drift-labs/protocol-v2.git?rev=v2.96.0#44fd13f7baa904669a8ec5754188358c62f38a30"
 dependencies = [
  "anchor-lang",
  "bytemuck",
