@@ -32,7 +32,7 @@ pub fn tokenize_shares<'info>(
     // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
     let mut vp = ctx.vault_protocol();
     vault.validate_vault_protocol(&vp)?;
-    let vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
+    let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
 
     validate!(
         vault.shares_base == tokenized_vault_depositor.vault_shares_base,
@@ -65,46 +65,23 @@ pub fn tokenize_shares<'info>(
 
     let total_supply_before = ctx.accounts.mint.supply;
 
-    let tokens_to_mint = match vp {
-        None => {
-            let (shares_transferred, _) = vault_depositor.transfer_shares(
-                &mut *tokenized_vault_depositor,
-                &mut vault,
-                &mut None,
-                amount,
-                unit,
-                vault_equity,
-                clock.unix_timestamp,
-            )?;
-            tokenized_vault_depositor.tokenize_shares(
-                &mut vault,
-                &mut None,
-                total_supply_before,
-                vault_equity,
-                shares_transferred,
-                clock.unix_timestamp,
-            )?
-        }
-        Some(vp) => {
-            let (shares_transferred, mut vp) = vault_depositor.transfer_shares(
-                &mut *tokenized_vault_depositor,
-                &mut vault,
-                &mut Some(vp),
-                amount,
-                unit,
-                vault_equity,
-                clock.unix_timestamp,
-            )?;
-            tokenized_vault_depositor.tokenize_shares(
-                &mut vault,
-                &mut vp,
-                total_supply_before,
-                vault_equity,
-                shares_transferred,
-                clock.unix_timestamp,
-            )?
-        }
-    };
+    let (shares_transferred, _) = vault_depositor.transfer_shares(
+        &mut *tokenized_vault_depositor,
+        &mut vault,
+        &mut vp,
+        amount,
+        unit,
+        vault_equity,
+        clock.unix_timestamp,
+    )?;
+    let tokens_to_mint = tokenized_vault_depositor.tokenize_shares(
+        &mut vault,
+        &mut vp,
+        total_supply_before,
+        vault_equity,
+        shares_transferred,
+        clock.unix_timestamp,
+    )?;
 
     let total_shares_after = vault_depositor
         .get_vault_shares()

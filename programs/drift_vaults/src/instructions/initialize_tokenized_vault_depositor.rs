@@ -13,15 +13,17 @@ pub fn initialize_tokenized_vault_depositor(
     ctx: Context<InitializeTokenizedVaultDepositor>,
     params: InitializeTokenizedVaultDepositorParams,
 ) -> Result<()> {
+    let vault = ctx.accounts.vault.load()?;
     let mut tokenized_vault_depositor = ctx.accounts.vault_depositor.load_init()?;
-    let vault = ctx.accounts.vault.load()?;
-    tokenized_vault_depositor.vault = ctx.accounts.vault.key();
-    tokenized_vault_depositor.vault_shares_base = vault.shares_base;
-    tokenized_vault_depositor.pubkey = ctx.accounts.vault_depositor.key();
-    tokenized_vault_depositor.mint = ctx.accounts.mint_account.key();
-    tokenized_vault_depositor.bump = ctx.bumps.vault_depositor;
+    *tokenized_vault_depositor = TokenizedVaultDepositor::new(
+        ctx.accounts.vault.key(),
+        ctx.accounts.vault_depositor.key(),
+        ctx.accounts.mint_account.key(),
+        vault.shares_base,
+        ctx.bumps.vault_depositor,
+        Clock::get()?.unix_timestamp,
+    );
 
-    let vault = ctx.accounts.vault.load()?;
     let signature_seeds = Vault::get_vault_signer_seeds(vault.name.as_ref(), &vault.bump);
     let signers = &[&signature_seeds[..]];
 

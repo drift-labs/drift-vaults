@@ -29,7 +29,7 @@ pub fn redeem_tokens<'info>(
     // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
     let mut vp = ctx.vault_protocol();
     vault.validate_vault_protocol(&vp)?;
-    let vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
+    let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
 
     let manager_shares_before = vault.total_shares.safe_sub(vault.user_shares)?;
     let total_shares_before = vault_depositor
@@ -55,49 +55,23 @@ pub fn redeem_tokens<'info>(
     )?;
 
     let total_supply_before = ctx.accounts.mint.supply;
-
-    let (shares_transferred, shares_to_transfer) = match vp {
-        None => {
-            let (shares_to_transfer, _) = tokenized_vault_depositor.redeem_tokens(
-                &mut vault,
-                &mut None,
-                total_supply_before,
-                vault_equity,
-                tokens_to_burn,
-                clock.unix_timestamp,
-            )?;
-            let (shares_transferred, _) = tokenized_vault_depositor.transfer_shares(
-                &mut *vault_depositor,
-                &mut vault,
-                &mut None,
-                shares_to_transfer,
-                WithdrawUnit::Shares,
-                vault_equity,
-                clock.unix_timestamp,
-            )?;
-            (shares_transferred, shares_to_transfer)
-        }
-        Some(vp) => {
-            let (shares_to_transfer, mut vp) = tokenized_vault_depositor.redeem_tokens(
-                &mut vault,
-                &mut Some(vp),
-                total_supply_before,
-                vault_equity,
-                tokens_to_burn,
-                clock.unix_timestamp,
-            )?;
-            let (shares_transferred, _) = tokenized_vault_depositor.transfer_shares(
-                &mut *vault_depositor,
-                &mut vault,
-                &mut vp,
-                shares_to_transfer,
-                WithdrawUnit::Shares,
-                vault_equity,
-                clock.unix_timestamp,
-            )?;
-            (shares_transferred, shares_to_transfer)
-        }
-    };
+    let (shares_to_transfer, mut vp) = tokenized_vault_depositor.redeem_tokens(
+        &mut vault,
+        &mut vp,
+        total_supply_before,
+        vault_equity,
+        tokens_to_burn,
+        clock.unix_timestamp,
+    )?;
+    let (shares_transferred, _) = tokenized_vault_depositor.transfer_shares(
+        &mut *vault_depositor,
+        &mut vault,
+        &mut vp,
+        shares_to_transfer,
+        WithdrawUnit::Shares,
+        vault_equity,
+        clock.unix_timestamp,
+    )?;
 
     let manager_shares_after = vault.total_shares.safe_sub(vault.user_shares)?;
     let total_shares_after = vault_depositor
@@ -177,9 +151,9 @@ pub struct RedeemTokens<'info> {
     )]
     pub mint: Account<'info, Mint>,
     #[account(
-    mut,
-    token::authority = authority,
-    token::mint = tokenized_vault_depositor.load()?.mint
+        mut,
+        token::authority = authority,
+        token::mint = tokenized_vault_depositor.load()?.mint
     )]
     pub user_token_account: Account<'info, TokenAccount>,
     #[account(

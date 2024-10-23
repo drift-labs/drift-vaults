@@ -50,11 +50,12 @@ pub struct TokenizedVaultDepositor {
     pub vault_shares_base: u32,
     /// The bump for the vault pda
     pub bump: u8,
-    pub padding: [u8; 3],
+    pub padding1: [u8; 3],
+    pub padding: [u64; 10],
 }
 
 impl Size for TokenizedVaultDepositor {
-    const SIZE: usize = 184 + 8;
+    const SIZE: usize = 264 + 8;
 }
 
 const_assert_eq!(
@@ -158,7 +159,14 @@ impl VaultDepositorBase for TokenizedVaultDepositor {
 }
 
 impl TokenizedVaultDepositor {
-    pub fn new(vault: Pubkey, pubkey: Pubkey, mint: Pubkey, now: i64) -> Self {
+    pub fn new(
+        vault: Pubkey,
+        pubkey: Pubkey,
+        mint: Pubkey,
+        vault_shares_base: u32,
+        bump: u8,
+        now: i64,
+    ) -> Self {
         Self {
             vault,
             pubkey,
@@ -171,9 +179,10 @@ impl TokenizedVaultDepositor {
             total_withdraws: 0,
             cumulative_profit_share_amount: 0,
             profit_share_fee_paid: 0,
-            vault_shares_base: 0,
-            bump: 0,
-            padding: [0; 3],
+            vault_shares_base,
+            bump,
+            padding1: [0; 3],
+            padding: [0; 10],
         }
     }
 
@@ -366,6 +375,8 @@ mod tests {
             Pubkey::default(),
             Pubkey::default(),
             Pubkey::default(),
+            0,
+            0,
             now,
         );
         let mut shares_transferred = 100_000;
@@ -425,6 +436,8 @@ mod tests {
             Pubkey::default(),
             Pubkey::default(),
             Pubkey::default(),
+            0,
+            0,
             now,
         );
         let shares_transferred = 500_000;
@@ -460,6 +473,8 @@ mod tests {
             Pubkey::default(),
             Pubkey::default(),
             Pubkey::default(),
+            0,
+            0,
             now,
         );
         let shares_transferred = 100_000;
@@ -522,6 +537,8 @@ mod tests {
             Pubkey::default(),
             Pubkey::default(),
             Pubkey::default(),
+            0,
+            0,
             now,
         );
 
