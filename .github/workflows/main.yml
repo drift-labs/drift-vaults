@@ -142,9 +142,10 @@ jobs:
           solana-verify --version
 
       - name: Verifiable Build
-        shell: bash +e {0}
+        shell: bash
         run: |
           solana-verify build --library-name drift_vaults --base-image ellipsislabs/solana:1.16.6
+          sleep 5
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
