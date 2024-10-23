@@ -70,60 +70,6 @@ const_assert_eq!(
 );
 
 impl VaultDepositorBase for VaultDepositor {
-    fn apply_rebase(
-        self: &mut VaultDepositor,
-        vault: &mut Vault,
-        vault_protocol: &mut Option<RefMut<VaultProtocol>>,
-        vault_equity: u64,
-    ) -> Result<Option<u128>> {
-        vault.apply_rebase(vault_protocol, vault_equity)?;
-
-        let mut rebase_divisor = None;
-
-        if vault.shares_base != self.vault_shares_base {
-            validate!(
-                vault.shares_base > self.vault_shares_base,
-                ErrorCode::InvalidVaultRebase,
-                "Rebase expo out of bounds"
-            )?;
-
-            let expo_diff = (vault.shares_base - self.vault_shares_base).cast::<u32>()?;
-
-            let _rebase_divisor = 10_u128.pow(expo_diff);
-
-            msg!(
-                "rebasing vault depositor: base: {} -> {} ",
-                self.vault_shares_base,
-                vault.shares_base,
-            );
-
-            self.vault_shares_base = vault.shares_base;
-
-            let old_vault_shares = self.unchecked_vault_shares();
-            let new_vault_shares = old_vault_shares.safe_div(_rebase_divisor)?;
-
-            msg!(
-                "rebasing vault depositor: shares {} -> {} ",
-                old_vault_shares,
-                new_vault_shares
-            );
-
-            self.update_vault_shares(new_vault_shares, vault)?;
-
-            self.last_withdraw_request.rebase(_rebase_divisor)?;
-
-            rebase_divisor = Some(_rebase_divisor);
-        }
-
-        validate!(
-            self.vault_shares_base == vault.shares_base,
-            ErrorCode::InvalidVaultRebase,
-            "vault depositor shares_base != vault shares_base"
-        )?;
-
-        Ok(rebase_divisor)
-    }
-
     fn get_authority(&self) -> Pubkey {
         self.authority
     }
@@ -233,51 +179,14 @@ impl VaultDepositor {
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
         vault_equity: u64,
     ) -> Result<Option<u128>> {
-        vault.apply_rebase(vault_protocol, vault_equity)?;
-        let mut rebase_divisor = None;
-
-        if vault.shares_base != self.vault_shares_base {
-            validate!(
-                vault.shares_base > self.vault_shares_base,
-                ErrorCode::InvalidVaultRebase,
-                "Rebase expo out of bounds"
-            )?;
-
-            let expo_diff = (vault.shares_base - self.vault_shares_base).cast::<u32>()?;
-
-            let _rebase_divisor = 10_u128.pow(expo_diff);
-
-            msg!(
-                "rebasing vault depositor: base: {} -> {} ",
-                self.vault_shares_base,
-                vault.shares_base
-            );
-
-            self.vault_shares_base = vault.shares_base;
-
-            let old_vault_shares = self.unchecked_vault_shares();
-            let new_vault_shares = old_vault_shares.safe_div(_rebase_divisor)?;
-
-            msg!(
-                "rebasing vault depositor: shares {} -> {} ",
-                old_vault_shares,
-                new_vault_shares
-            );
-
-            self.update_vault_shares(new_vault_shares, vault)?;
-
-            self.last_withdraw_request.rebase(_rebase_divisor)?;
-
-            rebase_divisor = Some(_rebase_divisor);
+        if let Some(rebase_divisor) =
+            VaultDepositorBase::apply_rebase(self, vault, vault_protocol, vault_equity)?
+        {
+            self.last_withdraw_request.rebase(rebase_divisor)?;
+            Ok(Some(rebase_divisor))
+        } else {
+            Ok(None)
         }
-
-        validate!(
-            self.vault_shares_base == vault.shares_base,
-            ErrorCode::InvalidVaultRebase,
-            "vault depositor shares_base != vault shares_base"
-        )?;
-
-        Ok(rebase_divisor)
     }
 
     pub fn calculate_profit_share_and_update(
@@ -769,48 +678,7 @@ impl VaultDepositor {
             ErrorCode::InvalidVaultDeposit,
             "Cannot apply profit share to depositor with pending withdraw request"
         )?;
-
-        let total_amount =
-            depositor_shares_to_vault_amount(self.vault_shares, vault.total_shares, vault_equity)?;
-
-        let (manager_profit_share, protocol_profit_share) =
-            self.calculate_profit_share_and_update(total_amount, vault, vault_protocol)?;
-        let manager_profit_share: u64 = manager_profit_share.cast()?;
-        let protocol_profit_share: u64 = protocol_profit_share.cast()?;
-        let profit_share = manager_profit_share
-            .safe_add(protocol_profit_share)?
-            .cast()?;
-
-        let profit_share_shares: u128 =
-            vault_amount_to_depositor_shares(profit_share, vault.total_shares, vault_equity)?;
-
-        self.decrease_vault_shares(profit_share_shares, vault)?;
-
-        vault.user_shares = vault.user_shares.safe_sub(profit_share_shares)?;
-        vault.manager_total_profit_share = vault
-            .manager_total_profit_share
-            .saturating_add(manager_profit_share);
-
-        if let Some(vp) = vault_protocol {
-            vp.protocol_total_profit_share = vp
-                .protocol_total_profit_share
-                .saturating_add(protocol_profit_share.cast()?);
-            let protocol_profit_share_shares: u128 = vault_amount_to_depositor_shares(
-                protocol_profit_share.cast()?,
-                vault.total_shares,
-                vault_equity,
-            )?;
-            msg!(
-                "protocol profit share shares: {}",
-                protocol_profit_share_shares
-            );
-            vp.protocol_profit_and_fee_shares = vp
-                .protocol_profit_and_fee_shares
-                .saturating_add(protocol_profit_share_shares);
-            msg!("vp shares after: {}", vp.protocol_profit_and_fee_shares);
-        }
-
-        Ok((manager_profit_share, protocol_profit_share))
+        VaultDepositorBase::apply_profit_share(self, vault_equity, vault, vault_protocol)
     }
 
     pub fn realize_profits(

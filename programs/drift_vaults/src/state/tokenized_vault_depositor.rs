@@ -1,7 +1,7 @@
 use std::cell::RefMut;
 
 use crate::error::ErrorCode;
-use crate::events::{VaultDepositorAction, VaultDepositorRecord};
+use crate::events::{VaultDepositorAction, VaultDepositorRecord, VaultDepositorV1Record};
 use crate::state::vault::Vault;
 use crate::{validate, VaultFee, VaultProtocol};
 use crate::{Size, VaultDepositorBase};
@@ -105,57 +105,6 @@ impl VaultDepositorBase for TokenizedVaultDepositor {
     fn set_profit_share_fee_paid(&mut self, amount: u64) {
         self.profit_share_fee_paid = amount;
     }
-
-    fn apply_rebase(
-        &mut self,
-        vault: &mut Vault,
-        vault_protocol: &mut Option<RefMut<VaultProtocol>>,
-        vault_equity: u64,
-    ) -> Result<Option<u128>> {
-        vault.apply_rebase(vault_protocol, vault_equity)?;
-
-        let mut rebase_divisor: Option<u128> = None;
-
-        if vault.shares_base != self.get_vault_shares_base() {
-            validate!(
-                vault.shares_base > self.get_vault_shares_base(),
-                ErrorCode::InvalidVaultRebase,
-                "Rebase expo out of bounds"
-            )?;
-
-            let expo_diff = (vault.shares_base - self.get_vault_shares_base()).cast::<u32>()?;
-
-            rebase_divisor = Some(10_u128.pow(expo_diff));
-
-            msg!(
-                "rebasing vault depositor: base: {} -> {} ",
-                self.get_vault_shares_base(),
-                vault.shares_base,
-            );
-
-            self.set_vault_shares_base(vault.shares_base);
-
-            let old_vault_shares = self.unchecked_vault_shares();
-            let new_vault_shares = old_vault_shares.safe_div(rebase_divisor.unwrap())?;
-
-            msg!(
-                "rebasing vault depositor: shares {} -> {} ",
-                old_vault_shares,
-                new_vault_shares
-            );
-
-            self.update_vault_shares(new_vault_shares, vault)?;
-            self.last_vault_shares = self.get_vault_shares();
-        }
-
-        validate!(
-            self.get_vault_shares_base() == vault.shares_base,
-            ErrorCode::InvalidVaultRebase,
-            "vault depositor shares_base != vault shares_base"
-        )?;
-
-        Ok(rebase_divisor)
-    }
 }
 
 impl TokenizedVaultDepositor {
@@ -186,33 +135,20 @@ impl TokenizedVaultDepositor {
         }
     }
 
-    pub fn apply_profit_share(
-        self: &mut TokenizedVaultDepositor,
-        vault_equity: u64,
+    fn apply_rebase(
+        &mut self,
         vault: &mut Vault,
-    ) -> Result<u64> {
-        let total_amount = depositor_shares_to_vault_amount(
-            self.get_vault_shares(),
-            vault.total_shares,
-            vault_equity,
-        )?;
-
-        let profit_share: u64 = self
-            .calculate_profit_share_and_update(total_amount, vault)?
-            .cast()?;
-
-        let profit_share_shares: u128 =
-            vault_amount_to_depositor_shares(profit_share, vault.total_shares, vault_equity)?;
-
-        self.decrease_vault_shares(profit_share_shares, vault)?;
-
-        vault.user_shares = vault.user_shares.safe_sub(profit_share_shares)?;
-
-        vault.manager_total_profit_share = vault
-            .manager_total_profit_share
-            .saturating_add(profit_share);
-
-        Ok(profit_share)
+        vault_protocol: &mut Option<RefMut<VaultProtocol>>,
+        vault_equity: u64,
+    ) -> Result<Option<u128>> {
+        if let Some(rebase_divisor) =
+            VaultDepositorBase::apply_rebase(self, vault, vault_protocol, vault_equity)?
+        {
+            self.last_vault_shares = self.get_vault_shares();
+            Ok(Some(rebase_divisor))
+        } else {
+            Ok(None)
+        }
     }
 
     pub fn tokenize_shares(
@@ -240,14 +176,16 @@ impl TokenizedVaultDepositor {
         let VaultFee {
             management_fee_payment,
             management_fee_shares,
-            protocol_fee_payment: _protocol_fee_payment,
-            protocol_fee_shares: _protocol_fee_shares,
+            protocol_fee_payment,
+            protocol_fee_shares,
         } = vault.apply_fee(vault_protocol, vault_equity, now)?;
-        let profit_share: u64 = self.apply_profit_share(vault_equity, vault)?;
+        let (manager_profit_share, protocol_profit_share) =
+            self.apply_profit_share(vault_equity, vault, vault_protocol)?;
 
         let vault_shares_before = self.checked_vault_shares(vault)?;
         let total_vault_shares_before = vault.total_shares;
         let user_vault_shares_before = vault.user_shares;
+        let protocol_shares_before = vault.get_protocol_shares(vault_protocol);
 
         let new_last_vault_shares = self
             .last_vault_shares
@@ -278,24 +216,55 @@ impl TokenizedVaultDepositor {
 
         self.last_vault_shares = self.checked_vault_shares(vault)?;
 
-        emit!(VaultDepositorRecord {
-            ts: now,
-            vault: vault.pubkey,
-            depositor_authority: vault.pubkey,
-            action: VaultDepositorAction::TokenizeShares,
-            amount: shares_transferred.cast()?,
-            spot_market_index: vault.spot_market_index,
-            vault_equity_before: vault_equity,
-            vault_shares_before,
-            user_vault_shares_before,
-            total_vault_shares_before,
-            vault_shares_after: self.last_vault_shares,
-            total_vault_shares_after: vault.total_shares,
-            user_vault_shares_after: vault.user_shares,
-            profit_share,
-            management_fee: management_fee_payment,
-            management_fee_shares,
-        });
+        match vault_protocol {
+            None => {
+                emit!(VaultDepositorRecord {
+                    ts: now,
+                    vault: vault.pubkey,
+                    depositor_authority: vault.pubkey,
+                    action: VaultDepositorAction::TokenizeShares,
+                    amount: shares_transferred.cast()?,
+                    spot_market_index: vault.spot_market_index,
+                    vault_equity_before: vault_equity,
+                    vault_shares_before,
+                    user_vault_shares_before,
+                    total_vault_shares_before,
+                    vault_shares_after: self.last_vault_shares,
+                    total_vault_shares_after: vault.total_shares,
+                    user_vault_shares_after: vault.user_shares,
+                    profit_share: manager_profit_share
+                        .safe_add(protocol_profit_share)?
+                        .cast()?,
+                    management_fee: management_fee_payment,
+                    management_fee_shares,
+                });
+            }
+            Some(_) => {
+                emit!(VaultDepositorV1Record {
+                    ts: now,
+                    vault: vault.pubkey,
+                    depositor_authority: vault.pubkey,
+                    action: VaultDepositorAction::Withdraw,
+                    amount: shares_transferred.cast()?,
+                    spot_market_index: vault.spot_market_index,
+                    vault_equity_before: vault_equity,
+                    vault_shares_before,
+                    user_vault_shares_before,
+                    total_vault_shares_before,
+                    vault_shares_after: self.last_vault_shares,
+                    total_vault_shares_after: vault.total_shares,
+                    user_vault_shares_after: vault.user_shares,
+                    protocol_profit_share,
+                    protocol_fee: protocol_fee_payment,
+                    protocol_fee_shares: protocol_fee_shares,
+                    manager_profit_share,
+                    management_fee: management_fee_payment,
+                    management_fee_shares,
+                    protocol_shares_before,
+                    protocol_shares_after: vault.get_protocol_shares(vault_protocol),
+                });
+            }
+        }
 
         Ok(tokens_to_mint.cast()?)
     }
@@ -314,14 +283,16 @@ impl TokenizedVaultDepositor {
         let VaultFee {
             management_fee_payment,
             management_fee_shares,
-            protocol_fee_payment: _protocol_fee_payment,
-            protocol_fee_shares: _protocol_fee_shares,
+            protocol_fee_payment,
+            protocol_fee_shares,
         } = vault.apply_fee(vault_protocol, vault_equity, now)?;
-        let profit_share: u64 = self.apply_profit_share(vault_equity, vault)?;
+        let (manager_profit_share, protocol_profit_share) =
+            self.apply_profit_share(vault_equity, vault, vault_protocol)?;
 
         let vault_shares_before = self.checked_vault_shares(vault)?;
         let total_vault_shares_before = vault.total_shares;
         let user_vault_shares_before = vault.user_shares;
+        let protocol_shares_before = vault.get_protocol_shares(vault_protocol);
 
         self.last_vault_shares = self.checked_vault_shares(vault)?;
 
@@ -339,28 +310,60 @@ impl TokenizedVaultDepositor {
             shares_to_redeem
         );
 
-        emit!(VaultDepositorRecord {
-            ts: now,
-            vault: vault.pubkey,
-            depositor_authority: vault.pubkey,
-            action: VaultDepositorAction::RedeemTokens,
-            amount: tokens_to_burn,
-            spot_market_index: vault.spot_market_index,
-            vault_equity_before: vault_equity,
-            vault_shares_before,
-            user_vault_shares_before,
-            total_vault_shares_before,
-            vault_shares_after: self.last_vault_shares,
-            total_vault_shares_after: vault.total_shares,
-            user_vault_shares_after: vault.user_shares,
-            profit_share,
-            management_fee: management_fee_payment,
-            management_fee_shares,
-        });
+        match vault_protocol {
+            None => {
+                emit!(VaultDepositorRecord {
+                    ts: now,
+                    vault: vault.pubkey,
+                    depositor_authority: vault.pubkey,
+                    action: VaultDepositorAction::RedeemTokens,
+                    amount: tokens_to_burn,
+                    spot_market_index: vault.spot_market_index,
+                    vault_equity_before: vault_equity,
+                    vault_shares_before,
+                    user_vault_shares_before,
+                    total_vault_shares_before,
+                    vault_shares_after: self.last_vault_shares,
+                    total_vault_shares_after: vault.total_shares,
+                    user_vault_shares_after: vault.user_shares,
+                    profit_share: manager_profit_share
+                        .safe_add(protocol_profit_share)?
+                        .cast()?,
+                    management_fee: management_fee_payment,
+                    management_fee_shares,
+                });
+            }
+            Some(_) => {
+                emit!(VaultDepositorV1Record {
+                    ts: now,
+                    vault: vault.pubkey,
+                    depositor_authority: vault.pubkey,
+                    action: VaultDepositorAction::FeePayment,
+                    amount: 0,
+                    spot_market_index: vault.spot_market_index,
+                    vault_equity_before: vault_equity,
+                    vault_shares_before,
+                    user_vault_shares_before,
+                    total_vault_shares_before,
+                    vault_shares_after: self.vault_shares,
+                    total_vault_shares_after: vault.total_shares,
+                    user_vault_shares_after: vault.user_shares,
+                    protocol_profit_share,
+                    protocol_fee: protocol_fee_payment,
+                    protocol_fee_shares,
+                    manager_profit_share,
+                    management_fee: management_fee_payment,
+                    management_fee_shares,
+                    protocol_shares_before,
+                    protocol_shares_after: vault.get_protocol_shares(vault_protocol),
+                });
+            }
+        }
 
         Ok((shares_to_redeem, vault_protocol.take()))
     }
 }
+
 #[cfg(test)]
 mod tests {
     use crate::{TokenizedVaultDepositor, Vault, VaultDepositorBase};
@@ -572,8 +575,8 @@ mod tests {
         println!("profit: {}", profit);
 
         let tvd_shares_before = tvd.get_vault_shares();
-        let profit_share = tvd
-            .apply_profit_share(vault_equity + profit, vault)
+        let (manager_profit_share, protocol_profit_share) = tvd
+            .apply_profit_share(vault_equity + profit, vault, &mut None)
             .unwrap();
         let tvd_shares_after = tvd.get_vault_shares();
 
@@ -582,7 +585,10 @@ mod tests {
             tvd_shares_before, tvd_shares_after
         );
 
-        assert_eq!(profit_share, (profit * profit_share_pct / 100) as u64);
+        assert_eq!(
+            manager_profit_share + protocol_profit_share,
+            (profit * profit_share_pct / 100) as u64
+        );
         assert!(
             tvd_shares_after < tvd_shares_before,
             "tvd shares should decrease after profit share"
