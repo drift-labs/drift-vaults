@@ -144,7 +144,7 @@ jobs:
       - name: Verifiable Build
         continue-on-error: true
         run: |
-          cargo fetch
+          cargo vendor
           solana-verify build --library-name drift_vaults --base-image ellipsislabs/solana:1.16.6
 
       - name: Upload Artifact
