@@ -142,7 +142,7 @@ jobs:
           solana-verify --version
 
       - name: Verifiable Build
-        shell: bash
+        shell: /usr/bin/bash --noprofile
         run: |
           solana-verify build --library-name drift_vaults --base-image ellipsislabs/solana:1.16.6
           sleep 5
