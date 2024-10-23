@@ -149,10 +149,10 @@
     bn.js "^5.1.2"
     buffer-layout "^1.2.0"
 
-"@drift-labs/sdk@2.98.0-beta.1":
-  version "2.98.0-beta.1"
-  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.98.0-beta.1.tgz#4f76e73b66becf91cb2f2839543e4011658db3cd"
-  integrity sha512-YYBmldcMaWU+hU9edF9c1wD17bVMLPFhGWDp6/BeRBlZcaBxT5tkHxDsQN4beZEKulgzEC/05H91Oa9zTQQsrw==
+"@drift-labs/sdk@2.98.0-beta.3":
+  version "2.98.0-beta.3"
+  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.98.0-beta.3.tgz#88f987bff9387a26509006badd224431e538fae0"
+  integrity sha512-U2DV78rwCQntwqR+z+5tQFCL3fpb48r/EprL9YtkIufcVt5TihgaQO+uMKKtci3M83H53bTq19XS5psollupQw==
   dependencies:
     "@coral-xyz/anchor" "0.28.0"
     "@coral-xyz/anchor-30" "npm:@coral-xyz/anchor@0.30.1"
@@ -667,7 +667,7 @@
 
 "@metaplex-foundation/beet@0.7.1", "@metaplex-foundation/beet@>=0.1.0", "@metaplex-foundation/beet@^0.7.1":
   version "0.7.1"
-  resolved "https://registry.npmjs.org/@metaplex-foundation/beet/-/beet-0.7.1.tgz"
+  resolved "https://registry.yarnpkg.com/@metaplex-foundation/beet/-/beet-0.7.1.tgz#0975314211643f87b5f6f3e584fa31abcf4c612c"
   integrity sha512-hNCEnS2WyCiYyko82rwuISsBY3KYpe828ubsd2ckeqZr7tl0WVLivGkoyA/qdiaaHEBGdGl71OpfWa2rqL3DiA==
   dependencies:
     ansicolors "^0.3.2"
