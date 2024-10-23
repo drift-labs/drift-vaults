@@ -1,7 +1,6 @@
 import {
 	BN,
 	DriftClient,
-	encodeName,
 	getInsuranceFundStakeAccountPublicKey,
 	getUserAccountPublicKey,
 	getUserAccountPublicKeySync,
