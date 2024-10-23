@@ -12,6 +12,7 @@ export * from './initVaultDepositor';
 export * from './deposit';
 export * from './requestWithdraw';
 export * from './forceWithdraw';
+export * from './forceWithdrawAll';
 export * from './withdraw';
 export * from './listDepositorsForVault';
 export * from './managerUpdateMarginTradingEnabled';

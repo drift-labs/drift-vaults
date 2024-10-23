@@ -53,6 +53,8 @@ pub enum ErrorCode {
     OngoingLiquidation,
     #[msg("VaultProtocolMissing")]
     VaultProtocolMissing,
+    #[msg("InvalidTokenization")]
+    InvalidTokenization,
 }
 
 impl From<DriftErrorCode> for ErrorCode {
