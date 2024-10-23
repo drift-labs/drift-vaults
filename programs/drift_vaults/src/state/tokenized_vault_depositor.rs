@@ -165,14 +165,6 @@ impl TokenizedVaultDepositor {
             return Err(ErrorCode::InvalidVaultRebase.into());
         }
 
-        let shares_transferred = if rebase_divisor.is_some() {
-            shares_transferred
-                .checked_div(rebase_divisor.unwrap())
-                .expect("math")
-        } else {
-            shares_transferred
-        };
-
         let VaultFee {
             management_fee_payment,
             management_fee_shares,
@@ -187,10 +179,7 @@ impl TokenizedVaultDepositor {
         let user_vault_shares_before = vault.user_shares;
         let protocol_shares_before = vault.get_protocol_shares(vault_protocol);
 
-        let new_last_vault_shares = self
-            .last_vault_shares
-            .checked_add(shares_transferred)
-            .expect("math");
+        let new_last_vault_shares = self.last_vault_shares.safe_add(shares_transferred)?;
 
         validate!(
             new_last_vault_shares == vault_shares_before,
@@ -369,6 +358,7 @@ mod tests {
     use crate::{TokenizedVaultDepositor, Vault, VaultDepositorBase};
     use anchor_lang::prelude::Pubkey;
     use drift::math::constants::PERCENTAGE_PRECISION;
+    use drift::math::safe_math::SafeMath;
 
     #[test]
     fn test_tokenize_shares() {
@@ -534,8 +524,8 @@ mod tests {
         let vault = &mut Vault::default();
         let profit_share_pct = 10u64;
         vault.profit_share = PERCENTAGE_PRECISION
-            .checked_div(profit_share_pct as u128)
-            .expect("math") as u32;
+            .safe_div(profit_share_pct as u128)
+            .unwrap() as u32;
         let mut tvd = TokenizedVaultDepositor::new(
             Pubkey::default(),
             Pubkey::default(),
