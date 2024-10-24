@@ -3,7 +3,7 @@ use drift::cpi::accounts::InitializeInsuranceFundStake as DriftInitializeInsuran
 use drift::program::Drift;
 use drift::state::spot_market::SpotMarket;
 
-use crate::constraints::{is_manager_for_vault, is_spot_market_for_vault, is_user_stats_for_vault};
+use crate::constraints::{is_manager_for_vault, is_user_stats_for_vault};
 use crate::drift_cpi::InitializeInsuranceFundStakeCPI;
 use crate::{declare_vault_seeds, Vault};
 
@@ -28,10 +28,6 @@ pub struct InitializeInsuranceFundStake<'info> {
     pub payer: Signer<'info>,
     pub rent: Sysvar<'info, Rent>,
     pub system_program: Program<'info, System>,
-
-    #[account(
-        constraint = is_spot_market_for_vault(&vault, &drift_spot_market, market_index)?
-    )]
     pub drift_spot_market: AccountLoader<'info, SpotMarket>,
     /// CHECK: checked in drift cpi
     #[account(

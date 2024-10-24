@@ -182,6 +182,36 @@ pub mod drift_vaults {
         instructions::initialize_insurance_fund_stake(ctx, market_index)
     }
 
+    pub fn add_insurance_fund_stake<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, AddInsuranceFundStake<'info>>,
+        market_index: u16,
+        amount: u64,
+    ) -> Result<()> {
+        instructions::add_insurance_fund_stake(ctx, market_index, amount)
+    }
+
+    pub fn request_remove_insurance_fund_stake<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, RequestRemoveInsuranceFundStake<'info>>,
+        market_index: u16,
+        amount: u64,
+    ) -> Result<()> {
+        instructions::request_remove_insurance_fund_stake(ctx, market_index, amount)
+    }
+
+    pub fn remove_insurance_fund_stake<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, RemoveInsuranceFundStake<'info>>,
+        market_index: u16,
+    ) -> Result<()> {
+        instructions::remove_insurance_fund_stake(ctx, market_index)
+    }
+
+    pub fn cancel_request_remove_insurance_fund_stake<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, RequestRemoveInsuranceFundStake<'info>>,
+        market_index: u16,
+    ) -> Result<()> {
+        instructions::cancel_request_remove_insurance_fund_stake(ctx, market_index)
+    }
+
     pub fn protocol_request_withdraw<'c: 'info, 'info>(
         ctx: Context<'_, '_, 'c, 'info, ProtocolRequestWithdraw<'info>>,
         withdraw_amount: u64,
