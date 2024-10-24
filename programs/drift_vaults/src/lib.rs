@@ -182,12 +182,6 @@ pub mod drift_vaults {
         instructions::initialize_insurance_fund_stake(ctx, market_index)
     }
 
-    pub fn initialize_competitor<'c: 'info, 'info>(
-        ctx: Context<'_, '_, 'c, 'info, InitializeCompetitor<'info>>,
-    ) -> Result<()> {
-        instructions::initialize_competitor(ctx)
-    }
-
     pub fn protocol_request_withdraw<'c: 'info, 'info>(
         ctx: Context<'_, '_, 'c, 'info, ProtocolRequestWithdraw<'info>>,
         withdraw_amount: u64,

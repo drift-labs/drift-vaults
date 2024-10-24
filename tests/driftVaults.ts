@@ -64,11 +64,6 @@ import {
 	getVaultProtocolAddressSync,
 	WithdrawUnit,
 } from '../ts/sdk';
-import {
-	CompetitionsClient,
-	getCompetitionAddressSync,
-	getCompetitorAddressSync,
-} from '@drift-labs/competitions-sdk';
 
 import { Metaplex } from '@metaplex-foundation/js';
 
@@ -545,99 +540,6 @@ describe('driftVaults', () => {
 
 		await testInitIFStakeAccount(0);
 		await driftClient.unsubscribe();
-	});
-
-	it('Test initializeCompetitor', async () => {
-		const spotMarket = adminClient.getSpotMarketAccount(0);
-		const [driftClient, _user, _kp] = await createUserWithUSDCAccount(
-			adminClient.provider,
-			usdcMint,
-			new anchor.Program(
-				adminClient.program.idl,
-				adminClient.program.programId,
-				adminClient.provider
-			),
-			new BN(1000 * 10 ** 6),
-			[],
-			[0],
-			[
-				{
-					publicKey: spotMarket.oracle,
-					source: spotMarket.oracleSource,
-				},
-			],
-			bulkAccountLoader
-		);
-		const vaultClient = new VaultClient({
-			driftClient,
-			program: program,
-		});
-		const vaultName = 'competition vault';
-		const vault = getVaultAddressSync(program.programId, encodeName(vaultName));
-		await vaultClient.initializeVault({
-			name: encodeName(vaultName),
-			spotMarketIndex: 0,
-			redeemPeriod: ZERO,
-			maxTokens: ZERO,
-			managementFee: ZERO,
-			profitShare: 0,
-			hurdleRate: 0,
-			permissioned: false,
-			minDepositAmount: ZERO,
-		});
-
-		try {
-			const competitionsClient = new CompetitionsClient({
-				// @ts-ignore
-				driftClient: driftClient as DriftClient,
-			});
-			const competitionName = 'sweepstakes';
-			const encodedName = encodeName(competitionName);
-			const competitionAddress = getCompetitionAddressSync(
-				competitionsClient.program.programId,
-				encodedName
-			);
-			const competitorAddress = getCompetitorAddressSync(
-				competitionsClient.program.programId,
-				competitionAddress,
-				vault
-			);
-			const initCompTx = await competitionsClient.initializeCompetition({
-				name: competitionName,
-				nextRoundExpiryTs: ZERO,
-				competitionExpiryTs: ZERO,
-				roundDuration: ZERO,
-				maxEntriesPerCompetitor: ZERO,
-				minSponsorAmount: ZERO,
-				maxSponsorFraction: ZERO,
-				numberOfWinners: 1,
-			});
-			await printTxLogs(provider.connection, initCompTx);
-
-			const initCompetitorTx = await vaultClient.initializeCompetitor(
-				vault,
-				// @ts-ignore
-				competitionsClient,
-				competitionName
-			);
-			await printTxLogs(provider.connection, initCompetitorTx);
-
-			const competitorAccount =
-				await competitionsClient.program.account.competitor.fetch(
-					competitorAddress
-				);
-			assert(
-				competitorAccount.competition.equals(competitionAddress),
-				'Competition address is incorrect'
-			);
-			assert(
-				competitorAccount.authority.equals(vault),
-				'Vault is not the competitor authority'
-			);
-		} catch (err) {
-			console.log(err);
-			assert(false, 'Failed to initialize competitor');
-		}
 	});
 });
 

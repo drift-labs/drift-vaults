@@ -29,7 +29,3 @@ pub trait UpdateUserMarginTradingEnabledCPI {
 pub trait InitializeInsuranceFundStakeCPI {
     fn drift_initialize_insurance_fund_stake(&self, market_index: u16) -> Result<()>;
 }
-
-pub trait InitializeCompetitorCPI {
-    fn drift_competition_initialize_competitor(&self) -> Result<()>;
-}

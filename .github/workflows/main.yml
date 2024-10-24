@@ -2,9 +2,9 @@ name: main
 
 on:
   push:
-    branches: master
+    branches: [master]
   pull_request:
-    branches: master
+    branches: [master]
 
 defaults:
   run:
@@ -143,6 +143,12 @@ jobs:
 
       - name: Verifiable Build
         run: |
+          cargo vendor
+          mkdir -p .cargo
+          echo '[source.crates-io]' > .cargo/config.toml
+          echo 'replace-with = "vendored-sources"' >> .cargo/config.toml
+          echo '[source.vendored-sources]' >> .cargo/config.toml
+          echo 'directory = "vendor"' >> .cargo/config.toml
           solana-verify build --library-name drift_vaults --base-image ellipsislabs/solana:1.16.6
 
       - name: Upload Artifact

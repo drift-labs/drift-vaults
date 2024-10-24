@@ -4,7 +4,7 @@ on:
     branches:
       - master
   repository_dispatch:
-    types: [competitions-sdk-update]
+    types: [sdk-update]
 
 env:
   CARGO_TERM_COLOR: always
@@ -28,14 +28,11 @@ jobs:
         id: determine-sdk-version
         run: |
           if [[ "${{ github.event_name }}" == "repository_dispatch" ]]; then
-            echo "DRIFT_SDK_VERSION=${{ github.event.client_payload.sdk-version }}" >> $GITHUB_ENV
-            echo "COMPETITIONS_SDK_VERSION=${{ github.event.client_payload.competitions-version }}" >> $GITHUB_ENV
+            echo "DRIFT_SDK_VERSION=${{ github.event.client_payload.version }}" >> $GITHUB_ENV
           else
             # Get the current version of sdk used in package.json
             CURRENT_DRIFT_SDK_VERSION=$(node -e "console.log(require('./ts/sdk/package.json').dependencies['@drift-labs/sdk'])")
-            CURRENT_COMPETITIONS_SDK_VERSION=$(node -e "console.log(require('./package.json').devDependencies['@drift-labs/competitions-sdk'])")
             echo "DRIFT_SDK_VERSION=$CURRENT_DRIFT_SDK_VERSION" >> $GITHUB_ENV
-            echo "COMPETITIONS_SDK_VERSION=$CURRENT_COMPETITIONS_SDK_VERSION" >> $GITHUB_ENV
           fi
 
       - name: Install dependencies
@@ -44,7 +41,6 @@ jobs:
       - name: Add specific version of sdk
         run: |
           yarn add --dev @drift-labs/sdk@$DRIFT_SDK_VERSION
-          yarn add --dev @drift-labs/competitions-sdk@$COMPETITIONS_SDK_VERSION
           cd ts/sdk
           yarn add @drift-labs/sdk@$DRIFT_SDK_VERSION
 
@@ -75,7 +71,7 @@ jobs:
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
           yarn run prettify:fix
           git add -A
-          git commit --allow-empty -m "Bumping sdk and competitions-sdk dependencies to $DRIFT_SDK_VERSION and $COMPETITIONS_SDK_VERSION"
+          git commit --allow-empty -m "Bumping sdk to $DRIFT_SDK_VERSION"
           git push
           echo "VAULT_VERSION=$VERSION" >> $GITHUB_ENV
 
