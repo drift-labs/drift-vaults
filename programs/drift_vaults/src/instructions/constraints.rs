@@ -1,7 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::get_associated_token_address;
 use drift::state::insurance_fund_stake::InsuranceFundStake;
-use drift::state::spot_market::SpotMarket;
 
 use crate::state::VaultProtocol;
 use crate::{TokenizedVaultDepositor, Vault, VaultDepositor};

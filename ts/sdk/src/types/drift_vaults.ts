@@ -1191,6 +1191,243 @@ export type DriftVaults = {
 			];
 		},
 		{
+			name: 'addInsuranceFundStake';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'driftSpotMarket';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftSpotMarketVault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'insuranceFundStake';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'insuranceFundVault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'managerTokenAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftState';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftSigner';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftProgram';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'tokenProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [
+				{
+					name: 'marketIndex';
+					type: 'u16';
+				},
+				{
+					name: 'amount';
+					type: 'u64';
+				}
+			];
+		},
+		{
+			name: 'requestRemoveInsuranceFundStake';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'driftSpotMarket';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'insuranceFundStake';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'insuranceFundVault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [
+				{
+					name: 'marketIndex';
+					type: 'u16';
+				},
+				{
+					name: 'amount';
+					type: 'u64';
+				}
+			];
+		},
+		{
+			name: 'removeInsuranceFundStake';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'driftSpotMarket';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'insuranceFundStake';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'insuranceFundVault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'managerTokenAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftState';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftSigner';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftProgram';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'tokenProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [
+				{
+					name: 'marketIndex';
+					type: 'u16';
+				}
+			];
+		},
+		{
+			name: 'cancelRequestRemoveInsuranceFundStake';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'driftSpotMarket';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'insuranceFundStake';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'insuranceFundVault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [
+				{
+					name: 'marketIndex';
+					type: 'u16';
+				}
+			];
+		},
+		{
 			name: 'protocolRequestWithdraw';
 			accounts: [
 				{
@@ -3691,6 +3928,243 @@ export const IDL: DriftVaults = {
 				{
 					name: 'driftState',
 					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [
+				{
+					name: 'marketIndex',
+					type: 'u16',
+				},
+			],
+		},
+		{
+			name: 'addInsuranceFundStake',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'driftSpotMarket',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftSpotMarketVault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'insuranceFundStake',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'insuranceFundVault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'managerTokenAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftState',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftSigner',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftProgram',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'tokenProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [
+				{
+					name: 'marketIndex',
+					type: 'u16',
+				},
+				{
+					name: 'amount',
+					type: 'u64',
+				},
+			],
+		},
+		{
+			name: 'requestRemoveInsuranceFundStake',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'driftSpotMarket',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'insuranceFundStake',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'insuranceFundVault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [
+				{
+					name: 'marketIndex',
+					type: 'u16',
+				},
+				{
+					name: 'amount',
+					type: 'u64',
+				},
+			],
+		},
+		{
+			name: 'removeInsuranceFundStake',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'driftSpotMarket',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'insuranceFundStake',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'insuranceFundVault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'managerTokenAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftState',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftSigner',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftProgram',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'tokenProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [
+				{
+					name: 'marketIndex',
+					type: 'u16',
+				},
+			],
+		},
+		{
+			name: 'cancelRequestRemoveInsuranceFundStake',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'driftSpotMarket',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'insuranceFundStake',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'insuranceFundVault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: true,
 					isSigner: false,
 				},
 				{
