@@ -30,7 +30,8 @@ pub struct RequestRemoveInsuranceFundStake<'info> {
     #[account(
         mut,
         seeds = [b"spot_market", market_index.to_le_bytes().as_ref()],
-        bump
+        bump,
+        seeds::program = drift_program.key(),
     )]
     pub drift_spot_market: AccountLoader<'info, SpotMarket>,
     #[account(
@@ -45,6 +46,7 @@ pub struct RequestRemoveInsuranceFundStake<'info> {
         mut,
         seeds = [b"insurance_fund_vault".as_ref(), market_index.to_le_bytes().as_ref()],
         bump,
+        seeds::program = drift_program.key(),
     )]
     pub insurance_fund_vault: Box<InterfaceAccount<'info, TokenAccount>>,
     #[account(

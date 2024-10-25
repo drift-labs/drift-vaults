@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::{TokenAccount, TokenInterface};
+use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 use drift::cpi::accounts::RemoveInsuranceFundStake as DriftRemoveInsuranceFundStake;
 use drift::program::Drift;
 use drift::state::insurance_fund_stake::InsuranceFundStake;
@@ -7,6 +7,7 @@ use drift::state::spot_market::SpotMarket;
 
 use crate::constraints::{is_if_stake_for_vault, is_manager_for_vault, is_user_stats_for_vault};
 use crate::drift_cpi::RemoveInsuranceFundStakeCPI;
+use crate::token_cpi::TokenTransferCPI;
 use crate::{declare_vault_seeds, Vault};
 
 pub fn remove_insurance_fund_stake<'info>(
@@ -45,13 +46,19 @@ pub struct RemoveInsuranceFundStake<'info> {
         seeds = [b"insurance_fund_vault".as_ref(), market_index.to_le_bytes().as_ref()],
         bump,
     )]
-    pub insurance_fund_vault: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub insurance_fund_vault: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
         token::mint = insurance_fund_vault.mint,
         token::authority = manager
     )]
-    pub manager_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub manager_token_account: Box<Account<'info, TokenAccount>>,
+    #[account(
+        mut,
+        seeds = [b"vault_token_account".as_ref(), vault.key().as_ref(), market_index.to_le_bytes().as_ref()],
+        bump,
+    )]
+    pub vault_if_token_account: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
         constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?
@@ -63,7 +70,31 @@ pub struct RemoveInsuranceFundStake<'info> {
     /// CHECK: forced drift_signer
     pub drift_signer: AccountInfo<'info>,
     pub drift_program: Program<'info, Drift>,
-    pub token_program: Interface<'info, TokenInterface>,
+    pub token_program: Program<'info, Token>,
+}
+
+impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, RemoveInsuranceFundStake<'info>> {
+    fn token_transfer(&self, amount: u64) -> Result<()> {
+        let cpi_accounts = Transfer {
+            from: self
+                .accounts
+                .vault_if_token_account
+                .to_account_info()
+                .clone(),
+            to: self
+                .accounts
+                .manager_token_account
+                .to_account_info()
+                .clone(),
+            authority: self.accounts.vault.to_account_info().clone(),
+        };
+        let token_program = self.accounts.token_program.to_account_info().clone();
+        let cpi_context = CpiContext::new(token_program, cpi_accounts);
+
+        token::transfer(cpi_context, amount)?;
+
+        Ok(())
+    }
 }
 
 impl<'info> RemoveInsuranceFundStakeCPI
@@ -81,7 +112,7 @@ impl<'info> RemoveInsuranceFundStakeCPI
             insurance_fund_vault: self.accounts.insurance_fund_vault.to_account_info().clone(),
             user_token_account: self
                 .accounts
-                .manager_token_account
+                .vault_if_token_account
                 .to_account_info()
                 .clone(),
             token_program: self.accounts.token_program.to_account_info().clone(),

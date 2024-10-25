@@ -1153,13 +1153,18 @@ export type DriftVaults = {
 					isSigner: false;
 				},
 				{
-					name: 'systemProgram';
+					name: 'driftSpotMarket';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftSpotMarketMint';
 					isMut: false;
 					isSigner: false;
 				},
 				{
-					name: 'driftSpotMarket';
-					isMut: false;
+					name: 'vaultTokenAccount';
+					isMut: true;
 					isSigner: false;
 				},
 				{
@@ -1181,6 +1186,16 @@ export type DriftVaults = {
 					name: 'driftProgram';
 					isMut: false;
 					isSigner: false;
+				},
+				{
+					name: 'tokenProgram';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'systemProgram';
+					isMut: false;
+					isSigner: false;
 				}
 			];
 			args: [
@@ -1200,7 +1215,7 @@ export type DriftVaults = {
 				},
 				{
 					name: 'manager';
-					isMut: false;
+					isMut: true;
 					isSigner: true;
 				},
 				{
@@ -1225,6 +1240,11 @@ export type DriftVaults = {
 				},
 				{
 					name: 'managerTokenAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'vaultIfTokenAccount';
 					isMut: true;
 					isSigner: false;
 				},
@@ -1345,6 +1365,11 @@ export type DriftVaults = {
 				},
 				{
 					name: 'managerTokenAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'vaultIfTokenAccount';
 					isMut: true;
 					isSigner: false;
 				},
@@ -3906,13 +3931,18 @@ export const IDL: DriftVaults = {
 					isSigner: false,
 				},
 				{
-					name: 'systemProgram',
+					name: 'driftSpotMarket',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftSpotMarketMint',
 					isMut: false,
 					isSigner: false,
 				},
 				{
-					name: 'driftSpotMarket',
-					isMut: false,
+					name: 'vaultTokenAccount',
+					isMut: true,
 					isSigner: false,
 				},
 				{
@@ -3935,6 +3965,16 @@ export const IDL: DriftVaults = {
 					isMut: false,
 					isSigner: false,
 				},
+				{
+					name: 'tokenProgram',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'systemProgram',
+					isMut: false,
+					isSigner: false,
+				},
 			],
 			args: [
 				{
@@ -3953,7 +3993,7 @@ export const IDL: DriftVaults = {
 				},
 				{
 					name: 'manager',
-					isMut: false,
+					isMut: true,
 					isSigner: true,
 				},
 				{
@@ -3978,6 +4018,11 @@ export const IDL: DriftVaults = {
 				},
 				{
 					name: 'managerTokenAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'vaultIfTokenAccount',
 					isMut: true,
 					isSigner: false,
 				},
@@ -4098,6 +4143,11 @@ export const IDL: DriftVaults = {
 				},
 				{
 					name: 'managerTokenAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'vaultIfTokenAccount',
 					isMut: true,
 					isSigner: false,
 				},

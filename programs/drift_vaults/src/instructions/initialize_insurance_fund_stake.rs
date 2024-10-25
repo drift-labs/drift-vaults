@@ -1,4 +1,5 @@
 use anchor_lang::prelude::*;
+use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 use drift::cpi::accounts::InitializeInsuranceFundStake as DriftInitializeInsuranceFundStake;
 use drift::program::Drift;
 use drift::state::spot_market::SpotMarket;
@@ -27,8 +28,26 @@ pub struct InitializeInsuranceFundStake<'info> {
     #[account(mut)]
     pub payer: Signer<'info>,
     pub rent: Sysvar<'info, Rent>,
-    pub system_program: Program<'info, System>,
+    #[account(
+        mut,
+        seeds = [b"spot_market", market_index.to_le_bytes().as_ref()],
+        bump,
+        seeds::program = drift_program.key(),
+    )]
     pub drift_spot_market: AccountLoader<'info, SpotMarket>,
+    #[account(
+        constraint = drift_spot_market.load()?.mint.eq(&drift_spot_market_mint.key())
+    )]
+    pub drift_spot_market_mint: Box<Account<'info, Mint>>,
+    #[account(
+        init,
+        seeds = [b"vault_token_account".as_ref(), vault.key().as_ref(), market_index.to_le_bytes().as_ref()],
+        bump,
+        payer = payer,
+        token::mint = drift_spot_market_mint,
+        token::authority = vault
+    )]
+    pub vault_token_account: Box<Account<'info, TokenAccount>>,
     /// CHECK: checked in drift cpi
     #[account(
         mut,
@@ -46,6 +65,8 @@ pub struct InitializeInsuranceFundStake<'info> {
     /// CHECK: checked in drift cpi
     pub drift_state: AccountInfo<'info>,
     pub drift_program: Program<'info, Drift>,
+    pub token_program: Program<'info, Token>,
+    pub system_program: Program<'info, System>,
 }
 
 impl<'info> InitializeInsuranceFundStakeCPI

@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token_interface::{TokenAccount, TokenInterface};
+use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
 use drift::cpi::accounts::AddInsuranceFundStake as DriftAddInsuranceFundStake;
 use drift::program::Drift;
 use drift::state::insurance_fund_stake::InsuranceFundStake;
@@ -7,6 +7,7 @@ use drift::state::spot_market::SpotMarket;
 
 use crate::constraints::{is_if_stake_for_vault, is_manager_for_vault, is_user_stats_for_vault};
 use crate::drift_cpi::AddInsuranceFundStakeCPI;
+use crate::token_cpi::TokenTransferCPI;
 use crate::{declare_vault_seeds, Vault};
 
 pub fn add_insurance_fund_stake<'info>(
@@ -14,6 +15,7 @@ pub fn add_insurance_fund_stake<'info>(
     market_index: u16,
     amount: u64,
 ) -> Result<()> {
+    ctx.token_transfer(amount)?;
     ctx.drift_add_insurance_fund_stake(market_index, amount)?;
     Ok(())
 }
@@ -26,19 +28,22 @@ pub struct AddInsuranceFundStake<'info> {
         constraint = is_manager_for_vault(&vault, &manager)?,
     )]
     pub vault: AccountLoader<'info, Vault>,
+    #[account(mut)]
     pub manager: Signer<'info>,
     #[account(
         mut,
         seeds = [b"spot_market", market_index.to_le_bytes().as_ref()],
-        bump
+        bump,
+        seeds::program = drift_program.key(),
     )]
     pub drift_spot_market: AccountLoader<'info, SpotMarket>,
     #[account(
         mut,
         seeds = [b"spot_market_vault".as_ref(), market_index.to_le_bytes().as_ref()],
         bump,
+        seeds::program = drift_program.key(),
     )]
-    pub drift_spot_market_vault: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub drift_spot_market_vault: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
         seeds = [b"insurance_fund_stake", vault.key().as_ref(), market_index.to_le_bytes().as_ref()],
@@ -51,14 +56,22 @@ pub struct AddInsuranceFundStake<'info> {
         mut,
         seeds = [b"insurance_fund_vault".as_ref(), market_index.to_le_bytes().as_ref()],
         bump,
+        seeds::program = drift_program.key(),
+        token::mint = drift_spot_market_vault.mint,
     )]
-    pub insurance_fund_vault: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub insurance_fund_vault: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
-        token::mint = insurance_fund_vault.mint,
-        token::authority = manager
+        token::mint = drift_spot_market_vault.mint,
+        token::authority = manager,
     )]
-    pub manager_token_account: Box<InterfaceAccount<'info, TokenAccount>>,
+    pub manager_token_account: Box<Account<'info, TokenAccount>>,
+    #[account(
+        mut,
+        seeds = [b"vault_token_account".as_ref(), vault.key().as_ref(), market_index.to_le_bytes().as_ref()],
+        bump,
+    )]
+    pub vault_if_token_account: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
         constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?
@@ -70,7 +83,27 @@ pub struct AddInsuranceFundStake<'info> {
     /// CHECK: forced drift_signer
     pub drift_signer: AccountInfo<'info>,
     pub drift_program: Program<'info, Drift>,
-    pub token_program: Interface<'info, TokenInterface>,
+    pub token_program: Program<'info, Token>,
+}
+
+impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, AddInsuranceFundStake<'info>> {
+    fn token_transfer(&self, amount: u64) -> Result<()> {
+        let cpi_accounts = Transfer {
+            from: self
+                .accounts
+                .manager_token_account
+                .to_account_info()
+                .clone(),
+            to: self.accounts.vault_if_token_account.to_account_info().clone(),
+            authority: self.accounts.manager.to_account_info().clone(),
+        };
+        let token_program = self.accounts.token_program.to_account_info().clone();
+        let cpi_context = CpiContext::new(token_program, cpi_accounts);
+
+        token::transfer(cpi_context, amount)?;
+
+        Ok(())
+    }
 }
 
 impl<'info> AddInsuranceFundStakeCPI for Context<'_, '_, '_, 'info, AddInsuranceFundStake<'info>> {
@@ -91,7 +124,7 @@ impl<'info> AddInsuranceFundStakeCPI for Context<'_, '_, '_, 'info, AddInsurance
             insurance_fund_vault: self.accounts.insurance_fund_vault.to_account_info().clone(),
             user_token_account: self
                 .accounts
-                .manager_token_account
+                .vault_if_token_account
                 .to_account_info()
                 .clone(),
             token_program: self.accounts.token_program.to_account_info().clone(),

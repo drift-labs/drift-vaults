@@ -42,6 +42,21 @@ export function getTokenVaultAddressSync(
 	)[0];
 }
 
+export function getInsuranceFundTokenVaultAddressSync(
+	programId: PublicKey,
+	vault: PublicKey,
+	marketIndex: number
+): PublicKey {
+	return PublicKey.findProgramAddressSync(
+		[
+			Buffer.from(anchor.utils.bytes.utf8.encode('vault_token_account')),
+			vault.toBuffer(),
+			new anchor.BN(marketIndex).toArrayLike(Buffer, 'le', 2),
+		],
+		programId
+	)[0];
+}
+
 export function getVaultProtocolAddressSync(
 	programId: PublicKey,
 	vault: PublicKey
