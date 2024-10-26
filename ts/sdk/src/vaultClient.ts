@@ -2161,7 +2161,8 @@ export class VaultClient {
 
 	public async removeInsuranceFundStake(
 		vault: PublicKey,
-		spotMarketIndex: number
+		spotMarketIndex: number,
+		managerTokenAccount?: PublicKey
 	): Promise<TransactionSignature> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
 		const ifStakeAccountPublicKey = getInsuranceFundStakeAccountPublicKey(
@@ -2179,20 +2180,29 @@ export class VaultClient {
 				`Spot market ${spotMarketIndex} not found on driftClient`
 			);
 		}
-		const managerTokenAccount = getAssociatedTokenAddressSync(
-			spotMarket.mint,
-			this.driftClient.wallet.publicKey
+
+		if (!managerTokenAccount) {
+			managerTokenAccount = getAssociatedTokenAddressSync(
+				spotMarket.mint,
+				this.driftClient.wallet.publicKey
+			);
+		}
+
+		const ifVaultTokenAccount = getInsuranceFundTokenVaultAddressSync(
+			this.program.programId,
+			vault,
+			spotMarketIndex
 		);
 
 		return await this.program.methods
 			.removeInsuranceFundStake(spotMarketIndex)
 			.accounts({
 				vault: vault,
-				manager: this.driftClient.wallet.publicKey,
 				driftSpotMarket: spotMarket.pubkey,
 				insuranceFundStake: ifStakeAccountPublicKey,
 				insuranceFundVault: ifVaultPublicKey,
-				managerTokenAccount: managerTokenAccount,
+				managerTokenAccount,
+				vaultIfTokenAccount: ifVaultTokenAccount,
 				driftState: await this.driftClient.getStatePublicKey(),
 				driftUserStats: vaultAccount.userStats,
 				driftSigner: this.driftClient.getStateAccount().signer,

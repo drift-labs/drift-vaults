@@ -1374,12 +1374,12 @@
           "isSigner": false
         },
         {
-          "name": "driftState",
+          "name": "driftUserStats",
           "isMut": true,
           "isSigner": false
         },
         {
-          "name": "driftUserStats",
+          "name": "driftState",
           "isMut": false,
           "isSigner": false
         },

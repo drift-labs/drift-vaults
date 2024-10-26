@@ -31,4 +31,4 @@ address = "PwDiXFxQsGra4sFFTT8r1QWRMd4vfumiWC1jfWNfdYT"
 filename = "./deps/metaplex/PwDiXFxQsGra4sFFTT8r1QWRMd4vfumiWC1jfWNfdYT.json"
 
 [scripts]
-test = "yarn anchor-tests:if-stake"
+test = "yarn anchor-tests"

@@ -70,6 +70,7 @@ pub struct AddInsuranceFundStake<'info> {
         mut,
         seeds = [b"vault_token_account".as_ref(), vault.key().as_ref(), market_index.to_le_bytes().as_ref()],
         bump,
+        token::authority = vault,
     )]
     pub vault_if_token_account: Box<Account<'info, TokenAccount>>,
     #[account(

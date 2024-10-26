@@ -287,12 +287,12 @@ export async function initializeAndSubscribeDriftClient(
 		oracleInfos,
 		accountSubscription: accountLoader
 			? {
-				type: 'polling',
-				accountLoader,
-			}
+					type: 'polling',
+					accountLoader,
+			  }
 			: {
-				type: 'websocket',
-			},
+					type: 'websocket',
+			  },
 	});
 	await driftClient.subscribe();
 	await driftClient.initializeUserAccount();
@@ -338,7 +338,7 @@ export async function createWSolTokenAccountForUser(
 	const tx = await provider.connection.requestAirdrop(
 		userKeypair.publicKey,
 		amount.toNumber() +
-		(await getMinimumBalanceForRentExemptAccount(provider.connection))
+			(await getMinimumBalanceForRentExemptAccount(provider.connection))
 	);
 	while (
 		(await provider.connection.getTransaction(tx, {
@@ -602,12 +602,12 @@ export async function initUserAccounts(
 			oracleInfos,
 			accountSubscription: accountLoader
 				? {
-					type: 'polling',
-					accountLoader,
-				}
+						type: 'polling',
+						accountLoader,
+				  }
 				: {
-					type: 'websocket',
-				},
+						type: 'websocket',
+				  },
 		});
 
 		// await driftClient1.initialize(usdcMint.publicKey, false);
@@ -784,9 +784,9 @@ function readBigInt64LE(buffer, offset = 0) {
 		(BigInt(val) << BigInt(32)) +
 		BigInt(
 			first +
-			buffer[++offset] * 2 ** 8 +
-			buffer[++offset] * 2 ** 16 +
-			buffer[++offset] * 2 ** 24
+				buffer[++offset] * 2 ** 8 +
+				buffer[++offset] * 2 ** 16 +
+				buffer[++offset] * 2 ** 24
 		)
 	);
 }
@@ -1012,6 +1012,7 @@ export async function initializeQuoteSpotMarket(
 		maintenanceLiabilityWeight,
 		imfFactor
 	);
+	await admin.updateInsuranceFundUnstakingPeriod(marketIndex, new BN(0));
 	await admin.updateWithdrawGuardThreshold(
 		marketIndex,
 		new BN(10 ** 10).mul(QUOTE_PRECISION)
@@ -1045,28 +1046,23 @@ export async function initializeSolSpotMarket(
 		.toNumber();
 	const marketIndex = admin.getStateAccount().numberOfSpotMarkets;
 
-	////
-	const aa = await admin.connection.getAccountInfo(solOracle);
-	console.log(solOracle.toBase58());
-	console.log(aa);
-	console.log("^^^^^")
-	////
-
 	try {
-	const txSig = await admin.initializeSpotMarket(
-		solMint,
-		optimalUtilization,
-		optimalRate,
-		maxRate,
-		solOracle,
-		OracleSource.PYTH,
-		initialAssetWeight,
-		maintenanceAssetWeight,
-		initialLiabilityWeight,
-		maintenanceLiabilityWeight
+		await admin.initializeSpotMarket(
+			solMint,
+			optimalUtilization,
+			optimalRate,
+			maxRate,
+			solOracle,
+			OracleSource.PYTH,
+			initialAssetWeight,
+			maintenanceAssetWeight,
+			initialLiabilityWeight,
+			maintenanceLiabilityWeight
 		);
+
+		await admin.updateInsuranceFundUnstakingPeriod(marketIndex, new BN(0));
 	} catch (e) {
-		console.log("errorrrr");
+		console.log('errorrrr');
 		console.log(e);
 	}
 	await admin.updateWithdrawGuardThreshold(
@@ -1209,8 +1205,8 @@ export async function getVaultDepositorValue(params: {
 	try {
 		tokenizedVaultDepositorAccount = params.tokenizedVaultDepositor
 			? await params.vaultClient.program.account.tokenizedVaultDepositor.fetch(
-				params.tokenizedVaultDepositor
-			)
+					params.tokenizedVaultDepositor
+			  )
 			: undefined;
 	} catch (e) {
 		console.log('failed to get tokenized vault depositor account', e);
@@ -1228,7 +1224,7 @@ export async function getVaultDepositorValue(params: {
 	if (tokenizedVaultDepositorAccount) {
 		assert(
 			tokenizedVaultDepositorAccount.vaultSharesBase ===
-			vaultAccount.sharesBase,
+				vaultAccount.sharesBase,
 			'tokenizedVaultDepositorAccount.vaultSharesBase is not equal to vaultAccount.sharesBase'
 		);
 	}
@@ -1311,7 +1307,8 @@ export async function getVaultDepositorValue(params: {
 			).toString()}`
 		);
 		console.log(
-			`  tokenizedVaultDepositorShareOfVault: ${tokenizedVaultDepositorShareOfVault * 100
+			`  tokenizedVaultDepositorShareOfVault: ${
+				tokenizedVaultDepositorShareOfVault * 100
 			}%`
 		);
 		console.log(`  ataBalance: ${ataBalance?.toString()}`);
@@ -1450,7 +1447,8 @@ export async function doWashTrading({
 	stopPnlDiffPct = stopPnlDiffPct ?? -0.999;
 	maxIters = maxIters ?? 100;
 	console.log(
-		`Trading against MM until pnl is ${stopPnlDiffPct * 100
+		`Trading against MM until pnl is ${
+			stopPnlDiffPct * 100
 		}%, starting at ${convertToNumber(
 			startVaultEquity,
 			QUOTE_PRECISION

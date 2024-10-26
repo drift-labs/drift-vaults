@@ -1,6 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 use drift::cpi::accounts::RemoveInsuranceFundStake as DriftRemoveInsuranceFundStake;
+use drift::math::safe_math::SafeMath;
 use drift::program::Drift;
 use drift::state::insurance_fund_stake::InsuranceFundStake;
 use drift::state::spot_market::SpotMarket;
@@ -14,7 +15,17 @@ pub fn remove_insurance_fund_stake<'info>(
     ctx: Context<'_, '_, '_, 'info, RemoveInsuranceFundStake<'info>>,
     market_index: u16,
 ) -> Result<()> {
+    let token_balance_before = ctx.accounts.vault_if_token_account.amount;
     ctx.drift_remove_insurance_fund_stake(market_index)?;
+    ctx.accounts.vault_if_token_account.reload()?;
+    let token_balance_after = ctx.accounts.vault_if_token_account.amount;
+    msg!(
+        "token_balance_before: {} token_balance_after: {}",
+        token_balance_before,
+        token_balance_after
+    );
+
+    ctx.token_transfer(token_balance_after.safe_sub(token_balance_before)?)?;
     Ok(())
 }
 
@@ -30,7 +41,8 @@ pub struct RemoveInsuranceFundStake<'info> {
     #[account(
         mut,
         seeds = [b"spot_market", market_index.to_le_bytes().as_ref()],
-        bump
+        bump,
+        seeds::program = drift_program.key(),
     )]
     pub drift_spot_market: AccountLoader<'info, SpotMarket>,
     #[account(
@@ -45,6 +57,8 @@ pub struct RemoveInsuranceFundStake<'info> {
         mut,
         seeds = [b"insurance_fund_vault".as_ref(), market_index.to_le_bytes().as_ref()],
         bump,
+        seeds::program = drift_program.key(),
+        token::mint = drift_spot_market.load()?.mint,
     )]
     pub insurance_fund_vault: Box<Account<'info, TokenAccount>>,
     #[account(
@@ -57,6 +71,7 @@ pub struct RemoveInsuranceFundStake<'info> {
         mut,
         seeds = [b"vault_token_account".as_ref(), vault.key().as_ref(), market_index.to_le_bytes().as_ref()],
         bump,
+        token::authority = vault,
     )]
     pub vault_if_token_account: Box<Account<'info, TokenAccount>>,
     #[account(
@@ -64,9 +79,9 @@ pub struct RemoveInsuranceFundStake<'info> {
         constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?
     )]
     /// CHECK: checked in drift cpi
-    pub drift_state: AccountInfo<'info>,
-    /// CHECK: checked in drift cpi
     pub drift_user_stats: AccountInfo<'info>,
+    /// CHECK: checked in drift cpi
+    pub drift_state: AccountInfo<'info>,
     /// CHECK: forced drift_signer
     pub drift_signer: AccountInfo<'info>,
     pub drift_program: Program<'info, Drift>,
@@ -75,6 +90,8 @@ pub struct RemoveInsuranceFundStake<'info> {
 
 impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, RemoveInsuranceFundStake<'info>> {
     fn token_transfer(&self, amount: u64) -> Result<()> {
+        declare_vault_seeds!(self.accounts.vault, seeds);
+
         let cpi_accounts = Transfer {
             from: self
                 .accounts
@@ -89,7 +106,7 @@ impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, RemoveInsuranceFundS
             authority: self.accounts.vault.to_account_info().clone(),
         };
         let token_program = self.accounts.token_program.to_account_info().clone();
-        let cpi_context = CpiContext::new(token_program, cpi_accounts);
+        let cpi_context = CpiContext::new_with_signer(token_program, cpi_accounts, seeds);
 
         token::transfer(cpi_context, amount)?;
 
