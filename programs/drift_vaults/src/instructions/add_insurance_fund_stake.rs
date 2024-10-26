@@ -95,7 +95,11 @@ impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, AddInsuranceFundStak
                 .manager_token_account
                 .to_account_info()
                 .clone(),
-            to: self.accounts.vault_if_token_account.to_account_info().clone(),
+            to: self
+                .accounts
+                .vault_if_token_account
+                .to_account_info()
+                .clone(),
             authority: self.accounts.manager.to_account_info().clone(),
         };
         let token_program = self.accounts.token_program.to_account_info().clone();
