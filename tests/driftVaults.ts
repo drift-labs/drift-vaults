@@ -512,7 +512,7 @@ describe('TestProtocolVaults', () => {
 				oracleInfos,
 			},
 		});
-		manager = bootstrapManager.signer;
+		_manager = bootstrapManager.signer;
 		managerClient = bootstrapManager.vaultClient;
 		managerUser = bootstrapManager.user;
 
@@ -535,7 +535,7 @@ describe('TestProtocolVaults', () => {
 				oracleInfos,
 			},
 		});
-		delegate = bootstrapDelegate.signer;
+		_delegate = bootstrapDelegate.signer;
 		delegateClient = bootstrapDelegate.vaultClient;
 		_delegateUser = bootstrapDelegate.user;
 
@@ -651,19 +651,17 @@ describe('TestProtocolVaults', () => {
 		await delegateClient.driftClient.unsubscribe();
 		await protocolClient.driftClient.unsubscribe();
 
+		await managerClient.driftClient.unsubscribe();
+		await vd2Client.driftClient.unsubscribe();
+		await delegateClient.driftClient.unsubscribe();
+
 		await managerUser.unsubscribe();
-		await fillerUser.unsubscribe();
-		await vdUser.subscribe();
 		await _vd2User.unsubscribe();
 		await _delegateUser.unsubscribe();
-		await _protocolUser.unsubscribe();
 
 		await managerClient.unsubscribe();
-		await fillerClient.unsubscribe();
-		await vdClient.unsubscribe();
 		await vd2Client.unsubscribe();
 		await delegateClient.unsubscribe();
-		await protocolClient.unsubscribe();
 	});
 
 	//
