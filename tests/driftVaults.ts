@@ -457,7 +457,6 @@ describe('TestProtocolVaults', () => {
 
 	let vd: Keypair;
 	let vdClient: VaultClient;
-	let vdUser: User;
 	let vdUserUSDCAccount: PublicKey;
 
 	let _vd2: Keypair;
@@ -512,7 +511,7 @@ describe('TestProtocolVaults', () => {
 				oracleInfos,
 			},
 		});
-		_manager = bootstrapManager.signer;
+		manager = bootstrapManager.signer;
 		managerClient = bootstrapManager.vaultClient;
 		managerUser = bootstrapManager.user;
 
@@ -535,7 +534,7 @@ describe('TestProtocolVaults', () => {
 				oracleInfos,
 			},
 		});
-		_delegate = bootstrapDelegate.signer;
+		delegate = bootstrapDelegate.signer;
 		delegateClient = bootstrapDelegate.vaultClient;
 		_delegateUser = bootstrapDelegate.user;
 
@@ -582,7 +581,6 @@ describe('TestProtocolVaults', () => {
 		});
 		vd = bootstrapVD.signer;
 		vdClient = bootstrapVD.vaultClient;
-		vdUser = bootstrapVD.user;
 		vdUserUSDCAccount = bootstrapVD.userUSDCAccount.publicKey;
 
 		// the VaultDepositor for the vault
