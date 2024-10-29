@@ -542,13 +542,13 @@ impl Vault {
             ErrorCode::InvalidVaultWithdrawSize,
             "Requested n_shares = 0"
         )?;
-            validate!(
-                vault_shares_before >= n_shares,
-                ErrorCode::InvalidVaultWithdrawSize,
-                "Requested n_shares={} > manager shares={}",
-                n_shares,
-                vault_shares_before,
-            )?;
+        validate!(
+            vault_shares_before >= n_shares,
+            ErrorCode::InvalidVaultWithdrawSize,
+            "Requested n_shares={} > manager shares={}",
+            n_shares,
+            vault_shares_before,
+        )?;
 
         let total_vault_shares_before = self.total_shares;
         let user_vault_shares_before = self.user_shares;
@@ -819,11 +819,11 @@ impl Vault {
             "Requested n_shares = 0"
         )?;
         validate!(
-            vault_shares_before >= n_shares,
+            protocol_shares_before >= n_shares,
             ErrorCode::InvalidVaultWithdrawSize,
-            "Requested n_shares={} > manager shares={}",
+            "Requested n_shares={} > protocol shares={}",
             n_shares,
-            vault_shares_before,
+            protocol_shares_before,
         )?;
 
         let total_vault_shares_before = self.total_shares;
