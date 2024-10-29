@@ -311,6 +311,12 @@ impl Vault {
         }
 
         // this will underflow if there is an issue with protocol fee calc
+        validate!(
+            self.total_shares >= self.user_shares,
+            ErrorCode::InvalidVaultSharesDetected,
+            "total_shares must be >= user_shares"
+        )?;
+
         self.get_manager_shares(vault_protocol)?;
 
         Ok(VaultFee {
