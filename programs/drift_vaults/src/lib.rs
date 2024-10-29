@@ -9,6 +9,7 @@ mod instructions;
 pub mod macros;
 mod state;
 mod tests;
+mod token_cpi;
 
 declare_id!("vAuLTsyrvSfZRuRB3XgvkPwNGgYSs9YRYymVebLKoxR");
 
@@ -60,6 +61,28 @@ pub mod drift_vaults {
 
     pub fn initialize_vault_depositor(ctx: Context<InitializeVaultDepositor>) -> Result<()> {
         instructions::initialize_vault_depositor(ctx)
+    }
+
+    pub fn initialize_tokenized_vault_depositor(
+        ctx: Context<InitializeTokenizedVaultDepositor>,
+        params: InitializeTokenizedVaultDepositorParams,
+    ) -> Result<()> {
+        instructions::initialize_tokenized_vault_depositor(ctx, params)
+    }
+
+    pub fn tokenize_shares<'info>(
+        ctx: Context<'_, '_, 'info, 'info, TokenizeShares<'info>>,
+        amount: u64,
+        unit: WithdrawUnit,
+    ) -> Result<()> {
+        instructions::tokenize_shares(ctx, amount, unit)
+    }
+
+    pub fn redeem_tokens<'info>(
+        ctx: Context<'_, '_, 'info, 'info, RedeemTokens<'info>>,
+        tokens_to_burn: u64,
+    ) -> Result<()> {
+        instructions::redeem_tokens(ctx, tokens_to_burn)
     }
 
     pub fn deposit<'c: 'info, 'info>(
@@ -134,6 +157,18 @@ pub mod drift_vaults {
         instructions::apply_profit_share(ctx)
     }
 
+    pub fn apply_rebase<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, ApplyRebase<'info>>,
+    ) -> Result<()> {
+        instructions::apply_rebase(ctx)
+    }
+
+    pub fn apply_rebase_tokenized_depositor<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, ApplyRebaseTokenizedDepositor<'info>>,
+    ) -> Result<()> {
+        instructions::apply_rebase_tokenized_depositor(ctx)
+    }
+
     pub fn force_withdraw<'c: 'info, 'info>(
         ctx: Context<'_, '_, 'c, 'info, ForceWithdraw<'info>>,
     ) -> Result<()> {
@@ -145,12 +180,6 @@ pub mod drift_vaults {
         market_index: u16,
     ) -> Result<()> {
         instructions::initialize_insurance_fund_stake(ctx, market_index)
-    }
-
-    pub fn initialize_competitor<'c: 'info, 'info>(
-        ctx: Context<'_, '_, 'c, 'info, InitializeCompetitor<'info>>,
-    ) -> Result<()> {
-        instructions::initialize_competitor(ctx)
     }
 
     pub fn protocol_request_withdraw<'c: 'info, 'info>(

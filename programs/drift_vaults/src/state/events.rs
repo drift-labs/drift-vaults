@@ -76,4 +76,21 @@ pub enum VaultDepositorAction {
     CancelWithdrawRequest,
     Withdraw,
     FeePayment,
+    TokenizeShares,
+    RedeemTokens,
+}
+
+#[event]
+#[derive(Default)]
+pub struct ShareTransferRecord {
+    pub ts: i64,
+    pub vault: Pubkey,
+    pub from_vault_depositor: Pubkey,
+    pub to_vault_depositor: Pubkey,
+    pub shares: u128,
+    pub value: u64,
+    pub from_depositor_shares_before: u128,
+    pub from_depositor_shares_after: u128,
+    pub to_depositor_shares_before: u128,
+    pub to_depositor_shares_after: u128,
 }

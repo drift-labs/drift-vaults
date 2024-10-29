@@ -1,5 +1,6 @@
 #[cfg(test)]
 mod vault_fcn {
+    use crate::state::traits::VaultDepositorBase;
     use crate::withdraw_request::WithdrawRequest;
     use crate::{Vault, VaultDepositor, WithdrawUnit};
     use anchor_lang::prelude::Pubkey;
@@ -542,6 +543,69 @@ mod vault_fcn {
     }
 
     #[test]
+    fn test_vd_withdraw_on_drawdown() {
+        let mut now = 123456789;
+        let vault = &mut Vault::default();
+
+        let mut vault_equity: u64 = 0;
+        let deposit_amount: u64 = 100 * QUOTE_PRECISION_U64;
+
+        assert_eq!(vault.user_shares, 0);
+        assert_eq!(vault.total_shares, 0);
+        assert_eq!(vault.shares_base, 0);
+
+        let vd = &mut VaultDepositor::new(
+            Pubkey::default(),
+            Pubkey::new_unique(),
+            Pubkey::new_unique(),
+            now,
+        );
+        vd.deposit(deposit_amount, vault_equity, vault, &mut None, now)
+            .unwrap(); // new user deposits $2000
+        let vd_shares = vd.get_vault_shares();
+        now += 100;
+        assert_eq!(vault.user_shares, deposit_amount as u128);
+        assert_eq!(vault.total_shares, deposit_amount as u128);
+        assert_eq!(vd.get_vault_shares(), vault.user_shares);
+        assert_eq!(vd.get_vault_shares_base(), vault.shares_base);
+        vault_equity += deposit_amount;
+
+        // down 50%
+        vault_equity /= 2;
+        now += 100;
+
+        // user withdraws
+        vd.request_withdraw(
+            vd_shares as u64,
+            WithdrawUnit::Shares,
+            vault_equity,
+            vault,
+            &mut None,
+            now,
+        )
+        .expect("request withdraw");
+
+        assert_eq!(
+            vd.last_withdraw_request,
+            WithdrawRequest {
+                shares: vd_shares,
+                value: vault_equity,
+                ts: now,
+            }
+        );
+
+        // down another 50%
+        vault_equity /= 2;
+        now += 100;
+
+        let (withdraw_amount, finishing_liquidation) = vd
+            .withdraw(vault_equity, vault, &mut None, now)
+            .expect("withdraw");
+        assert_eq!(withdraw_amount, vault_equity);
+        assert!(!finishing_liquidation);
+    }
+
+    #[test]
     fn test_vd_request_withdraw_after_rebase() {
         let mut now = 123456789;
         let vault = &mut Vault::default();
@@ -660,7 +724,7 @@ mod vault_fcn {
             WithdrawRequest {
                 shares: vd_shares,
                 value: vault_equity,
-                ts: now
+                ts: now,
             }
         );
         println!(
@@ -695,6 +759,8 @@ mod vault_v1_fcn {
 
     use crate::state::{Vault, VaultProtocol};
     use crate::{VaultDepositor, WithdrawUnit};
+
+    const USER_SHARES_AFTER_1500_BPS_FEE: u64 = 99_850_025;
 
     #[test]
     fn test_manager_withdraw_v1() {
@@ -750,8 +816,6 @@ mod vault_v1_fcn {
         assert_eq!(vault.manager_total_withdraws, 99999999);
         assert_eq!(withdraw, 99999999);
     }
-
-    const USER_SHARES_AFTER_1500_BPS_FEE: u64 = 99_850_025;
 
     #[test]
     fn test_management_and_protocol_fee_v1() {

@@ -9,10 +9,9 @@ use drift::state::user::User;
 use crate::constraints::{
     is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
 };
-use crate::drift_cpi::{
-    TokenTransferCPI, UpdateUserDelegateCPI, UpdateUserReduceOnlyCPI, WithdrawCPI,
-};
+use crate::drift_cpi::{UpdateUserDelegateCPI, UpdateUserReduceOnlyCPI, WithdrawCPI};
 use crate::state::{Vault, VaultDepositor, VaultProtocolProvider};
+use crate::token_cpi::TokenTransferCPI;
 use crate::{
     declare_vault_seeds, implement_update_user_delegate_cpi, implement_update_user_reduce_only_cpi,
     implement_withdraw, AccountMapProvider,

@@ -10,11 +10,13 @@
         "update-idl": "cp target/idl/drift_vaults.json ts/sdk/src/idl/drift_vaults.json",
         "update-pyth": "cp deps/pyth.json target/idl/pyth.json",
         "update-drift": "cp deps/drift.json target/idl/drift.json",
-        "anchor-tests": "yarn update-types && yarn update-idl && yarn update-drift && yarn update-pyth && yarn run ts-mocha -p ./tsconfig.json -t 1000000 --exit tests/**/*.ts"
+        "anchor-tests": "yarn update-types && yarn update-idl && yarn update-drift && yarn update-pyth && yarn update-drift && yarn update-pyth && yarn run ts-mocha -p ./tsconfig.json -t 1000000 --exit tests/**/*.ts",
+        "anchor-tests:vaults": "yarn anchor-tests -g TestDriftVaults",
+        "anchor-tests:protocol": "yarn anchor-tests -g TestProtocolVaults",
+        "anchor-tests:tokenize": "yarn anchor-tests -g TestTokenizedDriftVaults"
     },
     "devDependencies": {
         "@coral-xyz/anchor": "0.28.0",
-        "@drift-labs/competitions-sdk": "0.2.536",
         "@drift-labs/sdk": "2.98.0-beta.9",
         "@solana/web3.js": "1.73.2",
         "@types/bn.js": "^5.1.0",
@@ -34,5 +36,8 @@
     },
     "engines": {
         "node": ">=16"
+    },
+    "dependencies": {
+        "@metaplex-foundation/js": "^0.20.1"
     }
 }

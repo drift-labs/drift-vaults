@@ -1,8 +1,9 @@
 use anchor_lang::prelude::*;
+use anchor_spl::associated_token::get_associated_token_address;
 use drift::state::spot_market::SpotMarket;
 
 use crate::state::VaultProtocol;
-use crate::{Vault, VaultDepositor};
+use crate::{TokenizedVaultDepositor, Vault, VaultDepositor};
 
 pub fn is_vault_for_vault_depositor(
     vault_depositor: &AccountLoader<VaultDepositor>,
@@ -85,4 +86,32 @@ pub fn is_vault_protocol_for_vault(
         msg!("Vault does not have VaultProtocol");
         Err(anchor_lang::error::Error::from(ec))
     }
+}
+
+pub fn is_tokenized_depositor_for_vault(
+    tokenized_vault_depositor: &AccountLoader<TokenizedVaultDepositor>,
+    vault: &AccountLoader<Vault>,
+) -> anchor_lang::Result<bool> {
+    Ok(tokenized_vault_depositor.load()?.vault.eq(&vault.key()))
+}
+
+pub fn is_mint_for_tokenized_depositor(
+    mint: &Pubkey,
+    tokenized_vault_depositor: &AccountLoader<TokenizedVaultDepositor>,
+) -> anchor_lang::Result<bool> {
+    Ok(tokenized_vault_depositor.load()?.mint.eq(mint))
+}
+
+pub fn is_vault_shares_base_for_tokenized_depositor(
+    vault_shares_base: &u32,
+    tokenized_vault_depositor: &AccountLoader<TokenizedVaultDepositor>,
+) -> anchor_lang::Result<bool> {
+    Ok(tokenized_vault_depositor
+        .load()?
+        .vault_shares_base
+        .eq(vault_shares_base))
+}
+
+pub fn is_ata(token_account: &Pubkey, owner: &Pubkey, mint: &Pubkey) -> anchor_lang::Result<bool> {
+    Ok(get_associated_token_address(owner, mint).eq(token_account))
 }
