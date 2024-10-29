@@ -31,7 +31,7 @@ pub fn redeem_tokens<'info>(
     vault.validate_vault_protocol(&vp)?;
     let mut vp = vp.as_mut().map(|vp| vp.load_mut()).transpose()?;
 
-    let manager_shares_before = vault.total_shares.safe_sub(vault.user_shares)?;
+    let manager_shares_before = vault.get_manager_shares(&mut vp)?;
     let total_shares_before = vault_depositor
         .get_vault_shares()
         .safe_add(tokenized_vault_depositor.get_vault_shares())?
@@ -73,7 +73,7 @@ pub fn redeem_tokens<'info>(
         clock.unix_timestamp,
     )?;
 
-    let manager_shares_after = vault.total_shares.safe_sub(vault.user_shares)?;
+    let manager_shares_after = vault.get_manager_shares(&mut vp)?;
     let total_shares_after = vault_depositor
         .get_vault_shares()
         .safe_add(tokenized_vault_depositor.get_vault_shares())?

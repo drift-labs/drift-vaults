@@ -245,7 +245,7 @@ impl TokenizedVaultDepositor {
                     user_vault_shares_after: vault.user_shares,
                     protocol_profit_share,
                     protocol_fee: protocol_fee_payment,
-                    protocol_fee_shares: protocol_fee_shares,
+                    protocol_fee_shares,
                     manager_profit_share,
                     management_fee: management_fee_payment,
                     management_fee_shares,
@@ -413,7 +413,7 @@ mod tests {
             .unwrap();
 
         // first tokenization will issue same amount of tokens as shares
-        assert_eq!(tokens_issued_2, (tokens_issued_1 as u64) * 2);
+        assert_eq!(tokens_issued_2, tokens_issued_1 * 2);
         assert_eq!(tvd.last_vault_shares, tvd.vault_shares);
         assert_eq!(
             tvd.vault_shares,
@@ -511,9 +511,8 @@ mod tests {
             now,
         );
 
-        assert_eq!(
+        assert!(
             tokens_issued_2.is_err(),
-            true,
             "disallow tokenize_shares on rebase"
         );
     }
@@ -577,7 +576,7 @@ mod tests {
 
         assert_eq!(
             manager_profit_share + protocol_profit_share,
-            (profit * profit_share_pct / 100) as u64
+            profit * profit_share_pct / 100
         );
         assert!(
             tvd_shares_after < tvd_shares_before,

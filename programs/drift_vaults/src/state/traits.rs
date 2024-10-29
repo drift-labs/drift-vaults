@@ -202,7 +202,8 @@ pub trait VaultDepositorBase {
             self.set_vault_shares_base(vault.shares_base);
 
             let old_vault_shares = self.unchecked_vault_shares();
-            let new_vault_shares = old_vault_shares.safe_div(rebase_divisor.unwrap())?;
+            let new_vault_shares =
+                old_vault_shares.safe_div(rebase_divisor.ok_or(ErrorCode::InvalidVaultRebase)?)?;
 
             msg!(
                 "rebasing vault depositor: shares {} -> {} ",
@@ -225,6 +226,7 @@ pub trait VaultDepositorBase {
     /// Transfer shares from `self` to `to`
     ///
     /// Returns the number of shares transferred
+    #[allow(clippy::too_many_arguments)]
     fn transfer_shares<'a>(
         &mut self,
         to: &mut dyn VaultDepositorBase,
