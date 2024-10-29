@@ -16,8 +16,7 @@ default = []
 [dependencies]
 anchor-lang = "0.29.0"
 anchor-spl = { version = "0.29.0", features = ["metadata"] }
-drift = { git = "https://github.com/drift-labs/protocol-v2.git", rev = "v2.96.0", features = ["cpi", "mainnet-beta"], default-features = false}
-drift-competitions = { git = "https://github.com/drift-labs/drift-competitions.git", rev = "122523", features = ["cpi"]}
+drift = { git = "https://github.com/drift-labs/protocol-v2.git", rev = "v2.96.0", features = ["cpi", "mainnet-beta"] }
 bytemuck = { version = "1.4.0" }
 static_assertions = "1.1.0"
 drift-macros = { git = "https://github.com/drift-labs/drift-macros.git", rev = "c57d87" }

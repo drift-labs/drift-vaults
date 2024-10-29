@@ -8,7 +8,6 @@
   },
   "dependencies": {
     "@coral-xyz/anchor": "0.28.0",
-    "@drift-labs/competitions-sdk": "0.2.519",
     "@drift-labs/sdk": "2.98.0-beta.8",
     "@metaplex-foundation/js": "^0.20.1",
     "@ledgerhq/hw-app-solana": "^7.1.1",
