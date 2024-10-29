@@ -132,8 +132,6 @@ impl Vault {
         let mut protocol_fee_shares: i128 = 0;
         let mut skip_ts_update = false;
 
-        let total_shares_before = self.total_shares;
-
         let mut handle_no_protocol_fee = |vault: &mut Vault| -> Result<()> {
             let since_last = now.safe_sub(vault.last_fee_update_ts)?;
 
@@ -312,19 +310,13 @@ impl Vault {
             self.last_fee_update_ts = now;
         }
 
-        // this will underflow if there is an issue with protocol fee calc
         validate!(
             self.total_shares >= self.user_shares,
             ErrorCode::InvalidVaultSharesDetected,
             "total_shares must be >= user_shares"
         )?;
 
-        validate!(
-            self.total_shares == total_shares_before,
-            ErrorCode::InvalidVaultSharesDetected,
-            "total_shares before and after not equal"
-        )?;
-
+        // this will underflow if there is an issue with protocol fee calc
         self.get_manager_shares(vault_protocol)?;
 
         Ok(VaultFee {
