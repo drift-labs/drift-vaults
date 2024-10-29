@@ -362,8 +362,6 @@ impl VaultDepositor {
         } = vault.apply_fee(vault_protocol, vault_equity, now)?;
         let (manager_profit_share, protocol_profit_share) =
             self.apply_profit_share(vault_equity, vault, vault_protocol)?;
-        msg!("manager_profit_share: {}", manager_profit_share);
-        msg!("protocol_profit_share: {}", protocol_profit_share);
 
         let (withdraw_value, n_shares) = withdraw_unit.get_withdraw_value_and_shares(
             withdraw_amount,
@@ -771,8 +769,6 @@ impl VaultDepositor {
             vault_equity,
         )?;
         let withdraw_amount = self.last_withdraw_request.value.min(shares_value);
-
-        msg!("withdraw amount: {}", withdraw_amount);
 
         let mut spot_market = spot_market_map.get_ref_mut(&vault.spot_market_index)?;
 
