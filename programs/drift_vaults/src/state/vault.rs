@@ -310,6 +310,15 @@ impl Vault {
             self.last_fee_update_ts = now;
         }
 
+        validate!(
+            self.total_shares >= self.user_shares,
+            ErrorCode::InvalidVaultSharesDetected,
+            "total_shares must be >= user_shares"
+        )?;
+
+        // this will underflow if there is an issue with protocol fee calc
+        self.get_manager_shares(vault_protocol)?;
+
         Ok(VaultFee {
             management_fee_payment: management_fee_payment.cast::<i64>()?,
             management_fee_shares: management_fee_shares.cast::<i64>()?,
@@ -800,6 +809,13 @@ impl Vault {
             n_shares > 0,
             ErrorCode::InvalidVaultWithdrawSize,
             "Requested n_shares = 0"
+        )?;
+        validate!(
+            protocol_shares_before >= n_shares,
+            ErrorCode::InvalidVaultWithdrawSize,
+            "Requested n_shares={} > protocol shares={}",
+            n_shares,
+            protocol_shares_before,
         )?;
 
         let total_vault_shares_before = self.total_shares;
