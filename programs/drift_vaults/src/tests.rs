@@ -602,7 +602,7 @@ mod vault_fcn {
             .withdraw(vault_equity, vault, &mut None, now)
             .expect("withdraw");
         assert_eq!(withdraw_amount, vault_equity);
-        assert!(finishing_liquidation);
+        assert!(!finishing_liquidation);
     }
 
     #[test]
