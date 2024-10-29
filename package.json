@@ -13,7 +13,8 @@
         "anchor-tests": "yarn update-types && yarn update-idl && yarn update-drift && yarn update-pyth && yarn update-drift && yarn update-pyth && yarn run ts-mocha -p ./tsconfig.json -t 1000000 --exit tests/**/*.ts",
         "anchor-tests:vaults": "yarn anchor-tests -g TestDriftVaults",
         "anchor-tests:protocol": "yarn anchor-tests -g TestProtocolVaults",
-        "anchor-tests:tokenize": "yarn anchor-tests -g TestTokenizedDriftVaults"
+        "anchor-tests:tokenize": "yarn anchor-tests -g TestTokenizedDriftVaults",
+        "anchor-tests:if-stake": "yarn anchor-tests -g TestInsuranceFundStake"
     },
     "devDependencies": {
         "@coral-xyz/anchor": "0.28.0",

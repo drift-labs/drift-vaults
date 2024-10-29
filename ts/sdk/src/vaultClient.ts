@@ -9,12 +9,14 @@ import {
 	UserMap,
 	unstakeSharesToAmount as depositSharesToVaultAmount,
 	ZERO,
+	getInsuranceFundVaultPublicKey,
 } from '@drift-labs/sdk';
 import { BorshAccountsCoder, Program, ProgramAccount } from '@coral-xyz/anchor';
 import { DriftVaults } from './types/drift_vaults';
 import {
 	getTokenizedVaultAddressSync,
 	getTokenizedVaultMintAddressSync,
+	getInsuranceFundTokenVaultAddressSync,
 	getTokenVaultAddressSync,
 	getVaultAddressSync,
 	getVaultDepositorAddressSync,
@@ -1994,15 +1996,218 @@ export class VaultClient {
 			);
 		}
 
+		const ifVaultTokenAccount = getInsuranceFundTokenVaultAddressSync(
+			this.program.programId,
+			vault,
+			spotMarketIndex
+		);
+
 		return await this.program.methods
 			.initializeInsuranceFundStake(spotMarketIndex)
 			.accounts({
 				vault: vault,
 				driftSpotMarket: spotMarket.pubkey,
+				driftSpotMarketMint: spotMarket.mint,
+				vaultTokenAccount: ifVaultTokenAccount,
 				insuranceFundStake: ifStakeAccountPublicKey,
 				driftUserStats: vaultAccount.userStats,
 				driftState: await this.driftClient.getStatePublicKey(),
 				driftProgram: this.driftClient.program.programId,
+			})
+			.rpc();
+	}
+
+	/**
+	 * Adds an amount to an insurance fund stake for the vault.
+	 * @param vault vault address to update
+	 * @param spotMarketIndex spot market index of the insurance fund stake
+	 * @param amount amount to add to the insurance fund stake, in spotMarketIndex precision
+	 * @returns
+	 */
+	public async addToInsuranceFundStake(
+		vault: PublicKey,
+		spotMarketIndex: number,
+		amount: BN,
+		managerTokenAccount?: PublicKey
+	): Promise<TransactionSignature> {
+		const vaultAccount = await this.program.account.vault.fetch(vault);
+
+		if (!vaultAccount.manager.equals(this.driftClient.wallet.publicKey)) {
+			throw new Error(
+				`Only the manager of the vault can add to the insurance fund stake.`
+			);
+		}
+
+		const ifStakeAccountPublicKey = getInsuranceFundStakeAccountPublicKey(
+			this.driftClient.program.programId,
+			vault,
+			spotMarketIndex
+		);
+		const ifVaultPublicKey = await getInsuranceFundVaultPublicKey(
+			this.driftClient.program.programId,
+			spotMarketIndex
+		);
+
+		const spotMarket = this.driftClient.getSpotMarketAccount(spotMarketIndex);
+		if (!spotMarket) {
+			throw new Error(
+				`Spot market ${spotMarketIndex} not found on driftClient`
+			);
+		}
+
+		if (!managerTokenAccount) {
+			managerTokenAccount = getAssociatedTokenAddressSync(
+				spotMarket.mint,
+				this.driftClient.wallet.publicKey
+			);
+		}
+
+		const ifVaultTokenAccount = getInsuranceFundTokenVaultAddressSync(
+			this.program.programId,
+			vault,
+			spotMarketIndex
+		);
+
+		return await this.program.methods
+			.addInsuranceFundStake(spotMarketIndex, amount)
+			.accounts({
+				vault: vault,
+				driftSpotMarket: spotMarket.pubkey,
+				driftSpotMarketVault: spotMarket.vault,
+				insuranceFundStake: ifStakeAccountPublicKey,
+				insuranceFundVault: ifVaultPublicKey,
+				managerTokenAccount,
+				vaultIfTokenAccount: ifVaultTokenAccount,
+				driftUserStats: vaultAccount.userStats,
+				driftState: await this.driftClient.getStatePublicKey(),
+				driftProgram: this.driftClient.program.programId,
+				driftSigner: this.driftClient.getStateAccount().signer,
+				tokenProgram: TOKEN_PROGRAM_ID,
+			})
+			.rpc();
+	}
+
+	public async requestRemoveInsuranceFundStake(
+		vault: PublicKey,
+		spotMarketIndex: number,
+		amount: BN
+	): Promise<TransactionSignature> {
+		const vaultAccount = await this.program.account.vault.fetch(vault);
+		const ifStakeAccountPublicKey = getInsuranceFundStakeAccountPublicKey(
+			this.driftClient.program.programId,
+			vault,
+			spotMarketIndex
+		);
+		const ifVaultPublicKey = await getInsuranceFundVaultPublicKey(
+			this.driftClient.program.programId,
+			spotMarketIndex
+		);
+
+		const spotMarket = this.driftClient.getSpotMarketAccount(spotMarketIndex);
+		if (!spotMarket) {
+			throw new Error(
+				`Spot market ${spotMarketIndex} not found on driftClient`
+			);
+		}
+
+		return await this.program.methods
+			.requestRemoveInsuranceFundStake(spotMarketIndex, amount)
+			.accounts({
+				vault,
+				manager: this.driftClient.wallet.publicKey,
+				driftSpotMarket: spotMarket.pubkey,
+				insuranceFundStake: ifStakeAccountPublicKey,
+				insuranceFundVault: ifVaultPublicKey,
+				driftUserStats: vaultAccount.userStats,
+				driftProgram: this.driftClient.program.programId,
+			})
+			.rpc();
+	}
+
+	public async cancelRequestRemoveInsuranceFundStake(
+		vault: PublicKey,
+		spotMarketIndex: number
+	): Promise<TransactionSignature> {
+		const vaultAccount = await this.program.account.vault.fetch(vault);
+		const ifStakeAccountPublicKey = getInsuranceFundStakeAccountPublicKey(
+			this.driftClient.program.programId,
+			vault,
+			spotMarketIndex
+		);
+		const ifVaultPublicKey = await getInsuranceFundVaultPublicKey(
+			this.driftClient.program.programId,
+			spotMarketIndex
+		);
+		const spotMarket = this.driftClient.getSpotMarketAccount(spotMarketIndex);
+		if (!spotMarket) {
+			throw new Error(
+				`Spot market ${spotMarketIndex} not found on driftClient`
+			);
+		}
+
+		return await this.program.methods
+			.cancelRequestRemoveInsuranceFundStake(spotMarketIndex)
+			.accounts({
+				vault: vault,
+				manager: this.driftClient.wallet.publicKey,
+				driftSpotMarket: spotMarket.pubkey,
+				insuranceFundStake: ifStakeAccountPublicKey,
+				insuranceFundVault: ifVaultPublicKey,
+				driftUserStats: vaultAccount.userStats,
+				driftProgram: this.driftClient.program.programId,
+			})
+			.rpc();
+	}
+
+	public async removeInsuranceFundStake(
+		vault: PublicKey,
+		spotMarketIndex: number,
+		managerTokenAccount?: PublicKey
+	): Promise<TransactionSignature> {
+		const vaultAccount = await this.program.account.vault.fetch(vault);
+		const ifStakeAccountPublicKey = getInsuranceFundStakeAccountPublicKey(
+			this.driftClient.program.programId,
+			vault,
+			spotMarketIndex
+		);
+		const ifVaultPublicKey = await getInsuranceFundVaultPublicKey(
+			this.driftClient.program.programId,
+			spotMarketIndex
+		);
+		const spotMarket = this.driftClient.getSpotMarketAccount(spotMarketIndex);
+		if (!spotMarket) {
+			throw new Error(
+				`Spot market ${spotMarketIndex} not found on driftClient`
+			);
+		}
+
+		if (!managerTokenAccount) {
+			managerTokenAccount = getAssociatedTokenAddressSync(
+				spotMarket.mint,
+				this.driftClient.wallet.publicKey
+			);
+		}
+
+		const ifVaultTokenAccount = getInsuranceFundTokenVaultAddressSync(
+			this.program.programId,
+			vault,
+			spotMarketIndex
+		);
+
+		return await this.program.methods
+			.removeInsuranceFundStake(spotMarketIndex)
+			.accounts({
+				vault: vault,
+				driftSpotMarket: spotMarket.pubkey,
+				insuranceFundStake: ifStakeAccountPublicKey,
+				insuranceFundVault: ifVaultPublicKey,
+				managerTokenAccount,
+				vaultIfTokenAccount: ifVaultTokenAccount,
+				driftState: await this.driftClient.getStatePublicKey(),
+				driftUserStats: vaultAccount.userStats,
+				driftSigner: this.driftClient.getStateAccount().signer,
+				driftProgram: this.driftClient.program.programId,
+				tokenProgram: TOKEN_PROGRAM_ID,
 			})
 			.rpc();
 	}

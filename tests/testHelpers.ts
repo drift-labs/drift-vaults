@@ -335,11 +335,19 @@ export async function createWSolTokenAccountForUser(
 	userKeypair: Keypair | Wallet,
 	amount: BN
 ): Promise<PublicKey> {
-	await provider.connection.requestAirdrop(
+	const tx = await provider.connection.requestAirdrop(
 		userKeypair.publicKey,
 		amount.toNumber() +
 			(await getMinimumBalanceForRentExemptAccount(provider.connection))
 	);
+	while (
+		(await provider.connection.getTransaction(tx, {
+			commitment: 'confirmed',
+			maxSupportedTransactionVersion: 0,
+		})) === null
+	) {
+		await sleep(100);
+	}
 	return await createWrappedNativeAccount(
 		provider.connection,
 		// @ts-ignore
@@ -507,6 +515,7 @@ export async function printTxLogs(
 ): Promise<void> {
 	const tx = await connection.getTransaction(txSig, {
 		commitment: 'confirmed',
+		maxSupportedTransactionVersion: 0,
 	});
 	console.log('tx logs', tx.meta.logMessages);
 	if (dumpEvents) {
@@ -1003,6 +1012,7 @@ export async function initializeQuoteSpotMarket(
 		maintenanceLiabilityWeight,
 		imfFactor
 	);
+	await admin.updateInsuranceFundUnstakingPeriod(marketIndex, new BN(0));
 	await admin.updateWithdrawGuardThreshold(
 		marketIndex,
 		new BN(10 ** 10).mul(QUOTE_PRECISION)
@@ -1036,24 +1046,31 @@ export async function initializeSolSpotMarket(
 		.toNumber();
 	const marketIndex = admin.getStateAccount().numberOfSpotMarkets;
 
-	const txSig = await admin.initializeSpotMarket(
-		solMint,
-		optimalUtilization,
-		optimalRate,
-		maxRate,
-		solOracle,
-		OracleSource.PYTH,
-		initialAssetWeight,
-		maintenanceAssetWeight,
-		initialLiabilityWeight,
-		maintenanceLiabilityWeight
-	);
+	try {
+		await admin.initializeSpotMarket(
+			solMint,
+			optimalUtilization,
+			optimalRate,
+			maxRate,
+			solOracle,
+			OracleSource.PYTH,
+			initialAssetWeight,
+			maintenanceAssetWeight,
+			initialLiabilityWeight,
+			maintenanceLiabilityWeight
+		);
+
+		await admin.updateInsuranceFundUnstakingPeriod(marketIndex, new BN(0));
+	} catch (e) {
+		console.log('errorrrr');
+		console.log(e);
+	}
 	await admin.updateWithdrawGuardThreshold(
 		marketIndex,
 		new BN(10 ** 10).mul(QUOTE_PRECISION)
 	);
 	await admin.updateSpotMarketStatus(marketIndex, MarketStatus.ACTIVE);
-	return txSig;
+	return '';
 }
 
 export async function bootstrapSignerClientAndUser(params: {
@@ -1071,6 +1088,7 @@ export async function bootstrapSignerClientAndUser(params: {
 	wallet: anchor.Wallet;
 	user: User;
 	userUSDCAccount: Keypair;
+	userWSOLAccount: PublicKey;
 	driftClient: DriftClient;
 	vaultClient: VaultClient;
 	provider: AnchorProvider;
@@ -1096,9 +1114,6 @@ export async function bootstrapSignerClientAndUser(params: {
 			commitment: 'confirmed',
 		},
 		activeSubAccountId,
-		// perpMarketIndexes,
-		// spotMarketIndexes,
-		// oracleInfos,
 		accountSubscription,
 	});
 	const wallet = new anchor.Wallet(signer);
@@ -1120,6 +1135,18 @@ export async function bootstrapSignerClientAndUser(params: {
 		payer,
 		signer.publicKey
 	);
+
+	let userWSOLAccount: PublicKey;
+	try {
+		userWSOLAccount = await createWSolTokenAccountForUser(
+			provider,
+			signer,
+			new BN(LAMPORTS_PER_SOL)
+		);
+	} catch (e) {
+		console.log('failed to create wsol token account for user', e);
+	}
+
 	await driftClient.subscribe();
 	if (depositCollateral) {
 		await driftClient.initializeUserAccountAndDepositCollateral(
@@ -1143,6 +1170,7 @@ export async function bootstrapSignerClientAndUser(params: {
 		wallet,
 		user,
 		userUSDCAccount,
+		userWSOLAccount,
 		driftClient,
 		vaultClient,
 		provider,
