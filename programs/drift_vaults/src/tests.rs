@@ -576,7 +576,7 @@ mod vault_fcn {
 
         // user withdraws
         vd.request_withdraw(
-            vd_shares.clone() as u64,
+            vd_shares as u64,
             WithdrawUnit::Shares,
             vault_equity,
             vault,
@@ -602,7 +602,7 @@ mod vault_fcn {
             .withdraw(vault_equity, vault, &mut None, now)
             .expect("withdraw");
         assert_eq!(withdraw_amount, vault_equity);
-        assert_eq!(finishing_liquidation, false);
+        assert!(!finishing_liquidation);
     }
 
     #[test]

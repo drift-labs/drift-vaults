@@ -144,15 +144,15 @@ pub struct TokenizeShares<'info> {
     #[account(
 		mut,
 		constraint = is_tokenized_depositor_for_vault(&tokenized_vault_depositor, &vault)?,
-		constraint = is_vault_shares_base_for_tokenized_depositor(&vault.load()?.shares_base, &tokenized_vault_depositor).expect("Vault shares base for tokenized depositor mismatch"),
+		constraint = is_vault_shares_base_for_tokenized_depositor(&vault.load()?.shares_base, &tokenized_vault_depositor)?,
 	)]
     pub tokenized_vault_depositor: AccountLoader<'info, TokenizedVaultDepositor>,
     #[account(
         mut,
-        seeds = [b"mint", vault.key().as_ref(), vault.load()?.shares_base.to_string().as_bytes().as_ref()],
+        seeds = [b"mint", vault.key().as_ref(), vault.load()?.shares_base.to_string().as_bytes()],
         bump,
         mint::authority = vault.key(),
-		constraint = is_mint_for_tokenized_depositor(&mint.key(), &tokenized_vault_depositor).expect("Mint for tokenized depositor mismatch"),
+		constraint = is_mint_for_tokenized_depositor(&mint.key(), &tokenized_vault_depositor)?,
     )]
     pub mint: Account<'info, Mint>,
     #[account(

@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features
 
+* Tokenized Vaults ([#55](https://github.com/drift-labs/drift-vaults/pull/55))
+
 ### Fixes
 
 ### Breaking

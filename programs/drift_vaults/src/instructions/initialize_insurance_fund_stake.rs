@@ -1,5 +1,5 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{self, Mint, Token, TokenAccount, Transfer};
+use anchor_spl::token::{Mint, Token, TokenAccount};
 use drift::cpi::accounts::InitializeInsuranceFundStake as DriftInitializeInsuranceFundStake;
 use drift::program::Drift;
 use drift::state::spot_market::SpotMarket;
