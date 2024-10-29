@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use anchor_spl::associated_token::get_associated_token_address;
-use drift::state::spot_market::SpotMarket;
+use drift::state::insurance_fund_stake::InsuranceFundStake;
 
 use crate::state::VaultProtocol;
 use crate::{TokenizedVaultDepositor, Vault, VaultDepositor};
@@ -58,17 +58,6 @@ pub fn is_user_stats_for_vault(
     Ok(vault.load()?.user_stats.eq(user_stats.key))
 }
 
-pub fn is_spot_market_for_vault(
-    vault: &AccountLoader<Vault>,
-    drift_spot_market: &AccountLoader<SpotMarket>,
-    market_index: u16,
-) -> Result<bool> {
-    Ok(
-        (vault.load()?.spot_market_index).eq(&drift_spot_market.load()?.market_index)
-            && (vault.load()?.spot_market_index).eq(&market_index),
-    )
-}
-
 pub fn is_vault_protocol_for_vault(
     vault_protocol: &AccountLoader<VaultProtocol>,
     vault: &AccountLoader<Vault>,
@@ -114,4 +103,11 @@ pub fn is_vault_shares_base_for_tokenized_depositor(
 
 pub fn is_ata(token_account: &Pubkey, owner: &Pubkey, mint: &Pubkey) -> anchor_lang::Result<bool> {
     Ok(get_associated_token_address(owner, mint).eq(token_account))
+}
+
+pub fn is_if_stake_for_vault(
+    if_stake: &AccountLoader<InsuranceFundStake>,
+    vault: &AccountLoader<Vault>,
+) -> Result<bool> {
+    Ok(if_stake.load()?.authority.eq(&vault.key()))
 }

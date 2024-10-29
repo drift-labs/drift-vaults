@@ -29,3 +29,22 @@ pub trait UpdateUserMarginTradingEnabledCPI {
 pub trait InitializeInsuranceFundStakeCPI {
     fn drift_initialize_insurance_fund_stake(&self, market_index: u16) -> Result<()>;
 }
+
+pub trait AddInsuranceFundStakeCPI {
+    fn drift_add_insurance_fund_stake(&self, market_index: u16, amount: u64) -> Result<()>;
+}
+
+pub trait RequestRemoveInsuranceFundStakeCPI {
+    fn drift_request_remove_insurance_fund_stake(
+        &self,
+        market_index: u16,
+        amount: u64,
+    ) -> Result<()>;
+}
+
+pub trait CancelRequestRemoveInsuranceFundStakeCPI {
+    fn drift_cancel_request_remove_insurance_fund_stake(&self, market_index: u16) -> Result<()>;
+}
+pub trait RemoveInsuranceFundStakeCPI {
+    fn drift_remove_insurance_fund_stake(&self, market_index: u16) -> Result<()>;
+}

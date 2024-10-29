@@ -167,7 +167,7 @@ describe('driftVaults', () => {
 
 	let vd2: Keypair;
 	let vd2Client: VaultClient;
-	let vd2UserUSDCAccount: Keypair;
+	let vd2UserUSDCAccount: PublicKey;
 	let _vd2User: User;
 
 	let _delegate: Keypair;
@@ -185,12 +185,6 @@ describe('driftVaults', () => {
 			await sleep(1000);
 		}
 		await adminClient.subscribe();
-
-		// const perpMarketIndexes = [0];
-		// const spotMarketIndexes = [0, 1];
-		// const oracleInfos = [
-		// 	{ publicKey: solPerpOracle, source: OracleSource.PYTH },
-		// ];
 
 		// init vault manager
 		const bootstrapManager = await bootstrapSignerClientAndUser({
@@ -259,7 +253,7 @@ describe('driftVaults', () => {
 		});
 		vd2 = bootstrapVD2.signer;
 		vd2Client = bootstrapVD2.vaultClient;
-		vd2UserUSDCAccount = bootstrapVD2.userUSDCAccount;
+		vd2UserUSDCAccount = bootstrapVD2.userUSDCAccount.publicKey;
 		_vd2User = bootstrapVD2.user;
 
 		// start account loader
@@ -336,7 +330,7 @@ describe('driftVaults', () => {
 		await vd2Client.program.methods
 			.deposit(usdcAmount)
 			.accounts({
-				userTokenAccount: vd2UserUSDCAccount.publicKey,
+				userTokenAccount: vd2UserUSDCAccount,
 				vault,
 				vaultDepositor,
 				vaultTokenAccount: vaultAccount.tokenAccount,
@@ -409,7 +403,7 @@ describe('driftVaults', () => {
 			const txSig = await vd2Client.program.methods
 				.withdraw()
 				.accounts({
-					userTokenAccount: vd2UserUSDCAccount.publicKey,
+					userTokenAccount: vd2UserUSDCAccount,
 					vault,
 					vaultDepositor,
 					vaultTokenAccount: vaultAccount.tokenAccount,
@@ -449,98 +443,6 @@ describe('driftVaults', () => {
 
 		await printTxLogs(provider.connection, txSig);
 	});
-
-	it('Test initializeInsuranceFundStake', async () => {
-		const spotMarket = adminClient.getSpotMarketAccount(0);
-		const [driftClient, _user, _kp] = await createUserWithUSDCAccount(
-			adminClient.provider,
-			usdcMint,
-			new anchor.Program(
-				adminClient.program.idl,
-				adminClient.program.programId,
-				adminClient.provider
-			),
-			new BN(1000 * 10 ** 6),
-			[],
-			[0],
-			[
-				{
-					publicKey: spotMarket.oracle,
-					source: spotMarket.oracleSource,
-				},
-			],
-			bulkAccountLoader
-		);
-		const vaultClient = new VaultClient({
-			driftClient,
-			program: program,
-		});
-		const vaultName = 'if stake vault';
-		const vault = getVaultAddressSync(program.programId, encodeName(vaultName));
-
-		const beforeStateAccount = adminClient.getStateAccount();
-		await vaultClient.initializeVault({
-			name: encodeName(vaultName),
-			spotMarketIndex: 0,
-			redeemPeriod: ZERO,
-			maxTokens: ZERO,
-			managementFee: ZERO,
-			profitShare: 0,
-			hurdleRate: 0,
-			permissioned: false,
-			minDepositAmount: ZERO,
-		});
-		await adminClient.fetchAccounts();
-		const afterStateAccount = adminClient.getStateAccount();
-
-		assert(
-			afterStateAccount.numberOfAuthorities
-				.sub(beforeStateAccount.numberOfAuthorities)
-				.eq(new BN(1))
-		);
-		assert(
-			afterStateAccount.numberOfSubAccounts
-				.sub(beforeStateAccount.numberOfSubAccounts)
-				.eq(new BN(1))
-		);
-
-		const testInitIFStakeAccount = async (marketIndex: number) => {
-			const ifStakeTx0 = await vaultClient.initializeInsuranceFundStake(
-				vault,
-				marketIndex
-			);
-			await printTxLogs(provider.connection, ifStakeTx0);
-
-			try {
-				const ifStakeAccountPublicKey = getInsuranceFundStakeAccountPublicKey(
-					driftClient.program.programId,
-					vault,
-					marketIndex
-				);
-				const ifStakeAccount =
-					(await driftClient.program.account.insuranceFundStake.fetch(
-						ifStakeAccountPublicKey
-					)) as InsuranceFundStake;
-
-				assert(ifStakeAccount, "Couldn't fetch IF stake account");
-				assert(
-					ifStakeAccount.marketIndex === marketIndex,
-					'Market index is incorrect'
-				);
-				assert(
-					ifStakeAccount.authority.equals(vault),
-					'Vault is not the authority'
-				);
-				assert(ifStakeAccount.ifShares.eq(new BN(0)), 'Doesnt have 0 shares');
-			} catch (err) {
-				console.log(err);
-				assert(false, "Couldn't fetch IF stake account");
-			}
-		};
-
-		await testInitIFStakeAccount(0);
-		await driftClient.unsubscribe();
-	});
 });
 
 describe('TestProtocolVaults', () => {
@@ -555,12 +457,11 @@ describe('TestProtocolVaults', () => {
 
 	let vd: Keypair;
 	let vdClient: VaultClient;
-	let vdUser: User;
-	let vdUserUSDCAccount: Keypair;
+	let vdUserUSDCAccount: PublicKey;
 
 	let _vd2: Keypair;
 	let vd2Client: VaultClient;
-	let _vd2UserUSDCAccount: Keypair;
+	let _vd2UserUSDCAccount: PublicKey;
 	let _vd2User: User;
 
 	let delegate: Keypair;
@@ -569,7 +470,7 @@ describe('TestProtocolVaults', () => {
 
 	let protocol: Keypair;
 	let protocolClient: VaultClient;
-	let protocolVdUserUSDCAccount: Keypair;
+	let protocolVdUserUSDCAccount: PublicKey;
 	let _protocolUser: User;
 
 	const protocolVaultName = 'protocol vault';
@@ -680,8 +581,7 @@ describe('TestProtocolVaults', () => {
 		});
 		vd = bootstrapVD.signer;
 		vdClient = bootstrapVD.vaultClient;
-		vdUser = bootstrapVD.user;
-		vdUserUSDCAccount = bootstrapVD.userUSDCAccount;
+		vdUserUSDCAccount = bootstrapVD.userUSDCAccount.publicKey;
 
 		// the VaultDepositor for the vault
 		const bootstrapVD2 = await bootstrapSignerClientAndUser({
@@ -705,7 +605,7 @@ describe('TestProtocolVaults', () => {
 		});
 		_vd2 = bootstrapVD2.signer;
 		vd2Client = bootstrapVD2.vaultClient;
-		_vd2UserUSDCAccount = bootstrapVD2.userUSDCAccount;
+		_vd2UserUSDCAccount = bootstrapVD2.userUSDCAccount.publicKey;
 		_vd2User = bootstrapVD2.user;
 
 		// init protocol
@@ -729,7 +629,7 @@ describe('TestProtocolVaults', () => {
 		});
 		protocol = bootstrapProtocol.signer;
 		protocolClient = bootstrapProtocol.vaultClient;
-		protocolVdUserUSDCAccount = bootstrapProtocol.userUSDCAccount;
+		protocolVdUserUSDCAccount = bootstrapProtocol.userUSDCAccount.publicKey;
 		_protocolUser = bootstrapProtocol.user;
 
 		// start account loader
@@ -749,19 +649,17 @@ describe('TestProtocolVaults', () => {
 		await delegateClient.driftClient.unsubscribe();
 		await protocolClient.driftClient.unsubscribe();
 
+		await managerClient.driftClient.unsubscribe();
+		await vd2Client.driftClient.unsubscribe();
+		await delegateClient.driftClient.unsubscribe();
+
 		await managerUser.unsubscribe();
-		await fillerUser.unsubscribe();
-		await vdUser.subscribe();
 		await _vd2User.unsubscribe();
 		await _delegateUser.unsubscribe();
-		await _protocolUser.unsubscribe();
 
 		await managerClient.unsubscribe();
-		await fillerClient.unsubscribe();
-		await vdClient.unsubscribe();
 		await vd2Client.unsubscribe();
 		await delegateClient.unsubscribe();
-		await protocolClient.unsubscribe();
 	});
 
 	//
@@ -864,7 +762,7 @@ describe('TestProtocolVaults', () => {
 				driftUserStats: vaultAccount.userStats,
 				driftUser: vaultAccount.user,
 				driftState: await adminClient.getStatePublicKey(),
-				userTokenAccount: vdUserUSDCAccount.publicKey,
+				userTokenAccount: vdUserUSDCAccount,
 				driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
 				driftProgram: adminClient.program.programId,
 			})
@@ -1318,7 +1216,7 @@ describe('TestProtocolVaults', () => {
 			await vdClient.program.methods
 				.withdraw()
 				.accounts({
-					userTokenAccount: vdUserUSDCAccount.publicKey,
+					userTokenAccount: vdUserUSDCAccount,
 					vault: protocolVault,
 					vaultDepositor,
 					vaultTokenAccount: vaultAccount.tokenAccount,
@@ -1428,7 +1326,7 @@ describe('TestProtocolVaults', () => {
 			await protocolClient.program.methods
 				.protocolWithdraw()
 				.accounts({
-					userTokenAccount: protocolVdUserUSDCAccount.publicKey,
+					userTokenAccount: protocolVdUserUSDCAccount,
 					vault: protocolVault,
 					vaultProtocol,
 					vaultTokenAccount: vaultAccount.tokenAccount,
@@ -2701,5 +2599,322 @@ describe('TestTokenizedDriftVaults', () => {
 				'vd0 Failed to deposit and tokenize again to new tokenized vault'
 			);
 		}
+	});
+});
+
+describe('TestInsuranceFundStake', () => {
+	const bulkAccountLoader = new BulkAccountLoader(connection, 'confirmed', 1);
+	let managerClient: VaultClient;
+	let managerDriftClient: DriftClient;
+	let managerUsdcAccount: PublicKey;
+	let managerWSOLAccount: PublicKey;
+
+	let vd0Client: VaultClient;
+	let vd0DriftClient: DriftClient;
+	let vd0UsdcAccount: PublicKey;
+	let vd0WSOLAccount: PublicKey;
+
+	let _vd1Signer: Signer;
+	let vd1Client: VaultClient;
+	let vd1DriftClient: DriftClient;
+
+	const usdcAmount = new BN(1_000).mul(QUOTE_PRECISION);
+
+	const commonVaultName = 'vault with IF';
+	let firstVaultInitd = false;
+
+	before(async () => {
+		while (!adminInitialized) {
+			console.log(
+				'TestInsuranceFundStake: waiting for drift initialization...'
+			);
+			await sleep(1000);
+		}
+
+		await adminClient.subscribe();
+
+		const bootstrapManager = await bootstrapSignerClientAndUser({
+			payer: provider,
+			programId: program.programId,
+			usdcMint,
+			usdcAmount,
+			driftClientConfig: {
+				accountSubscription: {
+					type: 'websocket',
+					resubTimeoutMs: 30_000,
+				},
+				opts,
+				activeSubAccountId: 0,
+				perpMarketIndexes,
+				spotMarketIndexes,
+				oracleInfos,
+			},
+			metaplex,
+		});
+		managerClient = bootstrapManager.vaultClient;
+		managerDriftClient = bootstrapManager.driftClient;
+		managerUsdcAccount = bootstrapManager.userUSDCAccount.publicKey;
+		managerWSOLAccount = bootstrapManager.userWSOLAccount;
+		const vd0Bootstrap = await bootstrapSignerClientAndUser({
+			payer: provider,
+			programId: program.programId,
+			usdcMint,
+			usdcAmount: new BN(10).mul(usdcAmount),
+			driftClientConfig: {
+				accountSubscription: {
+					type: 'websocket',
+					resubTimeoutMs: 30_000,
+				},
+				opts,
+				activeSubAccountId: 0,
+				perpMarketIndexes,
+				spotMarketIndexes,
+				oracleInfos,
+			},
+			metaplex,
+		});
+		vd0Client = vd0Bootstrap.vaultClient;
+		vd0DriftClient = vd0Bootstrap.driftClient;
+		vd0UsdcAccount = vd0Bootstrap.userUSDCAccount.publicKey;
+		vd0WSOLAccount = vd0Bootstrap.userWSOLAccount;
+		const vd1Bootstrap = await bootstrapSignerClientAndUser({
+			payer: provider,
+			programId: program.programId,
+			usdcMint,
+			usdcAmount: new BN(10).mul(usdcAmount),
+			driftClientConfig: {
+				accountSubscription: {
+					type: 'websocket',
+					resubTimeoutMs: 30_000,
+				},
+				opts,
+				activeSubAccountId: 0,
+				perpMarketIndexes,
+				spotMarketIndexes,
+				oracleInfos,
+			},
+			metaplex,
+		});
+		_vd1Signer = vd1Bootstrap.signer;
+		vd1Client = vd1Bootstrap.vaultClient;
+		vd1DriftClient = vd1Bootstrap.driftClient;
+
+		if (!firstVaultInitd) {
+			await managerClient.initializeVault({
+				name: encodeName(commonVaultName),
+				spotMarketIndex: 0,
+				redeemPeriod: ZERO,
+				maxTokens: ZERO,
+				managementFee: ZERO,
+				profitShare: 0,
+				hurdleRate: 0,
+				permissioned: false,
+				minDepositAmount: ZERO,
+			});
+			firstVaultInitd = true;
+		}
+
+		// start account loader
+		bulkAccountLoader.startPolling();
+		await bulkAccountLoader.load();
+		await managerDriftClient.subscribe();
+		await vd0DriftClient.subscribe();
+		await vd1DriftClient.subscribe();
+	});
+
+	after(async () => {
+		bulkAccountLoader.stopPolling();
+
+		await adminClient.unsubscribe();
+		await managerClient.unsubscribe();
+		await managerDriftClient.unsubscribe();
+		await vd0Client.unsubscribe();
+		await vd0DriftClient.unsubscribe();
+		await vd1Client.unsubscribe();
+		await vd1DriftClient.unsubscribe();
+	});
+
+	const testInsuranceFundStake = async (marketIndex: number) => {
+		const vaultName = `if stake vault market ${marketIndex}`;
+		const vault = getVaultAddressSync(program.programId, encodeName(vaultName));
+
+		const beforeStateAccount = adminClient.getStateAccount();
+		await managerClient.initializeVault({
+			name: encodeName(vaultName),
+			spotMarketIndex: 0,
+			redeemPeriod: ZERO,
+			maxTokens: ZERO,
+			managementFee: ZERO,
+			profitShare: 0,
+			hurdleRate: 0,
+			permissioned: false,
+			minDepositAmount: ZERO,
+		});
+		await adminClient.fetchAccounts();
+		const afterStateAccount = adminClient.getStateAccount();
+
+		assert(
+			afterStateAccount.numberOfAuthorities
+				.sub(beforeStateAccount.numberOfAuthorities)
+				.eq(new BN(1))
+		);
+		assert(
+			afterStateAccount.numberOfSubAccounts
+				.sub(beforeStateAccount.numberOfSubAccounts)
+				.eq(new BN(1))
+		);
+
+		console.log(
+			`Testing initializeInsuranceFundStake for market ${marketIndex}`
+		);
+		const _ifStakeTx0 = await managerClient.initializeInsuranceFundStake(
+			vault,
+			marketIndex
+		);
+		// await printTxLogs(provider.connection, _ifStakeTx0);
+
+		// test initializing an IF stake account
+		const ifStakeAccountPublicKey = getInsuranceFundStakeAccountPublicKey(
+			managerDriftClient.program.programId,
+			vault,
+			marketIndex
+		);
+		const ifStakeAccount =
+			(await managerDriftClient.program.account.insuranceFundStake.fetch(
+				ifStakeAccountPublicKey
+			)) as InsuranceFundStake;
+
+		assert(ifStakeAccount, "Couldn't fetch IF stake account");
+		assert(
+			ifStakeAccount.marketIndex === marketIndex,
+			'Market index is incorrect'
+		);
+		assert(
+			ifStakeAccount.authority.equals(vault),
+			'Vault is not the authority'
+		);
+		assert(ifStakeAccount.ifShares.eq(ZERO), 'Doesnt have 0 shares');
+
+		let managerTokenAccount: PublicKey;
+		let vd0TokenAccount: PublicKey;
+		if (marketIndex === 0) {
+			managerTokenAccount = managerUsdcAccount;
+			vd0TokenAccount = vd0UsdcAccount;
+		} else if (marketIndex === 1) {
+			managerTokenAccount = managerWSOLAccount;
+			vd0TokenAccount = vd0WSOLAccount;
+		} else {
+			assert(false, 'Invalid market index');
+		}
+		const managerTokenAccountBalance =
+			await managerDriftClient.connection.getTokenAccountBalance(
+				managerTokenAccount
+			);
+
+		const vd0TokenAccountBalance =
+			await vd0DriftClient.connection.getTokenAccountBalance(vd0TokenAccount);
+
+		// test only manager can add stake
+		try {
+			const _tx = await vd0Client.addToInsuranceFundStake(
+				vault,
+				marketIndex,
+				new BN(vd0TokenAccountBalance.value.amount),
+				vd0TokenAccount
+			);
+			// await printTxLogs(provider.connection, _tx, true, managerDriftClient.program);
+			assert(false, 'vd0 should not be able to add to IF stake');
+		} catch (e) {
+			assert(true);
+		}
+
+		// test add some stake
+		const ifStakeAmount = new BN(managerTokenAccountBalance.value.amount);
+		const _tx = await managerClient.addToInsuranceFundStake(
+			vault,
+			marketIndex,
+			ifStakeAmount,
+			managerTokenAccount
+		);
+		// await printTxLogs(provider.connection, _tx, true, managerDriftClient.program);
+
+		const ifStakeAccount1 =
+			(await managerDriftClient.program.account.insuranceFundStake.fetch(
+				ifStakeAccountPublicKey
+			)) as InsuranceFundStake;
+		await managerDriftClient.fetchAccounts();
+		assert(
+			ifStakeAccount1.ifShares.eq(ifStakeAmount),
+			'Shares are not equal to amount deposited'
+		);
+
+		// test request remove stake
+		const requestRemoveAmount = ifStakeAmount.sub(new BN(2));
+		const _tx1 = await managerClient.requestRemoveInsuranceFundStake(
+			vault,
+			marketIndex,
+			requestRemoveAmount
+		);
+		// await printTxLogs(provider.connection, _tx1, true, managerDriftClient.program);
+
+		const ifStakeAccount2 =
+			(await managerDriftClient.program.account.insuranceFundStake.fetch(
+				ifStakeAccountPublicKey
+			)) as InsuranceFundStake;
+		assert(
+			ifStakeAccount2.lastWithdrawRequestShares.eq(requestRemoveAmount),
+			'Failed to request remove stake'
+		);
+
+		// test cancel remove stake request
+		const _tx2 = await managerClient.cancelRequestRemoveInsuranceFundStake(
+			vault,
+			marketIndex
+		);
+		// await printTxLogs(provider.connection, _tx2, true, managerDriftClient.program);
+
+		const ifStakeAccount3 =
+			(await managerDriftClient.program.account.insuranceFundStake.fetch(
+				ifStakeAccountPublicKey
+			)) as InsuranceFundStake;
+		assert(
+			ifStakeAccount3.lastWithdrawRequestShares.eq(ZERO),
+			'Failed to cancel remove stake request'
+		);
+
+		// test remove stake
+		const _tx11 = await managerClient.requestRemoveInsuranceFundStake(
+			vault,
+			marketIndex,
+			requestRemoveAmount
+		);
+		// await printTxLogs(provider.connection, _tx11, true, managerDriftClient.program);
+
+		// Sleep for 1 second (unstake period)
+		await new Promise((resolve) => setTimeout(resolve, 1000));
+
+		const _tx3 = await managerClient.removeInsuranceFundStake(
+			vault,
+			marketIndex,
+			managerTokenAccount
+		);
+		// await printTxLogs(provider.connection, _tx3, true, managerDriftClient.program);
+
+		const tokenBalanceAfter =
+			await managerDriftClient.connection.getTokenAccountBalance(
+				managerTokenAccount
+			);
+		assert(
+			new BN(tokenBalanceAfter.value.amount).eq(requestRemoveAmount),
+			`Manager balance not expected after unstake: ${tokenBalanceAfter.value.amount}`
+		);
+	};
+
+	it('Test initializeInsuranceFundStake for vault deposit asset', async () => {
+		await testInsuranceFundStake(0);
+	});
+
+	it('Test initializeInsuranceFundStake for asset different than deposit asset', async () => {
+		await testInsuranceFundStake(1);
 	});
 });
