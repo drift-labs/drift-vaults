@@ -11,7 +11,7 @@ name = "drift_vaults"
 [features]
 no-entrypoint = []
 cpi = ["no-entrypoint"]
-default=[]
+default = []
 
 [dependencies]
 anchor-lang = "0.29.0"
