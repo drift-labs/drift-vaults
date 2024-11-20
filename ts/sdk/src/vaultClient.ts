@@ -1555,6 +1555,10 @@ export class VaultClient {
 				.remainingAccounts(remainingAccounts)
 				.rpc();
 		} else {
+			const oracleFeedsToCrankIxs = await this.getOracleFeedsToCrank(
+				txParams?.oracleFeedsToCrank
+			);
+
 			const requestWithdrawIx = this.program.instruction.requestWithdraw(
 				// @ts-ignore
 				amount,
@@ -1568,7 +1572,10 @@ export class VaultClient {
 				}
 			);
 
-			return await this.createAndSendTxn([requestWithdrawIx], txParams);
+			return await this.createAndSendTxn(
+				[...oracleFeedsToCrankIxs, requestWithdrawIx],
+				txParams
+			);
 		}
 	}
 
