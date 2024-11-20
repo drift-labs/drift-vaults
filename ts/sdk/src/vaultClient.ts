@@ -10,6 +10,7 @@ import {
 	unstakeSharesToAmount as depositSharesToVaultAmount,
 	ZERO,
 	getInsuranceFundVaultPublicKey,
+	OracleSource,
 } from '@drift-labs/sdk';
 import { BorshAccountsCoder, Program, ProgramAccount } from '@coral-xyz/anchor';
 import { DriftVaults } from './types/drift_vaults';
@@ -58,6 +59,7 @@ export type TxParams = {
 	cuPriceMicroLamports?: number;
 	simulateTransaction?: boolean;
 	lookupTables?: AddressLookupTableAccount[];
+	oracleFeedsToCrank?: { feed: PublicKey; oracleSource: OracleSource }[];
 };
 
 export class VaultClient {
@@ -1661,7 +1663,12 @@ export class VaultClient {
 					.rpc();
 			}
 		} else {
+			const oracleFeedsToCrankIxs = await this.getOracleFeedsToCrank(
+				txParams?.oracleFeedsToCrank
+			);
+
 			const ixs = [
+				...oracleFeedsToCrankIxs,
 				await this.program.methods
 					.withdraw()
 					.accounts({
@@ -1823,6 +1830,10 @@ export class VaultClient {
 				.remainingAccounts(remainingAccounts)
 				.rpc();
 		} else {
+			const oracleFeedsToCrankIxs = await this.getOracleFeedsToCrank(
+				txParams?.oracleFeedsToCrank
+			);
+
 			const cancelRequestWithdrawIx =
 				this.program.instruction.cancelRequestWithdraw({
 					accounts: {
@@ -1832,7 +1843,10 @@ export class VaultClient {
 					remainingAccounts,
 				});
 
-			return await this.createAndSendTxn([cancelRequestWithdrawIx], txParams);
+			return await this.createAndSendTxn(
+				[...oracleFeedsToCrankIxs, cancelRequestWithdrawIx],
+				txParams
+			);
 		}
 	}
 
@@ -2397,5 +2411,30 @@ export class VaultClient {
 		return this.createAndSendTxn([ix], {
 			cuLimit: 1_000_000,
 		});
+	}
+
+	private async getOracleFeedsToCrank(
+		oracleFeedsToCrank: TxParams['oracleFeedsToCrank']
+	) {
+		const oracleFeedsToCrankIxs: TransactionInstruction[] = oracleFeedsToCrank
+			? ((await Promise.all(
+					oracleFeedsToCrank.map(async (feedConfig) => {
+						if (
+							JSON.stringify(feedConfig.oracleSource) !==
+							JSON.stringify(OracleSource.SWITCHBOARD_ON_DEMAND)
+						) {
+							throw new Error(
+								'Only SWITCHBOARD_ON_DEMAND oracle feeds are supported for cranking'
+							);
+						}
+
+						return this.driftClient.getPostSwitchboardOnDemandUpdateAtomicIx(
+							feedConfig.feed
+						);
+					})
+			  )) as TransactionInstruction[])
+			: [];
+
+		return oracleFeedsToCrankIxs;
 	}
 }
