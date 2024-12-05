@@ -41,6 +41,13 @@ impl WithdrawRequest {
 
         let amount = depositor_shares_to_vault_amount(n_shares, vault.total_shares, vault_equity)?;
 
+        msg!("shares:       {}", n_shares);
+        msg!("total shares: {}", vault.total_shares);
+        msg!("equity:       {}", vault_equity);
+        msg!("amount:       {}", amount);
+        msg!("value:        {}", self.value);
+        msg!("amount > value: {}", amount > self.value);
+
         let vault_shares_lost = if amount > self.value {
             let new_n_shares = vault_amount_to_depositor_shares(
                 self.value,
@@ -60,6 +67,8 @@ impl WithdrawRequest {
         } else {
             0
         };
+
+        msg!("vault_shares_lost: {}", vault_shares_lost);
 
         Ok(vault_shares_lost)
     }

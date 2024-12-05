@@ -573,7 +573,8 @@ export class VaultClient {
 	 */
 	public async managerDeposit(
 		vault: PublicKey,
-		amount: BN
+		amount: BN,
+		userAta?: PublicKey
 	): Promise<TransactionSignature> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
 		const driftSpotMarket = this.driftClient.getSpotMarketAccount(
@@ -600,6 +601,12 @@ export class VaultClient {
 			});
 		}
 
+		const spotMarket = this.driftClient.getSpotMarketAccount(vaultAccount.spotMarketIndex);
+
+		if (!spotMarket) {
+			throw new Error(`Spot market ${vaultAccount.spotMarketIndex} not found on driftClient`);
+		}
+
 		return await this.program.methods
 			.managerDeposit(amount)
 			.accounts({
@@ -616,7 +623,7 @@ export class VaultClient {
 				),
 				driftState: await this.driftClient.getStatePublicKey(),
 				driftSpotMarketVault: driftSpotMarket.vault,
-				userTokenAccount: getAssociatedTokenAddressSync(
+				userTokenAccount: userAta ?? getAssociatedTokenAddressSync(
 					driftSpotMarket.mint,
 					this.driftClient.wallet.publicKey
 				),

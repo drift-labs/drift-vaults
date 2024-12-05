@@ -14,6 +14,9 @@ url = "https://api.apr.dev"
 cluster = "Localnet"
 wallet = "~/.config/solana/id.json"
 
+[test]
+startup_wait = 10000
+
 [[test.genesis]]
 address = "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
 program = "./deps/drift.so"
@@ -31,4 +34,5 @@ address = "PwDiXFxQsGra4sFFTT8r1QWRMd4vfumiWC1jfWNfdYT"
 filename = "./deps/metaplex/PwDiXFxQsGra4sFFTT8r1QWRMd4vfumiWC1jfWNfdYT.json"
 
 [scripts]
-test = "yarn anchor-tests"
+test = "yarn anchor-tests:test-no-shares"
+

@@ -287,12 +287,12 @@ export async function initializeAndSubscribeDriftClient(
 		oracleInfos,
 		accountSubscription: accountLoader
 			? {
-					type: 'polling',
-					accountLoader,
-			  }
+				type: 'polling',
+				accountLoader,
+			}
 			: {
-					type: 'websocket',
-			  },
+				type: 'websocket',
+			},
 	});
 	await driftClient.subscribe();
 	await driftClient.initializeUserAccount();
@@ -338,7 +338,7 @@ export async function createWSolTokenAccountForUser(
 	const tx = await provider.connection.requestAirdrop(
 		userKeypair.publicKey,
 		amount.toNumber() +
-			(await getMinimumBalanceForRentExemptAccount(provider.connection))
+		(await getMinimumBalanceForRentExemptAccount(provider.connection))
 	);
 	while (
 		(await provider.connection.getTransaction(tx, {
@@ -519,8 +519,12 @@ export async function printTxLogs(
 	});
 	console.log('tx logs', tx.meta.logMessages);
 	if (dumpEvents) {
-		for (const e of parseLogs(driftProgram, tx.meta.logMessages)) {
-			console.log(JSON.stringify(e));
+		for (const l of tx.meta.logMessages) {
+			if (l.includes('Program data: ')) {
+				const stripped = l.replace('Program data: ', '');
+				const e = driftProgram.coder.events.decode(stripped);
+				console.log(JSON.stringify(e));
+			}
 		}
 	}
 }
@@ -602,12 +606,12 @@ export async function initUserAccounts(
 			oracleInfos,
 			accountSubscription: accountLoader
 				? {
-						type: 'polling',
-						accountLoader,
-				  }
+					type: 'polling',
+					accountLoader,
+				}
 				: {
-						type: 'websocket',
-				  },
+					type: 'websocket',
+				},
 		});
 
 		// await driftClient1.initialize(usdcMint.publicKey, false);
@@ -784,9 +788,9 @@ function readBigInt64LE(buffer, offset = 0) {
 		(BigInt(val) << BigInt(32)) +
 		BigInt(
 			first +
-				buffer[++offset] * 2 ** 8 +
-				buffer[++offset] * 2 ** 16 +
-				buffer[++offset] * 2 ** 24
+			buffer[++offset] * 2 ** 8 +
+			buffer[++offset] * 2 ** 16 +
+			buffer[++offset] * 2 ** 24
 		)
 	);
 }
@@ -1205,8 +1209,8 @@ export async function getVaultDepositorValue(params: {
 	try {
 		tokenizedVaultDepositorAccount = params.tokenizedVaultDepositor
 			? await params.vaultClient.program.account.tokenizedVaultDepositor.fetch(
-					params.tokenizedVaultDepositor
-			  )
+				params.tokenizedVaultDepositor
+			)
 			: undefined;
 	} catch (e) {
 		console.log('failed to get tokenized vault depositor account', e);
@@ -1224,7 +1228,7 @@ export async function getVaultDepositorValue(params: {
 	if (tokenizedVaultDepositorAccount) {
 		assert(
 			tokenizedVaultDepositorAccount.vaultSharesBase ===
-				vaultAccount.sharesBase,
+			vaultAccount.sharesBase,
 			'tokenizedVaultDepositorAccount.vaultSharesBase is not equal to vaultAccount.sharesBase'
 		);
 	}
@@ -1307,8 +1311,7 @@ export async function getVaultDepositorValue(params: {
 			).toString()}`
 		);
 		console.log(
-			`  tokenizedVaultDepositorShareOfVault: ${
-				tokenizedVaultDepositorShareOfVault * 100
+			`  tokenizedVaultDepositorShareOfVault: ${tokenizedVaultDepositorShareOfVault * 100
 			}%`
 		);
 		console.log(`  ataBalance: ${ataBalance?.toString()}`);
@@ -1447,8 +1450,7 @@ export async function doWashTrading({
 	stopPnlDiffPct = stopPnlDiffPct ?? -0.999;
 	maxIters = maxIters ?? 100;
 	console.log(
-		`Trading against MM until pnl is ${
-			stopPnlDiffPct * 100
+		`Trading against MM until pnl is ${stopPnlDiffPct * 100
 		}%, starting at ${convertToNumber(
 			startVaultEquity,
 			QUOTE_PRECISION

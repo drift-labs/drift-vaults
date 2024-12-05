@@ -33,6 +33,10 @@ export const deposit = async (program: Command, cmdOpts: OptionValues) => {
     const depositBN = new BN(cmdOpts.amount * spotPrecision.toNumber());
 
     console.log(`depositing: ${depositBN.toString()}`);
-    const tx = await driftVault.deposit(vaultDepositorAddress, depositBN);
-    console.log(`Deposited ${cmdOpts.amount} to vault as manager: ${tx}`);
+    try {
+        const tx = await driftVault.deposit(vaultDepositorAddress, depositBN);
+        console.log(`Deposited ${cmdOpts.amount} to vault as manager: ${tx}`);
+    } catch (err) {
+        console.error(`Error depositing: ${err}`);
+    }
 };

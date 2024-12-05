@@ -32,6 +32,7 @@ import {
 	DRIFT_PROGRAM_ID,
 	OrderType,
 	isVariant,
+	convertToNumber,
 } from '@drift-labs/sdk';
 import {
 	bootstrapSignerClientAndUser,
@@ -1077,7 +1078,7 @@ describe('TestProtocolVaults', () => {
 		);
 		assert(
 			finalSolPerpPrice ===
-				solPrice.price.toNumber() / PRICE_PRECISION.toNumber()
+			solPrice.price.toNumber() / PRICE_PRECISION.toNumber()
 		);
 
 		const solPerpMarket = delegateClient.driftClient.getPerpMarketAccount(0);
@@ -1095,7 +1096,7 @@ describe('TestProtocolVaults', () => {
 		assert(pnl === upnl);
 		assert(
 			solPerpPos.quoteAssetAmount.toNumber() / QUOTE_PRECISION.toNumber() ==
-				upnl
+			upnl
 		);
 		assert(solPerpQuote === pnl);
 
@@ -1514,8 +1515,8 @@ describe('TestTokenizedDriftVaults', () => {
 			: undefined;
 		const tokenizedVaultDepositor = tokenizedVaultDepositorAddress
 			? await program.account.tokenizedVaultDepositor.fetch(
-					tokenizedVaultDepositorAddress
-			  )
+				tokenizedVaultDepositorAddress
+			)
 			: undefined;
 		return {
 			vault,
@@ -2064,8 +2065,7 @@ describe('TestTokenizedDriftVaults', () => {
 				address: vault,
 			});
 		console.log(
-			`Vault equity (solprice: ${solPrice1.toString()}): ${vaultEquity2.toString()} (${
-				(vaultEquity2.toNumber() / vaultEquity.toNumber() - 1) * 100
+			`Vault equity (solprice: ${solPrice1.toString()}): ${vaultEquity2.toString()} (${(vaultEquity2.toNumber() / vaultEquity.toNumber() - 1) * 100
 			}% return)`
 		);
 
@@ -2305,8 +2305,7 @@ describe('TestTokenizedDriftVaults', () => {
 			}
 		);
 		console.log(
-			`Vault equity 2: ${vaultEquity1.toString()} (${
-				(vaultEquity1.toNumber() / vaultEquity0.toNumber() - 1) * 100
+			`Vault equity 2: ${vaultEquity1.toString()} (${(vaultEquity1.toNumber() / vaultEquity0.toNumber() - 1) * 100
 			}%)`
 		);
 
@@ -2530,8 +2529,7 @@ describe('TestTokenizedDriftVaults', () => {
 		);
 		try {
 			console.log(
-				`Initializing tokenized vault for vault with shares base: ${
-					vault_3.sharesBase
+				`Initializing tokenized vault for vault with shares base: ${vault_3.sharesBase
 				}: ${tokenizedVaultDepositor2.toBase58()}`
 			);
 			await managerClient.initializeTokenizedVaultDepositor({
@@ -2916,5 +2914,220 @@ describe('TestInsuranceFundStake', () => {
 
 	it('Test initializeInsuranceFundStake for asset different than deposit asset', async () => {
 		await testInsuranceFundStake(1);
+	});
+});
+
+describe('TestVaultWithNoShares', () => {
+	const bulkAccountLoader = new BulkAccountLoader(connection, 'confirmed', 1);
+	let managerClient: VaultClient;
+	let managerDriftClient: DriftClient;
+	let managerUsdcAccount: PublicKey;
+	let managerWSOLAccount: PublicKey;
+
+	let vd0Client: VaultClient;
+	let vd0DriftClient: DriftClient;
+	let vd0UsdcAccount: PublicKey;
+	let vd0WSOLAccount: PublicKey;
+
+	let _vd1Signer: Signer;
+	let vd1Client: VaultClient;
+	let vd1DriftClient: DriftClient;
+
+	const usdcAmount = new BN(1_000).mul(QUOTE_PRECISION);
+
+	before(async () => {
+		while (!adminInitialized) {
+			console.log('TestVaultWithNoShares: waiting for drift initialization...');
+			await sleep(1000);
+		}
+
+		await adminClient.subscribe();
+
+		const bootstrapManager = await bootstrapSignerClientAndUser({
+			payer: provider,
+			programId: program.programId,
+			usdcMint,
+			usdcAmount,
+			driftClientConfig: {
+				accountSubscription: {
+					type: 'websocket',
+					resubTimeoutMs: 30_000,
+				},
+				opts,
+				activeSubAccountId: 0,
+				perpMarketIndexes,
+				spotMarketIndexes,
+				oracleInfos,
+			},
+			metaplex,
+		});
+		managerClient = bootstrapManager.vaultClient;
+		managerDriftClient = bootstrapManager.driftClient;
+		managerUsdcAccount = bootstrapManager.userUSDCAccount.publicKey;
+		managerWSOLAccount = bootstrapManager.userWSOLAccount;
+		const vd0Bootstrap = await bootstrapSignerClientAndUser({
+			payer: provider,
+			programId: program.programId,
+			usdcMint,
+			usdcAmount: new BN(10).mul(usdcAmount),
+			driftClientConfig: {
+				accountSubscription: {
+					type: 'websocket',
+					resubTimeoutMs: 30_000,
+				},
+				opts,
+				activeSubAccountId: 0,
+				perpMarketIndexes,
+				spotMarketIndexes,
+				oracleInfos,
+			},
+			metaplex,
+		});
+		vd0Client = vd0Bootstrap.vaultClient;
+		vd0DriftClient = vd0Bootstrap.driftClient;
+		vd0UsdcAccount = vd0Bootstrap.userUSDCAccount.publicKey;
+		vd0WSOLAccount = vd0Bootstrap.userWSOLAccount;
+		const vd1Bootstrap = await bootstrapSignerClientAndUser({
+			payer: provider,
+			programId: program.programId,
+			usdcMint,
+			usdcAmount: new BN(10).mul(usdcAmount),
+			driftClientConfig: {
+				accountSubscription: {
+					type: 'websocket',
+					resubTimeoutMs: 30_000,
+				},
+				opts,
+				activeSubAccountId: 0,
+				perpMarketIndexes,
+				spotMarketIndexes,
+				oracleInfos,
+			},
+			metaplex,
+		});
+		_vd1Signer = vd1Bootstrap.signer;
+		vd1Client = vd1Bootstrap.vaultClient;
+		vd1DriftClient = vd1Bootstrap.driftClient;
+
+		// start account loader
+		bulkAccountLoader.startPolling();
+		await bulkAccountLoader.load();
+		await managerDriftClient.subscribe();
+		await vd0DriftClient.subscribe();
+		await vd1DriftClient.subscribe();
+	});
+
+	after(async () => {
+		bulkAccountLoader.stopPolling();
+
+		await adminClient.unsubscribe();
+		await managerClient.unsubscribe();
+		await managerDriftClient.unsubscribe();
+		await vd0Client.unsubscribe();
+		await vd0DriftClient.unsubscribe();
+		await vd1Client.unsubscribe();
+		await vd1DriftClient.unsubscribe();
+	});
+
+	it('Test manager requests withdraw all shares then cancels', async () => {
+		const vaultName = encodeName('test vault mgnr withdraw all');
+		const vault = getVaultAddressSync(program.programId, vaultName);
+		const initTx = await managerClient.initializeVault({
+			name: vaultName,
+			spotMarketIndex: 1,
+			redeemPeriod: ZERO,
+			maxTokens: ZERO,
+			managementFee: ZERO,
+			profitShare: 0,
+			hurdleRate: 0,
+			permissioned: false,
+			minDepositAmount: ZERO,
+		});
+		await printTxLogs(provider.connection, initTx);
+
+
+		// const depositTx = await managerClient.managerDeposit(vault, usdcAmount, managerUsdcAccount);
+		// await printTxLogs(provider.connection, depositTx);
+
+		// vaultAccount = await program.account.vault.fetch(vault);
+		// console.log(vaultAccount);
+		// assert(vaultAccount.totalShares.eq(usdcAmount), 'total shares after deposit');
+		// assert(vaultAccount.managerTotalDeposits.eq(usdcAmount), 'manager total deposits after deposit');
+
+		// worked for manager...
+		// const requestWithdrawTokens = await managerClient.managerRequestWithdraw(vault, usdcAmount, WithdrawUnit.SHARES);
+		// const requestWithdrawTokens = await managerClient.managerRequestWithdraw(vault, PERCENTAGE_PRECISION, WithdrawUnit.SHARES_PERCENT);
+		// await printTxLogs(provider.connection, requestWithdrawTokens);
+
+		// const cancelWithdraw = await managerClient.managerCancelWithdrawRequest(vault);
+		// await printTxLogs(provider.connection, cancelWithdraw);
+
+		// vaultAccount = await program.account.vault.fetch(vault);
+		// console.log(vaultAccount);
+
+		// assert(vaultAccount.totalShares.eq(usdcAmount), 'total shares after deposit');
+		// assert(vaultAccount.managerTotalDeposits.eq(usdcAmount), 'manager total deposits after deposit');
+
+		const depositAmount = new BN((await provider.connection.getTokenAccountBalance(vd0WSOLAccount)).value.amount);
+
+
+		const spotOracle = vd0DriftClient.getOracleDataForSpotMarket(1);
+		console.log(`Oracle: ${convertToNumber(spotOracle.price)}`)
+
+
+		const vaultDepositor = getVaultDepositorAddressSync(
+			program.programId,
+			vault,
+			vd0DriftClient.wallet.publicKey
+		);
+
+		const depTx = await vd0Client.deposit(
+			vaultDepositor,
+			depositAmount,
+			{
+				vault: vault,
+				authority: vd0DriftClient.wallet.publicKey,
+			},
+			undefined,
+			vd0WSOLAccount
+		);
+		await printTxLogs(provider.connection, depTx);
+
+		let vaultDepositAccount = await program.account.vaultDepositor.fetchAndContext(vaultDepositor);
+		let vaultAccount = await program.account.vault.fetchAndContext(vault);
+		console.log(vaultAccount);
+		console.log(vaultDepositAccount);
+		assert(vaultAccount.data.totalShares.eq(depositAmount), 'total shares after deposit');
+		assert(vaultAccount.data.totalDeposits.eq(depositAmount), 'total deposits after deposit');
+		assert(vaultAccount.data.userShares.eq(vaultDepositAccount.data.vaultShares), 'vd shares == vault user shares');
+
+		try {
+			console.log("================================================")
+			// const requestWithdraw = await vd0Client.requestWithdraw(vaultDepositor, PERCENTAGE_PRECISION, WithdrawUnit.SHARES_PERCENT);
+			const requestWithdraw = await vd0Client.requestWithdraw(vaultDepositor, depositAmount, WithdrawUnit.SHARES);
+			await printTxLogs(provider.connection, requestWithdraw, true, program);
+			console.log("================================================")
+		} catch(e) {
+			console.error(e);
+			throw e;
+		}
+
+		vaultAccount = await program.account.vault.fetchAndContext(vault);
+		console.log(vaultAccount);
+		console.log(vaultDepositAccount);
+
+		const cancelWithdraw = await vd0Client.cancelRequestWithdraw(vaultDepositor);
+		await printTxLogs(provider.connection, cancelWithdraw, true, program);
+		console.log("================================================")
+
+
+		vaultDepositAccount = await program.account.vaultDepositor.fetchAndContext(vaultDepositor);
+		vaultAccount = await program.account.vault.fetchAndContext(vault);
+		console.log(vaultAccount);
+		console.log(vaultDepositAccount);
+
+		assert(vaultAccount.data.totalShares.eq(depositAmount), 'total shares after cancel withdraw');
+		assert(vaultAccount.data.totalDeposits.eq(depositAmount), 'total deposits after cancel withdraw');
+		assert(vaultAccount.data.userShares.eq(vaultDepositAccount.data.vaultShares), 'vd shares == vault user shares');
 	});
 });

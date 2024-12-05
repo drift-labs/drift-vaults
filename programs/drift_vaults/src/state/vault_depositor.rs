@@ -363,7 +363,7 @@ impl VaultDepositor {
         let (manager_profit_share, protocol_profit_share) =
             self.apply_profit_share(vault_equity, vault, vault_protocol)?;
 
-        let (withdraw_value, n_shares) = withdraw_unit.get_withdraw_value_and_shares(
+        let (mut withdraw_value, n_shares) = withdraw_unit.get_withdraw_value_and_shares(
             withdraw_amount,
             vault_equity,
             self.get_vault_shares(),
@@ -381,6 +381,15 @@ impl VaultDepositor {
         let total_vault_shares_before = vault.total_shares;
         let user_vault_shares_before = vault.user_shares;
         let protocol_shares_before = vault.get_protocol_shares(vault_protocol);
+
+        msg!("withdraw_value 1: {}", withdraw_value);
+        withdraw_value = depositor_shares_to_vault_amount(
+            n_shares,
+            vault.total_shares,
+            vault_equity,
+        )?
+        .min(vault_equity.saturating_sub(1));
+        msg!("withdraw_value 2: {}", withdraw_value);
 
         self.last_withdraw_request.set(
             vault_shares_before,

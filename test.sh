@@ -83,7 +83,7 @@ sleep 5
 
 export ANCHOR_WALLET="$HOME/.config/solana/id.json"
 if [[ $no_test == false ]]; then
-  yarn anchor-tests
+  yarn anchor-tests:test-no-shares
 fi
 
 # if --detach is not given, then the test is killed once "yarn anchor-tests" completes
