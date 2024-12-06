@@ -411,7 +411,7 @@ impl Vault {
         let spot_market = spot_market_map.get_ref(&self.spot_market_index)?;
         let spot_market_precision = spot_market.get_precision().cast::<i128>()?;
         let oracle_price = oracle_map
-            .get_price_data(&spot_market.oracle)?
+            .get_price_data(&spot_market.oracle_id())?
             .price
             .cast::<i128>()?;
 
