@@ -242,6 +242,7 @@ export type VaultDepositorV1Record = {
 
 export type VaultsEventMap = {
 	VaultDepositorRecord: Event<VaultDepositorRecord>;
+	VaultDepositorV1Record: Event<VaultDepositorV1Record>;
 };
 
 export type EventType = keyof VaultsEventMap;
