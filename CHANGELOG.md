@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features
 
+### Fixes
+
+### Breaking
+
+## [0.2.0] - 2024-12-10
+
+### Features
+
 * update drift to v2.103.0
 * Tokenized Vaults ([#55](https://github.com/drift-labs/drift-vaults/pull/55))
 * Remove drift-competitions ([#56](https://github.com/drift-labs/drift-vaults/pull/56))
