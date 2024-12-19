@@ -7,14 +7,16 @@ use crate::constraints::{
     is_delegate_for_vault, is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault,
     is_vault_for_vault_depositor,
 };
+use crate::events::{VaultDepositorAction, VaultDepositorRecord, VaultDepositorV1Record};
 use crate::state::{Vault, VaultProtocolProvider};
-use crate::AccountMapProvider;
-use crate::VaultDepositor;
+use crate::{AccountMapProvider, VaultFee};
+use crate::{VaultDepositor, VaultDepositorBase};
 
 pub fn apply_profit_share<'c: 'info, 'info>(
     ctx: Context<'_, '_, 'c, 'info, ApplyProfitShare<'info>>,
 ) -> Result<()> {
     let clock = &Clock::get()?;
+    let now = clock.unix_timestamp;
 
     let mut vault = ctx.accounts.vault.load_mut()?;
     let mut vault_depositor = ctx.accounts.vault_depositor.load_mut()?;
@@ -36,7 +38,69 @@ pub fn apply_profit_share<'c: 'info, 'info>(
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
-    vault_depositor.apply_profit_share(vault_equity, &mut vault, &mut vp)?;
+    let vault_shares_before = vault_depositor.checked_vault_shares(&vault)?;
+    let total_vault_shares_before = vault.total_shares;
+    let user_vault_shares_before = vault.user_shares;
+    let protocol_shares_before = vault.get_protocol_shares(&mut vp);
+
+    let VaultFee {
+        management_fee_payment,
+        management_fee_shares,
+        protocol_fee_payment,
+        protocol_fee_shares,
+    } = vault.apply_fee(&mut vp, vault_equity, now)?;
+    let (manager_profit_share, protocol_profit_share) =
+        vault_depositor.apply_profit_share(vault_equity, &mut vault, &mut vp)?;
+
+    let protocol_shares_after = vault.get_protocol_shares(&mut vp);
+
+    match vp {
+        None => {
+            emit!(VaultDepositorRecord {
+                ts: now,
+                vault: vault.pubkey,
+                depositor_authority: vault_depositor.authority,
+                action: VaultDepositorAction::FeePayment,
+                amount: 0,
+                spot_market_index: vault.spot_market_index,
+                vault_equity_before: vault_equity,
+                vault_shares_before,
+                user_vault_shares_before,
+                total_vault_shares_before,
+                vault_shares_after: vault_depositor.get_vault_shares(),
+                total_vault_shares_after: vault.total_shares,
+                user_vault_shares_after: vault.user_shares,
+                profit_share: manager_profit_share,
+                management_fee: management_fee_payment,
+                management_fee_shares,
+            });
+        }
+        Some(_) => {
+            emit!(VaultDepositorV1Record {
+                ts: now,
+                vault: vault.pubkey,
+                depositor_authority: vault_depositor.authority,
+                action: VaultDepositorAction::FeePayment,
+                amount: 0,
+                spot_market_index: vault.spot_market_index,
+                vault_equity_before: vault_equity,
+                vault_shares_before,
+                user_vault_shares_before,
+                total_vault_shares_before,
+                vault_shares_after: vault_depositor.get_vault_shares(),
+                total_vault_shares_after: vault.total_shares,
+                user_vault_shares_after: vault.user_shares,
+                protocol_profit_share,
+                protocol_fee: protocol_fee_payment,
+                protocol_fee_shares,
+                manager_profit_share,
+                management_fee: management_fee_payment,
+                management_fee_shares,
+                protocol_shares_before,
+                protocol_shares_after,
+            });
+        }
+    }
 
     Ok(())
 }

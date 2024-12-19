@@ -274,8 +274,6 @@ impl VaultDepositor {
             protocol_fee_payment,
             protocol_fee_shares,
         } = vault.apply_fee(vault_protocol, vault_equity, now)?;
-        let (manager_profit_share, protocol_profit_share) =
-            self.apply_profit_share(vault_equity, vault, vault_protocol)?;
 
         let n_shares = vault_amount_to_depositor_shares(amount, vault.total_shares, vault_equity)?;
 
@@ -309,7 +307,7 @@ impl VaultDepositor {
                     vault_shares_after,
                     total_vault_shares_after: vault.total_shares,
                     user_vault_shares_after: vault.user_shares,
-                    profit_share: manager_profit_share,
+                    profit_share: 0,
                     management_fee: management_fee_payment,
                     management_fee_shares,
                 });
@@ -329,10 +327,10 @@ impl VaultDepositor {
                     vault_shares_after,
                     total_vault_shares_after: vault.total_shares,
                     user_vault_shares_after: vault.user_shares,
-                    protocol_profit_share,
+                    protocol_profit_share: 0,
                     protocol_fee: protocol_fee_payment,
                     protocol_fee_shares,
-                    manager_profit_share,
+                    manager_profit_share: 0,
                     management_fee: management_fee_payment,
                     management_fee_shares,
                     protocol_shares_before,
