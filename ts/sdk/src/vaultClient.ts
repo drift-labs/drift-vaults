@@ -988,7 +988,7 @@ export class VaultClient {
 		]);
 	}
 
-	private createInitVaultDepositorIx(vault: PublicKey, authority?: PublicKey) {
+	private createInitVaultDepositorIx(vault: PublicKey, authority?: PublicKey, payer?: PublicKey) {
 		const vaultDepositor = getVaultDepositorAddressSync(
 			this.program.programId,
 			vault,
@@ -1004,7 +1004,7 @@ export class VaultClient {
 		const initIx = this.program.instruction.initializeVaultDepositor({
 			accounts: {
 				...accounts,
-				payer: authority || this.driftClient.wallet.publicKey,
+				payer: payer || authority || this.driftClient.wallet.publicKey,
 				rent: SYSVAR_RENT_PUBKEY,
 				systemProgram: SystemProgram.programId,
 			},
@@ -1021,7 +1021,8 @@ export class VaultClient {
 	 */
 	public async initializeVaultDepositor(
 		vault: PublicKey,
-		authority?: PublicKey
+		authority?: PublicKey,
+		payer?: PublicKey
 	): Promise<TransactionSignature> {
 		const vaultDepositor = getVaultDepositorAddressSync(
 			this.program.programId,
@@ -1040,13 +1041,13 @@ export class VaultClient {
 				.initializeVaultDepositor()
 				.accounts({
 					...accounts,
-					payer: authority || this.driftClient.wallet.publicKey,
+					payer: payer || authority || this.driftClient.wallet.publicKey,
 					rent: SYSVAR_RENT_PUBKEY,
 					systemProgram: SystemProgram.programId,
 				})
 				.rpc();
 		} else {
-			const initIx = this.createInitVaultDepositorIx(vault, authority);
+			const initIx = this.createInitVaultDepositorIx(vault, authority, payer);
 			return await this.createAndSendTxn([initIx]);
 		}
 	}
