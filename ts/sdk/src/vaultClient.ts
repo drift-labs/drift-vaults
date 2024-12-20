@@ -988,7 +988,11 @@ export class VaultClient {
 		]);
 	}
 
-	private createInitVaultDepositorIx(vault: PublicKey, authority?: PublicKey, payer?: PublicKey) {
+	private createInitVaultDepositorIx(
+		vault: PublicKey,
+		authority?: PublicKey,
+		payer?: PublicKey
+	) {
 		const vaultDepositor = getVaultDepositorAddressSync(
 			this.program.programId,
 			vault,
