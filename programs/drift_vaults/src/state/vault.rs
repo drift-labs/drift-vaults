@@ -906,8 +906,7 @@ impl Vault {
                 .safe_sub(vault_shares_lost)?;
 
             // distribute protocol shares forfeited to users
-            let users_share_of_forfeited_shares = vault_shares_lost;
-            self.user_shares = self.user_shares.safe_add(users_share_of_forfeited_shares)?;
+            self.user_shares = self.user_shares.safe_add(vault_shares_lost)?;
 
             // get_manager_shares logic but doesn't need Option<RefMut<VaultProtocol>>
             let vault_shares_after = self
