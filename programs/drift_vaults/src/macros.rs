@@ -119,3 +119,15 @@ macro_rules! implement_deposit {
         drift::cpi::deposit(cpi_context, spot_market_index, $amount, false)?;
     };
 }
+
+#[cfg(test)]
+#[macro_export]
+macro_rules! assert_eq_within {
+    ($left:expr, $right:expr, $tolerance:expr $(,)?) => {
+        assert!(($left).abs_diff($right) <= $tolerance,
+            "assertion failed: |{:?} - {:?}| <= {:?}", $left, $right, $tolerance);
+    };
+    ($left:expr, $right:expr, $tolerance:expr, $($arg:tt)+) => {
+        assert!(($left).abs_diff($right) <= $tolerance, $($arg)+)
+    };
+}

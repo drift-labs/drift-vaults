@@ -1683,3 +1683,585 @@ mod vault_v1_fcn {
         );
     }
 }
+
+#[cfg(test)]
+mod request_withdraw_cancel_tests {
+    use crate::{
+        assert_eq_within,
+        state::{vault::Vault, VaultDepositor, VaultProtocol},
+        WithdrawUnit,
+    };
+    use drift::math::{
+        casting::Cast,
+        constants::{PERCENTAGE_PRECISION_U64, QUOTE_PRECISION, QUOTE_PRECISION_U64},
+        safe_math::SafeMath,
+    };
+    use std::cell::RefCell;
+
+    enum TestType {
+        Manager,
+        Protocol,
+        VaultDepositor,
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn run_withdraw_request_cancel_test(
+        test_type: TestType,
+        // shares params
+        total_shares_initial: u128,
+        user_shares_initial: u128,
+        protocol_shares_initial: u128,
+        vd_shares_initial: u128,
+        // equity params
+        vault_equity_initial: u64,
+        vault_equity_before_cancel: u64,
+        // expected final sahres
+        expected_manager_shares_final: u128,
+        expected_protocol_shares_final: u128,
+        expected_total_shares_final: u128,
+        expected_user_shares_final: u128,
+        expected_vd_shares_final: u128,
+        // expected final equity
+        expected_manager_equity_final: u64,
+        expected_protocol_equity_final: u64,
+        expected_user_equity_final: u64,
+        expected_vd_equity_final: u64,
+    ) {
+        let now = 1000;
+
+        let mut vault = Vault {
+            total_shares: total_shares_initial,
+            user_shares: user_shares_initial,
+            vault_protocol: protocol_shares_initial == 0,
+            ..Default::default()
+        };
+
+        let vp = RefCell::new(VaultProtocol::default());
+        vp.borrow_mut().protocol_profit_and_fee_shares = protocol_shares_initial;
+
+        let mut vd = VaultDepositor::default();
+        vd.update_vault_shares(vd_shares_initial, &vault).unwrap();
+
+        // request withdraw then cancel
+        match test_type {
+            TestType::Manager => {
+                vault
+                    .manager_request_withdraw(
+                        &mut Some(vp.borrow_mut()),
+                        PERCENTAGE_PRECISION_U64,
+                        WithdrawUnit::SharesPercent,
+                        vault_equity_initial,
+                        now,
+                    )
+                    .expect("can request withdraw");
+
+                vault
+                    .manager_cancel_withdraw_request(
+                        &mut Some(vp.borrow_mut()),
+                        vault_equity_before_cancel,
+                        now + 1000,
+                    )
+                    .expect("can cancel withdraw request");
+            }
+            TestType::Protocol => {
+                vault
+                    .protocol_request_withdraw(
+                        &mut Some(vp.borrow_mut()),
+                        PERCENTAGE_PRECISION_U64,
+                        WithdrawUnit::SharesPercent,
+                        vault_equity_initial,
+                        now,
+                    )
+                    .expect("can request withdraw");
+
+                vault
+                    .protocol_cancel_withdraw_request(
+                        &mut Some(vp.borrow_mut()),
+                        vault_equity_before_cancel,
+                        now + 1000,
+                    )
+                    .expect("can cancel withdraw request");
+            }
+            TestType::VaultDepositor => {
+                vd.request_withdraw(
+                    PERCENTAGE_PRECISION_U64,
+                    WithdrawUnit::SharesPercent,
+                    vault_equity_initial,
+                    &mut vault,
+                    &mut None,
+                    now,
+                )
+                .expect("can request withdraw");
+
+                vd.cancel_withdraw_request(
+                    vault_equity_before_cancel,
+                    &mut vault,
+                    &mut None,
+                    now + 1000,
+                )
+                .expect("can cancel withdraw request");
+            }
+        }
+
+        // check final shares state
+
+        assert_eq!(
+            vault.last_manager_withdraw_request.value, 0,
+            "manager withdraw request value"
+        );
+        assert_eq!(
+            vault.last_manager_withdraw_request.shares, 0,
+            "manager withdraw request shares"
+        );
+        assert_eq!(
+            vault.total_shares, expected_total_shares_final,
+            "total shares final"
+        );
+        assert_eq!(
+            vault.user_shares, expected_user_shares_final,
+            "user shares final"
+        );
+
+        let manager_shares_final = vault
+            .get_manager_shares(&mut Some(vp.borrow_mut()))
+            .unwrap();
+        assert_eq!(
+            manager_shares_final, expected_manager_shares_final,
+            "manager shares final"
+        );
+
+        let protocol_shares_final = vault.get_protocol_shares(&mut Some(vp.borrow_mut()));
+        let vp = vp.borrow_mut();
+        assert_eq!(vp.last_protocol_withdraw_request.value, 0);
+        assert_eq!(vp.last_protocol_withdraw_request.shares, 0);
+        assert_eq!(
+            protocol_shares_final, expected_protocol_shares_final,
+            "protocol shares final"
+        );
+
+        let vd_shares_final = vd.checked_vault_shares(&vault).unwrap();
+        assert_eq!(vd.last_withdraw_request.value, 0);
+        assert_eq!(vd.last_withdraw_request.shares, 0);
+        assert_eq!(vd_shares_final, expected_vd_shares_final, "vd shares final");
+
+        // check equity
+
+        let manager_equity = vault_equity_before_cancel
+            .safe_mul(manager_shares_final.cast::<u64>().unwrap())
+            .unwrap()
+            .safe_div(vault.total_shares.cast::<u64>().unwrap())
+            .unwrap();
+        assert_eq!(
+            manager_equity, expected_manager_equity_final,
+            "manager equity final"
+        );
+
+        let protocol_equity_final = vault_equity_before_cancel
+            .safe_mul(protocol_shares_final.cast::<u64>().unwrap())
+            .unwrap()
+            .safe_div(vault.total_shares.cast::<u64>().unwrap())
+            .unwrap();
+        assert_eq!(
+            protocol_equity_final, expected_protocol_equity_final,
+            "protocol equity final"
+        );
+
+        let total_user_equity = vault_equity_before_cancel
+            .safe_mul(vault.user_shares.cast::<u64>().unwrap())
+            .unwrap()
+            .safe_div(vault.total_shares.cast::<u64>().unwrap())
+            .unwrap();
+        assert_eq!(
+            total_user_equity, expected_user_equity_final,
+            "user equity final"
+        );
+
+        let vd_equity = vault_equity_before_cancel
+            .safe_mul(vd_shares_final.cast::<u64>().unwrap())
+            .unwrap()
+            .safe_div(vault.total_shares.cast::<u64>().unwrap())
+            .unwrap();
+        assert_eq!(vd_equity, expected_vd_equity_final, "vd equity final");
+
+        let total_equity = manager_equity
+            .safe_add(protocol_equity_final)
+            .unwrap()
+            .safe_add(total_user_equity)
+            .unwrap();
+
+        assert_eq_within!(
+            total_equity,
+            vault_equity_before_cancel,
+            1,
+            "total equity final"
+        )
+    }
+
+    #[test]
+    fn test_vault_manager_cancel_withdraw_request_no_profit() {
+        // test setup:
+        // * users own 80% of vault
+        // * manager owns 10% of vault
+        // * protocol own 10% of vault
+        // * single vault depositor owns 50% of vault
+        //
+        // test sequence
+        // 1) manager requests withdraw for 100% of their shares
+        // 2) manager cancels withdraw request (vault equity stays unchanged)
+        //
+        // expected result:
+        // * no 'lost shares' applied
+        // * manager equity stays unchanged
+
+        run_withdraw_request_cancel_test(
+            TestType::Manager,
+            // shares params
+            100 * QUOTE_PRECISION, // manager equity initial = $10
+            80 * QUOTE_PRECISION,
+            10 * QUOTE_PRECISION,
+            50 * QUOTE_PRECISION,
+            // equity params
+            100 * QUOTE_PRECISION_U64,
+            100 * QUOTE_PRECISION_U64,
+            // expected final shares
+            10 * QUOTE_PRECISION,
+            10 * QUOTE_PRECISION,
+            100 * QUOTE_PRECISION,
+            80 * QUOTE_PRECISION,
+            50 * QUOTE_PRECISION,
+            // expected final equity
+            10 * QUOTE_PRECISION_U64,
+            10 * QUOTE_PRECISION_U64,
+            80 * QUOTE_PRECISION_U64,
+            50 * QUOTE_PRECISION_U64,
+        );
+    }
+
+    #[test]
+    fn test_vault_manager_cancel_withdraw_request_with_profit() {
+        // test setup:
+        // * users own 70% of vault
+        // * manager owns 20% of vault
+        // * protocol own 10% of vault
+        // * single vault depositor owns 50% of vault
+        //
+        // test sequence
+        // 1) manager requests withdraw for 100% of their shares
+        // 2) manager cancels withdraw request (vault equity +50% during withdraw)
+        //
+        // expected result:
+        // * 'lost shares' applied
+        // * manager does not enjoy pnl during withdraw window
+
+        run_withdraw_request_cancel_test(
+            TestType::Manager,
+            // shares params
+            100 * QUOTE_PRECISION, // manager equity initial = $20
+            70 * QUOTE_PRECISION,
+            10 * QUOTE_PRECISION,
+            50 * QUOTE_PRECISION,
+            // equity params
+            100 * QUOTE_PRECISION_U64,
+            150 * QUOTE_PRECISION_U64,
+            // expected final shares
+            12_307_692,
+            10_000_000,
+            92_307_692,
+            70_000_000,
+            50_000_000,
+            // expected final equity
+            19_999_999,  // manager equity be unchanged, manager should forfeit pnl
+            16_250_000,  // protocol equity +62.5%
+            113_750_000, // users equity +62.5%
+            81_250_000,  // vd equity +62.5%
+        );
+    }
+
+    #[test]
+    fn test_vault_manager_cancel_withdraw_request_with_loss() {
+        // test setup:
+        // * users own 80% of vault
+        // * manager owns 10% of vault
+        // * protocol own 10% of vault
+        // * single vault depositor owns 50% of vault
+        //
+        // test sequence
+        // 1) manager requests withdraw for 100% of their shares
+        // 2) manager cancels withdraw request (vault equity -10% during withdraw)
+        //
+        // expected result:
+        // * no 'lost shares' applied
+        // * manager exposed to loss during withdraw window
+
+        run_withdraw_request_cancel_test(
+            TestType::Manager,
+            // shares params
+            100 * QUOTE_PRECISION, // manager equity initial = $10
+            80 * QUOTE_PRECISION,
+            10 * QUOTE_PRECISION,
+            50 * QUOTE_PRECISION,
+            // equity params
+            100 * QUOTE_PRECISION_U64,
+            90 * QUOTE_PRECISION_U64,
+            // expected final shares
+            10 * QUOTE_PRECISION,
+            10 * QUOTE_PRECISION,
+            100 * QUOTE_PRECISION,
+            80 * QUOTE_PRECISION,
+            50 * QUOTE_PRECISION,
+            // expected final equity
+            9 * QUOTE_PRECISION_U64,
+            9 * QUOTE_PRECISION_U64, // manager equity down 10% with vault
+            72 * QUOTE_PRECISION_U64,
+            45 * QUOTE_PRECISION_U64,
+        );
+    }
+
+    #[test]
+    fn test_vault_protocol_cancel_withdraw_request_no_profit() {
+        // test setup:
+        // * users own 80% of vault
+        // * manager owns 10% of vault
+        // * protocol own 10% of vault
+        // * single vault depositor owns 50% of vault
+
+        // test sequence
+        // 1) protocol requests withdraw for 100% of their shares
+        // 2) protocol cancels withdraw request (vault equity stays unchanged)
+        //
+        // expected result:
+        // * no 'lost shares' applied
+        // * protocol equity stays unchanged
+        // * user equity stays unchanged
+
+        run_withdraw_request_cancel_test(
+            TestType::Protocol,
+            // shares params
+            100 * QUOTE_PRECISION,
+            80 * QUOTE_PRECISION,
+            10 * QUOTE_PRECISION, // protocol equity initial = $10
+            50 * QUOTE_PRECISION,
+            // equity params
+            100 * QUOTE_PRECISION_U64,
+            100 * QUOTE_PRECISION_U64,
+            // expected final shares
+            10 * QUOTE_PRECISION,
+            10 * QUOTE_PRECISION,
+            100 * QUOTE_PRECISION,
+            80 * QUOTE_PRECISION,
+            50 * QUOTE_PRECISION,
+            // expected final equity
+            10 * QUOTE_PRECISION_U64,
+            10 * QUOTE_PRECISION_U64, // protocol equity unchanged
+            80 * QUOTE_PRECISION_U64,
+            50 * QUOTE_PRECISION_U64,
+        );
+    }
+
+    #[test]
+    fn test_vault_protocol_cancel_withdraw_request_with_profit() {
+        // test setup:
+        // * users own 80% of vault
+        // * manager owns 10% of vault
+        // * protocol own 10% of vault
+        // * single vault depositor owns 50% of vault
+
+        // test sequence
+        // 1) protocol requests withdraw for 100% of their shares
+        // 2) protocol cancels withdraw request (vault equity +10% during withdraw)
+        //
+        // expected result:
+        // * 'lost shares' applied
+        // * protocol does not enjoy pnl during withdraw window
+        // * user and manager share protocol pnl
+
+        run_withdraw_request_cancel_test(
+            TestType::Protocol,
+            // shares params
+            100 * QUOTE_PRECISION,
+            80 * QUOTE_PRECISION,
+            10 * QUOTE_PRECISION, // protocol equity initial = $10
+            50 * QUOTE_PRECISION,
+            // equity params
+            100 * QUOTE_PRECISION_U64,
+            110 * QUOTE_PRECISION_U64,
+            // expected final shares
+            10_000_000,
+            9_000_000,
+            99_000_000,
+            80_000_000,
+            50_000_000,
+            // expected final equity
+            11_111_111, // manager equity +11.11%
+            10_000_000, // protocol equity unchanged
+            88_888_888, // user equity +11.11%
+            55_555_555, // vd equity +11.11%
+        );
+    }
+
+    #[test]
+    fn test_vault_protocol_cancel_withdraw_request_with_loss() {
+        // test setup:
+        // * users own 80% of vault
+        // * manager owns 10% of vault
+        // * protocol own 10% of vault
+        // * single vault depositor owns 50% of vault
+
+        // test sequence
+        // 1) protocol requests withdraw for 100% of their shares
+        // 2) protocol cancels withdraw request (vault equity -10% during withdraw)
+        //
+        // expected result:
+        // * no 'lost shares' applied
+        // * user, manager, and protocol exposed to losses during withdraw window
+
+        run_withdraw_request_cancel_test(
+            TestType::Protocol,
+            // shares params
+            100 * QUOTE_PRECISION,
+            80 * QUOTE_PRECISION,
+            10 * QUOTE_PRECISION, // protocol equity initial = $10
+            50 * QUOTE_PRECISION,
+            // equity params
+            100 * QUOTE_PRECISION_U64,
+            90 * QUOTE_PRECISION_U64,
+            // expected final shares
+            10 * QUOTE_PRECISION,
+            10 * QUOTE_PRECISION,
+            100 * QUOTE_PRECISION,
+            80 * QUOTE_PRECISION,
+            50 * QUOTE_PRECISION,
+            // expected final equity
+            9_000_000,
+            9_000_000, // protocol equity down 10% with vault
+            72 * QUOTE_PRECISION_U64,
+            45 * QUOTE_PRECISION_U64,
+        );
+    }
+
+    #[test]
+    fn test_vault_depositor_cancel_withdraw_request_no_profit() {
+        // test setup:
+        // * users own 80% of vault
+        // * manager owns 10% of vault
+        // * protocol own 10% of vault
+        // * single vault depositor owns 50% of vault
+        //
+        // test sequence
+        // 1) depositor requests withdraw for 100% of their shares
+        // 2) depositor cancels withdraw request (vault equity stays unchanged)
+        //
+        // expected result:
+        // * no 'lost shares' applied
+        // * vd equity stays unchanged
+
+        run_withdraw_request_cancel_test(
+            TestType::VaultDepositor,
+            // shares params
+            100 * QUOTE_PRECISION,
+            80 * QUOTE_PRECISION,
+            10 * QUOTE_PRECISION,
+            50 * QUOTE_PRECISION, // vd equity initial = $50
+            // equity params
+            100 * QUOTE_PRECISION_U64,
+            100 * QUOTE_PRECISION_U64,
+            // expected final shares
+            10 * QUOTE_PRECISION,
+            10 * QUOTE_PRECISION,
+            100 * QUOTE_PRECISION,
+            80 * QUOTE_PRECISION,
+            50 * QUOTE_PRECISION,
+            // expected final equity
+            10 * QUOTE_PRECISION_U64,
+            10 * QUOTE_PRECISION_U64,
+            80 * QUOTE_PRECISION_U64,
+            50 * QUOTE_PRECISION_U64, // vd equity remains unchanged = $50
+        );
+    }
+
+    #[test]
+    fn test_vault_depositor_cancel_withdraw_request_with_profit() {
+        // test setup:
+        // * users own 80% of vault
+        // * manager owns 10% of vault
+        // * protocol own 10% of vault
+        // * single vault depositor owns 50% of vault
+        //
+        // test sequence
+        // 1) depositor requests withdraw for 100% of their shares
+        // 2) depositor cancels withdraw request (vault equity +10% during withdraw)
+        //
+        // expected result:
+        // * 'lost shares' applied
+        // * vd does not enjoy pnl during withdraw window
+        // * manager equity +10%
+        // * protocol equity +10%
+        // * users equity +10%
+        //   * vd does not enjoy pnl during withdraw window (5% extra pnl split with remaining shares)
+
+        run_withdraw_request_cancel_test(
+            TestType::VaultDepositor,
+            // shares params
+            100 * QUOTE_PRECISION,
+            80 * QUOTE_PRECISION,
+            10 * QUOTE_PRECISION,
+            50 * QUOTE_PRECISION, // vd equity initial = $50
+            // equity params
+            100 * QUOTE_PRECISION_U64,
+            110 * QUOTE_PRECISION_U64,
+            // expected final shares
+            10_000_000,
+            10_000_000,
+            91_666_666,
+            71_666_666,
+            41_666_666,
+            // expected final equity
+            12_000_000,
+            12_000_000,
+            85_999_999,
+            49_999_999, // vd equity remains unchanged = ~$50
+        );
+    }
+
+    #[test]
+    fn test_vault_depositor_cancel_withdraw_request_with_loss() {
+        // test setup:
+        // * users own 80% of vault
+        // * manager owns 10% of vault
+        // * protocol own 10% of vault
+        // * single vault depositor owns 50% of vault
+        //
+        // test sequence
+        // 1) depositor requests withdraw for 100% of their shares
+        // 2) depositor cancels withdraw request (vault equity -10% during withdraw)
+        //
+        // expected result:
+        // * no 'lost shares' applied
+        // * users and vd equity -10%
+        // * protocol equity -10%
+        // * manager equity -10%
+
+        run_withdraw_request_cancel_test(
+            TestType::VaultDepositor,
+            // shares params
+            100 * QUOTE_PRECISION,
+            80 * QUOTE_PRECISION,
+            10 * QUOTE_PRECISION,
+            50 * QUOTE_PRECISION, // vd equity initial = $50
+            // equity params
+            100 * QUOTE_PRECISION_U64,
+            90 * QUOTE_PRECISION_U64,
+            // expected final shares
+            10 * QUOTE_PRECISION,
+            10 * QUOTE_PRECISION,
+            100 * QUOTE_PRECISION,
+            80 * QUOTE_PRECISION,
+            50 * QUOTE_PRECISION,
+            // expected final equity
+            9 * QUOTE_PRECISION_U64,
+            9 * QUOTE_PRECISION_U64,
+            72 * QUOTE_PRECISION_U64,
+            45 * QUOTE_PRECISION_U64, // vd equity down 10% with vault
+        );
+    }
+}

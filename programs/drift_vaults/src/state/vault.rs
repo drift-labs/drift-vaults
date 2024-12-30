@@ -610,14 +610,6 @@ impl Vault {
 
         self.total_shares = self.total_shares.safe_sub(vault_shares_lost)?;
 
-        self.user_shares = self.user_shares.safe_sub(vault_shares_lost)?;
-
-        if let Some(vp) = vault_protocol {
-            vp.protocol_profit_and_fee_shares = vp
-                .protocol_profit_and_fee_shares
-                .safe_sub(vault_shares_lost)?;
-        }
-
         let vault_shares_after = self.get_manager_shares(vault_protocol)?;
         let protocol_shares_after = self.get_protocol_shares(vault_protocol);
 
@@ -901,7 +893,7 @@ impl Vault {
         };
 
         self.total_shares = self.total_shares.safe_sub(vault_shares_lost)?;
-        self.user_shares = self.user_shares.safe_sub(vault_shares_lost)?;
+        self.user_shares = self.user_shares.saturating_sub(vault_shares_lost);
 
         if let Some(vp) = vault_protocol {
             self.total_withdraw_requested = self
@@ -912,6 +904,10 @@ impl Vault {
             vp.protocol_profit_and_fee_shares = vp
                 .protocol_profit_and_fee_shares
                 .safe_sub(vault_shares_lost)?;
+
+            // distribute protocol shares forfeited to users
+            let users_share_of_forfeited_shares = vault_shares_lost;
+            self.user_shares = self.user_shares.safe_add(users_share_of_forfeited_shares)?;
 
             // get_manager_shares logic but doesn't need Option<RefMut<VaultProtocol>>
             let vault_shares_after = self
