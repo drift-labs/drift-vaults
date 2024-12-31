@@ -125,9 +125,21 @@ macro_rules! implement_deposit {
 macro_rules! assert_eq_within {
     ($left:expr, $right:expr, $tolerance:expr $(,)?) => {
         assert!(($left).abs_diff($right) <= $tolerance,
-            "assertion failed: |{:?} - {:?}| <= {:?}", $left, $right, $tolerance);
+            "\nAssertion failed: values differ by more than {tolerance}\n  Left: {left}\n Right: {right}\n  Diff: {diff}",
+            tolerance = $tolerance,
+            left = $left,
+            right = $right,
+            diff = ($left).abs_diff($right)
+        );
     };
     ($left:expr, $right:expr, $tolerance:expr, $($arg:tt)+) => {
-        assert!(($left).abs_diff($right) <= $tolerance, $($arg)+)
+        assert!(($left).abs_diff($right) <= $tolerance,
+            "\nAssertion failed: {}\n  Left: {left}\n Right: {right}\n  Diff: {diff}\n  Max allowed diff: {tolerance}",
+            format!($($arg)+),
+            tolerance = $tolerance,
+            left = $left,
+            right = $right,
+            diff = ($left).abs_diff($right)
+        )
     };
 }
