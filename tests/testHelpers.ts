@@ -1115,6 +1115,7 @@ export async function bootstrapSignerClientAndUser(params: {
 		},
 		activeSubAccountId,
 		accountSubscription,
+		txVersion: 'legacy',
 	});
 	const wallet = new anchor.Wallet(signer);
 	const provider = new anchor.AnchorProvider(
