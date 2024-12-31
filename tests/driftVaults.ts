@@ -122,6 +122,7 @@ mockUSDCMint(provider, usdcMint)
 				type: 'websocket',
 				resubTimeoutMs: 30_000,
 			},
+			txVersion: 'legacy',
 		});
 
 		const startInitTime = Date.now();
@@ -2000,6 +2001,7 @@ describe('TestTokenizedDriftVaults', () => {
 			authority: vault,
 			activeSubAccountId: 0,
 			subAccountIds: [0],
+			txVersion: 'legacy',
 		});
 
 		await delegateDriftClient.subscribe();
