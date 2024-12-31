@@ -1100,7 +1100,10 @@ describe('TestProtocolVaults', () => {
 		);
 		assert(solPerpQuote === pnl);
 
+		await fillerUser.fetchAccounts();
 		await vaultUser.fetchAccounts();
+		await delegateClient.driftClient.fetchAccounts();
+
 		try {
 			// settle market maker who lost trade and pays taker fees
 			await delegateClient.driftClient.settlePNL(
