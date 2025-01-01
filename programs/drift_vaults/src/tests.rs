@@ -1685,7 +1685,16 @@ mod vault_v1_fcn {
 }
 
 #[cfg(test)]
+#[derive(Debug, Clone)]
+enum EntityType {
+    Manager,
+    Protocol,
+    VaultDepositor,
+}
+
+#[cfg(test)]
 mod request_withdraw_cancel_tests {
+    use super::EntityType;
     use crate::{
         assert_eq_within,
         state::{vault::Vault, VaultDepositor, VaultProtocol},
@@ -1697,12 +1706,6 @@ mod request_withdraw_cancel_tests {
         safe_math::SafeMath,
     };
     use std::cell::RefCell;
-
-    enum EntityType {
-        Manager,
-        Protocol,
-        VaultDepositor,
-    }
 
     struct DepositsInWithdrawWindow {
         entity_type: EntityType,
@@ -2697,5 +2700,262 @@ mod request_withdraw_cancel_tests {
             108_695_652, // +10.869565%
             76_086_956,  // +12.173912%
         );
+    }
+}
+
+#[cfg(test)]
+mod complete_vault_withdraw_tests {
+
+    use super::EntityType;
+    use crate::{
+        state::{vault::Vault, VaultDepositor, VaultProtocol},
+        WithdrawUnit,
+    };
+    use drift::math::constants::{PERCENTAGE_PRECISION_U64, QUOTE_PRECISION_U64};
+    use std::cell::RefCell;
+
+    #[derive(Debug)]
+    struct WithdrawParam {
+        entity_type: EntityType,
+        shares_pct: u64,
+    }
+
+    #[allow(clippy::too_many_arguments)]
+    fn run_complete_withdraw_test(
+        request_withdraw_order: &Vec<WithdrawParam>,
+        withdraw_order: &Vec<WithdrawParam>,
+        // shares params
+        total_shares_initial: u128,
+        protocol_shares_initial: u128,
+        vd_shares_initial: u128,
+        // equity params
+        vault_equity_initial: u64,
+        vault_equity_final: u64,
+        // expected final sahres
+        expected_manager_shares_final: u128,
+        expected_protocol_shares_final: u128,
+        expected_total_shares_final: u128,
+        expected_user_shares_final: u128,
+        expected_vd_shares_final: u128,
+    ) -> Result<(), &'static str> {
+        let now = 1000;
+
+        let mut vault = Vault {
+            total_shares: total_shares_initial,
+            user_shares: vd_shares_initial,
+            vault_protocol: protocol_shares_initial == 0,
+            ..Default::default()
+        };
+
+        let vp = RefCell::new(VaultProtocol::default());
+        vp.borrow_mut().protocol_profit_and_fee_shares = protocol_shares_initial;
+
+        let mut vd = VaultDepositor::default();
+        vd.update_vault_shares(vd_shares_initial, &vault).unwrap();
+
+        // ACTION 1) request withdraw
+        for param in request_withdraw_order {
+            match param.entity_type {
+                EntityType::Manager => {
+                    vault
+                        .manager_request_withdraw(
+                            &mut Some(vp.borrow_mut()),
+                            param.shares_pct,
+                            WithdrawUnit::SharesPercent,
+                            vault_equity_initial,
+                            now,
+                        )
+                        .expect("manager can request withdraw");
+                }
+                EntityType::Protocol => {
+                    vault
+                        .protocol_request_withdraw(
+                            &mut Some(vp.borrow_mut()),
+                            param.shares_pct,
+                            WithdrawUnit::SharesPercent,
+                            vault_equity_initial,
+                            now,
+                        )
+                        .expect("protocol can request withdraw");
+                }
+                EntityType::VaultDepositor => {
+                    vd.request_withdraw(
+                        param.shares_pct,
+                        WithdrawUnit::SharesPercent,
+                        vault_equity_initial,
+                        &mut vault,
+                        &mut None,
+                        now,
+                    )
+                    .expect("vault depositor can request withdraw");
+                }
+            }
+        }
+
+        let now = now + 1000;
+
+        // ACTION 2) complete withdraw
+        for param in withdraw_order {
+            match param.entity_type {
+                EntityType::Manager => {
+                    vault
+                        .manager_withdraw(&mut Some(vp.borrow_mut()), vault_equity_final, now)
+                        .expect("manager can withdraw");
+                }
+                EntityType::Protocol => {
+                    vault
+                        .protocol_withdraw(&mut Some(vp.borrow_mut()), vault_equity_final, now)
+                        .expect("protocol can withdraw");
+                }
+                EntityType::VaultDepositor => {
+                    vd.withdraw(
+                        vault_equity_final,
+                        &mut vault,
+                        &mut Some(vp.borrow_mut()),
+                        now,
+                    )
+                    .expect("vault depositor can withdraw");
+                }
+            }
+        }
+
+        // check final shares state
+
+        if vault.last_manager_withdraw_request.value != 0 {
+            return Err("manager withdraw request value");
+        }
+        if vault.last_manager_withdraw_request.shares != 0 {
+            return Err("manager withdraw request shares");
+        }
+        if vault.total_shares != expected_total_shares_final {
+            return Err("total shares final");
+        }
+        if vault.user_shares != expected_user_shares_final {
+            return Err("user shares final");
+        }
+
+        let manager_shares_final = vault
+            .get_manager_shares(&mut Some(vp.borrow_mut()))
+            .unwrap();
+        if manager_shares_final != expected_manager_shares_final {
+            return Err("manager shares final");
+        }
+
+        let protocol_shares_final = vault.get_protocol_shares(&mut Some(vp.borrow_mut()));
+        let vp = vp.borrow_mut();
+        if vp.last_protocol_withdraw_request.value != 0 {
+            return Err("protocol withdraw request value");
+        }
+        if vp.last_protocol_withdraw_request.shares != 0 {
+            return Err("protocol withdraw request shares");
+        }
+        if protocol_shares_final != expected_protocol_shares_final {
+            return Err("protocol shares final");
+        }
+
+        let vd_shares_final = vd.checked_vault_shares(&vault).unwrap();
+        if vd.last_withdraw_request.value != 0 {
+            return Err("vault depositor withdraw request value");
+        }
+        if vd.last_withdraw_request.shares != 0 {
+            return Err("vault depositor withdraw request shares");
+        }
+        if vd_shares_final != expected_vd_shares_final {
+            return Err("vault depositor shares final");
+        }
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_complete_withdraw() {
+        // Test all possible withdraw order permutations
+        let withdraw_orders = vec![
+            vec![
+                EntityType::Manager,
+                EntityType::Protocol,
+                EntityType::VaultDepositor,
+            ],
+            vec![
+                EntityType::Manager,
+                EntityType::VaultDepositor,
+                EntityType::Protocol,
+            ],
+            vec![
+                EntityType::Protocol,
+                EntityType::Manager,
+                EntityType::VaultDepositor,
+            ],
+            vec![
+                EntityType::Protocol,
+                EntityType::VaultDepositor,
+                EntityType::Manager,
+            ],
+            vec![
+                EntityType::VaultDepositor,
+                EntityType::Manager,
+                EntityType::Protocol,
+            ],
+            vec![
+                EntityType::VaultDepositor,
+                EntityType::Protocol,
+                EntityType::Manager,
+            ],
+        ];
+
+        let vault_equity_initial = 100 * QUOTE_PRECISION_U64;
+        let test_final_vault_equity = vec![100, 90, 110];
+
+        for vault_equity_final in &test_final_vault_equity {
+            for withdraw_order in &withdraw_orders {
+                let withdraw_params = withdraw_order
+                    .into_iter()
+                    .map(|entity_type| WithdrawParam {
+                        entity_type: entity_type.clone(),
+                        shares_pct: PERCENTAGE_PRECISION_U64,
+                    })
+                    .collect();
+
+                let result = run_complete_withdraw_test(
+                    &vec![
+                        WithdrawParam {
+                            entity_type: EntityType::Manager,
+                            shares_pct: PERCENTAGE_PRECISION_U64,
+                        },
+                        WithdrawParam {
+                            entity_type: EntityType::Protocol,
+                            shares_pct: PERCENTAGE_PRECISION_U64,
+                        },
+                        WithdrawParam {
+                            entity_type: EntityType::VaultDepositor,
+                            shares_pct: PERCENTAGE_PRECISION_U64,
+                        },
+                    ],
+                    &withdraw_params,
+                    // shares params
+                    100,
+                    10,
+                    80,
+                    // equity params
+                    vault_equity_initial,
+                    *vault_equity_final,
+                    // expected final shares
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                );
+
+                assert!(
+                    result.is_ok(),
+                    "\nError {:?}\nInitial vault equity: {}\nFinal vault equity: {}\nwithdraw order: {:?}",
+                    result.err().unwrap(),
+                    vault_equity_initial,
+                    vault_equity_final,
+                    withdraw_params
+                );
+            }
+        }
     }
 }
