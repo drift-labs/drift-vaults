@@ -575,7 +575,8 @@ export class VaultClient {
 	 */
 	public async managerDeposit(
 		vault: PublicKey,
-		amount: BN
+		amount: BN,
+		userTokenAccount?: PublicKey
 	): Promise<TransactionSignature> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
 		const driftSpotMarket = this.driftClient.getSpotMarketAccount(
@@ -618,10 +619,12 @@ export class VaultClient {
 				),
 				driftState: await this.driftClient.getStatePublicKey(),
 				driftSpotMarketVault: driftSpotMarket.vault,
-				userTokenAccount: getAssociatedTokenAddressSync(
-					driftSpotMarket.mint,
-					this.driftClient.wallet.publicKey
-				),
+				userTokenAccount:
+					userTokenAccount ??
+					getAssociatedTokenAddressSync(
+						driftSpotMarket.mint,
+						this.driftClient.wallet.publicKey
+					),
 				tokenProgram: TOKEN_PROGRAM_ID,
 			})
 			.remainingAccounts(remainingAccounts)

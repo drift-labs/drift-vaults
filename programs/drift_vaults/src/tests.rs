@@ -2704,7 +2704,7 @@ mod request_withdraw_cancel_tests {
 }
 
 #[cfg(test)]
-mod complete_vault_withdraw_tests {
+mod full_vault_withdraw_tests {
 
     use super::EntityType;
     use crate::{
@@ -2909,7 +2909,7 @@ mod complete_vault_withdraw_tests {
         for vault_equity_final in &test_final_vault_equity {
             for withdraw_order in &withdraw_orders {
                 let withdraw_params = withdraw_order
-                    .into_iter()
+                    .iter()
                     .map(|entity_type| WithdrawParam {
                         entity_type: entity_type.clone(),
                         shares_pct: PERCENTAGE_PRECISION_U64,

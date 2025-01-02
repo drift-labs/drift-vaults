@@ -14,7 +14,8 @@
         "anchor-tests:vaults": "yarn anchor-tests -g TestDriftVaults",
         "anchor-tests:protocol": "yarn anchor-tests -g TestProtocolVaults",
         "anchor-tests:tokenize": "yarn anchor-tests -g TestTokenizedDriftVaults",
-        "anchor-tests:if-stake": "yarn anchor-tests -g TestInsuranceFundStake"
+        "anchor-tests:if-stake": "yarn anchor-tests -g TestInsuranceFundStake",
+        "anchor-tests:withdraw": "yarn anchor-tests -g TestWithdrawFromVaults"
     },
     "devDependencies": {
         "@coral-xyz/anchor": "0.28.0",
