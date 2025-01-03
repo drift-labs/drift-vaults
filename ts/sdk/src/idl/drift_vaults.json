@@ -568,17 +568,7 @@
           "isSigner": true
         },
         {
-          "name": "driftUserStats",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "driftUser",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "driftState",
           "isMut": false,
           "isSigner": false
         }
@@ -615,17 +605,7 @@
           "isSigner": true
         },
         {
-          "name": "driftUserStats",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "driftUser",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "driftState",
           "isMut": false,
           "isSigner": false
         }
@@ -840,17 +820,7 @@
           "isSigner": true
         },
         {
-          "name": "driftUserStats",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "driftUser",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "driftState",
           "isMut": false,
           "isSigner": false
         }
@@ -882,17 +852,7 @@
           "isSigner": true
         },
         {
-          "name": "driftUserStats",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "driftUser",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "driftState",
           "isMut": false,
           "isSigner": false
         }
@@ -1456,17 +1416,7 @@
           "isSigner": true
         },
         {
-          "name": "driftUserStats",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "driftUser",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "driftState",
           "isMut": false,
           "isSigner": false
         }
@@ -1503,17 +1453,7 @@
           "isSigner": true
         },
         {
-          "name": "driftUserStats",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "driftUser",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "driftState",
           "isMut": false,
           "isSigner": false
         }

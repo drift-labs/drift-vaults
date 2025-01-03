@@ -378,8 +378,6 @@ describe('driftVaults', () => {
 				vault,
 				vaultDepositor,
 				driftUser: vaultAccount.user,
-				driftUserStats: vaultAccount.userStats,
-				driftState: await adminClient.getStatePublicKey(),
 			})
 			.remainingAccounts(remainingAccounts)
 			.rpc();
@@ -1182,8 +1180,6 @@ describe('TestProtocolVaults', () => {
 					vault: protocolVault,
 					vaultDepositor,
 					driftUser: vaultAccount.user,
-					driftUserStats: vaultAccount.userStats,
-					driftState: await adminClient.getStatePublicKey(),
 				})
 				.remainingAccounts(remainingAccounts)
 				.rpc();
@@ -1298,8 +1294,6 @@ describe('TestProtocolVaults', () => {
 					vault: protocolVault,
 					vaultProtocol,
 					driftUser: vaultAccount.user,
-					driftUserStats: vaultAccount.userStats,
-					driftState: await adminClient.getStatePublicKey(),
 				})
 				.remainingAccounts(remainingAccounts)
 				.rpc();

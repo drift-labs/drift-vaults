@@ -660,18 +660,9 @@ export class VaultClient {
 			});
 		}
 
-		const userStatsKey = getUserStatsAccountPublicKey(
-			this.driftClient.program.programId,
-			vault
-		);
-
-		const driftStateKey = await this.driftClient.getStatePublicKey();
-
 		const accounts = {
 			vault,
-			driftUserStats: userStatsKey,
 			driftUser: vaultAccount.user,
-			driftState: driftStateKey,
 		};
 
 		if (this.cliMode) {
@@ -704,19 +695,10 @@ export class VaultClient {
 	): Promise<TransactionSignature> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
 
-		const userStatsKey = getUserStatsAccountPublicKey(
-			this.driftClient.program.programId,
-			vault
-		);
-
-		const driftStateKey = await this.driftClient.getStatePublicKey();
-
 		const accounts = {
 			manager: this.driftClient.wallet.publicKey,
 			vault,
-			driftUserStats: userStatsKey,
 			driftUser: vaultAccount.user,
-			driftState: driftStateKey,
 		};
 
 		const user = await this.getSubscribedVaultUser(vaultAccount.user);
@@ -1540,19 +1522,10 @@ export class VaultClient {
 			});
 		}
 
-		const userStatsKey = getUserStatsAccountPublicKey(
-			this.driftClient.program.programId,
-			vaultDepositorAccount.vault
-		);
-
-		const driftStateKey = await this.driftClient.getStatePublicKey();
-
 		const accounts = {
 			vault: vaultDepositorAccount.vault,
 			vaultDepositor,
-			driftUserStats: userStatsKey,
 			driftUser: vaultAccount.user,
-			driftState: driftStateKey,
 		};
 
 		if (this.cliMode) {
@@ -1808,19 +1781,10 @@ export class VaultClient {
 			vaultDepositorAccount.vault
 		);
 
-		const userStatsKey = getUserStatsAccountPublicKey(
-			this.driftClient.program.programId,
-			vaultDepositorAccount.vault
-		);
-
-		const driftStateKey = await this.driftClient.getStatePublicKey();
-
 		const accounts = {
 			vault: vaultDepositorAccount.vault,
 			vaultDepositor,
-			driftUserStats: userStatsKey,
 			driftUser: vaultAccount.user,
-			driftState: driftStateKey,
 		};
 
 		const user = await this.getSubscribedVaultUser(vaultAccount.user);
@@ -2273,18 +2237,9 @@ export class VaultClient {
 			});
 		}
 
-		const userStatsKey = getUserStatsAccountPublicKey(
-			this.driftClient.program.programId,
-			vault
-		);
-
-		const driftStateKey = await this.driftClient.getStatePublicKey();
-
 		const accounts = {
 			vault,
-			driftUserStats: userStatsKey,
 			driftUser: vaultAccount.user,
-			driftState: driftStateKey,
 		};
 
 		if (this.cliMode) {
@@ -2317,19 +2272,10 @@ export class VaultClient {
 	): Promise<TransactionSignature> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
 
-		const userStatsKey = getUserStatsAccountPublicKey(
-			this.driftClient.program.programId,
-			vault
-		);
-
-		const driftStateKey = await this.driftClient.getStatePublicKey();
-
 		const accounts = {
 			manager: this.driftClient.wallet.publicKey,
 			vault,
-			driftUserStats: userStatsKey,
 			driftUser: vaultAccount.user,
-			driftState: driftStateKey,
 		};
 
 		const user = await this.getSubscribedVaultUser(vaultAccount.user);
