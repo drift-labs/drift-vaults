@@ -673,8 +673,7 @@ impl Vault {
         validate!(
             n_shares > 0,
             ErrorCode::InvalidVaultWithdraw,
-            "Must submit withdraw request and wait the redeem_period ({} seconds)",
-            self.redeem_period
+            "No last_withdraw_request.shares found, must call manager_request_withdraw first",
         )?;
 
         let amount: u64 =
@@ -985,8 +984,7 @@ impl Vault {
         validate!(
             n_shares > 0,
             ErrorCode::InvalidVaultWithdraw,
-            "Must submit withdraw request and wait the redeem_period ({} seconds)",
-            self.redeem_period
+            "No last_withdraw_request.shares found, must call protocol_request_withdraw first",
         )?;
 
         let amount: u64 =

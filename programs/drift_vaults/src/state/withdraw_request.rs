@@ -123,3 +123,84 @@ impl WithdrawRequest {
         Ok(())
     }
 }
+
+// #[cfg(test)]
+// mod tests {
+//     use super::*;
+
+//     #[test]
+//     fn test_calculate_shares_lost() {
+//         let mut withdraw_request = WithdrawRequest::default();
+//         let mut vault = Vault::default();
+//         let mut vault_equity: u64;
+
+//         vault.total_shares = 100;
+//         // withdraw_request.value = 100;
+//         // withdraw_request.shares = 100;
+//         // withdraw_request.value = 99;
+//         // withdraw_request.shares = 99;
+//         withdraw_request.value = 50;
+//         withdraw_request.shares = 50;
+
+//         // // test full withdrawal, equity stays the same
+//         // vault_equity = 100;
+//         // shares_lost = withdraw_request
+//         //     .calculate_shares_lost(&vault, vault_equity)
+//         //     .expect("should not fail");
+//         // assert_eq!(shares_lost, 0, "shares lost should be 0");
+
+//         // // test full withdrawal, equity went down
+//         // vault_equity = 99;
+//         // shares_lost = withdraw_request
+//         //     .calculate_shares_lost(&vault, vault_equity)
+//         //     .expect("should not fail");
+//         // assert_eq!(shares_lost, 0, "shares lost should be 0");
+
+//         // test full withdrawal, equity went up
+//         vault_equity = 100;
+//         msg!(
+//             "start shares: {} start value: {}",
+//             withdraw_request.shares,
+//             withdraw_request
+//                 .shares
+//                 .safe_mul(vault_equity.into())
+//                 .unwrap()
+//                 .safe_div(vault.total_shares)
+//                 .unwrap()
+//         );
+//         vault_equity = 105;
+//         let shares_lost = withdraw_request
+//             .calculate_shares_lost(&vault, vault_equity)
+//             .expect("should not fail");
+//         let new_shares = withdraw_request
+//             .shares
+//             .safe_sub(shares_lost)
+//             .expect("should not fail");
+//         let new_total_shares = vault
+//             .total_shares
+//             .safe_sub(shares_lost)
+//             .expect("should not fail");
+//         msg!("new total shares: {}", new_total_shares);
+//         msg!(
+//             "user's new shares: {} final value: {}",
+//             new_shares,
+//             new_shares
+//                 .safe_mul(vault_equity.into())
+//                 .unwrap()
+//                 .safe_div(new_total_shares)
+//                 .unwrap()
+//         );
+
+//         let others_new_shares = new_total_shares.safe_sub(new_shares).unwrap();
+//         msg!(
+//             "others new shares: {} final value: {}",
+//             others_new_shares,
+//             others_new_shares
+//                 .safe_mul(vault_equity.into())
+//                 .unwrap()
+//                 .safe_div(new_total_shares)
+//                 .unwrap()
+//         );
+//         assert_eq!(shares_lost, 0, "shares lost should be 0");
+//     }
+// }
