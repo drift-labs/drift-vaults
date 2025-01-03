@@ -3,7 +3,7 @@ use drift::instructions::optional_accounts::AccountMaps;
 use drift::math::casting::Cast;
 use drift::state::user::User;
 
-use crate::constraints::{is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault};
+use crate::constraints::{is_manager_for_vault, is_user_for_vault};
 use crate::state::{Vault, VaultProtocolProvider};
 use crate::AccountMapProvider;
 
@@ -43,15 +43,7 @@ pub struct ManagerCancelWithdrawRequest<'info> {
     pub vault: AccountLoader<'info, Vault>,
     pub manager: Signer<'info>,
     #[account(
-        constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?
-    )]
-    /// CHECK: checked in drift cpi
-    pub drift_user_stats: AccountInfo<'info>,
-    #[account(
         constraint = is_user_for_vault(&vault, &drift_user.key())?
     )]
-    /// CHECK: checked in drift cpi
     pub drift_user: AccountLoader<'info, User>,
-    /// CHECK: checked in drift cpi
-    pub drift_state: AccountInfo<'info>,
 }
