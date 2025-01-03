@@ -48,6 +48,5 @@ pub struct ApplyRebase<'info> {
         mut,
         constraint = is_user_for_vault(&vault, &drift_user.key())?
     )]
-    /// CHECK: checked in drift cpi
     pub drift_user: AccountLoader<'info, User>,
 }
