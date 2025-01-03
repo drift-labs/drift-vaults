@@ -1011,14 +1011,6 @@ impl Vault {
         }
         self.net_deposits = self.net_deposits.safe_sub(n_tokens.cast()?)?;
 
-        validate!(
-            protocol_shares_before >= n_shares,
-            ErrorCode::InvalidVaultWithdrawSize,
-            "protocol_shares_before={} < n_shares={}",
-            protocol_shares_before,
-            n_shares
-        )?;
-
         self.total_shares = self.total_shares.safe_sub(n_shares)?;
 
         if let Some(vp) = vault_protocol {
