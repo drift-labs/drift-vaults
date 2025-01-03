@@ -39,7 +39,6 @@ pub fn reset_delegate<'info>(ctx: Context<'_, '_, '_, 'info, ResetDelegate<'info
 pub struct ResetDelegate<'info> {
     #[account(mut)]
     pub vault: AccountLoader<'info, Vault>,
-    pub authority: Signer<'info>,
     #[account(
         mut,
         constraint = is_user_for_vault(&vault, &drift_user.key())?
