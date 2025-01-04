@@ -2701,6 +2701,162 @@ mod request_withdraw_cancel_tests {
             76_086_956,  // +12.173912%
         );
     }
+
+    #[test]
+    fn test_vault_fully_owned_by_manager_cancel_withdraw_request_no_profit() {
+        // test setup:
+        // * manager owns 100% of vault
+        //
+        // test sequence
+        // 1) manager requests withdraw for 100% of their shares
+        //
+        // expected result:
+        // * no 'lost shares' applied
+        // * manager equity unchanged
+
+        run_withdraw_request_cancel_test(
+            EntityType::Manager,
+            // withdraw shares pct
+            PERCENTAGE_PRECISION_U64,
+            vec![],
+            // shares params
+            100 * QUOTE_PRECISION, // manager equity initial = $10
+            0 * QUOTE_PRECISION,
+            0 * QUOTE_PRECISION,
+            0 * QUOTE_PRECISION,
+            // equity params
+            100 * QUOTE_PRECISION_U64,
+            100 * QUOTE_PRECISION_U64,
+            // expected final shares
+            100 * QUOTE_PRECISION,
+            0 * QUOTE_PRECISION,
+            100 * QUOTE_PRECISION,
+            0 * QUOTE_PRECISION,
+            0 * QUOTE_PRECISION,
+            // expected final equity
+            100 * QUOTE_PRECISION_U64, // unchanged
+            0,
+            0,
+            0,
+        );
+    }
+
+    #[test]
+    fn test_vault_fully_owned_by_manager_cancel_withdraw_request_with_loss() {
+        // test setup:
+        // * manager owns 100% of vault
+        //
+        // test sequence
+        // 1) manager requests withdraw for 100% of their shares
+        //
+        // expected result:
+        // * no 'lost shares' applied
+        // * manager -10% with vault
+
+        run_withdraw_request_cancel_test(
+            EntityType::Manager,
+            // withdraw shares pct
+            PERCENTAGE_PRECISION_U64,
+            vec![],
+            // shares params
+            100 * QUOTE_PRECISION, // manager equity initial = $10
+            0 * QUOTE_PRECISION,
+            0 * QUOTE_PRECISION,
+            0 * QUOTE_PRECISION,
+            // equity params
+            100 * QUOTE_PRECISION_U64,
+            90 * QUOTE_PRECISION_U64,
+            // expected final shares
+            100 * QUOTE_PRECISION,
+            0 * QUOTE_PRECISION,
+            100 * QUOTE_PRECISION,
+            0 * QUOTE_PRECISION,
+            0 * QUOTE_PRECISION,
+            // expected final equity
+            90 * QUOTE_PRECISION_U64, // -10%
+            0,
+            0,
+            0,
+        );
+    }
+
+    #[test]
+    fn test_vault_mostly_owned_by_manager_cancel_withdraw_request_with_profit() {
+        // test setup:
+        // * manager owns nearly 100% of vault
+        //
+        // test sequence
+        // 1) manager requests withdraw for 100% of their shares
+        //
+        // expected result:
+        // * 'lost shares' applied
+        // * manager +10% with vault
+
+        run_withdraw_request_cancel_test(
+            EntityType::Manager,
+            // withdraw shares pct
+            PERCENTAGE_PRECISION_U64,
+            vec![],
+            // shares params
+            100 * QUOTE_PRECISION, // manager equity initial is almost 100% of vault
+            1,
+            0 * QUOTE_PRECISION,
+            1,
+            // equity params
+            100 * QUOTE_PRECISION_U64,
+            110 * QUOTE_PRECISION_U64,
+            // expected final shares
+            9,
+            0,
+            10,
+            1,
+            1,
+            // expected final equity
+            99_000_000, // manager equity unchanged
+            0,
+            11_000_000, // manager forfeits $9.9 of profits
+            11_000_000, // user gets the $9.9 profit
+        );
+    }
+
+    #[test]
+    fn test_vault_fully_owned_by_manager_cancel_withdraw_request_with_profit() {
+        // test setup:
+        // * manager owns 100% of vault
+        //
+        // test sequence
+        // 1) manager requests withdraw for 100% of their shares
+        //
+        // expected result:
+        // * no 'lost shares' applied
+        // * manager +10% with vault since they own 100%
+
+        run_withdraw_request_cancel_test(
+            EntityType::Manager,
+            // withdraw shares pct
+            PERCENTAGE_PRECISION_U64.safe_sub(1).unwrap(),
+            vec![],
+            // shares params
+            100 * QUOTE_PRECISION, // manager equity initial = $100
+            0 * QUOTE_PRECISION,
+            0 * QUOTE_PRECISION,
+            0 * QUOTE_PRECISION,
+            // equity params
+            100 * QUOTE_PRECISION_U64,
+            110 * QUOTE_PRECISION_U64,
+            // expected final shares
+            100 * QUOTE_PRECISION,
+            0 * QUOTE_PRECISION,
+            100 * QUOTE_PRECISION,
+            0 * QUOTE_PRECISION,
+            0 * QUOTE_PRECISION,
+            // expected final equity
+            110 * QUOTE_PRECISION_U64, // +10%
+            0,
+            0,
+            0,
+        );
+    }
 }
 
 #[cfg(test)]

@@ -32,6 +32,7 @@ import {
 	DRIFT_PROGRAM_ID,
 	OrderType,
 	isVariant,
+	convertToNumber,
 } from '@drift-labs/sdk';
 import {
 	bootstrapSignerClientAndUser,
@@ -2952,8 +2953,6 @@ describe('TestWithdrawFromVaults', () => {
 	);
 	let firstVaultInitd = false;
 
-	const protocolVaultName = 'protocol vault';
-
 	const VAULT_PROTOCOL_DISCRIM: number[] = [106, 130, 5, 195, 126, 82, 249, 53];
 
 	before(async () => {
@@ -3249,7 +3248,7 @@ describe('TestWithdrawFromVaults', () => {
 			assert(false);
 		}
 
-		const { vault: vaultState1, vaultDepositor: vdState1 } =
+		const { vault: vaultState1 } =
 			await fetchAccountStates(commonVaultKey, vdKey);
 
 		vaultEquity = await managerClient.calculateVaultEquity({
@@ -3274,5 +3273,126 @@ describe('TestWithdrawFromVaults', () => {
 		);
 		console.log('vd0TokenBalance1', vd0TokenBalance1.value.uiAmountString);
 		console.log('vaultTokenBalance1', vaultTokenBalance1.value.uiAmountString);
+	});
+
+	it('Test manager cancel withdraw owning 100% of vault', async () => {
+		const { driftClient: mmDriftClient, requoteFunc } =
+			await initializeSolSpotMarketMaker(
+				provider,
+				usdcMint,
+				new anchor.Program(
+					managerDriftClient.program.idl,
+					managerDriftClient.program.programId,
+					provider
+				),
+				[
+					{
+						publicKey: solPerpOracle,
+						source: OracleSource.PYTH,
+					},
+				],
+				undefined,
+				undefined,
+				bulkAccountLoader
+			);
+
+		// 1) manager deposits
+
+		await managerClient.managerDeposit(
+			commonVaultKey,
+			new BN(100).mul(QUOTE_PRECISION),
+			managerUsdcAccount
+		);
+
+		const { vault: vaultState0 } = await fetchAccountStates(commonVaultKey);
+		const vaultEquity0 = await managerClient.calculateVaultEquity({
+			address: commonVaultKey,
+		});
+
+		// 2) manager requests withdraw
+		const tx0 = await managerClient.managerRequestWithdraw(
+			commonVaultKey,
+			PERCENTAGE_PRECISION,
+			WithdrawUnit.SHARES_PERCENT
+		);
+		await printTxLogs(provider.connection, tx0);
+
+		// 3) vault trades into profit
+		try {
+			const oracle0 = mmDriftClient.getOracleDataForSpotMarket(1);
+
+			await managerClient.updateDelegate(
+				commonVaultKey,
+				managerSigner.publicKey
+			);
+			await managerDriftClient.addAndSubscribeToUsers(commonVaultKey);
+			await managerDriftClient.switchActiveUser(0, commonVaultKey);
+
+			const vaultEquity = await managerClient.calculateVaultEquity({
+				address: commonVaultKey,
+			});
+
+			await doWashTrading({
+				mmDriftClient,
+				traderDriftClient: managerDriftClient,
+				traderAuthority: commonVaultKey,
+				traderSubAccount: 0,
+				vaultClient: managerClient,
+				vaultAddress: commonVaultKey,
+				startVaultEquity: vaultEquity,
+				stopPnlDiffPct: -0.1,
+				maxIters: 1,
+				mmRequoteFunc: requoteFunc,
+				doSell: false,
+			});
+
+			const solMarket = adminClient.getSpotMarketAccount(1);
+
+			// increase oracle
+			const newOraclePrice = convertToNumber(oracle0.price) * 1.25;
+
+			console.log(
+				`setting oracle price ${convertToNumber(
+					oracle0.price
+				)} -> ${newOraclePrice}`
+			);
+			await setFeedPrice(
+				anchor.workspace.Pyth,
+				newOraclePrice,
+				solMarket!.oracle
+			);
+
+			await managerDriftClient.fetchAccounts();
+
+			const vaultEquity1 = await managerClient.calculateVaultEquity({
+				address: commonVaultKey,
+			});
+
+			assert(vaultEquity1.gt(vaultEquity0), 'vault equity should be in profit');
+		} catch (e) {
+			console.error(e);
+			assert(false);
+		}
+
+		// 4) manager cancels withdraw
+		const tx1 = await managerClient.managerCancelWithdrawRequest(
+			commonVaultKey
+		);
+		await printTxLogs(provider.connection, tx1);
+
+		await managerClient.driftClient.fetchAccounts();
+
+		const { vault: vaultState1 } = await fetchAccountStates(commonVaultKey);
+
+		assert(
+			vaultState1.totalShares.eq(vaultState0.totalShares),
+			'total shares should be the same after canceling withdraws'
+		);
+
+		const vaultEquity2 = await managerClient.calculateVaultEquity({
+			address: commonVaultKey,
+		});
+		console.log('final vault equity:', vaultEquity2.toNumber() / 1e6);
+		assert(vaultEquity2.gt(ZERO));
 	});
 });

@@ -592,7 +592,7 @@ impl Vault {
     ) -> Result<()> {
         self.apply_rebase(vault_protocol, vault_equity)?;
 
-        let vault_shares_before: u128 = self.get_manager_shares(vault_protocol)?;
+        let manager_vault_shares_before: u128 = self.get_manager_shares(vault_protocol)?;
         let total_vault_shares_before = self.total_shares;
         let user_vault_shares_before = self.user_shares;
         let protocol_shares_before = self.get_protocol_shares(vault_protocol);
@@ -608,7 +608,12 @@ impl Vault {
             .last_manager_withdraw_request
             .calculate_shares_lost(self, vault_equity)?;
 
-        self.total_shares = self.total_shares.safe_sub(vault_shares_lost)?;
+        // only deduct lost shares if manager doesn't own 100% of the vault
+        let manager_owns_entire_vault = total_vault_shares_before == manager_vault_shares_before;
+
+        if vault_shares_lost > 0 && !manager_owns_entire_vault {
+            self.total_shares = self.total_shares.safe_sub(vault_shares_lost)?;
+        }
 
         let vault_shares_after = self.get_manager_shares(vault_protocol)?;
         let protocol_shares_after = self.get_protocol_shares(vault_protocol);
@@ -620,7 +625,7 @@ impl Vault {
                 amount: 0,
                 depositor_authority: self.manager,
                 vault_equity_before: vault_equity,
-                vault_shares_before,
+                vault_shares_before: manager_vault_shares_before,
                 user_vault_shares_before,
                 total_vault_shares_before,
                 vault_shares_after,
@@ -873,7 +878,7 @@ impl Vault {
 
         self.apply_rebase(vault_protocol, vault_equity)?;
 
-        let vault_shares_before: u128 = self.get_manager_shares(vault_protocol)?;
+        let manager_shares_before: u128 = self.get_manager_shares(vault_protocol)?;
         let total_vault_shares_before = self.total_shares;
         let user_vault_shares_before = self.user_shares;
         let protocol_shares_before = self.get_protocol_shares(vault_protocol);
@@ -892,8 +897,13 @@ impl Vault {
                 .calculate_shares_lost(self, vault_equity)?,
         };
 
-        self.total_shares = self.total_shares.safe_sub(vault_shares_lost)?;
-        self.user_shares = self.user_shares.saturating_sub(vault_shares_lost);
+        // only deduct lost shares if protocol doesn't own 100% of the vault
+        let vp_owns_entire_vault = total_vault_shares_before == protocol_shares_before;
+
+        if vault_shares_lost > 0 && !vp_owns_entire_vault {
+            self.total_shares = self.total_shares.safe_sub(vault_shares_lost)?;
+            self.user_shares = self.user_shares.saturating_sub(vault_shares_lost);
+        }
 
         if let Some(vp) = vault_protocol {
             self.total_withdraw_requested = self
@@ -901,12 +911,14 @@ impl Vault {
                 .safe_sub(vp.last_protocol_withdraw_request.value)?;
             vp.last_protocol_withdraw_request.reset(now)?;
 
-            vp.protocol_profit_and_fee_shares = vp
-                .protocol_profit_and_fee_shares
-                .safe_sub(vault_shares_lost)?;
+            if vault_shares_lost > 0 && !vp_owns_entire_vault {
+                vp.protocol_profit_and_fee_shares = vp
+                    .protocol_profit_and_fee_shares
+                    .safe_sub(vault_shares_lost)?;
 
-            // distribute protocol shares forfeited to users
-            self.user_shares = self.user_shares.safe_add(vault_shares_lost)?;
+                // distribute protocol shares forfeited to users
+                self.user_shares = self.user_shares.safe_add(vault_shares_lost)?;
+            }
 
             // get_manager_shares logic but doesn't need Option<RefMut<VaultProtocol>>
             let vault_shares_after = self
@@ -923,7 +935,7 @@ impl Vault {
                     amount: 0,
                     depositor_authority: vp.protocol,
                     vault_equity_before: vault_equity,
-                    vault_shares_before,
+                    vault_shares_before: manager_shares_before,
                     user_vault_shares_before,
                     total_vault_shares_before,
                     vault_shares_after,
