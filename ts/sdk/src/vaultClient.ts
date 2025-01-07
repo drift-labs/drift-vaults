@@ -292,14 +292,13 @@ export class VaultClient {
 
 			const user = await this.getSubscribedVaultUser(vaultAccount.user);
 			const allTimeTotalPnl = user.getTotalAllTimePnl();
-			
+
 			return allTimeTotalPnl;
 		} catch (err) {
 			console.error('VaultClient ~ err:', err);
 			return ZERO;
 		}
 	}
-
 
 	/**
 	 *
