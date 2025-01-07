@@ -275,6 +275,32 @@ export class VaultClient {
 		}
 	}
 
+	public async calculateVaultAllTimeNotionalPnl(params: {
+		address?: PublicKey;
+		vault?: Vault;
+	}): Promise<BN> {
+		try {
+			let vaultAccount: Vault;
+			if (params.address !== undefined) {
+				// @ts-ignore
+				vaultAccount = await this.program.account.vault.fetch(params.address);
+			} else if (params.vault !== undefined) {
+				vaultAccount = params.vault;
+			} else {
+				throw new Error('Must supply address or vault');
+			}
+
+			const user = await this.getSubscribedVaultUser(vaultAccount.user);
+			const allTimeTotalPnl = user.getTotalAllTimePnl();
+			
+			return allTimeTotalPnl;
+		} catch (err) {
+			console.error('VaultClient ~ err:', err);
+			return ZERO;
+		}
+	}
+
+
 	/**
 	 *
 	 * @param vault pubkey
