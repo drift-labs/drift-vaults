@@ -897,27 +897,20 @@ impl Vault {
                 .calculate_shares_lost(self, vault_equity)?,
         };
 
-        // only deduct lost shares if protocol doesn't own 100% of the vault
-        let vp_owns_entire_vault = total_vault_shares_before == protocol_shares_before;
-
-        if vault_shares_lost > 0 && !vp_owns_entire_vault {
-            self.total_shares = self.total_shares.safe_sub(vault_shares_lost)?;
-            self.user_shares = self.user_shares.saturating_sub(vault_shares_lost);
-        }
-
         if let Some(vp) = vault_protocol {
             self.total_withdraw_requested = self
                 .total_withdraw_requested
                 .safe_sub(vp.last_protocol_withdraw_request.value)?;
             vp.last_protocol_withdraw_request.reset(now)?;
 
+            // only deduct lost shares if protocol doesn't own 100% of the vault
+            let vp_owns_entire_vault = total_vault_shares_before == protocol_shares_before;
+
             if vault_shares_lost > 0 && !vp_owns_entire_vault {
+                self.total_shares = self.total_shares.safe_sub(vault_shares_lost)?;
                 vp.protocol_profit_and_fee_shares = vp
                     .protocol_profit_and_fee_shares
                     .safe_sub(vault_shares_lost)?;
-
-                // distribute protocol shares forfeited to users
-                self.user_shares = self.user_shares.safe_add(vault_shares_lost)?;
             }
 
             // get_manager_shares logic but doesn't need Option<RefMut<VaultProtocol>>
