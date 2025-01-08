@@ -3242,8 +3242,10 @@ describe('TestWithdrawFromVaults', () => {
 			assert(false);
 		}
 
-		const { vault: vaultState1 } =
-			await fetchAccountStates(commonVaultKey, vdKey);
+		const { vault: vaultState1 } = await fetchAccountStates(
+			commonVaultKey,
+			vdKey
+		);
 
 		vaultEquity = await managerClient.calculateVaultEquity({
 			address: commonVaultKey,
