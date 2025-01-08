@@ -697,6 +697,11 @@ export type DriftVaults = {
 					isSigner: true;
 				},
 				{
+					name: 'driftUserStats';
+					isMut: true;
+					isSigner: false;
+				},
+				{
 					name: 'driftUser';
 					isMut: true;
 					isSigner: false;
@@ -3383,6 +3388,11 @@ export const IDL: DriftVaults = {
 					name: 'authority',
 					isMut: false,
 					isSigner: true,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: true,
+					isSigner: false,
 				},
 				{
 					name: 'driftUser',
