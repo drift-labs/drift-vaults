@@ -379,6 +379,7 @@ describe('driftVaults', () => {
 				vault,
 				vaultDepositor,
 				driftUser: vaultAccount.user,
+				driftUserStats: vaultAccount.userStats,
 			})
 			.remainingAccounts(remainingAccounts)
 			.rpc();
@@ -1180,6 +1181,7 @@ describe('TestProtocolVaults', () => {
 				.accounts({
 					vault: protocolVault,
 					vaultDepositor,
+					driftUserStats: vaultAccount.userStats,
 					driftUser: vaultAccount.user,
 				})
 				.remainingAccounts(remainingAccounts)
@@ -1295,6 +1297,7 @@ describe('TestProtocolVaults', () => {
 					vault: protocolVault,
 					vaultProtocol,
 					driftUser: vaultAccount.user,
+					driftUserStats: vaultAccount.userStats,
 				})
 				.remainingAccounts(remainingAccounts)
 				.rpc();
