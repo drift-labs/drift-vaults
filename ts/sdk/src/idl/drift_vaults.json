@@ -697,18 +697,8 @@
           "isSigner": true
         },
         {
-          "name": "driftUserStats",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
           "name": "driftUser",
           "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "driftState",
-          "isMut": false,
           "isSigner": false
         },
         {
