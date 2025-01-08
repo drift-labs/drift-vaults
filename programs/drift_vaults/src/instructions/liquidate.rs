@@ -66,7 +66,11 @@ pub fn liquidate<'c: 'info, 'info>(
 pub struct Liquidate<'info> {
     #[account(mut)]
     pub vault: AccountLoader<'info, Vault>,
-    #[account(mut)]
+    #[account(
+        mut,
+        seeds = [b"vault_depositor", vault.key().as_ref(), authority.key().as_ref()],
+        bump,
+    )]
     pub vault_depositor: AccountLoader<'info, VaultDepositor>,
     pub authority: Signer<'info>,
     #[account(
