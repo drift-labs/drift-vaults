@@ -568,6 +568,11 @@
           "isSigner": true
         },
         {
+          "name": "driftUserStats",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "driftUser",
           "isMut": false,
           "isSigner": false
@@ -603,6 +608,11 @@
           "name": "authority",
           "isMut": false,
           "isSigner": true
+        },
+        {
+          "name": "driftUserStats",
+          "isMut": false,
+          "isSigner": false
         },
         {
           "name": "driftUser",
@@ -810,6 +820,11 @@
           "isSigner": true
         },
         {
+          "name": "driftUserStats",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "driftUser",
           "isMut": false,
           "isSigner": false
@@ -840,6 +855,11 @@
           "name": "manager",
           "isMut": false,
           "isSigner": true
+        },
+        {
+          "name": "driftUserStats",
+          "isMut": false,
+          "isSigner": false
         },
         {
           "name": "driftUser",
@@ -1406,6 +1426,11 @@
           "isSigner": true
         },
         {
+          "name": "driftUserStats",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "driftUser",
           "isMut": false,
           "isSigner": false
@@ -1441,6 +1466,11 @@
           "name": "protocol",
           "isMut": false,
           "isSigner": true
+        },
+        {
+          "name": "driftUserStats",
+          "isMut": false,
+          "isSigner": false
         },
         {
           "name": "driftUser",

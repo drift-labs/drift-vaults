@@ -660,9 +660,15 @@ export class VaultClient {
 			});
 		}
 
+		const userStatsKey = getUserStatsAccountPublicKey(
+			this.driftClient.program.programId,
+			vault
+		);
+
 		const accounts = {
 			vault,
 			driftUser: vaultAccount.user,
+			driftUserStats: userStatsKey,
 		};
 
 		if (this.cliMode) {
@@ -695,10 +701,16 @@ export class VaultClient {
 	): Promise<TransactionSignature> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
 
+		const userStatsKey = getUserStatsAccountPublicKey(
+			this.driftClient.program.programId,
+			vault
+		);
+
 		const accounts = {
 			manager: this.driftClient.wallet.publicKey,
 			vault,
 			driftUser: vaultAccount.user,
+			driftUserStats: userStatsKey,
 		};
 
 		const user = await this.getSubscribedVaultUser(vaultAccount.user);
@@ -725,6 +737,10 @@ export class VaultClient {
 				this.program.instruction.mangerCancelWithdrawRequest({
 					accounts: {
 						...accounts,
+						driftUserStats: getUserStatsAccountPublicKey(
+							this.driftClient.program.programId,
+							vault
+						),
 						manager: this.driftClient.wallet.publicKey,
 					},
 					remainingAccounts,
@@ -1522,10 +1538,16 @@ export class VaultClient {
 			});
 		}
 
+		const userStatsKey = getUserStatsAccountPublicKey(
+			this.driftClient.program.programId,
+			vaultDepositorAccount.vault
+		);
+
 		const accounts = {
 			vault: vaultDepositorAccount.vault,
 			vaultDepositor,
 			driftUser: vaultAccount.user,
+			driftUserStats: userStatsKey,
 		};
 
 		if (this.cliMode) {
@@ -1781,9 +1803,15 @@ export class VaultClient {
 			vaultDepositorAccount.vault
 		);
 
+		const userStatsKey = getUserStatsAccountPublicKey(
+			this.driftClient.program.programId,
+			vaultDepositorAccount.vault
+		);
+
 		const accounts = {
 			vault: vaultDepositorAccount.vault,
 			vaultDepositor,
+			driftUserStats: userStatsKey,
 			driftUser: vaultAccount.user,
 		};
 
@@ -2237,8 +2265,14 @@ export class VaultClient {
 			});
 		}
 
+		const userStatsKey = getUserStatsAccountPublicKey(
+			this.driftClient.program.programId,
+			vault
+		);
+
 		const accounts = {
 			vault,
+			driftUserStats: userStatsKey,
 			driftUser: vaultAccount.user,
 		};
 
@@ -2272,9 +2306,15 @@ export class VaultClient {
 	): Promise<TransactionSignature> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
 
+		const userStatsKey = getUserStatsAccountPublicKey(
+			this.driftClient.program.programId,
+			vault
+		);
+
 		const accounts = {
 			manager: this.driftClient.wallet.publicKey,
 			vault,
+			driftUserStats: userStatsKey,
 			driftUser: vaultAccount.user,
 		};
 

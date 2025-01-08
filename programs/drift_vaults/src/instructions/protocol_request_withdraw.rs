@@ -2,7 +2,9 @@ use anchor_lang::prelude::*;
 use drift::instructions::optional_accounts::AccountMaps;
 use drift::state::user::User;
 
-use crate::constraints::{is_protocol_for_vault, is_user_for_vault, is_vault_protocol_for_vault};
+use crate::constraints::{
+    is_protocol_for_vault, is_user_for_vault, is_user_stats_for_vault, is_vault_protocol_for_vault,
+};
 use crate::{AccountMapProvider, Vault, VaultProtocol, WithdrawUnit};
 
 pub fn protocol_request_withdraw<'c: 'info, 'info>(
@@ -47,6 +49,11 @@ pub struct ProtocolRequestWithdraw<'info> {
     )]
     pub vault_protocol: AccountLoader<'info, VaultProtocol>,
     pub protocol: Signer<'info>,
+    #[account(
+        constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?
+    )]
+    /// CHECK: unused, for future proofing
+    pub drift_user_stats: AccountInfo<'info>,
     #[account(
         constraint = is_user_for_vault(&vault, &drift_user.key())?
     )]
