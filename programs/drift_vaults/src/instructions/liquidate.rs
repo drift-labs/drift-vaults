@@ -77,7 +77,7 @@ pub struct Liquidate<'info> {
     pub authority: Signer<'info>,
     #[account(
         mut,
-        constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?
+        constraint = is_user_stats_for_vault(&vault, &drift_user_stats.key())?
     )]
     /// CHECK: checked in drift cpi
     pub drift_user_stats: AccountInfo<'info>,

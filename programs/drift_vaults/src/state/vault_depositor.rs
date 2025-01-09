@@ -15,7 +15,7 @@ use drift::state::oracle_map::OracleMap;
 use drift::state::perp_market_map::PerpMarketMap;
 use drift::state::spot_market::SpotBalanceType;
 use drift::state::spot_market_map::SpotMarketMap;
-use drift::state::user::User;
+use drift::state::user::{User, UserStats};
 use drift_macros::assert_no_slop;
 use static_assertions::const_assert_eq;
 
@@ -56,8 +56,10 @@ pub struct VaultDepositor {
     pub profit_share_fee_paid: u64,
     /// the exponent for vault_shares decimal places
     pub vault_shares_base: u32,
-    pub padding1: u32,
-    pub padding: [u64; 8],
+    pub last_cumulative_fuel_amount_ts: i32,
+    pub cumulative_fuel_amount: u32,
+    pub fuel_amount: u32,
+    pub padding: [u64; 7],
 }
 
 impl Size for VaultDepositor {
@@ -127,9 +129,11 @@ impl VaultDepositor {
             total_deposits: 0,
             total_withdraws: 0,
             cumulative_profit_share_amount: 0,
-            padding1: 0,
             profit_share_fee_paid: 0,
-            padding: [0u64; 8],
+            last_cumulative_fuel_amount_ts: 0,
+            cumulative_fuel_amount: 0,
+            fuel_amount: 0,
+            padding: [0u64; 7],
         }
     }
 
@@ -232,6 +236,7 @@ impl VaultDepositor {
         vault: &mut Vault,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
         now: i64,
+        user_stats: &UserStats,
     ) -> Result<()> {
         validate!(
             vault.max_tokens == 0 || vault.max_tokens > vault_equity.safe_add(amount)?,
@@ -275,7 +280,7 @@ impl VaultDepositor {
             protocol_fee_shares,
         } = vault.apply_fee(vault_protocol, vault_equity, now)?;
         let (manager_profit_share, protocol_profit_share) =
-            self.apply_profit_share(vault_equity, vault, vault_protocol)?;
+            self.apply_profit_share(vault_equity, vault, vault_protocol, now, user_stats)?;
 
         let n_shares = vault_amount_to_depositor_shares(amount, vault.total_shares, vault_equity)?;
 
@@ -352,6 +357,7 @@ impl VaultDepositor {
         vault: &mut Vault,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
         now: i64,
+        user_stats: &UserStats,
     ) -> Result<()> {
         let rebase_divisor = self.apply_rebase(vault, vault_protocol, vault_equity)?;
         let VaultFee {
@@ -361,7 +367,7 @@ impl VaultDepositor {
             protocol_fee_shares,
         } = vault.apply_fee(vault_protocol, vault_equity, now)?;
         let (manager_profit_share, protocol_profit_share) =
-            self.apply_profit_share(vault_equity, vault, vault_protocol)?;
+            self.apply_profit_share(vault_equity, vault, vault_protocol, now, user_stats)?;
 
         let (withdraw_value, n_shares) = withdraw_unit.get_withdraw_value_and_shares(
             withdraw_amount,
@@ -451,6 +457,7 @@ impl VaultDepositor {
         vault: &mut Vault,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
         now: i64,
+        user_stats: &UserStats,
     ) -> Result<()> {
         self.apply_rebase(vault, vault_protocol, vault_equity)?;
 
@@ -465,6 +472,8 @@ impl VaultDepositor {
             protocol_fee_payment,
             protocol_fee_shares,
         } = vault.apply_fee(vault_protocol, vault_equity, now)?;
+
+        self.update_cumulative_fuel_amount(now, vault, user_stats)?;
 
         let vault_shares_lost = self
             .last_withdraw_request
@@ -546,11 +555,14 @@ impl VaultDepositor {
         vault: &mut Vault,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
         now: i64,
+        user_stats: &UserStats,
     ) -> Result<(u64, bool)> {
         self.last_withdraw_request
             .check_redeem_period_finished(vault, now)?;
 
         self.apply_rebase(vault, vault_protocol, vault_equity)?;
+
+        self.update_cumulative_fuel_amount(now, vault, user_stats)?;
 
         let vault_shares_before: u128 = self.checked_vault_shares(vault)?;
         let total_vault_shares_before = vault.total_shares;
@@ -670,12 +682,15 @@ impl VaultDepositor {
         vault_equity: u64,
         vault: &mut Vault,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
+        now: i64,
+        user_stats: &UserStats,
     ) -> Result<(u64, u64)> {
         validate!(
             !self.last_withdraw_request.pending(),
             ErrorCode::InvalidVaultDeposit,
             "Cannot apply profit share to depositor with pending withdraw request"
         )?;
+        self.update_cumulative_fuel_amount(now, vault, user_stats)?;
         VaultDepositorBase::apply_profit_share(self, vault_equity, vault, vault_protocol)
     }
 
@@ -685,6 +700,7 @@ impl VaultDepositor {
         vault: &mut Vault,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
         now: i64,
+        user_stats: &UserStats,
     ) -> Result<u64> {
         let VaultFee {
             management_fee_payment,
@@ -699,7 +715,7 @@ impl VaultDepositor {
         let protocol_shares_before = vault.get_protocol_shares(vault_protocol);
 
         let (manager_profit_share, protocol_profit_share) =
-            self.apply_profit_share(vault_equity, vault, vault_protocol)?;
+            self.apply_profit_share(vault_equity, vault, vault_protocol, now, user_stats)?;
         let profit_share = manager_profit_share.saturating_add(protocol_profit_share);
         let protocol_shares_after = vault.get_protocol_shares(vault_protocol);
 
@@ -826,6 +842,38 @@ impl VaultDepositor {
 
         Ok(())
     }
+
+    pub fn update_cumulative_fuel_amount(
+        &mut self,
+        now: i64,
+        vault: &Vault,
+        user_stats: &UserStats,
+    ) -> Result<u32> {
+        if (now as i32) < self.last_cumulative_fuel_amount_ts {
+            let total_fuel = user_stats
+                .fuel_borrows
+                .safe_add(user_stats.fuel_deposits)?
+                .safe_add(user_stats.fuel_insurance)?
+                .safe_add(user_stats.fuel_taker)?
+                .safe_add(user_stats.fuel_maker)?
+                .safe_add(user_stats.fuel_positions)?;
+
+            let fuel_delta = total_fuel.safe_sub(self.cumulative_fuel_amount)?;
+            let vd_shares = self.checked_vault_shares(vault)?;
+            let vd_share_of_delta = fuel_delta
+                .cast::<u128>()?
+                .safe_mul(vd_shares)?
+                .safe_div(vault.total_shares)?;
+
+            self.fuel_amount = self
+                .fuel_amount
+                .safe_add(vd_share_of_delta.cast::<u32>()?)?;
+            self.cumulative_fuel_amount = total_fuel as u32;
+            self.last_cumulative_fuel_amount_ts = now as i32;
+        }
+
+        Ok(self.fuel_amount)
+    }
 }
 
 #[cfg(test)]
@@ -836,6 +884,7 @@ mod vault_v1_tests {
     use drift::math::casting::Cast;
     use drift::math::constants::{PERCENTAGE_PRECISION_U64, QUOTE_PRECISION_U64};
     use drift::math::insurance::if_shares_to_vault_amount;
+    use drift::state::user::UserStats;
 
     use crate::{Vault, VaultDepositor, VaultProtocol, WithdrawUnit};
 
@@ -864,6 +913,7 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now + 20,
+            &UserStats::default(),
         )
         .unwrap();
 
@@ -876,6 +926,7 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now + 20,
+            &UserStats::default(),
         )
         .unwrap();
 
@@ -885,6 +936,7 @@ mod vault_v1_tests {
                 &mut vault,
                 &mut Some(vp.borrow_mut()),
                 now + 20,
+                &UserStats::default(),
             )
             .unwrap();
         assert_eq!(vd.vault_shares_base, 0);
@@ -908,6 +960,7 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now + 20,
+            &UserStats::default(),
         )
         .unwrap();
         assert_eq!(vd.vault_shares_base, 0);
@@ -927,6 +980,7 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now + 20,
+            &UserStats::default(),
         )
         .unwrap();
         // 100M shares, 50M of which are profit. 15% profit share on 50M shares is 7.5M shares. 100M - 7.5M = 92.5M shares
@@ -942,6 +996,7 @@ mod vault_v1_tests {
                 &mut vault,
                 &mut Some(vp.borrow_mut()),
                 now + 20,
+                &UserStats::default(),
             )
             .unwrap();
         // 100M shares minus 50M shares of profit and 15% or 7.5M profit share = 42.5M shares
@@ -1005,6 +1060,7 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now + 20,
+            &UserStats::default(),
         )
         .unwrap();
         assert_eq!(vd.vault_shares_base, 0);
@@ -1023,6 +1079,7 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now + 20,
+            &UserStats::default(),
         )
         .unwrap();
         assert_eq!(vd.checked_vault_shares(&vault).unwrap(), 95_000_000);
@@ -1037,6 +1094,7 @@ mod vault_v1_tests {
                 &mut vault,
                 &mut Some(vp.borrow_mut()),
                 now + 20,
+                &UserStats::default(),
             )
             .unwrap();
         assert_eq!(vd.checked_vault_shares(&vault).unwrap(), 45_000_000);
@@ -1085,6 +1143,7 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now + 20,
+            &UserStats::default(),
         )
         .unwrap();
         assert_eq!(vd.vault_shares_base, 0);
@@ -1104,6 +1163,7 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now + 20,
+            &UserStats::default(),
         )
         .unwrap();
         // user has 100M shares, with 100% profit, so 50M shares are profit.
@@ -1120,6 +1180,7 @@ mod vault_v1_tests {
                 &mut vault,
                 &mut Some(vp.borrow_mut()),
                 now + 20,
+                &UserStats::default(),
             )
             .unwrap();
         let profit = amount;
@@ -1200,6 +1261,7 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now + 20,
+            &UserStats::default(),
         )
         .unwrap();
         assert_eq!(vd.vault_shares_base, 0);
@@ -1218,6 +1280,7 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now + 20,
+            &UserStats::default(),
         )
         .unwrap();
         // user has 100M shares, with 100% profit, so 50M shares are profit.
@@ -1234,6 +1297,7 @@ mod vault_v1_tests {
                 &mut vault,
                 &mut Some(vp.borrow_mut()),
                 now + 20,
+                &UserStats::default(),
             )
             .unwrap();
         let profit = amount;
@@ -1314,6 +1378,7 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now,
+            &UserStats::default(),
         )
         .unwrap();
         assert_eq!(vd.vault_shares_base, 0);
@@ -1325,8 +1390,14 @@ mod vault_v1_tests {
                                       // vault_protocol.protocol_profit_share = 50_000; // 5% profit share
         vault_equity = 400 * QUOTE_PRECISION_U64; // up 100%
 
-        vd.realize_profits(vault_equity, &mut vault, &mut Some(vp.borrow_mut()), now)
-            .unwrap();
+        vd.realize_profits(
+            vault_equity,
+            &mut vault,
+            &mut Some(vp.borrow_mut()),
+            now,
+            &UserStats::default(),
+        )
+        .unwrap();
 
         println!("vault shares: {}", vd.checked_vault_shares(&vault).unwrap());
         println!(
@@ -1348,6 +1419,7 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now + 20,
+            &UserStats::default(),
         )
         .unwrap();
         assert_eq!(vd.checked_vault_shares(&vault).unwrap(), 95000000);
@@ -1362,6 +1434,7 @@ mod vault_v1_tests {
                 &mut vault,
                 &mut Some(vp.borrow_mut()),
                 now + 20,
+                &UserStats::default(),
             )
             .unwrap();
         // assert_eq!(vd.checked_vault_shares(vault).unwrap(), 0);
@@ -1402,6 +1475,7 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now,
+            &UserStats::default(),
         )
         .unwrap();
         assert_eq!(vd.vault_shares_base, 0);
@@ -1427,8 +1501,14 @@ mod vault_v1_tests {
         println!("total shares: {}", vault.total_shares);
 
         // let vault_before = vault;
-        vd.realize_profits(vault_equity, &mut vault, &mut Some(vp.borrow_mut()), now)
-            .unwrap(); // should be noop
+        vd.realize_profits(
+            vault_equity,
+            &mut vault,
+            &mut Some(vp.borrow_mut()),
+            now,
+            &UserStats::default(),
+        )
+        .unwrap(); // should be noop
 
         // request withdraw all
         vd.request_withdraw(
@@ -1438,6 +1518,7 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now + 20,
+            &UserStats::default(),
         )
         .unwrap();
         // assert_eq!(vd.checked_vault_shares(vault).unwrap(), 100000000);
@@ -1455,6 +1536,7 @@ mod vault_v1_tests {
                 &mut vault,
                 &mut Some(vp.borrow_mut()),
                 now + 20 + 3600,
+                &UserStats::default(),
             )
             .unwrap();
         // assert_eq!(vd.checked_vault_shares(vault).unwrap(), 0);
@@ -1495,6 +1577,7 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now,
+            &UserStats::default(),
         )
         .unwrap();
         assert_eq!(vd.vault_shares_base, 0);
@@ -1520,8 +1603,14 @@ mod vault_v1_tests {
         println!("total shares: {}", vault.total_shares);
 
         // let vault_before = vault;
-        vd.realize_profits(vault_equity, &mut vault, &mut Some(vp.borrow_mut()), now)
-            .unwrap(); // should be noop
+        vd.realize_profits(
+            vault_equity,
+            &mut vault,
+            &mut Some(vp.borrow_mut()),
+            now,
+            &UserStats::default(),
+        )
+        .unwrap(); // should be noop
 
         // request withdraw all
         vd.request_withdraw(
@@ -1531,6 +1620,7 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now + 20,
+            &UserStats::default(),
         )
         .unwrap();
         // assert_eq!(vd.checked_vault_shares(vault).unwrap(), 100000000);
@@ -1547,6 +1637,7 @@ mod vault_v1_tests {
                 &mut vault,
                 &mut Some(vp.borrow_mut()),
                 now + 20 + 3600,
+                &UserStats::default(),
             )
             .unwrap();
         // assert_eq!(vd.checked_vault_shares(vault).unwrap(), 0);

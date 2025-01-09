@@ -43,7 +43,7 @@ pub struct ManagerCancelWithdrawRequest<'info> {
     pub vault: AccountLoader<'info, Vault>,
     pub manager: Signer<'info>,
     #[account(
-        constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?
+        constraint = is_user_stats_for_vault(&vault, &drift_user_stats.key())?
     )]
     /// CHECK: checked in drift cpi
     pub drift_user_stats: AccountInfo<'info>,

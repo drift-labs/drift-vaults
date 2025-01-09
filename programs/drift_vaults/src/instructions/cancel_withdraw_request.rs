@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use drift::instructions::optional_accounts::AccountMaps;
 use drift::math::casting::Cast;
-use drift::state::user::User;
+use drift::state::user::{User, UserStats};
 
 use crate::constraints::{
     is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
@@ -33,11 +33,14 @@ pub fn cancel_withdraw_request<'c: 'info, 'info>(
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
+    let user_stats = ctx.accounts.drift_user_stats.load()?;
+
     vault_depositor.cancel_withdraw_request(
         vault_equity.cast()?,
         &mut vault,
         &mut vp,
         clock.unix_timestamp,
+        &user_stats,
     )?;
 
     Ok(())
@@ -56,10 +59,10 @@ pub struct CancelWithdrawRequest<'info> {
     pub vault_depositor: AccountLoader<'info, VaultDepositor>,
     pub authority: Signer<'info>,
     #[account(
-        constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?
+        constraint = is_user_stats_for_vault(&vault, &drift_user_stats.key())?
     )]
     /// CHECK: checked in drift cpi
-    pub drift_user_stats: AccountInfo<'info>,
+    pub drift_user_stats: AccountLoader<'info, UserStats>,
     #[account(
         constraint = is_user_for_vault(&vault, &drift_user.key())?
     )]
