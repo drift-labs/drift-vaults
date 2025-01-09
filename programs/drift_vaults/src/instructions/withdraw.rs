@@ -53,6 +53,7 @@ pub fn withdraw<'c: 'info, 'info>(ctx: Context<'_, '_, 'c, 'info, Withdraw<'info
 
     drop(vault);
     drop(user);
+    drop(user_stats);
     drop(vp);
 
     ctx.drift_withdraw(user_withdraw_amount)?;

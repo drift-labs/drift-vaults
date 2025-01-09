@@ -1794,7 +1794,15 @@
             "type": "u32"
           },
           {
-            "name": "padding1",
+            "name": "lastCumulativeFuelAmountTs",
+            "type": "i32"
+          },
+          {
+            "name": "cumulativeFuelAmount",
+            "type": "u32"
+          },
+          {
+            "name": "fuelAmount",
             "type": "u32"
           },
           {
@@ -1802,7 +1810,7 @@
             "type": {
               "array": [
                 "u64",
-                8
+                7
               ]
             }
           }

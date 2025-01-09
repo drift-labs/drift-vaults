@@ -120,8 +120,10 @@ export type VaultDepositor = {
 	cumulativeProfitShareAmount: BN;
 	vaultSharesBase: number;
 	profitShareFeePaid: BN;
-	padding1: number | number[];
-	padding: number[] | BN[];
+	lastCumulativeFuelAmountTs: number;
+	cumulativeFuelAmount: number;
+	fuelAmount: number;
+	padding: BN | BN[];
 };
 
 export type VaultProtocol = {

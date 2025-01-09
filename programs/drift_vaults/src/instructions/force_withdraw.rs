@@ -50,6 +50,7 @@ pub fn force_withdraw<'c: 'info, 'info>(
 
     drop(vault);
     drop(user);
+    drop(user_stats);
     drop(vp);
 
     ctx.drift_withdraw(withdraw_amount)?;
