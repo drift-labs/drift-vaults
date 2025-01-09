@@ -2934,14 +2934,12 @@ describe('TestInsuranceFundStake', () => {
 
 describe('TestSOLDenomindatedVault', () => {
 	const bulkAccountLoader = new BulkAccountLoader(connection, 'confirmed', 1);
-	let managerSigner: Signer;
 	let managerClient: VaultClient;
 	let managerDriftClient: DriftClient;
 
 	let vd0Signer: Signer;
 	let vd0Client: VaultClient;
 	let vd0DriftClient: DriftClient;
-	let vd0UsdcAccount: PublicKey;
 
 	const usdcAmount = new BN(1_000).mul(QUOTE_PRECISION);
 
@@ -2977,7 +2975,6 @@ describe('TestSOLDenomindatedVault', () => {
 			},
 			metaplex,
 		});
-		managerSigner = bootstrapManager.signer;
 		managerClient = bootstrapManager.vaultClient;
 		managerDriftClient = bootstrapManager.driftClient;
 
@@ -2999,7 +2996,6 @@ describe('TestSOLDenomindatedVault', () => {
 		vd0Signer = vd0Bootstrap.signer;
 		vd0Client = vd0Bootstrap.vaultClient;
 		vd0DriftClient = vd0Bootstrap.driftClient;
-		vd0UsdcAccount = vd0Bootstrap.userUSDCAccount.publicKey;
 
 		if (!firstVaultInitd) {
 			await managerClient.initializeVault({
@@ -3030,29 +3026,6 @@ describe('TestSOLDenomindatedVault', () => {
 		await vd0Client.unsubscribe();
 		await vd0DriftClient.unsubscribe();
 	});
-
-	async function fetchAccountStates(
-		vaultAddress?: PublicKey,
-		vaultDepositorAddress?: PublicKey,
-		tokenizedVaultDepositorAddress?: PublicKey
-	) {
-		const vault = vaultAddress
-			? await program.account.vault.fetch(vaultAddress)
-			: undefined;
-		const vaultDepositor = vaultDepositorAddress
-			? await program.account.vaultDepositor.fetch(vaultDepositorAddress)
-			: undefined;
-		const tokenizedVaultDepositor = tokenizedVaultDepositorAddress
-			? await program.account.tokenizedVaultDepositor.fetch(
-					tokenizedVaultDepositorAddress
-			  )
-			: undefined;
-		return {
-			vault,
-			vaultDepositor,
-			tokenizedVaultDepositor,
-		};
-	}
 
 	it('Initialized SOL denominated vault', async () => {
 		const vault = await program.account.vault.fetch(commonVaultKey);
