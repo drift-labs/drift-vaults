@@ -103,9 +103,11 @@ pub trait VaultDepositorBase {
             let profit_share_amount =
                 manager_profit_share_amount.safe_add(protocol_profit_share_amount)?;
 
+            let net_profit = profit_u128.safe_sub(profit_share_amount)?;
+
             self.set_cumulative_profit_share_amount(
                 self.get_cumulative_profit_share_amount()
-                    .safe_add(profit_u128.cast()?)?,
+                    .safe_add(net_profit.cast()?)?,
             );
 
             self.set_profit_share_fee_paid(

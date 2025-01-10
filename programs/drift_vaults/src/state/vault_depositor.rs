@@ -1132,8 +1132,8 @@ mod vault_v1_tests {
         // total shares outside of user is now 100M + 7.5M = 107.5M
         assert_eq!(vault.total_shares, 107_500_000);
         assert_eq!(withdraw_amount, equity_minus_fee);
-        // $100 worth of profit that has been realized (this is not total fees paid)
-        assert_eq!(vd.cumulative_profit_share_amount, 100_000_000);
+        // $85 = 100 - 10% - 5%, worth of profit that has been realized (this is not total fees paid)
+        assert_eq!(vd.cumulative_profit_share_amount, 85_000_000);
         println!("vault shares: {}", vd.checked_vault_shares(&vault).unwrap());
         println!("shares base: {}", vd.vault_shares_base);
         println!("user shares: {}", vault.user_shares);
@@ -1246,8 +1246,8 @@ mod vault_v1_tests {
         // total shares outside of user is now 100M + 5M = 105M
         assert_eq!(vault.total_shares, 105_000_000);
         assert_eq!(withdraw_amount, equity_minus_fee);
-        // $100 worth of profit that has been realized (this is not total fees paid)
-        assert_eq!(vd.cumulative_profit_share_amount, 100_000_000);
+        // $90 = $100 - 10% worth of profit that has been realized (this is not total fees paid)
+        assert_eq!(vd.cumulative_profit_share_amount, 90_000_000);
         println!("vault shares: {}", vd.checked_vault_shares(&vault).unwrap());
         println!("shares base: {}", vd.vault_shares_base);
         println!("user shares: {}", vault.user_shares);
