@@ -3113,3 +3113,204 @@ describe('TestSOLDenomindatedVault', () => {
 		);
 	});
 });
+
+describe('TestNegativeManagementFee', () => {
+	const bulkAccountLoader = new BulkAccountLoader(connection, 'confirmed', 1);
+	let managerClient: VaultClient;
+	let managerDriftClient: DriftClient;
+	let managerUsdcTokenAccount: Keypair;
+
+	let vd0Signer: Signer;
+	let vd0Client: VaultClient;
+	let vd0DriftClient: DriftClient;
+	let vd0UsdcTokenAccount: Keypair;
+
+	const usdcAmount = new BN(1_000).mul(QUOTE_PRECISION);
+
+	const commonVaultName = 'negative mgmt fee vault';
+	const commonVaultKey = getVaultAddressSync(
+		program.programId,
+		encodeName(commonVaultName)
+	);
+	let firstVaultInitd = false;
+
+	before(async () => {
+		while (!adminInitialized) {
+			await sleep(1000);
+		}
+
+		await adminClient.subscribe();
+
+		const bootstrapManager = await bootstrapSignerClientAndUser({
+			payer: provider,
+			programId: program.programId,
+			usdcMint,
+			usdcAmount,
+			driftClientConfig: {
+				accountSubscription: {
+					type: 'websocket',
+					resubTimeoutMs: 30_000,
+				},
+				opts,
+				activeSubAccountId: 0,
+			},
+			metaplex,
+		});
+		managerClient = bootstrapManager.vaultClient;
+		managerDriftClient = bootstrapManager.driftClient;
+		managerUsdcTokenAccount = bootstrapManager.userUSDCAccount;
+
+		const vd0Bootstrap = await bootstrapSignerClientAndUser({
+			payer: provider,
+			programId: program.programId,
+			usdcMint,
+			usdcAmount: new BN(10).mul(usdcAmount),
+			driftClientConfig: {
+				accountSubscription: {
+					type: 'websocket',
+					resubTimeoutMs: 30_000,
+				},
+				opts,
+				activeSubAccountId: 0,
+			},
+			metaplex,
+		});
+		vd0Signer = vd0Bootstrap.signer;
+		vd0Client = vd0Bootstrap.vaultClient;
+		vd0DriftClient = vd0Bootstrap.driftClient;
+		vd0UsdcTokenAccount = vd0Bootstrap.userUSDCAccount;
+
+		if (!firstVaultInitd) {
+			await managerClient.initializeVault({
+				name: encodeName(commonVaultName),
+				spotMarketIndex: 0,
+				redeemPeriod: ZERO,
+				maxTokens: ZERO,
+				managementFee: new BN('-2147483648'), // -214700% annualized (manager pays 24% hourly, .4% per minute)
+				profitShare: 0,
+				hurdleRate: 0,
+				permissioned: false,
+				minDepositAmount: ZERO,
+			});
+			firstVaultInitd = true;
+		}
+
+		// start account loader
+		bulkAccountLoader.startPolling();
+		await bulkAccountLoader.load();
+	});
+
+	after(async () => {
+		bulkAccountLoader.stopPolling();
+
+		await adminClient.unsubscribe();
+		await managerClient.unsubscribe();
+		await managerDriftClient.unsubscribe();
+		await vd0Client.unsubscribe();
+		await vd0DriftClient.unsubscribe();
+	});
+
+	it('Test negative management fee', async () => {
+		// manager deposits first
+		try {
+			const tx0 = await managerClient.managerDeposit(
+				commonVaultKey,
+				usdcAmount,
+				managerUsdcTokenAccount.publicKey
+			);
+			await printTxLogs(provider.connection, tx0);
+		} catch (e) {
+			console.error(e);
+			assert(false, 'manager deposit failed');
+		}
+
+		const vaultEquityBefore =
+			await vd0Client.calculateVaultEquityInDepositAsset({
+				address: commonVaultKey,
+			});
+
+		// depositor deposits
+		const vdKey = getVaultDepositorAddressSync(
+			program.programId,
+			commonVaultKey,
+			vd0Signer.publicKey
+		);
+		const tx1 = await vd0Client.deposit(
+			vdKey,
+			usdcAmount,
+			{
+				authority: vd0Signer.publicKey,
+				vault: commonVaultKey,
+			},
+			undefined,
+			vd0UsdcTokenAccount.publicKey
+		);
+		await printTxLogs(provider.connection, tx1);
+
+		const vaultEquityAfter = await vd0Client.calculateVaultEquityInDepositAsset(
+			{
+				address: commonVaultKey,
+			}
+		);
+		console.log(
+			`vault equity after user deposit: ${vaultEquityBefore} -> ${vaultEquityAfter}`
+		);
+		assert(vaultEquityAfter > vaultEquityBefore, 'Vault equity not increased');
+		console.log(`vd0 Vault Depositor Value:`);
+		await getVaultDepositorValue({
+			vaultClient: vd0Client,
+			vault: commonVaultKey,
+			vaultDepositor: vdKey,
+			print: true,
+		});
+
+		console.log('sleep for 1 minute');
+		await sleep(60_000);
+
+		console.log(`vd0 Vault Depositor Value:`);
+		const { vaultDepositorEquity: vdEquityBefore } =
+			await getVaultDepositorValue({
+				vaultClient: vd0Client,
+				vault: commonVaultKey,
+				vaultDepositor: vdKey,
+				print: true,
+			});
+		assert(
+			vdEquityBefore.eq(new BN('1000000000')),
+			'Vault depositor equity wrong'
+		);
+
+		// trigger mgmt fee
+		const tx2 = await managerClient.managerRequestWithdraw(
+			commonVaultKey,
+			new BN(1),
+			WithdrawUnit.SHARES_PERCENT
+		);
+		await printTxLogs(provider.connection, tx2);
+
+		const equityEnd = await vd0Client.calculateVaultEquityInDepositAsset({
+			address: commonVaultKey,
+		});
+		console.log(
+			`vault equity end: ${vaultEquityBefore} -> ${vaultEquityAfter} -> ${equityEnd}`
+		);
+
+		console.log(`vd0 Vault Depositor Value:`);
+		const { vaultDepositorEquity: vdEquityAfter } =
+			await getVaultDepositorValue({
+				vaultClient: vd0Client,
+				vault: commonVaultKey,
+				vaultDepositor: vdKey,
+				print: true,
+			});
+
+		assert(
+			vdEquityAfter > vdEquityBefore,
+			'Vault depositor equity increase from negative management fee'
+		);
+		assert(
+			vdEquityAfter.eq(new BN('1004086632')),
+			'Vault depositor equity wrong'
+		);
+	});
+});
