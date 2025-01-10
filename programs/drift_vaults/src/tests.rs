@@ -1,9 +1,12 @@
 #[cfg(test)]
 mod vault_fcn {
+    use std::str::FromStr;
+
     use crate::state::traits::VaultDepositorBase;
+    use crate::test_utils::create_account_info;
     use crate::withdraw_request::WithdrawRequest;
     use crate::{Vault, VaultDepositor, WithdrawUnit};
-    use anchor_lang::prelude::Pubkey;
+    use anchor_lang::prelude::{AccountLoader, Pubkey};
     use drift::math::constants::{
         ONE_YEAR, QUOTE_PRECISION, QUOTE_PRECISION_I64, QUOTE_PRECISION_U64,
     };
@@ -836,6 +839,71 @@ mod vault_fcn {
         assert_eq!(vd.profit_share_fee_paid, 20_990_909);
         assert_eq!(vault.total_shares, 2000 * QUOTE_PRECISION);
         assert_eq!(vd.checked_vault_shares(&vault).unwrap(), 1980_921_432);
+    }
+
+    #[test]
+    fn apply_profit_share_on_net_hwm_example() {
+        let vault_str = String::from("0wjoKwKYdXdTdXBlcmNoYXJnZXIgVmF1bHQgICAgICAgICAgICAgIObOTURhcaZ/hexxlaSKNnYv57PHIZx9B8zN8k75zR8X5YskhtQuJRuc1ZuimumplgthmeBFASQW793js7pxldJCFqweTOnzcxGL+XKJx2Lif7339IdAC/KyKj8JEFZwkobFx9kGlk72vtua5uHjyHSzAViuG0/APV227Zmg8aZjmuxoym5eTWKAUNtoEdxsbA9c5IdRusnrLgc4WGs7FVYLef8oRnsVQX7JdnHagGAmJsU0t+iRQjIn8UdUnf8jwgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQjcnBxIEAAAAAAAAAAAAAMeNOt6kBAAAAAAAAAAAAAC5KoFnAAAAAAAAAAAAAAAAgDoJAAAAAADHSjWPHAAAAADgV+tIGwAAAAAAAAAAAADTz/tkAAAAAHycB+TTAgAAAEibJrr///8aotBlLSwAAJ4FyYFZKQAAAAAAAAAAAAAAuGTZRQAAAAAAAAAAAAAAEQ28vgkBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJ//V2YAAAAAAAAAAOCTBAAAAAAAAAD/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");
+        let mut vault_decoded_bytes = base64::decode(vault_str).unwrap();
+        let vault_bytes = vault_decoded_bytes.as_mut_slice();
+        let mut lamports = 0;
+        let key = Pubkey::default();
+        let owner = Pubkey::from_str("vAuLTsyrvSfZRuRB3XgvkPwNGgYSs9YRYymVebLKoxR").unwrap();
+        let vault_account_info =
+            create_account_info(&key, true, &mut lamports, vault_bytes, &owner);
+        let vault_loader: AccountLoader<Vault> =
+            AccountLoader::try_from(&vault_account_info).unwrap();
+
+        let vd_str = String::from("V222aldgP9Pmzk1EYXGmf4XscZWkijZ2L+ezxyGcfQfMzfJO+c0fF3+94atStThJMBa2OKTfUXJGJXPLv0FNp+KPmd6vhnmEDTcLJRUaWdAPxV7zBY0GiaKVHFu9h+8uxW0VlL9rvWTAzbMLAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHJ+VZgAAAAAAAAAAAAAAAABJfw8AAAAAAEl/DwAAAAAAAAAAAAAAAKkKggIAAAAAypzAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");
+        let mut vd_decoded_bytes = base64::decode(vd_str).unwrap();
+        let vd_bytes = vd_decoded_bytes.as_mut_slice();
+        let mut lamports = 0;
+        let key = Pubkey::default();
+        let owner = Pubkey::from_str("vAuLTsyrvSfZRuRB3XgvkPwNGgYSs9YRYymVebLKoxR").unwrap();
+        let vd_account_info = create_account_info(&key, true, &mut lamports, vd_bytes, &owner);
+        let vd_loader: AccountLoader<VaultDepositor> =
+            AccountLoader::try_from(&vd_account_info).unwrap();
+
+        let mut vault = vault_loader.load_mut().unwrap();
+        let mut vd = vd_loader.load_mut().unwrap();
+        let mut vp = None;
+
+        let vault_equity = 8_045_367_880_000;
+        let vd_amount = depositor_shares_to_vault_amount(
+            vd.checked_vault_shares(&vault).unwrap(),
+            vault.total_shares,
+            vault_equity,
+        )
+        .unwrap();
+
+        let vd_hwm =
+            (vd.total_deposits - vd.total_withdraws) as i64 + vd.cumulative_profit_share_amount;
+        let unrealized_profit = vd_amount as i64 - vd_hwm;
+
+        assert_eq!(vd_amount, 309_346_825);
+        assert_eq!(vd_hwm, 302_076_841);
+        assert_eq!(unrealized_profit, 7_269_984);
+
+        let (manager_profit_share, protocol_profit_share) = vd
+            .apply_profit_share(vault_equity, &mut vault, &mut vp)
+            .unwrap();
+
+        assert_eq!(manager_profit_share, 2_180_995);
+        assert_eq!(protocol_profit_share, 0);
+
+        let vd_amount = depositor_shares_to_vault_amount(
+            vd.checked_vault_shares(&vault).unwrap(),
+            vault.total_shares,
+            vault_equity,
+        )
+        .unwrap();
+        let vd_hwm =
+            (vd.total_deposits - vd.total_withdraws) as i64 + vd.cumulative_profit_share_amount;
+        let unrealized_profit = vd_amount as i64 - vd_hwm;
+
+        assert_eq!(vd_amount, 307_165_832);
+        assert_eq!(vd_hwm, 307_165_830);
+        assert_eq!(unrealized_profit, 2);
     }
 }
 
