@@ -11,6 +11,7 @@ import {
 	ZERO,
 	getInsuranceFundVaultPublicKey,
 	OracleSource,
+	WRAPPED_SOL_MINT,
 } from '@drift-labs/sdk';
 import { BorshAccountsCoder, Program, ProgramAccount } from '@coral-xyz/anchor';
 import { DriftVaults } from './types/drift_vaults';
@@ -36,6 +37,8 @@ import {
 } from '@solana/web3.js';
 import {
 	createAssociatedTokenAccountInstruction,
+	createCloseAccountInstruction,
+	createSyncNativeInstruction,
 	getAssociatedTokenAddressSync,
 	TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
@@ -626,6 +629,8 @@ export class VaultClient {
 				isWritable: true,
 			});
 		}
+
+		// TODO: handle SOL deposits (need to create/destroy WSOL token accounts)
 
 		return await this.program.methods
 			.managerDeposit(amount)
@@ -1371,7 +1376,7 @@ export class VaultClient {
 			authority: PublicKey;
 			vault: PublicKey;
 		},
-		userTokenAccount?: PublicKey
+		depositTokenAccount?: PublicKey
 	) {
 		let vaultPubKey: PublicKey;
 		if (initVaultDepositor) {
@@ -1414,6 +1419,36 @@ export class VaultClient {
 			);
 		}
 
+		let userTokenAccount =
+			depositTokenAccount ??
+			getAssociatedTokenAddressSync(
+				spotMarket.mint,
+				this.driftClient.wallet.publicKey,
+				true
+			);
+
+		const isSolDeposit = spotMarket.mint.equals(WRAPPED_SOL_MINT);
+
+		const preIxs: TransactionInstruction[] = [];
+		const postIxs: TransactionInstruction[] = [];
+
+		if (isSolDeposit) {
+			const { ixs, pubkey } =
+				await this.driftClient.getWrappedSolAccountCreationIxs(amount, true);
+
+			userTokenAccount = pubkey;
+
+			preIxs.push(...ixs);
+			postIxs.push(
+				createCloseAccountInstruction(
+					userTokenAccount,
+					this.driftClient.wallet.publicKey,
+					this.driftClient.wallet.publicKey,
+					[]
+				)
+			);
+		}
+
 		const accounts = {
 			vault: vaultPubKey,
 			vaultDepositor,
@@ -1422,13 +1457,7 @@ export class VaultClient {
 			driftUser: vaultAccount.user,
 			driftState: driftStateKey,
 			driftSpotMarketVault: spotMarket.vault,
-			userTokenAccount:
-				userTokenAccount ??
-				getAssociatedTokenAddressSync(
-					spotMarket.mint,
-					this.driftClient.wallet.publicKey,
-					true
-				),
+			userTokenAccount,
 			driftProgram: this.driftClient.program.programId,
 			tokenProgram: TOKEN_PROGRAM_ID,
 		};
@@ -1437,6 +1466,8 @@ export class VaultClient {
 			vaultAccount,
 			accounts,
 			remainingAccounts,
+			preIxs,
+			postIxs,
 		};
 	}
 
@@ -1458,7 +1489,7 @@ export class VaultClient {
 		},
 		txParams?: TxParams
 	): Promise<VersionedTransaction> {
-		const { vaultAccount, accounts, remainingAccounts } =
+		const { vaultAccount, accounts, remainingAccounts, preIxs, postIxs } =
 			await this.prepDepositTx(vaultDepositor, amount, initVaultDepositor);
 
 		const ixs: TransactionInstruction[] = [];
@@ -1480,7 +1511,9 @@ export class VaultClient {
 			})
 			.remainingAccounts(remainingAccounts)
 			.instruction();
+		ixs.push(...preIxs);
 		ixs.push(depositIx);
+		ixs.push(...postIxs);
 
 		return await this.createTxn(ixs, txParams);
 	}
@@ -1504,7 +1537,7 @@ export class VaultClient {
 		userTokenAccount?: PublicKey
 	): Promise<TransactionSignature> {
 		if (this.cliMode) {
-			const { vaultAccount, accounts, remainingAccounts } =
+			const { vaultAccount, accounts, remainingAccounts, preIxs, postIxs } =
 				await this.prepDepositTx(
 					vaultDepositor,
 					amount,
@@ -1522,6 +1555,8 @@ export class VaultClient {
 				.deposit(amount)
 				.accounts(accounts)
 				.remainingAccounts(remainingAccounts)
+				.preInstructions(preIxs)
+				.postInstructions(postIxs)
 				.rpc();
 		} else {
 			const depositTxn = await this.createDepositTx(
@@ -1651,23 +1686,47 @@ export class VaultClient {
 			);
 		}
 
-		const userAta = getAssociatedTokenAddressSync(
+		const isSolMarket = spotMarket.mint.equals(WRAPPED_SOL_MINT);
+
+		// let createAtaIx: TransactionInstruction | undefined = undefined;
+		let userAta = getAssociatedTokenAddressSync(
 			spotMarket.mint,
 			this.driftClient.wallet.publicKey,
 			true
 		);
 
-		let createAtaIx: TransactionInstruction | undefined = undefined;
-		const userAtaExists = await this.driftClient.connection.getAccountInfo(
-			userAta
-		);
-		if (userAtaExists === null) {
-			createAtaIx = createAssociatedTokenAccountInstruction(
-				this.driftClient.wallet.publicKey,
-				userAta,
-				this.driftClient.wallet.publicKey,
-				spotMarket.mint
+		const preIxs: TransactionInstruction[] = [];
+		const postIxs: TransactionInstruction[] = [];
+
+		if (isSolMarket) {
+			const { ixs, pubkey } =
+				await this.driftClient.getWrappedSolAccountCreationIxs(ZERO, false);
+
+			userAta = pubkey;
+			preIxs.push(...ixs);
+			postIxs.push(createSyncNativeInstruction(userAta));
+			postIxs.push(
+				createCloseAccountInstruction(
+					userAta,
+					this.driftClient.wallet.publicKey,
+					this.driftClient.wallet.publicKey,
+					[]
+				)
 			);
+		} else {
+			const userAtaExists = await this.driftClient.connection.getAccountInfo(
+				userAta
+			);
+			if (userAtaExists === null) {
+				preIxs.push(
+					createAssociatedTokenAccountInstruction(
+						this.driftClient.wallet.publicKey,
+						userAta,
+						this.driftClient.wallet.publicKey,
+						spotMarket.mint
+					)
+				);
+			}
 		}
 
 		const accounts = {
@@ -1685,20 +1744,13 @@ export class VaultClient {
 		};
 
 		if (this.cliMode) {
-			if (createAtaIx) {
-				return await this.program.methods
-					.withdraw()
-					.accounts(accounts)
-					.remainingAccounts(remainingAccounts)
-					.preInstructions([createAtaIx])
-					.rpc();
-			} else {
-				return await this.program.methods
-					.withdraw()
-					.accounts(accounts)
-					.remainingAccounts(remainingAccounts)
-					.rpc();
-			}
+			return await this.program.methods
+				.withdraw()
+				.accounts(accounts)
+				.remainingAccounts(remainingAccounts)
+				.preInstructions(preIxs)
+				.postInstructions(postIxs)
+				.rpc();
 		} else {
 			const oracleFeedsToCrankIxs = await this.getOracleFeedsToCrank(
 				txParams?.oracleFeedsToCrank
@@ -1706,6 +1758,7 @@ export class VaultClient {
 
 			const ixs = [
 				...oracleFeedsToCrankIxs,
+				...preIxs,
 				await this.program.methods
 					.withdraw()
 					.accounts({
@@ -1714,13 +1767,13 @@ export class VaultClient {
 					})
 					.remainingAccounts(remainingAccounts)
 					.instruction(),
+				...postIxs,
 			];
-			if (createAtaIx) {
-				ixs.unshift(createAtaIx);
-			}
 
+			const creationIxs = preIxs.concat(postIxs).length;
 			return await this.createAndSendTxn(ixs, {
-				cuLimit: (txParams?.cuLimit ?? 650_000) + (createAtaIx ? 100_000 : 0),
+				cuLimit:
+					(txParams?.cuLimit ?? 650_000) + (creationIxs > 0 ? 200_000 : 0),
 				...txParams,
 			});
 		}
