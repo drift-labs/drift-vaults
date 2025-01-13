@@ -455,18 +455,21 @@ export class VaultClient {
 		);
 	}
 
-	public async initializeVault(params: {
-		name: number[];
-		spotMarketIndex: number;
-		redeemPeriod: BN;
-		maxTokens: BN;
-		minDepositAmount: BN;
-		managementFee: BN;
-		profitShare: number;
-		hurdleRate: number;
-		permissioned: boolean;
-		vaultProtocol?: VaultProtocolParams;
-	}): Promise<TransactionSignature> {
+	public async initializeVault(
+		params: {
+			name: number[];
+			spotMarketIndex: number;
+			redeemPeriod: BN;
+			maxTokens: BN;
+			minDepositAmount: BN;
+			managementFee: BN;
+			profitShare: number;
+			hurdleRate: number;
+			permissioned: boolean;
+			vaultProtocol?: VaultProtocolParams;
+		},
+		uiTxParams?: TxParams
+	): Promise<TransactionSignature> {
 		const { vaultProtocol: vaultProtocolParams, ...vaultParams } = params;
 		const vault = getVaultAddressSync(this.program.programId, params.name);
 		const tokenAccount = getTokenVaultAddressSync(
@@ -543,7 +546,7 @@ export class VaultClient {
 					})
 					.instruction();
 				const ixs = [...preIxs, initializeVaultWithProtocolIx];
-				return await this.createAndSendTxn(ixs);
+				return await this.createAndSendTxn(ixs, uiTxParams);
 			}
 		} else {
 			const _params: VaultParams = vaultParams;
@@ -565,7 +568,7 @@ export class VaultClient {
 					})
 					.instruction();
 				const ixs = [initializeVaultIx];
-				return await this.createAndSendTxn(ixs);
+				return await this.createAndSendTxn(ixs, uiTxParams);
 			}
 		}
 	}
@@ -579,25 +582,36 @@ export class VaultClient {
 	 */
 	public async updateDelegate(
 		vault: PublicKey,
-		delegate: PublicKey
+		delegate: PublicKey,
+		uiTxParams?: TxParams
 	): Promise<TransactionSignature> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
-		return await this.program.methods
-			.updateDelegate(delegate)
-			.preInstructions([
-				ComputeBudgetProgram.setComputeUnitLimit({
-					units: 400_000,
-				}),
-				ComputeBudgetProgram.setComputeUnitPrice({
-					microLamports: 300_000,
-				}),
-			])
-			.accounts({
-				vault: vault,
-				driftUser: vaultAccount.user,
-				driftProgram: this.driftClient.program.programId,
-			})
-			.rpc();
+		const accounts = {
+			vault: vault,
+			driftUser: vaultAccount.user,
+			driftProgram: this.driftClient.program.programId,
+		};
+
+		if (this.cliMode) {
+			return await this.program.methods
+				.updateDelegate(delegate)
+				.preInstructions([
+					ComputeBudgetProgram.setComputeUnitLimit({
+						units: 400_000,
+					}),
+					ComputeBudgetProgram.setComputeUnitPrice({
+						microLamports: 300_000,
+					}),
+				])
+				.accounts(accounts)
+				.rpc();
+		} else {
+			const updateDelegateIx = await this.program.methods
+				.updateDelegate(delegate)
+				.accounts({ ...accounts, manager: this.driftClient.wallet.publicKey })
+				.instruction();
+			return await this.createAndSendTxn([updateDelegateIx], uiTxParams);
+		}
 	}
 
 	/**
@@ -608,17 +622,31 @@ export class VaultClient {
 	 */
 	public async updateMarginTradingEnabled(
 		vault: PublicKey,
-		enabled: boolean
+		enabled: boolean,
+		uiTxParams?: TxParams
 	): Promise<TransactionSignature> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
-		return await this.program.methods
-			.updateMarginTradingEnabled(enabled)
-			.accounts({
-				vault: vault,
-				driftUser: vaultAccount.user,
-				driftProgram: this.driftClient.program.programId,
-			})
-			.rpc();
+		const accounts = {
+			vault: vault,
+			driftUser: vaultAccount.user,
+			driftProgram: this.driftClient.program.programId,
+		};
+
+		if (this.cliMode) {
+			return await this.program.methods
+				.updateMarginTradingEnabled(enabled)
+				.accounts(accounts)
+				.rpc();
+		} else {
+			const updateMarginTradingEnabledIx = await this.program.methods
+				.updateMarginTradingEnabled(enabled)
+				.accounts({ ...accounts, manager: this.driftClient.wallet.publicKey })
+				.instruction();
+			return await this.createAndSendTxn(
+				[updateMarginTradingEnabledIx],
+				uiTxParams
+			);
+		}
 	}
 
 	/**
@@ -878,7 +906,8 @@ export class VaultClient {
 			profitShare: number | null;
 			hurdleRate: number | null;
 			permissioned: boolean | null;
-		}
+		},
+		uiTxParams?: TxParams
 	): Promise<TransactionSignature> {
 		const ix = this.program.instruction.updateVault(params, {
 			accounts: {
@@ -886,10 +915,14 @@ export class VaultClient {
 				manager: this.driftClient.wallet.publicKey,
 			},
 		});
-		return this.createAndSendTxn([ix], {
-			cuLimit: 600_000,
-			cuPriceMicroLamports: 10_000,
-		});
+		if (this.cliMode) {
+			return this.createAndSendTxn([ix], {
+				cuLimit: 600_000,
+				cuPriceMicroLamports: 10_000,
+			});
+		} else {
+			return this.createAndSendTxn([ix], uiTxParams);
+		}
 	}
 
 	public async getApplyProfitShareIx(
