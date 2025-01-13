@@ -504,6 +504,15 @@ export class VaultClient {
 			driftProgram: this.driftClient.program.programId,
 		};
 
+		const preIxs = [
+			ComputeBudgetProgram.setComputeUnitLimit({
+				units: 400_000,
+			}),
+			ComputeBudgetProgram.setComputeUnitPrice({
+				microLamports: 300_000,
+			}),
+		];
+
 		if (vaultProtocolParams) {
 			const vaultProtocol = this.getVaultProtocolAddress(
 				getVaultAddressSync(this.program.programId, params.name)
@@ -512,35 +521,52 @@ export class VaultClient {
 				...vaultParams,
 				vaultProtocol: vaultProtocolParams,
 			};
-			return await this.program.methods
-				.initializeVaultWithProtocol(_params)
-				.preInstructions([
-					ComputeBudgetProgram.setComputeUnitLimit({
-						units: 400_000,
-					}),
-					ComputeBudgetProgram.setComputeUnitPrice({
-						microLamports: 300_000,
-					}),
-				])
-				.accounts({
-					...accounts,
-					vaultProtocol,
-				})
-				.rpc();
+
+			if (this.cliMode) {
+				return await this.program.methods
+					.initializeVaultWithProtocol(_params)
+					.preInstructions(preIxs)
+					.accounts({
+						...accounts,
+						vaultProtocol,
+					})
+					.rpc();
+			} else {
+				const uiAuthority = this.driftClient.wallet.publicKey;
+				const initializeVaultWithProtocolIx = await this.program.methods
+					.initializeVaultWithProtocol(_params)
+					.accounts({
+						...accounts,
+						vaultProtocol,
+						payer: uiAuthority,
+						manager: uiAuthority,
+					})
+					.instruction();
+				const ixs = [...preIxs, initializeVaultWithProtocolIx];
+				return await this.createAndSendTxn(ixs);
+			}
 		} else {
 			const _params: VaultParams = vaultParams;
-			return await this.program.methods
-				.initializeVault(_params)
-				.preInstructions([
-					ComputeBudgetProgram.setComputeUnitLimit({
-						units: 400_000,
-					}),
-					ComputeBudgetProgram.setComputeUnitPrice({
-						microLamports: 300_000,
-					}),
-				])
-				.accounts(accounts)
-				.rpc();
+
+			if (this.cliMode) {
+				return await this.program.methods
+					.initializeVault(_params)
+					.preInstructions(preIxs)
+					.accounts(accounts)
+					.rpc();
+			} else {
+				const uiAuthority = this.driftClient.wallet.publicKey;
+				const initializeVaultIx = await this.program.methods
+					.initializeVault(_params)
+					.accounts({
+						...accounts,
+						payer: uiAuthority,
+						manager: uiAuthority,
+					})
+					.instruction();
+				const ixs = [initializeVaultIx];
+				return await this.createAndSendTxn(ixs);
+			}
 		}
 	}
 
