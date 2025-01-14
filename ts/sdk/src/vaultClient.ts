@@ -1171,7 +1171,8 @@ export class VaultClient {
 	public async initializeVaultDepositor(
 		vault: PublicKey,
 		authority?: PublicKey,
-		payer?: PublicKey
+		payer?: PublicKey,
+		uiTxParams?: TxParams
 	): Promise<TransactionSignature> {
 		const vaultDepositor = getVaultDepositorAddressSync(
 			this.program.programId,
@@ -1197,7 +1198,7 @@ export class VaultClient {
 				.rpc();
 		} else {
 			const initIx = this.createInitVaultDepositorIx(vault, authority, payer);
-			return await this.createAndSendTxn([initIx]);
+			return await this.createAndSendTxn([initIx], uiTxParams);
 		}
 	}
 
