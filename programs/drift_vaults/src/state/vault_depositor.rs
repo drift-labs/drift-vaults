@@ -478,12 +478,6 @@ impl VaultDepositor {
 
             vault.total_shares = vault.total_shares.safe_sub(vault_shares_lost)?;
             vault.user_shares = vault.user_shares.safe_sub(vault_shares_lost)?;
-
-            if let Some(vp) = vault_protocol {
-                vp.protocol_profit_and_fee_shares = vp
-                    .protocol_profit_and_fee_shares
-                    .safe_sub(vault_shares_lost)?;
-            }
         }
 
         let vault_shares_after = self.checked_vault_shares(vault)?;

@@ -1847,8 +1847,13 @@ mod request_withdraw_cancel_tests {
                     .expect("can cancel withdraw request");
             }
             EntityType::VaultDepositor => {
-                vd.cancel_withdraw_request(vault_equity_final, &mut vault, &mut None, now + 1000)
-                    .expect("can cancel withdraw request");
+                vd.cancel_withdraw_request(
+                    vault_equity_final,
+                    &mut vault,
+                    &mut Some(vp.borrow_mut()),
+                    now + 1000,
+                )
+                .expect("can cancel withdraw request");
             }
         }
 
