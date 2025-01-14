@@ -12,6 +12,7 @@ import {
 	getInsuranceFundVaultPublicKey,
 	OracleSource,
 	WRAPPED_SOL_MINT,
+	SpotMarketAccount,
 } from '@drift-labs/sdk';
 import { BorshAccountsCoder, Program, ProgramAccount } from '@coral-xyz/anchor';
 import { DriftVaults } from './types/drift_vaults';
@@ -649,6 +650,35 @@ export class VaultClient {
 		}
 	}
 
+	private async handleWSolMovement(
+		amount: BN,
+		driftSpotMarket: SpotMarketAccount,
+		userTokenAccount: PublicKey
+	) {
+		const isSolDeposit = driftSpotMarket.mint.equals(WRAPPED_SOL_MINT);
+		const preIxs: TransactionInstruction[] = [];
+		const postIxs: TransactionInstruction[] = [];
+
+		if (isSolDeposit) {
+			const { ixs: createWSolAccountIxs, pubkey } =
+				await this.driftClient.getWrappedSolAccountCreationIxs(amount, true);
+
+			userTokenAccount = pubkey;
+
+			preIxs.push(...createWSolAccountIxs);
+			postIxs.push(
+				createCloseAccountInstruction(
+					userTokenAccount,
+					this.driftClient.wallet.publicKey,
+					this.driftClient.wallet.publicKey,
+					[]
+				)
+			);
+		}
+
+		return { userTokenAccount, preIxs, postIxs };
+	}
+
 	/**
 	 *
 	 * @param vault vault address to deposit to
@@ -657,7 +687,8 @@ export class VaultClient {
 	 */
 	public async managerDeposit(
 		vault: PublicKey,
-		amount: BN
+		amount: BN,
+		uiTxParams?: TxParams
 	): Promise<TransactionSignature> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
 		const driftSpotMarket = this.driftClient.getSpotMarketAccount(
@@ -684,38 +715,63 @@ export class VaultClient {
 			});
 		}
 
-		// TODO: handle SOL deposits (need to create/destroy WSOL token accounts)
+		const accounts = {
+			vault,
+			vaultTokenAccount: vaultAccount.tokenAccount,
+			driftUser: await getUserAccountPublicKey(
+				this.driftClient.program.programId,
+				vault
+			),
+			driftUserStats: getUserStatsAccountPublicKey(
+				this.driftClient.program.programId,
+				vault
+			),
+			driftProgram: this.driftClient.program.programId,
+			driftState: await this.driftClient.getStatePublicKey(),
+			driftSpotMarketVault: driftSpotMarket.vault,
+			userTokenAccount: getAssociatedTokenAddressSync(
+				driftSpotMarket.mint,
+				this.driftClient.wallet.publicKey
+			),
+			tokenProgram: TOKEN_PROGRAM_ID,
+		};
 
-		return await this.program.methods
-			.managerDeposit(amount)
-			.accounts({
-				vault,
-				vaultTokenAccount: vaultAccount.tokenAccount,
-				driftUser: await getUserAccountPublicKey(
-					this.driftClient.program.programId,
-					vault
-				),
-				driftProgram: this.driftClient.program.programId,
-				driftUserStats: getUserStatsAccountPublicKey(
-					this.driftClient.program.programId,
-					vault
-				),
-				driftState: await this.driftClient.getStatePublicKey(),
-				driftSpotMarketVault: driftSpotMarket.vault,
-				userTokenAccount: getAssociatedTokenAddressSync(
-					driftSpotMarket.mint,
-					this.driftClient.wallet.publicKey
-				),
-				tokenProgram: TOKEN_PROGRAM_ID,
-			})
-			.remainingAccounts(remainingAccounts)
-			.rpc();
+		const { userTokenAccount, preIxs, postIxs } = await this.handleWSolMovement(
+			amount,
+			driftSpotMarket,
+			accounts.userTokenAccount
+		);
+
+		if (this.cliMode) {
+			return await this.program.methods
+				.managerDeposit(amount)
+				.accounts({ ...accounts, userTokenAccount })
+				.remainingAccounts(remainingAccounts)
+				.preInstructions(preIxs)
+				.postInstructions(postIxs)
+				.rpc();
+		} else {
+			const managerDepositIx = await this.program.methods
+				.managerDeposit(amount)
+				.accounts({
+					...accounts,
+					userTokenAccount,
+					manager: this.driftClient.wallet.publicKey,
+				})
+				.remainingAccounts(remainingAccounts)
+				.instruction();
+			return await this.createAndSendTxn(
+				[...preIxs, managerDepositIx, ...postIxs],
+				uiTxParams
+			);
+		}
 	}
 
 	public async managerRequestWithdraw(
 		vault: PublicKey,
 		amount: BN,
-		withdrawUnit: WithdrawUnit
+		withdrawUnit: WithdrawUnit,
+		uiTxParams?: TxParams
 	): Promise<TransactionSignature> {
 		this.program.idl.types;
 		// @ts-ignore
@@ -776,12 +832,13 @@ export class VaultClient {
 				}
 			);
 
-			return await this.createAndSendTxn([requestWithdrawIx]);
+			return await this.createAndSendTxn([requestWithdrawIx], uiTxParams);
 		}
 	}
 
 	public async managerCancelWithdrawRequest(
-		vault: PublicKey
+		vault: PublicKey,
+		uiTxParams?: TxParams
 	): Promise<TransactionSignature> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
 
@@ -829,12 +886,13 @@ export class VaultClient {
 					remainingAccounts,
 				});
 
-			return await this.createAndSendTxn([cancelRequestWithdrawIx]);
+			return await this.createAndSendTxn([cancelRequestWithdrawIx], uiTxParams);
 		}
 	}
 
 	public async managerWithdraw(
-		vault: PublicKey
+		vault: PublicKey,
+		uiTxParams?: TxParams
 	): Promise<TransactionSignature> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
 
@@ -891,9 +949,7 @@ export class VaultClient {
 			},
 			remainingAccounts,
 		});
-		return this.createAndSendTxn([ix], {
-			cuLimit: 1_000_000,
-		});
+		return this.createAndSendTxn([ix], uiTxParams);
 	}
 
 	public async managerUpdateVault(
@@ -1478,7 +1534,7 @@ export class VaultClient {
 			);
 		}
 
-		let userTokenAccount =
+		const nonWSolUserTokenAccount =
 			depositTokenAccount ??
 			getAssociatedTokenAddressSync(
 				spotMarket.mint,
@@ -1486,27 +1542,11 @@ export class VaultClient {
 				true
 			);
 
-		const isSolDeposit = spotMarket.mint.equals(WRAPPED_SOL_MINT);
-
-		const preIxs: TransactionInstruction[] = [];
-		const postIxs: TransactionInstruction[] = [];
-
-		if (isSolDeposit) {
-			const { ixs, pubkey } =
-				await this.driftClient.getWrappedSolAccountCreationIxs(amount, true);
-
-			userTokenAccount = pubkey;
-
-			preIxs.push(...ixs);
-			postIxs.push(
-				createCloseAccountInstruction(
-					userTokenAccount,
-					this.driftClient.wallet.publicKey,
-					this.driftClient.wallet.publicKey,
-					[]
-				)
-			);
-		}
+		const { userTokenAccount, preIxs, postIxs } = await this.handleWSolMovement(
+			amount,
+			spotMarket,
+			nonWSolUserTokenAccount
+		);
 
 		const accounts = {
 			vault: vaultPubKey,
@@ -1516,7 +1556,7 @@ export class VaultClient {
 			driftUser: vaultAccount.user,
 			driftState: driftStateKey,
 			driftSpotMarketVault: spotMarket.vault,
-			userTokenAccount,
+			userTokenAccount: userTokenAccount,
 			driftProgram: this.driftClient.program.programId,
 			tokenProgram: TOKEN_PROGRAM_ID,
 		};
