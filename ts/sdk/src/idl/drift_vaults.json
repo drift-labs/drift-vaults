@@ -717,11 +717,6 @@
           "isSigner": false
         },
         {
-          "name": "driftState",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "driftProgram",
           "isMut": false,
           "isSigner": false

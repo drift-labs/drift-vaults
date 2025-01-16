@@ -4,9 +4,8 @@ use drift::instructions::optional_accounts::AccountMaps;
 use drift::program::Drift;
 use drift::state::user::User;
 
-use crate::constraints::{
-    is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
-};
+use crate::constants::permissioned_liquidator;
+use crate::constraints::{is_user_for_vault, is_user_stats_for_vault};
 use crate::drift_cpi::{UpdateUserDelegateCPI, UpdateUserReduceOnlyCPI};
 use crate::state::{Vault, VaultDepositor, VaultProtocolProvider};
 use crate::{declare_vault_seeds, implement_update_user_delegate_cpi};
@@ -48,16 +47,16 @@ pub fn liquidate<'c: 'info, 'info>(
         &spot_market_map,
         &mut oracle_map,
     )?;
-    // 3. Check that the vault is not already in liquidation for another depositor
-    vault.check_delegate_available_for_liquidation(&vault_depositor, now)?;
+    // 3. Check that the vault is not already in liquidation
+    vault.check_available_for_liquidation(now)?;
 
-    vault.set_liquidation_delegate(vault_depositor.authority, now);
+    vault.set_liquidation_delegate(permissioned_liquidator::id(), now);
 
     drop(user);
     drop(vault);
     drop(vp);
 
-    ctx.drift_update_user_delegate(vault_depositor.authority)?;
+    ctx.drift_update_user_delegate(permissioned_liquidator::id())?;
     ctx.drift_update_user_reduce_only(true)?;
 
     Ok(())
@@ -71,7 +70,6 @@ pub struct Liquidate<'info> {
         mut,
         seeds = [b"vault_depositor", vault.key().as_ref(), authority.key().as_ref()],
         bump,
-        constraint = is_authority_for_vault_depositor(&vault_depositor, &authority)?,
     )]
     pub vault_depositor: AccountLoader<'info, VaultDepositor>,
     pub authority: Signer<'info>,
@@ -87,8 +85,6 @@ pub struct Liquidate<'info> {
     )]
     /// CHECK: checked in drift cpi
     pub drift_user: AccountLoader<'info, User>,
-    /// CHECK: checked in drift cpi
-    pub drift_state: AccountInfo<'info>,
     pub drift_program: Program<'info, Drift>,
 }
 
