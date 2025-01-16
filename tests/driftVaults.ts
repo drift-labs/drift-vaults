@@ -3325,6 +3325,7 @@ describe('TestWithdrawFromVaults', () => {
 		await managerClient.managerDeposit(
 			commonVaultKey,
 			new BN(100).mul(QUOTE_PRECISION),
+			undefined,
 			managerUsdcAccount
 		);
 		const vdKey = getVaultDepositorAddressSync(
@@ -3488,6 +3489,7 @@ describe('TestWithdrawFromVaults', () => {
 		await managerClient.managerDeposit(
 			commonVaultKey,
 			new BN(100).mul(QUOTE_PRECISION),
+			undefined,
 			managerUsdcAccount
 		);
 
