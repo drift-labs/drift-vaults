@@ -23,7 +23,7 @@ use crate::events::{VaultDepositorAction, VaultDepositorV1Record};
 use crate::state::events::VaultDepositorRecord;
 use crate::state::withdraw_request::WithdrawRequest;
 use crate::state::{VaultFee, VaultProtocol};
-use crate::{validate, Size, VaultDepositor, WithdrawUnit};
+use crate::{validate, Size, WithdrawUnit};
 
 #[assert_no_slop]
 #[account(zero_copy(unsafe))]
@@ -482,21 +482,17 @@ impl Vault {
         Ok(())
     }
 
-    pub fn check_delegate_available_for_liquidation(
-        &self,
-        vault_depositor: &VaultDepositor,
-        now: i64,
-    ) -> VaultResult {
+    pub fn check_available_for_liquidation(&self, now: i64) -> VaultResult {
         validate!(
-            self.liquidation_delegate != vault_depositor.authority,
-            ErrorCode::DelegateNotAvailableForLiquidation,
-            "liquidation delegate is already vault depositor"
+            self.liquidation_delegate == Pubkey::default(),
+            ErrorCode::VaultInLiquidation,
+            "vault already has liquidation delegate"
         )?;
 
         validate!(
             now.saturating_sub(self.liquidation_start_ts) > TIME_FOR_LIQUIDATION,
-            ErrorCode::DelegateNotAvailableForLiquidation,
-            "vault is already in liquidation"
+            ErrorCode::VaultInLiquidation,
+            "vault is still in liquidation"
         )?;
 
         Ok(())
@@ -678,8 +674,7 @@ impl Vault {
         validate!(
             n_shares > 0,
             ErrorCode::InvalidVaultWithdraw,
-            "Must submit withdraw request and wait the redeem_period ({} seconds)",
-            self.redeem_period
+            "No last_withdraw_request.shares found, must call manager_request_withdraw first",
         )?;
 
         let amount: u64 =
@@ -990,8 +985,7 @@ impl Vault {
         validate!(
             n_shares > 0,
             ErrorCode::InvalidVaultWithdraw,
-            "Must submit withdraw request and wait the redeem_period ({} seconds)",
-            self.redeem_period
+            "No last_withdraw_request.shares found, must call protocol_request_withdraw first",
         )?;
 
         let amount: u64 =
@@ -1012,14 +1006,6 @@ impl Vault {
             vp.protocol_total_withdraws = vp.protocol_total_withdraws.saturating_add(n_tokens);
         }
         self.net_deposits = self.net_deposits.safe_sub(n_tokens.cast()?)?;
-
-        validate!(
-            protocol_shares_before >= n_shares,
-            ErrorCode::InvalidVaultWithdrawSize,
-            "protocol_shares_before={} < n_shares={}",
-            protocol_shares_before,
-            n_shares
-        )?;
 
         self.total_shares = self.total_shares.safe_sub(n_shares)?;
 

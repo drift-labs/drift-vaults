@@ -562,8 +562,7 @@ impl VaultDepositor {
         validate!(
             n_shares > 0,
             ErrorCode::InvalidVaultWithdraw,
-            "Must submit withdraw request and wait the redeem_period ({} seconds)",
-            vault.redeem_period
+            "No last_withdraw_request.shares found, must call request_withdraw first",
         )?;
 
         validate!(

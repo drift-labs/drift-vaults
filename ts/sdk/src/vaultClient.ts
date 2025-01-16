@@ -665,13 +665,10 @@ export class VaultClient {
 			vault
 		);
 
-		const driftStateKey = await this.driftClient.getStatePublicKey();
-
 		const accounts = {
 			vault,
-			driftUserStats: userStatsKey,
 			driftUser: vaultAccount.user,
-			driftState: driftStateKey,
+			driftUserStats: userStatsKey,
 		};
 
 		if (this.cliMode) {
@@ -709,14 +706,11 @@ export class VaultClient {
 			vault
 		);
 
-		const driftStateKey = await this.driftClient.getStatePublicKey();
-
 		const accounts = {
 			manager: this.driftClient.wallet.publicKey,
 			vault,
-			driftUserStats: userStatsKey,
 			driftUser: vaultAccount.user,
-			driftState: driftStateKey,
+			driftUserStats: userStatsKey,
 		};
 
 		const user = await this.getSubscribedVaultUser(vaultAccount.user);
@@ -743,6 +737,10 @@ export class VaultClient {
 				this.program.instruction.mangerCancelWithdrawRequest({
 					accounts: {
 						...accounts,
+						driftUserStats: getUserStatsAccountPublicKey(
+							this.driftClient.program.programId,
+							vault
+						),
 						manager: this.driftClient.wallet.publicKey,
 					},
 					remainingAccounts,
@@ -1545,14 +1543,11 @@ export class VaultClient {
 			vaultDepositorAccount.vault
 		);
 
-		const driftStateKey = await this.driftClient.getStatePublicKey();
-
 		const accounts = {
 			vault: vaultDepositorAccount.vault,
 			vaultDepositor,
-			driftUserStats: userStatsKey,
 			driftUser: vaultAccount.user,
-			driftState: driftStateKey,
+			driftUserStats: userStatsKey,
 		};
 
 		if (this.cliMode) {
@@ -1813,14 +1808,11 @@ export class VaultClient {
 			vaultDepositorAccount.vault
 		);
 
-		const driftStateKey = await this.driftClient.getStatePublicKey();
-
 		const accounts = {
 			vault: vaultDepositorAccount.vault,
 			vaultDepositor,
 			driftUserStats: userStatsKey,
 			driftUser: vaultAccount.user,
-			driftState: driftStateKey,
 		};
 
 		const user = await this.getSubscribedVaultUser(vaultAccount.user);
@@ -2278,13 +2270,10 @@ export class VaultClient {
 			vault
 		);
 
-		const driftStateKey = await this.driftClient.getStatePublicKey();
-
 		const accounts = {
 			vault,
 			driftUserStats: userStatsKey,
 			driftUser: vaultAccount.user,
-			driftState: driftStateKey,
 		};
 
 		if (this.cliMode) {
@@ -2322,14 +2311,11 @@ export class VaultClient {
 			vault
 		);
 
-		const driftStateKey = await this.driftClient.getStatePublicKey();
-
 		const accounts = {
 			manager: this.driftClient.wallet.publicKey,
 			vault,
 			driftUserStats: userStatsKey,
 			driftUser: vaultAccount.user,
-			driftState: driftStateKey,
 		};
 
 		const user = await this.getSubscribedVaultUser(vaultAccount.user);
