@@ -26,6 +26,7 @@ import {
 	getVaultProtocolAddressSync,
 } from './addresses';
 import {
+	AccountMeta,
 	AddressLookupTableAccount,
 	ComputeBudgetProgram,
 	PublicKey,
@@ -633,15 +634,28 @@ export class VaultClient {
 			driftProgram: this.driftClient.program.programId,
 		};
 
+		const user = await this.getSubscribedVaultUser(vaultAccount.user);
+
+		let remainingAccounts: AccountMeta[] = [];
+		try {
+			remainingAccounts = this.driftClient.getRemainingAccounts({
+				userAccounts: [user.getUserAccount()],
+			});
+		} catch (err) {
+			// do nothing
+		}
+
 		if (this.cliMode) {
 			return await this.program.methods
 				.updateMarginTradingEnabled(enabled)
 				.accounts(accounts)
+				.remainingAccounts(remainingAccounts)
 				.rpc();
 		} else {
 			const updateMarginTradingEnabledIx = await this.program.methods
 				.updateMarginTradingEnabled(enabled)
 				.accounts({ ...accounts, manager: this.driftClient.wallet.publicKey })
+				.remainingAccounts(remainingAccounts)
 				.instruction();
 			return await this.createAndSendTxn(
 				[updateMarginTradingEnabledIx],
