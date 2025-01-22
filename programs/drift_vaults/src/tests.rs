@@ -2726,18 +2726,18 @@ mod request_withdraw_cancel_tests {
             vec![],
             // shares params
             100 * QUOTE_PRECISION, // manager equity initial = $10
-            0 * QUOTE_PRECISION,
-            0 * QUOTE_PRECISION,
-            0 * QUOTE_PRECISION,
+            0,
+            0,
+            0,
             // equity params
             100 * QUOTE_PRECISION_U64,
             100 * QUOTE_PRECISION_U64,
             // expected final shares
             100 * QUOTE_PRECISION,
-            0 * QUOTE_PRECISION,
+            0,
             100 * QUOTE_PRECISION,
-            0 * QUOTE_PRECISION,
-            0 * QUOTE_PRECISION,
+            0,
+            0,
             // expected final equity
             100 * QUOTE_PRECISION_U64, // unchanged
             0,
@@ -2765,18 +2765,18 @@ mod request_withdraw_cancel_tests {
             vec![],
             // shares params
             100 * QUOTE_PRECISION, // manager equity initial = $10
-            0 * QUOTE_PRECISION,
-            0 * QUOTE_PRECISION,
-            0 * QUOTE_PRECISION,
+            0,
+            0,
+            0,
             // equity params
             100 * QUOTE_PRECISION_U64,
             90 * QUOTE_PRECISION_U64,
             // expected final shares
             100 * QUOTE_PRECISION,
-            0 * QUOTE_PRECISION,
+            0,
             100 * QUOTE_PRECISION,
-            0 * QUOTE_PRECISION,
-            0 * QUOTE_PRECISION,
+            0,
+            0,
             // expected final equity
             90 * QUOTE_PRECISION_U64, // -10%
             0,
@@ -2805,7 +2805,7 @@ mod request_withdraw_cancel_tests {
             // shares params
             100 * QUOTE_PRECISION, // manager equity initial is almost 100% of vault
             1,
-            0 * QUOTE_PRECISION,
+            0,
             1,
             // equity params
             100 * QUOTE_PRECISION_U64,
@@ -2843,18 +2843,18 @@ mod request_withdraw_cancel_tests {
             vec![],
             // shares params
             100 * QUOTE_PRECISION, // manager equity initial = $100
-            0 * QUOTE_PRECISION,
-            0 * QUOTE_PRECISION,
-            0 * QUOTE_PRECISION,
+            0,
+            0,
+            0,
             // equity params
             100 * QUOTE_PRECISION_U64,
             110 * QUOTE_PRECISION_U64,
             // expected final shares
             100 * QUOTE_PRECISION,
-            0 * QUOTE_PRECISION,
+            0,
             100 * QUOTE_PRECISION,
-            0 * QUOTE_PRECISION,
-            0 * QUOTE_PRECISION,
+            0,
+            0,
             // expected final equity
             110 * QUOTE_PRECISION_U64, // +10%
             0,
