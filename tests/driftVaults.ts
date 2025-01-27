@@ -32,6 +32,8 @@ import {
 	DRIFT_PROGRAM_ID,
 	OrderType,
 	isVariant,
+	WRAPPED_SOL_MINT,
+	convertToNumber,
 } from '@drift-labs/sdk';
 import {
 	bootstrapSignerClientAndUser,
@@ -51,7 +53,12 @@ import {
 	validateTotalUserShares,
 } from './testHelpers';
 import { getMint } from '@solana/spl-token';
-import { ConfirmOptions, Keypair, Signer } from '@solana/web3.js';
+import {
+	ConfirmOptions,
+	Keypair,
+	LAMPORTS_PER_SOL,
+	Signer,
+} from '@solana/web3.js';
 import { assert } from 'chai';
 import {
 	VaultClient,
@@ -379,7 +386,6 @@ describe('driftVaults', () => {
 				vaultDepositor,
 				driftUser: vaultAccount.user,
 				driftUserStats: vaultAccount.userStats,
-				driftState: await adminClient.getStatePublicKey(),
 			})
 			.remainingAccounts(remainingAccounts)
 			.rpc();
@@ -1181,9 +1187,8 @@ describe('TestProtocolVaults', () => {
 				.accounts({
 					vault: protocolVault,
 					vaultDepositor,
-					driftUser: vaultAccount.user,
 					driftUserStats: vaultAccount.userStats,
-					driftState: await adminClient.getStatePublicKey(),
+					driftUser: vaultAccount.user,
 				})
 				.remainingAccounts(remainingAccounts)
 				.rpc();
@@ -1299,7 +1304,6 @@ describe('TestProtocolVaults', () => {
 					vaultProtocol,
 					driftUser: vaultAccount.user,
 					driftUserStats: vaultAccount.userStats,
-					driftState: await adminClient.getStatePublicKey(),
 				})
 				.remainingAccounts(remainingAccounts)
 				.rpc();
@@ -2923,5 +2927,661 @@ describe('TestInsuranceFundStake', () => {
 
 	it('Test initializeInsuranceFundStake for asset different than deposit asset', async () => {
 		await testInsuranceFundStake(1);
+	});
+});
+
+describe('TestSOLDenomindatedVault', () => {
+	const bulkAccountLoader = new BulkAccountLoader(connection, 'confirmed', 1);
+	let managerClient: VaultClient;
+	let managerDriftClient: DriftClient;
+
+	let vd0Signer: Signer;
+	let vd0Client: VaultClient;
+	let vd0DriftClient: DriftClient;
+
+	const usdcAmount = new BN(1_000).mul(QUOTE_PRECISION);
+
+	const commonVaultName = 'sol vault';
+	const commonVaultKey = getVaultAddressSync(
+		program.programId,
+		encodeName(commonVaultName)
+	);
+	let firstVaultInitd = false;
+
+	before(async () => {
+		while (!adminInitialized) {
+			console.log(
+				'TestTokenizedDriftVaults: waiting for drift initialization...'
+			);
+			await sleep(1000);
+		}
+
+		await adminClient.subscribe();
+
+		const bootstrapManager = await bootstrapSignerClientAndUser({
+			payer: provider,
+			programId: program.programId,
+			usdcMint,
+			usdcAmount,
+			driftClientConfig: {
+				accountSubscription: {
+					type: 'websocket',
+					resubTimeoutMs: 30_000,
+				},
+				opts,
+				activeSubAccountId: 0,
+			},
+			metaplex,
+		});
+		managerClient = bootstrapManager.vaultClient;
+		managerDriftClient = bootstrapManager.driftClient;
+
+		const vd0Bootstrap = await bootstrapSignerClientAndUser({
+			payer: provider,
+			programId: program.programId,
+			usdcMint,
+			usdcAmount: new BN(10).mul(usdcAmount),
+			driftClientConfig: {
+				accountSubscription: {
+					type: 'websocket',
+					resubTimeoutMs: 30_000,
+				},
+				opts,
+				activeSubAccountId: 0,
+			},
+			metaplex,
+		});
+		vd0Signer = vd0Bootstrap.signer;
+		vd0Client = vd0Bootstrap.vaultClient;
+		vd0DriftClient = vd0Bootstrap.driftClient;
+
+		if (!firstVaultInitd) {
+			await managerClient.initializeVault({
+				name: encodeName(commonVaultName),
+				spotMarketIndex: 1,
+				redeemPeriod: ZERO,
+				maxTokens: ZERO,
+				managementFee: ZERO,
+				profitShare: 0,
+				hurdleRate: 0,
+				permissioned: false,
+				minDepositAmount: ZERO,
+			});
+			firstVaultInitd = true;
+		}
+
+		// start account loader
+		bulkAccountLoader.startPolling();
+		await bulkAccountLoader.load();
+	});
+
+	after(async () => {
+		bulkAccountLoader.stopPolling();
+
+		await adminClient.unsubscribe();
+		await managerClient.unsubscribe();
+		await managerDriftClient.unsubscribe();
+		await vd0Client.unsubscribe();
+		await vd0DriftClient.unsubscribe();
+	});
+
+	it('Initialized SOL denominated vault', async () => {
+		const vault = await program.account.vault.fetch(commonVaultKey);
+		assert(vault.spotMarketIndex === 1, 'Vault spot market index is not 1');
+
+		const spotMarket1 = vd0DriftClient.getSpotMarketAccount(1);
+		assert(
+			spotMarket1.mint.equals(WRAPPED_SOL_MINT),
+			'Spot market mint is not SOL'
+		);
+
+		const vdSolBalance = await vd0DriftClient.connection.getBalance(
+			vd0Signer.publicKey
+		);
+		assert(vdSolBalance > 0, 'Vault depositor SOL balance is 0');
+	});
+
+	it('Test deposit then withdraw SOL', async () => {
+		const balanceBefore = await vd0DriftClient.connection.getBalance(
+			vd0Signer.publicKey
+		);
+		const vaultEquityBefore =
+			await vd0Client.calculateVaultEquityInDepositAsset({
+				address: commonVaultKey,
+			});
+
+		const vdKey = getVaultDepositorAddressSync(
+			program.programId,
+			commonVaultKey,
+			vd0Signer.publicKey
+		);
+		const tx0 = await vd0Client.deposit(vdKey, new BN(0.5 * LAMPORTS_PER_SOL), {
+			authority: vd0Signer.publicKey,
+			vault: commonVaultKey,
+		});
+		await printTxLogs(provider.connection, tx0);
+
+		const balanceAfter = await vd0DriftClient.connection.getBalance(
+			vd0Signer.publicKey
+		);
+		console.log(`sol balance ${balanceBefore} -> ${balanceAfter}`);
+		assert(
+			balanceAfter < balanceBefore,
+			'Vault depositor SOL balance not decreased'
+		);
+
+		const vaultEquityAfter = await vd0Client.calculateVaultEquityInDepositAsset(
+			{
+				address: commonVaultKey,
+			}
+		);
+		console.log(`vault equity: ${vaultEquityBefore} -> ${vaultEquityAfter}`);
+		assert(vaultEquityAfter > vaultEquityBefore, 'Vault equity not increased');
+
+		const tx1 = await vd0Client.requestWithdraw(
+			vdKey,
+			PERCENTAGE_PRECISION,
+			WithdrawUnit.SHARES_PERCENT
+		);
+		await printTxLogs(provider.connection, tx1);
+
+		const tx2 = await vd0Client.withdraw(vdKey);
+		await printTxLogs(provider.connection, tx2);
+
+		const equityEnd = await vd0Client.calculateVaultEquityInDepositAsset({
+			address: commonVaultKey,
+		});
+		console.log(
+			`vault equity: ${vaultEquityBefore} -> ${vaultEquityAfter} -> ${equityEnd}`
+		);
+		assert(
+			equityEnd.sub(vaultEquityBefore).abs().lten(1),
+			'Vault equity not decreased'
+		);
+
+		const balanceEnd = await vd0DriftClient.connection.getBalance(
+			vd0Signer.publicKey
+		);
+		console.log(
+			`sol balance ${balanceBefore} -> ${balanceAfter} -> ${balanceEnd}`
+		);
+		assert(
+			Math.abs(balanceEnd - balanceBefore) <= 0.003 * LAMPORTS_PER_SOL,
+			'Vault depositor SOL balance not increased'
+		);
+	});
+});
+
+describe('TestWithdrawFromVaults', () => {
+	const bulkAccountLoader = new BulkAccountLoader(connection, 'confirmed', 1);
+	let managerSigner: Signer;
+	let managerClient: VaultClient;
+	let managerDriftClient: DriftClient;
+	let managerUsdcAccount: PublicKey;
+
+	let vd0Signer: Signer;
+	let vd0Client: VaultClient;
+	let vd0DriftClient: DriftClient;
+	let vd0UsdcAccount: PublicKey;
+
+	let protocol: Keypair;
+	let protocolClient: VaultClient;
+	let protocolDriftClient: DriftClient;
+	let _protocolUser: User;
+
+	const usdcAmount = new BN(1_000).mul(QUOTE_PRECISION);
+
+	const commonVaultName = 'withdraw test vault';
+	const commonVaultKey = getVaultAddressSync(
+		program.programId,
+		encodeName(commonVaultName)
+	);
+	let firstVaultInitd = false;
+
+	const VAULT_PROTOCOL_DISCRIM: number[] = [106, 130, 5, 195, 126, 82, 249, 53];
+
+	before(async () => {
+		while (!adminInitialized) {
+			console.log(
+				'TestTokenizedDriftVaults: waiting for drift initialization...'
+			);
+			await sleep(1000);
+		}
+
+		await adminClient.subscribe();
+
+		const bootstrapManager = await bootstrapSignerClientAndUser({
+			payer: provider,
+			programId: program.programId,
+			usdcMint,
+			usdcAmount,
+			driftClientConfig: {
+				accountSubscription: {
+					type: 'websocket',
+					resubTimeoutMs: 30_000,
+				},
+				opts,
+				activeSubAccountId: 0,
+			},
+			metaplex,
+		});
+		managerSigner = bootstrapManager.signer;
+		managerClient = bootstrapManager.vaultClient;
+		managerDriftClient = bootstrapManager.driftClient;
+		managerUsdcAccount = bootstrapManager.userUSDCAccount.publicKey;
+
+		const vd0Bootstrap = await bootstrapSignerClientAndUser({
+			payer: provider,
+			programId: program.programId,
+			usdcMint,
+			usdcAmount,
+			driftClientConfig: {
+				accountSubscription: {
+					type: 'websocket',
+					resubTimeoutMs: 30_000,
+				},
+				opts,
+				activeSubAccountId: 0,
+			},
+			metaplex,
+		});
+		vd0Signer = vd0Bootstrap.signer;
+		vd0Client = vd0Bootstrap.vaultClient;
+		vd0DriftClient = vd0Bootstrap.driftClient;
+		vd0UsdcAccount = vd0Bootstrap.userUSDCAccount.publicKey;
+
+		const bootstrapProtocol = await bootstrapSignerClientAndUser({
+			payer: provider,
+			programId: program.programId,
+			usdcMint,
+			usdcAmount,
+			skipUser: true,
+			driftClientConfig: {
+				accountSubscription: {
+					type: 'websocket',
+					resubTimeoutMs: 30_000,
+				},
+				opts,
+				activeSubAccountId: 0,
+				perpMarketIndexes,
+				spotMarketIndexes,
+				oracleInfos,
+			},
+		});
+		protocol = bootstrapProtocol.signer;
+		protocolClient = bootstrapProtocol.vaultClient;
+		protocolDriftClient = bootstrapProtocol.driftClient;
+		_protocolUser = bootstrapProtocol.user;
+
+		if (!firstVaultInitd) {
+			const vpParams: VaultProtocolParams = {
+				protocol: protocol.publicKey,
+				protocolFee: new BN(0),
+				// 100_000 = 10%
+				protocolProfitShare: 100_000,
+			};
+
+			await managerClient.initializeVault({
+				name: encodeName(commonVaultName),
+				spotMarketIndex: 0,
+				redeemPeriod: ZERO,
+				maxTokens: ZERO,
+				managementFee: ZERO,
+				profitShare: 0,
+				hurdleRate: 0,
+				permissioned: false,
+				minDepositAmount: ZERO,
+				vaultProtocol: vpParams,
+			});
+
+			const vaultAcct = await program.account.vault.fetch(commonVaultKey);
+			assert(vaultAcct.manager.equals(managerSigner.publicKey));
+			const vp = getVaultProtocolAddressSync(
+				managerClient.program.programId,
+				commonVaultKey
+			);
+			// asserts "exit" was called on VaultProtocol to define the discriminator
+			const vpAcctInfo = await connection.getAccountInfo(vp);
+			assert(vpAcctInfo.data.includes(Buffer.from(VAULT_PROTOCOL_DISCRIM)));
+
+			// asserts Vault and VaultProtocol fields were set properly
+			const vpAcct = await program.account.vaultProtocol.fetch(vp);
+			assert(vaultAcct.vaultProtocol);
+			assert(vpAcct.protocol.equals(protocol.publicKey));
+
+			await vd0Client.initializeVaultDepositor(
+				commonVaultKey,
+				vd0Signer.publicKey
+			);
+			const vaultDepositor = getVaultDepositorAddressSync(
+				program.programId,
+				commonVaultKey,
+				vd0Signer.publicKey
+			);
+			const vdAcct = await program.account.vaultDepositor.fetch(vaultDepositor);
+			assert(vdAcct.vault.equals(commonVaultKey));
+
+			firstVaultInitd = true;
+		}
+
+		// start account loader
+		bulkAccountLoader.startPolling();
+		await bulkAccountLoader.load();
+	});
+
+	after(async () => {
+		bulkAccountLoader.stopPolling();
+
+		await adminClient.unsubscribe();
+		await managerClient.unsubscribe();
+		await managerDriftClient.unsubscribe();
+		await vd0Client.unsubscribe();
+		await vd0DriftClient.unsubscribe();
+		await protocolClient.unsubscribe();
+		await protocolDriftClient.unsubscribe();
+	});
+
+	async function fetchAccountStates(
+		vaultAddress?: PublicKey,
+		vaultDepositorAddress?: PublicKey,
+		protocolAddress?: PublicKey
+	) {
+		const vault = vaultAddress
+			? await program.account.vault.fetch(vaultAddress)
+			: undefined;
+		const vaultDepositor = vaultDepositorAddress
+			? await program.account.vaultDepositor.fetch(vaultDepositorAddress)
+			: undefined;
+		const protocol = protocolAddress
+			? await program.account.vaultProtocol.fetch(protocolAddress)
+			: undefined;
+		return {
+			vault,
+			vaultDepositor,
+			protocol,
+		};
+	}
+
+	it('Test full withdraw of vault shares', async () => {
+		const managerTokenBalance0 = await connection.getTokenAccountBalance(
+			managerUsdcAccount
+		);
+		const vd0TokenBalance0 = await connection.getTokenAccountBalance(
+			vd0UsdcAccount
+		);
+		console.log(
+			'managerTokenBalance0',
+			managerTokenBalance0.value.uiAmountString
+		);
+		console.log('vd0TokenBalance0', vd0TokenBalance0.value.uiAmountString);
+
+		let vaultEquity = await managerClient.calculateVaultEquity({
+			address: commonVaultKey,
+		});
+		console.log('vault equity:', vaultEquity.toString());
+
+		// 1) manager deposits + vd deposits
+
+		await managerClient.managerDeposit(
+			commonVaultKey,
+			new BN(100).mul(QUOTE_PRECISION),
+			undefined,
+			managerUsdcAccount
+		);
+		const vdKey = getVaultDepositorAddressSync(
+			program.programId,
+			commonVaultKey,
+			vd0Signer.publicKey
+		);
+		await vd0Client.deposit(
+			vdKey,
+			new BN(500).mul(QUOTE_PRECISION),
+			undefined,
+			undefined,
+			vd0UsdcAccount
+		);
+
+		// 2) manager requests withdraw + vd requests withdraw
+
+		await managerClient.managerRequestWithdraw(
+			commonVaultKey,
+			PERCENTAGE_PRECISION,
+			WithdrawUnit.SHARES_PERCENT
+		);
+		await vd0Client.requestWithdraw(
+			vdKey,
+			PERCENTAGE_PRECISION,
+			WithdrawUnit.SHARES_PERCENT
+		);
+
+		const { vault: vaultState0 } = await fetchAccountStates(
+			commonVaultKey,
+			vdKey
+		);
+
+		console.log(
+			'vaultState0 usdc balance',
+			(await connection.getTokenAccountBalance(vaultState0.tokenAccount)).value
+				.uiAmountString
+		);
+
+		// 3) withdraw in reverse order:
+		// 3.1) vd withdraws
+		try {
+			const remainingAccounts = vd0Client.driftClient.getRemainingAccounts({
+				userAccounts: [],
+				writableSpotMarketIndexes: [0],
+			});
+			remainingAccounts.push({
+				pubkey: vd0Client.getVaultProtocolAddress(commonVaultKey),
+				isSigner: false,
+				isWritable: true,
+			});
+			const txSig = await vd0Client.program.methods
+				.withdraw()
+				.accounts({
+					userTokenAccount: vd0UsdcAccount,
+					vault: commonVaultKey,
+					vaultDepositor: vdKey,
+					vaultTokenAccount: vaultState0.tokenAccount,
+					driftUser: vaultState0.user,
+					driftUserStats: vaultState0.userStats,
+					driftState: await adminClient.getStatePublicKey(),
+					driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
+					driftSigner: adminClient.getStateAccount().signer,
+					driftProgram: adminClient.program.programId,
+				})
+				.remainingAccounts(remainingAccounts)
+				.rpc();
+
+			await printTxLogs(provider.connection, txSig);
+		} catch (e) {
+			console.error(e);
+			assert(false);
+		}
+
+		// 3.2) manager withdraws
+		try {
+			const remainingAccounts = managerClient.driftClient.getRemainingAccounts({
+				userAccounts: [],
+				writableSpotMarketIndexes: [0],
+			});
+			remainingAccounts.push({
+				pubkey: managerClient.getVaultProtocolAddress(commonVaultKey),
+				isSigner: false,
+				isWritable: true,
+			});
+			const txSig = await managerClient.program.methods
+				.managerWithdraw()
+				.accounts({
+					userTokenAccount: managerUsdcAccount,
+					manager: managerSigner.publicKey,
+					vault: commonVaultKey,
+					vaultTokenAccount: vaultState0.tokenAccount,
+					driftUser: vaultState0.user,
+					driftUserStats: vaultState0.userStats,
+					driftState: await adminClient.getStatePublicKey(),
+					driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
+					driftSigner: adminClient.getStateAccount().signer,
+					driftProgram: adminClient.program.programId,
+				})
+				.remainingAccounts(remainingAccounts)
+				.rpc();
+
+			await printTxLogs(provider.connection, txSig);
+		} catch (e) {
+			console.error(e);
+			assert(false);
+		}
+
+		const { vault: vaultState1 } = await fetchAccountStates(
+			commonVaultKey,
+			vdKey
+		);
+
+		vaultEquity = await managerClient.calculateVaultEquity({
+			address: commonVaultKey,
+		});
+		console.log('final vault equity:', vaultEquity.toNumber() / 1e6);
+		assert(vaultEquity.eq(ZERO));
+
+		const managerTokenBalance1 = await connection.getTokenAccountBalance(
+			managerUsdcAccount
+		);
+		const vd0TokenBalance1 = await connection.getTokenAccountBalance(
+			vd0UsdcAccount
+		);
+		const vaultTokenBalance1 = await connection.getTokenAccountBalance(
+			vaultState1.tokenAccount
+		);
+
+		console.log(
+			'managerTokenBalance1',
+			managerTokenBalance1.value.uiAmountString
+		);
+		console.log('vd0TokenBalance1', vd0TokenBalance1.value.uiAmountString);
+		console.log('vaultTokenBalance1', vaultTokenBalance1.value.uiAmountString);
+	});
+
+	it('Test manager cancel withdraw owning 100% of vault', async () => {
+		const { driftClient: mmDriftClient, requoteFunc } =
+			await initializeSolSpotMarketMaker(
+				provider,
+				usdcMint,
+				new anchor.Program(
+					managerDriftClient.program.idl,
+					managerDriftClient.program.programId,
+					provider
+				),
+				[
+					{
+						publicKey: solPerpOracle,
+						source: OracleSource.PYTH,
+					},
+				],
+				undefined,
+				undefined,
+				bulkAccountLoader
+			);
+
+		// 1) manager deposits
+
+		await managerClient.managerDeposit(
+			commonVaultKey,
+			new BN(100).mul(QUOTE_PRECISION),
+			undefined,
+			managerUsdcAccount
+		);
+
+		const { vault: vaultState0 } = await fetchAccountStates(commonVaultKey);
+		const vaultEquity0 = await managerClient.calculateVaultEquity({
+			address: commonVaultKey,
+		});
+
+		// 2) manager requests withdraw
+		const tx0 = await managerClient.managerRequestWithdraw(
+			commonVaultKey,
+			PERCENTAGE_PRECISION,
+			WithdrawUnit.SHARES_PERCENT
+		);
+		await printTxLogs(provider.connection, tx0);
+
+		// 3) vault trades into profit
+		try {
+			const oracle0 = mmDriftClient.getOracleDataForSpotMarket(1);
+
+			await managerClient.updateDelegate(
+				commonVaultKey,
+				managerSigner.publicKey
+			);
+			await managerDriftClient.addAndSubscribeToUsers(commonVaultKey);
+			await managerDriftClient.switchActiveUser(0, commonVaultKey);
+
+			const vaultEquity = await managerClient.calculateVaultEquity({
+				address: commonVaultKey,
+			});
+
+			await doWashTrading({
+				mmDriftClient,
+				traderDriftClient: managerDriftClient,
+				traderAuthority: commonVaultKey,
+				traderSubAccount: 0,
+				vaultClient: managerClient,
+				vaultAddress: commonVaultKey,
+				startVaultEquity: vaultEquity,
+				stopPnlDiffPct: -0.1,
+				maxIters: 1,
+				mmRequoteFunc: requoteFunc,
+				doSell: false,
+			});
+
+			const solMarket = adminClient.getSpotMarketAccount(1);
+
+			// increase oracle
+			const newOraclePrice = convertToNumber(oracle0.price) * 1.25;
+
+			console.log(
+				`setting oracle price ${convertToNumber(
+					oracle0.price
+				)} -> ${newOraclePrice}`
+			);
+			await setFeedPrice(
+				anchor.workspace.Pyth,
+				newOraclePrice,
+				solMarket!.oracle
+			);
+
+			await managerDriftClient.fetchAccounts();
+
+			const vaultEquity1 = await managerClient.calculateVaultEquity({
+				address: commonVaultKey,
+			});
+
+			assert(vaultEquity1.gt(vaultEquity0), 'vault equity should be in profit');
+		} catch (e) {
+			console.error(e);
+			assert(false);
+		}
+
+		// 4) manager cancels withdraw
+		const tx1 = await managerClient.managerCancelWithdrawRequest(
+			commonVaultKey
+		);
+		await printTxLogs(provider.connection, tx1);
+
+		await managerClient.driftClient.fetchAccounts();
+
+		const { vault: vaultState1 } = await fetchAccountStates(commonVaultKey);
+
+		assert(
+			vaultState1.totalShares.eq(vaultState0.totalShares),
+			'total shares should be the same after canceling withdraws'
+		);
+
+		const vaultEquity2 = await managerClient.calculateVaultEquity({
+			address: commonVaultKey,
+		});
+		console.log('final vault equity:', vaultEquity2.toNumber() / 1e6);
+		assert(vaultEquity2.gt(ZERO));
 	});
 });

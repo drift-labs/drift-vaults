@@ -454,7 +454,7 @@ impl VaultDepositor {
     ) -> Result<()> {
         self.apply_rebase(vault, vault_protocol, vault_equity)?;
 
-        let vault_shares_before: u128 = self.checked_vault_shares(vault)?;
+        let vd_vault_shares_before: u128 = self.checked_vault_shares(vault)?;
         let total_vault_shares_before = vault.total_shares;
         let user_vault_shares_before = vault.user_shares;
         let protocol_shares_before = vault.get_protocol_shares(vault_protocol);
@@ -469,15 +469,15 @@ impl VaultDepositor {
         let vault_shares_lost = self
             .last_withdraw_request
             .calculate_shares_lost(vault, vault_equity)?;
-        self.decrease_vault_shares(vault_shares_lost, vault)?;
 
-        vault.total_shares = vault.total_shares.safe_sub(vault_shares_lost)?;
-        vault.user_shares = vault.user_shares.safe_sub(vault_shares_lost)?;
+        // only deduct lost shares if user doesn't own 100% of the vault
+        let user_owns_entire_vault = total_vault_shares_before == vd_vault_shares_before;
 
-        if let Some(vp) = vault_protocol {
-            vp.protocol_profit_and_fee_shares = vp
-                .protocol_profit_and_fee_shares
-                .safe_sub(vault_shares_lost)?;
+        if vault_shares_lost > 0 && !user_owns_entire_vault {
+            self.decrease_vault_shares(vault_shares_lost, vault)?;
+
+            vault.total_shares = vault.total_shares.safe_sub(vault_shares_lost)?;
+            vault.user_shares = vault.user_shares.safe_sub(vault_shares_lost)?;
         }
 
         let vault_shares_after = self.checked_vault_shares(vault)?;
@@ -493,7 +493,7 @@ impl VaultDepositor {
                     amount: 0,
                     spot_market_index: vault.spot_market_index,
                     vault_equity_before: vault_equity,
-                    vault_shares_before,
+                    vault_shares_before: vd_vault_shares_before,
                     user_vault_shares_before,
                     total_vault_shares_before,
                     vault_shares_after,
@@ -513,7 +513,7 @@ impl VaultDepositor {
                     amount: 0,
                     spot_market_index: vault.spot_market_index,
                     vault_equity_before: vault_equity,
-                    vault_shares_before,
+                    vault_shares_before: vd_vault_shares_before,
                     user_vault_shares_before,
                     total_vault_shares_before,
                     vault_shares_after,
@@ -562,8 +562,7 @@ impl VaultDepositor {
         validate!(
             n_shares > 0,
             ErrorCode::InvalidVaultWithdraw,
-            "Must submit withdraw request and wait the redeem_period ({} seconds)",
-            vault.redeem_period
+            "No last_withdraw_request.shares found, must call request_withdraw first",
         )?;
 
         validate!(

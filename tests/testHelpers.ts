@@ -1429,6 +1429,7 @@ export async function doWashTrading({
 	mmRequoteFunc,
 	mmQuoteSpreadBps = 500,
 	mmQuoteOffsetBps = 0,
+	doSell = true,
 }: {
 	mmDriftClient: DriftClient;
 	traderDriftClient: DriftClient;
@@ -1442,6 +1443,7 @@ export async function doWashTrading({
 	mmRequoteFunc: (price: BN, size: BN) => Promise<void>;
 	mmQuoteSpreadBps?: number;
 	mmQuoteOffsetBps?: number;
+	doSell?: boolean;
 }) {
 	let diff = 1;
 	let i = 0;
@@ -1544,28 +1546,30 @@ export async function doWashTrading({
 				}
 			);
 
-			await traderDriftClient.placeAndTakeSpotOrder(
-				{
-					orderType: OrderType.LIMIT,
-					marketIndex,
-					baseAssetAmount: bidAmount,
-					price: mmBid.price,
-					direction: PositionDirection.SHORT,
-					immediateOrCancel: true,
-					auctionDuration: 0,
-					reduceOnly: true,
-				},
-				undefined,
-				{
-					maker: mmUser.getUserAccountPublicKey(),
-					makerStats: getUserStatsAccountPublicKey(
-						new PublicKey(DRIFT_PROGRAM_ID),
-						mmDriftClient.authority
-					),
-					makerUserAccount: mmUser.getUserAccount(),
-					order: mmBid,
-				}
-			);
+			if (doSell) {
+				await traderDriftClient.placeAndTakeSpotOrder(
+					{
+						orderType: OrderType.LIMIT,
+						marketIndex,
+						baseAssetAmount: bidAmount,
+						price: mmBid.price,
+						direction: PositionDirection.SHORT,
+						immediateOrCancel: true,
+						auctionDuration: 0,
+						reduceOnly: true,
+					},
+					undefined,
+					{
+						maker: mmUser.getUserAccountPublicKey(),
+						makerStats: getUserStatsAccountPublicKey(
+							new PublicKey(DRIFT_PROGRAM_ID),
+							mmDriftClient.authority
+						),
+						makerUserAccount: mmUser.getUserAccount(),
+						order: mmBid,
+					}
+				);
+			}
 
 			vaultEquity = await vaultClient.calculateVaultEquityInDepositAsset({
 				address: vaultAddress,
