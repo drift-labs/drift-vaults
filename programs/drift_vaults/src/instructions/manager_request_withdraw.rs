@@ -1,6 +1,6 @@
 use anchor_lang::prelude::*;
 use drift::instructions::optional_accounts::AccountMaps;
-use drift::state::user::{User, UserStats};
+use drift::state::user::User;
 
 use crate::constraints::{is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault};
 use crate::state::VaultProtocolProvider;
@@ -49,13 +49,10 @@ pub struct ManagerRequestWithdraw<'info> {
     #[account(
         constraint = is_user_stats_for_vault(&vault, &drift_user_stats.key())?
     )]
-    /// CHECK: checked in drift cpi
-    pub drift_user_stats: AccountLoader<'info, UserStats>,
+    /// CHECK: unused, for future proofing
+    pub drift_user_stats: AccountInfo<'info>,
     #[account(
         constraint = is_user_for_vault(&vault, &drift_user.key())?
     )]
-    /// CHECK: checked in drift cpi
     pub drift_user: AccountLoader<'info, User>,
-    /// CHECK: checked in drift cpi
-    pub drift_state: AccountInfo<'info>,
 }

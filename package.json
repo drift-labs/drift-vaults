@@ -14,11 +14,13 @@
         "anchor-tests:vaults": "yarn anchor-tests -g TestDriftVaults",
         "anchor-tests:protocol": "yarn anchor-tests -g TestProtocolVaults",
         "anchor-tests:tokenize": "yarn anchor-tests -g TestTokenizedDriftVaults",
-        "anchor-tests:if-stake": "yarn anchor-tests -g TestInsuranceFundStake"
+        "anchor-tests:if-stake": "yarn anchor-tests -g TestInsuranceFundStake",
+        "anchor-tests:sol-denom-vault": "yarn anchor-tests -g TestSOLDenomindatedVault",
+        "anchor-tests:withdraw": "yarn anchor-tests -g TestWithdrawFromVaults"
     },
     "devDependencies": {
         "@coral-xyz/anchor": "0.28.0",
-        "@drift-labs/sdk": "2.107.0-beta.1",
+        "@drift-labs/sdk": "2.108.0-beta.11",
         "@solana/web3.js": "1.73.2",
         "@types/bn.js": "^5.1.0",
         "@types/chai": "^4.3.0",

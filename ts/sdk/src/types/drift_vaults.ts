@@ -576,11 +576,6 @@ export type DriftVaults = {
 					name: 'driftUser';
 					isMut: false;
 					isSigner: false;
-				},
-				{
-					name: 'driftState';
-					isMut: false;
-					isSigner: false;
 				}
 			];
 			args: [
@@ -621,11 +616,6 @@ export type DriftVaults = {
 				},
 				{
 					name: 'driftUser';
-					isMut: false;
-					isSigner: false;
-				},
-				{
-					name: 'driftState';
 					isMut: false;
 					isSigner: false;
 				}
@@ -727,11 +717,6 @@ export type DriftVaults = {
 					isSigner: false;
 				},
 				{
-					name: 'driftState';
-					isMut: false;
-					isSigner: false;
-				},
-				{
 					name: 'driftProgram';
 					isMut: false;
 					isSigner: false;
@@ -746,11 +731,6 @@ export type DriftVaults = {
 					name: 'vault';
 					isMut: true;
 					isSigner: false;
-				},
-				{
-					name: 'authority';
-					isMut: false;
-					isSigner: true;
 				},
 				{
 					name: 'driftUser';
@@ -848,11 +828,6 @@ export type DriftVaults = {
 					name: 'driftUser';
 					isMut: false;
 					isSigner: false;
-				},
-				{
-					name: 'driftState';
-					isMut: false;
-					isSigner: false;
 				}
 			];
 			args: [
@@ -888,11 +863,6 @@ export type DriftVaults = {
 				},
 				{
 					name: 'driftUser';
-					isMut: false;
-					isSigner: false;
-				},
-				{
-					name: 'driftState';
 					isMut: false;
 					isSigner: false;
 				}
@@ -1464,11 +1434,6 @@ export type DriftVaults = {
 					name: 'driftUser';
 					isMut: false;
 					isSigner: false;
-				},
-				{
-					name: 'driftState';
-					isMut: false;
-					isSigner: false;
 				}
 			];
 			args: [
@@ -1509,11 +1474,6 @@ export type DriftVaults = {
 				},
 				{
 					name: 'driftUser';
-					isMut: false;
-					isSigner: false;
-				},
-				{
-					name: 'driftState';
 					isMut: false;
 					isSigner: false;
 				}
@@ -3348,11 +3308,6 @@ export const IDL: DriftVaults = {
 					isMut: false,
 					isSigner: false,
 				},
-				{
-					name: 'driftState',
-					isMut: false,
-					isSigner: false,
-				},
 			],
 			args: [
 				{
@@ -3392,11 +3347,6 @@ export const IDL: DriftVaults = {
 				},
 				{
 					name: 'driftUser',
-					isMut: false,
-					isSigner: false,
-				},
-				{
-					name: 'driftState',
 					isMut: false,
 					isSigner: false,
 				},
@@ -3498,11 +3448,6 @@ export const IDL: DriftVaults = {
 					isSigner: false,
 				},
 				{
-					name: 'driftState',
-					isMut: false,
-					isSigner: false,
-				},
-				{
 					name: 'driftProgram',
 					isMut: false,
 					isSigner: false,
@@ -3517,11 +3462,6 @@ export const IDL: DriftVaults = {
 					name: 'vault',
 					isMut: true,
 					isSigner: false,
-				},
-				{
-					name: 'authority',
-					isMut: false,
-					isSigner: true,
 				},
 				{
 					name: 'driftUser',
@@ -3620,11 +3560,6 @@ export const IDL: DriftVaults = {
 					isMut: false,
 					isSigner: false,
 				},
-				{
-					name: 'driftState',
-					isMut: false,
-					isSigner: false,
-				},
 			],
 			args: [
 				{
@@ -3659,11 +3594,6 @@ export const IDL: DriftVaults = {
 				},
 				{
 					name: 'driftUser',
-					isMut: false,
-					isSigner: false,
-				},
-				{
-					name: 'driftState',
 					isMut: false,
 					isSigner: false,
 				},
@@ -4236,11 +4166,6 @@ export const IDL: DriftVaults = {
 					isMut: false,
 					isSigner: false,
 				},
-				{
-					name: 'driftState',
-					isMut: false,
-					isSigner: false,
-				},
 			],
 			args: [
 				{
@@ -4280,11 +4205,6 @@ export const IDL: DriftVaults = {
 				},
 				{
 					name: 'driftUser',
-					isMut: false,
-					isSigner: false,
-				},
-				{
-					name: 'driftState',
 					isMut: false,
 					isSigner: false,
 				},
