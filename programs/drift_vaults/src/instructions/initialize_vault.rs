@@ -60,8 +60,8 @@ pub fn initialize_vault<'info>(
 
     drop(vault);
 
-    ctx.drift_initialize_user(params.name, bump)?;
     ctx.drift_initialize_user_stats(params.name, bump)?;
+    ctx.drift_initialize_user(params.name, bump)?;
 
     Ok(())
 }
@@ -131,25 +131,6 @@ impl<'info> InitializeUserCPI for Context<'_, '_, '_, 'info, InitializeVault<'in
         let signers = &[&signature_seeds[..]];
 
         let cpi_program = self.accounts.drift_program.to_account_info().clone();
-        let cpi_accounts = InitializeUserStats {
-            user_stats: self.accounts.drift_user_stats.clone(),
-            state: self.accounts.drift_state.clone(),
-            authority: self.accounts.vault.to_account_info().clone(),
-            payer: self.accounts.payer.to_account_info().clone(),
-            rent: self.accounts.rent.to_account_info().clone(),
-            system_program: self.accounts.system_program.to_account_info().clone(),
-        };
-        let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signers);
-        drift::cpi::initialize_user_stats(cpi_ctx)?;
-
-        Ok(())
-    }
-
-    fn drift_initialize_user_stats(&self, name: [u8; 32], bump: u8) -> Result<()> {
-        let signature_seeds = Vault::get_vault_signer_seeds(&name, &bump);
-        let signers = &[&signature_seeds[..]];
-
-        let cpi_program = self.accounts.drift_program.to_account_info().clone();
         let cpi_accounts = InitializeUser {
             user_stats: self.accounts.drift_user_stats.clone(),
             user: self.accounts.drift_user.clone(),
@@ -162,6 +143,25 @@ impl<'info> InitializeUserCPI for Context<'_, '_, '_, 'info, InitializeVault<'in
         let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signers);
         let sub_account_id = 0_u16;
         drift::cpi::initialize_user(cpi_ctx, sub_account_id, name)?;
+
+        Ok(())
+    }
+
+    fn drift_initialize_user_stats(&self, name: [u8; 32], bump: u8) -> Result<()> {
+        let signature_seeds = Vault::get_vault_signer_seeds(&name, &bump);
+        let signers = &[&signature_seeds[..]];
+
+        let cpi_program = self.accounts.drift_program.to_account_info().clone();
+        let cpi_accounts = InitializeUserStats {
+            user_stats: self.accounts.drift_user_stats.clone(),
+            state: self.accounts.drift_state.clone(),
+            authority: self.accounts.vault.to_account_info().clone(),
+            payer: self.accounts.payer.to_account_info().clone(),
+            rent: self.accounts.rent.to_account_info().clone(),
+            system_program: self.accounts.system_program.to_account_info().clone(),
+        };
+        let cpi_ctx = CpiContext::new_with_signer(cpi_program, cpi_accounts, signers);
+        drift::cpi::initialize_user_stats(cpi_ctx)?;
 
         Ok(())
     }

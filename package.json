@@ -14,11 +14,13 @@
         "anchor-tests:vaults": "yarn anchor-tests -g TestDriftVaults",
         "anchor-tests:protocol": "yarn anchor-tests -g TestProtocolVaults",
         "anchor-tests:tokenize": "yarn anchor-tests -g TestTokenizedDriftVaults",
-        "anchor-tests:if-stake": "yarn anchor-tests -g TestInsuranceFundStake"
+        "anchor-tests:if-stake": "yarn anchor-tests -g TestInsuranceFundStake",
+        "anchor-tests:sol-denom-vault": "yarn anchor-tests -g TestSOLDenomindatedVault",
+        "anchor-tests:withdraw": "yarn anchor-tests -g TestWithdrawFromVaults"
     },
     "devDependencies": {
         "@coral-xyz/anchor": "0.28.0",
-        "@drift-labs/sdk": "2.98.0-beta.9",
+        "@drift-labs/sdk": "2.108.0-beta.10",
         "@solana/web3.js": "1.73.2",
         "@types/bn.js": "^5.1.0",
         "@types/chai": "^4.3.0",
@@ -36,7 +38,7 @@
         "typescript": "^5"
     },
     "engines": {
-        "node": ">=16"
+        "node": ">=20.18.0"
     },
     "dependencies": {
         "@metaplex-foundation/js": "^0.20.1"

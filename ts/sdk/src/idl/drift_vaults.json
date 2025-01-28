@@ -1,5 +1,5 @@
 {
-  "version": "0.1.0",
+  "version": "0.2.0",
   "name": "drift_vaults",
   "instructions": [
     {
@@ -576,11 +576,6 @@
           "name": "driftUser",
           "isMut": false,
           "isSigner": false
-        },
-        {
-          "name": "driftState",
-          "isMut": false,
-          "isSigner": false
         }
       ],
       "args": [
@@ -621,11 +616,6 @@
         },
         {
           "name": "driftUser",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "driftState",
           "isMut": false,
           "isSigner": false
         }
@@ -727,11 +717,6 @@
           "isSigner": false
         },
         {
-          "name": "driftState",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
           "name": "driftProgram",
           "isMut": false,
           "isSigner": false
@@ -746,11 +731,6 @@
           "name": "vault",
           "isMut": true,
           "isSigner": false
-        },
-        {
-          "name": "authority",
-          "isMut": false,
-          "isSigner": true
         },
         {
           "name": "driftUser",
@@ -848,11 +828,6 @@
           "name": "driftUser",
           "isMut": false,
           "isSigner": false
-        },
-        {
-          "name": "driftState",
-          "isMut": false,
-          "isSigner": false
         }
       ],
       "args": [
@@ -888,11 +863,6 @@
         },
         {
           "name": "driftUser",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "driftState",
           "isMut": false,
           "isSigner": false
         }
@@ -1464,11 +1434,6 @@
           "name": "driftUser",
           "isMut": false,
           "isSigner": false
-        },
-        {
-          "name": "driftState",
-          "isMut": false,
-          "isSigner": false
         }
       ],
       "args": [
@@ -1509,11 +1474,6 @@
         },
         {
           "name": "driftUser",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "driftState",
           "isMut": false,
           "isSigner": false
         }

@@ -7,7 +7,7 @@ mod drift_cpi;
 mod error;
 mod instructions;
 pub mod macros;
-mod state;
+pub mod state;
 mod tests;
 mod token_cpi;
 

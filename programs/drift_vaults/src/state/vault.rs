@@ -23,7 +23,7 @@ use crate::events::{VaultDepositorAction, VaultDepositorV1Record};
 use crate::state::events::VaultDepositorRecord;
 use crate::state::withdraw_request::WithdrawRequest;
 use crate::state::{VaultFee, VaultProtocol};
-use crate::{validate, Size, VaultDepositor, WithdrawUnit};
+use crate::{validate, Size, WithdrawUnit};
 
 #[assert_no_slop]
 #[account(zero_copy(unsafe))]
@@ -411,7 +411,7 @@ impl Vault {
         let spot_market = spot_market_map.get_ref(&self.spot_market_index)?;
         let spot_market_precision = spot_market.get_precision().cast::<i128>()?;
         let oracle_price = oracle_map
-            .get_price_data(&spot_market.oracle)?
+            .get_price_data(&spot_market.oracle_id())?
             .price
             .cast::<i128>()?;
 
@@ -482,21 +482,17 @@ impl Vault {
         Ok(())
     }
 
-    pub fn check_delegate_available_for_liquidation(
-        &self,
-        vault_depositor: &VaultDepositor,
-        now: i64,
-    ) -> VaultResult {
+    pub fn check_available_for_liquidation(&self, now: i64) -> VaultResult {
         validate!(
-            self.liquidation_delegate != vault_depositor.authority,
-            ErrorCode::DelegateNotAvailableForLiquidation,
-            "liquidation delegate is already vault depositor"
+            self.liquidation_delegate == Pubkey::default(),
+            ErrorCode::VaultInLiquidation,
+            "vault already has liquidation delegate"
         )?;
 
         validate!(
             now.saturating_sub(self.liquidation_start_ts) > TIME_FOR_LIQUIDATION,
-            ErrorCode::DelegateNotAvailableForLiquidation,
-            "vault is already in liquidation"
+            ErrorCode::VaultInLiquidation,
+            "vault is still in liquidation"
         )?;
 
         Ok(())
@@ -592,7 +588,7 @@ impl Vault {
     ) -> Result<()> {
         self.apply_rebase(vault_protocol, vault_equity)?;
 
-        let vault_shares_before: u128 = self.get_manager_shares(vault_protocol)?;
+        let manager_vault_shares_before: u128 = self.get_manager_shares(vault_protocol)?;
         let total_vault_shares_before = self.total_shares;
         let user_vault_shares_before = self.user_shares;
         let protocol_shares_before = self.get_protocol_shares(vault_protocol);
@@ -608,14 +604,11 @@ impl Vault {
             .last_manager_withdraw_request
             .calculate_shares_lost(self, vault_equity)?;
 
-        self.total_shares = self.total_shares.safe_sub(vault_shares_lost)?;
+        // only deduct lost shares if manager doesn't own 100% of the vault
+        let manager_owns_entire_vault = total_vault_shares_before == manager_vault_shares_before;
 
-        self.user_shares = self.user_shares.safe_sub(vault_shares_lost)?;
-
-        if let Some(vp) = vault_protocol {
-            vp.protocol_profit_and_fee_shares = vp
-                .protocol_profit_and_fee_shares
-                .safe_sub(vault_shares_lost)?;
+        if vault_shares_lost > 0 && !manager_owns_entire_vault {
+            self.total_shares = self.total_shares.safe_sub(vault_shares_lost)?;
         }
 
         let vault_shares_after = self.get_manager_shares(vault_protocol)?;
@@ -628,7 +621,7 @@ impl Vault {
                 amount: 0,
                 depositor_authority: self.manager,
                 vault_equity_before: vault_equity,
-                vault_shares_before,
+                vault_shares_before: manager_vault_shares_before,
                 user_vault_shares_before,
                 total_vault_shares_before,
                 vault_shares_after,
@@ -681,8 +674,7 @@ impl Vault {
         validate!(
             n_shares > 0,
             ErrorCode::InvalidVaultWithdraw,
-            "Must submit withdraw request and wait the redeem_period ({} seconds)",
-            self.redeem_period
+            "No last_withdraw_request.shares found, must call manager_request_withdraw first",
         )?;
 
         let amount: u64 =
@@ -881,7 +873,7 @@ impl Vault {
 
         self.apply_rebase(vault_protocol, vault_equity)?;
 
-        let vault_shares_before: u128 = self.get_manager_shares(vault_protocol)?;
+        let manager_shares_before: u128 = self.get_manager_shares(vault_protocol)?;
         let total_vault_shares_before = self.total_shares;
         let user_vault_shares_before = self.user_shares;
         let protocol_shares_before = self.get_protocol_shares(vault_protocol);
@@ -900,18 +892,21 @@ impl Vault {
                 .calculate_shares_lost(self, vault_equity)?,
         };
 
-        self.total_shares = self.total_shares.safe_sub(vault_shares_lost)?;
-        self.user_shares = self.user_shares.safe_sub(vault_shares_lost)?;
-
         if let Some(vp) = vault_protocol {
             self.total_withdraw_requested = self
                 .total_withdraw_requested
                 .safe_sub(vp.last_protocol_withdraw_request.value)?;
             vp.last_protocol_withdraw_request.reset(now)?;
 
-            vp.protocol_profit_and_fee_shares = vp
-                .protocol_profit_and_fee_shares
-                .safe_sub(vault_shares_lost)?;
+            // only deduct lost shares if protocol doesn't own 100% of the vault
+            let vp_owns_entire_vault = total_vault_shares_before == protocol_shares_before;
+
+            if vault_shares_lost > 0 && !vp_owns_entire_vault {
+                self.total_shares = self.total_shares.safe_sub(vault_shares_lost)?;
+                vp.protocol_profit_and_fee_shares = vp
+                    .protocol_profit_and_fee_shares
+                    .safe_sub(vault_shares_lost)?;
+            }
 
             // get_manager_shares logic but doesn't need Option<RefMut<VaultProtocol>>
             let vault_shares_after = self
@@ -928,7 +923,7 @@ impl Vault {
                     amount: 0,
                     depositor_authority: vp.protocol,
                     vault_equity_before: vault_equity,
-                    vault_shares_before,
+                    vault_shares_before: manager_shares_before,
                     user_vault_shares_before,
                     total_vault_shares_before,
                     vault_shares_after,
@@ -990,8 +985,7 @@ impl Vault {
         validate!(
             n_shares > 0,
             ErrorCode::InvalidVaultWithdraw,
-            "Must submit withdraw request and wait the redeem_period ({} seconds)",
-            self.redeem_period
+            "No last_withdraw_request.shares found, must call protocol_request_withdraw first",
         )?;
 
         let amount: u64 =
@@ -1012,14 +1006,6 @@ impl Vault {
             vp.protocol_total_withdraws = vp.protocol_total_withdraws.saturating_add(n_tokens);
         }
         self.net_deposits = self.net_deposits.safe_sub(n_tokens.cast()?)?;
-
-        validate!(
-            protocol_shares_before >= n_shares,
-            ErrorCode::InvalidVaultWithdrawSize,
-            "protocol_shares_before={} < n_shares={}",
-            protocol_shares_before,
-            n_shares
-        )?;
 
         self.total_shares = self.total_shares.safe_sub(n_shares)?;
 

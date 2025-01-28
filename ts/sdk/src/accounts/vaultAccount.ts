@@ -42,6 +42,13 @@ export class VaultAccount extends VaultsProgramAccount<
 		return getVaultAddressSync(programId, encodeName(vaultName));
 	}
 
+	/**
+	 * Calculates the new total shares and management fee shares after a management fee is applied.
+	 * Only applies to deposits.
+	 * Management fee is applied to a depositor's existing equity, and the total shares are updated (increased) accordingly.
+	 * @param vaultEquity - The equity of the vault.
+	 * @returns An object containing the new total shares and management fee shares.
+	 */
 	calcSharesAfterManagementFee(vaultEquity: BN): {
 		totalShares: BN;
 		managementFeeShares: BN;
