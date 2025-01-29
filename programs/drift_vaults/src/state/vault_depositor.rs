@@ -849,7 +849,7 @@ impl VaultDepositor {
         vault: &Vault,
         user_stats: &UserStats,
     ) -> Result<u32> {
-        if (now as i32) < self.last_cumulative_fuel_amount_ts {
+        if (now as i32) > self.last_cumulative_fuel_amount_ts {
             let total_fuel = user_stats
                 .fuel_borrows
                 .safe_add(user_stats.fuel_deposits)?
