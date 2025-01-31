@@ -47,7 +47,7 @@ pub struct ManagerRequestWithdraw<'info> {
     pub vault: AccountLoader<'info, Vault>,
     pub manager: Signer<'info>,
     #[account(
-        constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?
+        constraint = is_user_stats_for_vault(&vault, &drift_user_stats.key())?
     )]
     /// CHECK: unused, for future proofing
     pub drift_user_stats: AccountInfo<'info>,

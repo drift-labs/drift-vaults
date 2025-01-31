@@ -50,7 +50,7 @@ pub struct ProtocolRequestWithdraw<'info> {
     pub vault_protocol: AccountLoader<'info, VaultProtocol>,
     pub protocol: Signer<'info>,
     #[account(
-        constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?
+        constraint = is_user_stats_for_vault(&vault, &drift_user_stats.key())?
     )]
     /// CHECK: unused, for future proofing
     pub drift_user_stats: AccountInfo<'info>,

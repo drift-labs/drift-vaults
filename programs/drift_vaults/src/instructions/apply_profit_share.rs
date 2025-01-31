@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use drift::instructions::optional_accounts::AccountMaps;
 use drift::program::Drift;
-use drift::state::user::User;
+use drift::state::user::{User, UserStats};
 
 use crate::constraints::{
     is_delegate_for_vault, is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault,
@@ -36,7 +36,15 @@ pub fn apply_profit_share<'c: 'info, 'info>(
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
-    vault_depositor.apply_profit_share(vault_equity, &mut vault, &mut vp)?;
+    let user_stats = ctx.accounts.drift_user_stats.load()?;
+
+    vault_depositor.apply_profit_share(
+        vault_equity,
+        &mut vault,
+        &mut vp,
+        clock.unix_timestamp,
+        &user_stats,
+    )?;
 
     Ok(())
 }
@@ -56,10 +64,10 @@ pub struct ApplyProfitShare<'info> {
     pub manager: Signer<'info>,
     #[account(
         mut,
-        constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?
+        constraint = is_user_stats_for_vault(&vault, &drift_user_stats.key())?
     )]
     /// CHECK: checked in drift cpi
-    pub drift_user_stats: AccountInfo<'info>,
+    pub drift_user_stats: AccountLoader<'info, UserStats>,
     #[account(
         mut,
         constraint = is_user_for_vault(&vault, &drift_user.key())?

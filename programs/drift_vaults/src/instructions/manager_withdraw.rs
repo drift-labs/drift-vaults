@@ -4,7 +4,7 @@ use anchor_spl::token::{Token, TokenAccount};
 use drift::cpi::accounts::Withdraw as DriftWithdraw;
 use drift::instructions::optional_accounts::AccountMaps;
 use drift::program::Drift;
-use drift::state::user::User;
+use drift::state::user::{User, UserStats};
 
 use crate::constraints::{is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault};
 use crate::drift_cpi::WithdrawCPI;
@@ -65,10 +65,10 @@ pub struct ManagerWithdraw<'info> {
     pub vault_token_account: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
-        constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?
+        constraint = is_user_stats_for_vault(&vault, &drift_user_stats.key())?
     )]
     /// CHECK: checked in drift cpi
-    pub drift_user_stats: AccountInfo<'info>,
+    pub drift_user_stats: AccountLoader<'info, UserStats>,
     #[account(
         mut,
         constraint = is_user_for_vault(&vault, &drift_user.key())?

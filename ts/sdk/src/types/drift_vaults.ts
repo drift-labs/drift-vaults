@@ -1722,13 +1722,21 @@ export type DriftVaults = {
 						type: 'u32';
 					},
 					{
-						name: 'padding1';
+						name: 'lastCumulativeFuelAmountTs';
+						type: 'i32';
+					},
+					{
+						name: 'cumulativeFuelAmount';
+						type: 'u32';
+					},
+					{
+						name: 'fuelAmount';
 						type: 'u32';
 					},
 					{
 						name: 'padding';
 						type: {
-							array: ['u64', 8];
+							array: ['u64', 7];
 						};
 					}
 				];
@@ -4445,13 +4453,21 @@ export const IDL: DriftVaults = {
 						type: 'u32',
 					},
 					{
-						name: 'padding1',
+						name: 'lastCumulativeFuelAmountTs',
+						type: 'i32',
+					},
+					{
+						name: 'cumulativeFuelAmount',
+						type: 'u32',
+					},
+					{
+						name: 'fuelAmount',
 						type: 'u32',
 					},
 					{
 						name: 'padding',
 						type: {
-							array: ['u64', 8],
+							array: ['u64', 7],
 						},
 					},
 				],
