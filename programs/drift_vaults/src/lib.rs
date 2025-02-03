@@ -8,6 +8,9 @@ mod error;
 mod instructions;
 pub mod macros;
 pub mod state;
+#[cfg(test)]
+mod test_utils;
+#[cfg(test)]
 mod tests;
 mod token_cpi;
 
