@@ -858,12 +858,16 @@ impl VaultDepositor {
                 .safe_add(user_stats.fuel_maker)?
                 .safe_add(user_stats.fuel_positions)?;
 
-            let fuel_delta = total_fuel.safe_sub(self.cumulative_fuel_amount)?;
             let vd_shares = self.checked_vault_shares(vault)?;
-            let vd_share_of_delta = fuel_delta
-                .cast::<u128>()?
-                .safe_mul(vd_shares)?
-                .safe_div(vault.total_shares)?;
+            let vd_share_of_delta = if vd_shares == 0 || vault.total_shares == 0 {
+                0
+            } else {
+                let fuel_delta = total_fuel.safe_sub(self.cumulative_fuel_amount)?;
+                fuel_delta
+                    .cast::<u128>()?
+                    .safe_mul(vd_shares)?
+                    .safe_div(vault.total_shares)?
+            };
 
             self.fuel_amount = self
                 .fuel_amount
@@ -1654,5 +1658,105 @@ mod vault_v1_tests {
             "cum profit share amount: {}",
             vd.cumulative_profit_share_amount
         );
+    }
+
+    #[test]
+    fn test_vault_depositor_shares_fuel() {
+        let now = 1000;
+        let mut vault = Vault::default();
+        // let vp = RefCell::new(VaultProtocol::default());
+        vault.total_shares = 1_000_000;
+
+        let vd_0 =
+            &mut VaultDepositor::new(Pubkey::default(), Pubkey::default(), Pubkey::default(), now);
+        vd_0.vault_shares = 200_000;
+        let vd_1 =
+            &mut VaultDepositor::new(Pubkey::default(), Pubkey::default(), Pubkey::default(), now);
+        vd_1.vault_shares = 300_000;
+
+        let mut vault_user_stats = UserStats::default();
+        vault_user_stats.fuel_insurance = 10_000;
+        vault_user_stats.fuel_deposits = 10_000;
+        vault_user_stats.fuel_borrows = 10_000;
+        vault_user_stats.fuel_positions = 10_000;
+        vault_user_stats.fuel_taker = 10_000;
+        vault_user_stats.fuel_maker = 10_000; // total = 60k
+
+        // 1) first crank
+        let now = 1000;
+        let vd_0_fuel_amount = vd_0
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats)
+            .unwrap();
+        assert_eq!(vd_0_fuel_amount, 12_000);
+        assert_eq!(vd_0.fuel_amount, 12_000);
+
+        let vd_1_fuel_amount = vd_1
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats)
+            .unwrap();
+        assert_eq!(vd_1_fuel_amount, 18_000);
+        assert_eq!(vd_1.fuel_amount, 18_000);
+
+        // 2) time advances, no new fuel
+        let now = 2000;
+        let vd_0_fuel_amount = vd_0
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats)
+            .unwrap();
+        assert_eq!(vd_0_fuel_amount, 12_000);
+        assert_eq!(vd_0.fuel_amount, 12_000);
+
+        let vd_1_fuel_amount = vd_1
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats)
+            .unwrap();
+        assert_eq!(vd_1_fuel_amount, 18_000);
+        assert_eq!(vd_1.fuel_amount, 18_000);
+
+        // 3) time advances, 10k more fuel
+        let now = 3000;
+        vault_user_stats.fuel_maker += 10_000; // total = 70k
+        let vd_0_fuel_amount = vd_0
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats)
+            .unwrap();
+        assert_eq!(vd_0_fuel_amount, 14_000);
+        assert_eq!(vd_0.fuel_amount, 14_000);
+
+        let vd_1_fuel_amount = vd_1
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats)
+            .unwrap();
+        assert_eq!(vd_1_fuel_amount, 21_000);
+        assert_eq!(vd_1.fuel_amount, 21_000);
+        assert_eq!(vd_0.cumulative_fuel_amount, 70_000);
+        assert_eq!(vd_1.cumulative_fuel_amount, 70_000);
+
+        // 4) time advances, more fuel, vd_0 cranks twice, vd_1 cranks once
+        let now = 4000;
+        vault_user_stats.fuel_maker += 10_000; // total = 80k
+        let vd_0_fuel_amount = vd_0
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats)
+            .unwrap();
+        assert_eq!(vd_0_fuel_amount, 16_000);
+        assert_eq!(vd_0.fuel_amount, 16_000);
+        assert_eq!(vd_1.fuel_amount, 21_000);
+        assert_eq!(vd_0.cumulative_fuel_amount, 80_000);
+        assert_eq!(vd_1.cumulative_fuel_amount, 70_000);
+
+        let now = 5000;
+        vault_user_stats.fuel_maker += 10_000; // total = 90k
+        let vd_0_fuel_amount = vd_0
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats)
+            .unwrap();
+        assert_eq!(vd_0_fuel_amount, 18_000);
+        assert_eq!(vd_1.fuel_amount, 21_000);
+        assert_eq!(vd_0.cumulative_fuel_amount, 90_000);
+        assert_eq!(vd_1.cumulative_fuel_amount, 70_000);
+
+        let vd_1_fuel_amount = vd_1
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats)
+            .unwrap();
+        assert_eq!(vd_1_fuel_amount, 27_000);
+        assert_eq!(vd_1.fuel_amount, 27_000);
+        assert_eq!(vd_0.fuel_amount, 18_000);
+
+        assert_eq!(vd_0.cumulative_fuel_amount, 90_000);
+        assert_eq!(vd_1.cumulative_fuel_amount, 90_000);
     }
 }
