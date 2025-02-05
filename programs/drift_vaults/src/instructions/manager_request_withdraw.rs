@@ -28,7 +28,7 @@ pub fn manager_request_withdraw<'c: 'info, 'info>(
         perp_market_map,
         spot_market_map,
         mut oracle_map,
-    } = ctx.load_maps(clock.slot, Some(spot_market_index), vp.is_some())?;
+    } = ctx.load_maps(clock.slot, Some(spot_market_index), vp.is_some(), false)?;
 
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;

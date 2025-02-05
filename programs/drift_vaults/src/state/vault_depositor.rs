@@ -56,10 +56,10 @@ pub struct VaultDepositor {
     pub profit_share_fee_paid: u64,
     /// the exponent for vault_shares decimal places
     pub vault_shares_base: u32,
-    pub last_cumulative_fuel_amount_ts: i32,
-    pub cumulative_fuel_amount: u32,
-    pub fuel_amount: u32,
-    pub padding: [u64; 7],
+    pub last_cumulative_fuel_amount_ts: u32, // overflows on 2106-02-07 06:28:15 UTC
+    pub cumulative_fuel_amount: u128,
+    pub fuel_amount: u128,
+    pub padding: [u64; 4],
 }
 
 impl Size for VaultDepositor {
@@ -133,7 +133,7 @@ impl VaultDepositor {
             last_cumulative_fuel_amount_ts: 0,
             cumulative_fuel_amount: 0,
             fuel_amount: 0,
-            padding: [0u64; 7],
+            padding: [0u64; 4],
         }
     }
 
@@ -848,15 +848,9 @@ impl VaultDepositor {
         now: i64,
         vault: &Vault,
         user_stats: &UserStats,
-    ) -> Result<u32> {
-        if (now as i32) > self.last_cumulative_fuel_amount_ts {
-            let total_fuel = user_stats
-                .fuel_borrows
-                .safe_add(user_stats.fuel_deposits)?
-                .safe_add(user_stats.fuel_insurance)?
-                .safe_add(user_stats.fuel_taker)?
-                .safe_add(user_stats.fuel_maker)?
-                .safe_add(user_stats.fuel_positions)?;
+    ) -> Result<u128> {
+        if (now as u32) > self.last_cumulative_fuel_amount_ts {
+            let total_fuel = user_stats.total_fuel()?;
 
             let vd_shares = self.checked_vault_shares(vault)?;
             let vd_share_of_delta = if vd_shares == 0 || vault.total_shares == 0 {
@@ -869,14 +863,18 @@ impl VaultDepositor {
                     .safe_div(vault.total_shares)?
             };
 
-            self.fuel_amount = self
-                .fuel_amount
-                .safe_add(vd_share_of_delta.cast::<u32>()?)?;
+            self.fuel_amount = self.fuel_amount.safe_add(vd_share_of_delta)?;
             self.cumulative_fuel_amount = total_fuel;
-            self.last_cumulative_fuel_amount_ts = now as i32;
+            self.last_cumulative_fuel_amount_ts = now as u32;
         }
 
         Ok(self.fuel_amount)
+    }
+
+    pub fn reset_fuel_amount(&mut self, now: i64) {
+        self.fuel_amount = 0;
+        self.cumulative_fuel_amount = 0;
+        self.last_cumulative_fuel_amount_ts = now as u32;
     }
 }
 

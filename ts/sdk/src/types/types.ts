@@ -109,9 +109,6 @@ export type VaultDepositor = {
 	pubkey: PublicKey;
 	authority: PublicKey;
 	vaultShares: BN;
-	// lastWithdrawRequestShares: BN;
-	// lastWithdrawRequestValue: BN;
-	// lastWithdrawRequestTs: BN;
 	lastWithdrawRequest: WithdrawRequest;
 	lastValidTs: BN;
 	netDeposits: BN;
@@ -121,8 +118,8 @@ export type VaultDepositor = {
 	vaultSharesBase: number;
 	profitShareFeePaid: BN;
 	lastCumulativeFuelAmountTs: number;
-	cumulativeFuelAmount: number;
-	fuelAmount: number;
+	cumulativeFuelAmount: BN;
+	fuelAmount: BN;
 	padding: BN | BN[];
 };
 

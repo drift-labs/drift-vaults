@@ -1,14 +1,14 @@
 use anchor_lang::prelude::*;
 use drift::instructions::optional_accounts::AccountMaps;
 use drift::math::casting::Cast;
-use drift::state::user::{User, UserStats};
+use drift::state::user::{FuelOverflowStatus, User, UserStats};
 
 use crate::constraints::{
     is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
 };
-use crate::state::{Vault, VaultProtocolProvider};
+use crate::state::FuelOverflowProvider;
 use crate::AccountMapProvider;
-use crate::VaultDepositor;
+use crate::{Vault, VaultDepositor, VaultProtocolProvider};
 
 pub fn cancel_withdraw_request<'c: 'info, 'info>(
     ctx: Context<'_, '_, 'c, 'info, CancelWithdrawRequest<'info>>,
@@ -24,16 +24,19 @@ pub fn cancel_withdraw_request<'c: 'info, 'info>(
 
     let user = ctx.accounts.drift_user.load()?;
 
+    let user_stats = ctx.accounts.drift_user_stats.load()?;
+    let has_fuel_overflow = FuelOverflowStatus::exists(user_stats.fuel_overflow_status);
+    let fuel_overflow = ctx.fuel_overflow(vp.is_some(), has_fuel_overflow);
+    user_stats.validate_fuel_overflow(&fuel_overflow)?;
+
     let AccountMaps {
         perp_market_map,
         spot_market_map,
         mut oracle_map,
-    } = ctx.load_maps(clock.slot, None, vp.is_some())?;
+    } = ctx.load_maps(clock.slot, None, vp.is_some(), has_fuel_overflow)?;
 
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
-
-    let user_stats = ctx.accounts.drift_user_stats.load()?;
 
     vault_depositor.cancel_withdraw_request(
         vault_equity.cast()?,
