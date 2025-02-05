@@ -983,6 +983,27 @@ export type DriftVaults = {
 			args: [];
 		},
 		{
+			name: 'managerUpdateFuelDistributionMode';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: false;
+					isSigner: true;
+				}
+			];
+			args: [
+				{
+					name: 'fuelDistributionMode';
+					type: 'u8';
+				}
+			];
+		},
+		{
 			name: 'applyProfitShare';
 			accounts: [
 				{
@@ -2081,9 +2102,16 @@ export type DriftVaults = {
 						type: 'bool';
 					},
 					{
+						name: 'fuelDistributionMode';
+						docs: [
+							'How fuel distribution should be treated [`FuelDistributionMode`]. Default is `UsersOnly`'
+						];
+						type: 'u8';
+					},
+					{
 						name: 'padding1';
 						type: {
-							array: ['u8', 7];
+							array: ['u8', 6];
 						};
 					},
 					{
@@ -2359,6 +2387,20 @@ export type DriftVaults = {
 					},
 					{
 						name: 'RedeemTokens';
+					}
+				];
+			};
+		},
+		{
+			name: 'FuelDistributionMode';
+			type: {
+				kind: 'enum';
+				variants: [
+					{
+						name: 'UsersOnly';
+					},
+					{
+						name: 'UsersAndManager';
 					}
 				];
 			};
@@ -2777,6 +2819,11 @@ export type DriftVaults = {
 			code: 6023;
 			name: 'InvalidTokenization';
 			msg: 'InvalidTokenization';
+		},
+		{
+			code: 6024;
+			name: 'InvalidFuelDistributionMode';
+			msg: 'InvalidFuelDistributionMode';
 		}
 	];
 };
@@ -3764,6 +3811,27 @@ export const IDL: DriftVaults = {
 				},
 			],
 			args: [],
+		},
+		{
+			name: 'managerUpdateFuelDistributionMode',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: false,
+					isSigner: true,
+				},
+			],
+			args: [
+				{
+					name: 'fuelDistributionMode',
+					type: 'u8',
+				},
+			],
 		},
 		{
 			name: 'applyProfitShare',
@@ -4864,9 +4932,16 @@ export const IDL: DriftVaults = {
 						type: 'bool',
 					},
 					{
+						name: 'fuelDistributionMode',
+						docs: [
+							'How fuel distribution should be treated [`FuelDistributionMode`]. Default is `UsersOnly`',
+						],
+						type: 'u8',
+					},
+					{
 						name: 'padding1',
 						type: {
-							array: ['u8', 7],
+							array: ['u8', 6],
 						},
 					},
 					{
@@ -5142,6 +5217,20 @@ export const IDL: DriftVaults = {
 					},
 					{
 						name: 'RedeemTokens',
+					},
+				],
+			},
+		},
+		{
+			name: 'FuelDistributionMode',
+			type: {
+				kind: 'enum',
+				variants: [
+					{
+						name: 'UsersOnly',
+					},
+					{
+						name: 'UsersAndManager',
 					},
 				],
 			},
@@ -5560,6 +5649,11 @@ export const IDL: DriftVaults = {
 			code: 6023,
 			name: 'InvalidTokenization',
 			msg: 'InvalidTokenization',
+		},
+		{
+			code: 6024,
+			name: 'InvalidFuelDistributionMode',
+			msg: 'InvalidFuelDistributionMode',
 		},
 	],
 };

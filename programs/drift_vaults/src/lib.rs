@@ -163,6 +163,13 @@ pub mod drift_vaults {
         instructions::manager_withdraw(ctx)
     }
 
+    pub fn manager_update_fuel_distribution_mode<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, ManagerUpdateFuelDistributionMode<'info>>,
+        fuel_distribution_mode: u8,
+    ) -> Result<()> {
+        instructions::manager_update_fuel_distribution_mode(ctx, fuel_distribution_mode)
+    }
+
     pub fn apply_profit_share<'c: 'info, 'info>(
         ctx: Context<'_, '_, 'c, 'info, ApplyProfitShare<'info>>,
     ) -> Result<()> {
