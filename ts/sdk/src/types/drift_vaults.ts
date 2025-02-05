@@ -772,6 +772,32 @@ export type DriftVaults = {
 			args: [];
 		},
 		{
+			name: 'resetFuelSeason';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'vaultDepositor';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'admin';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: true;
+					isSigner: false;
+				}
+			];
+			args: [];
+		},
+		{
 			name: 'managerDeposit';
 			accounts: [
 				{
@@ -3523,6 +3549,32 @@ export const IDL: DriftVaults = {
 				{
 					name: 'driftProgram',
 					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [],
+		},
+		{
+			name: 'resetFuelSeason',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'vaultDepositor',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'admin',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: true,
 					isSigner: false,
 				},
 			],
