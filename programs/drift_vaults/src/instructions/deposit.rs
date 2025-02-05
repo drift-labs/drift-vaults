@@ -59,6 +59,7 @@ pub fn deposit<'c: 'info, 'info>(
         &mut vp,
         clock.unix_timestamp,
         &user_stats,
+        &fuel_overflow,
     )?;
 
     drop(vault);

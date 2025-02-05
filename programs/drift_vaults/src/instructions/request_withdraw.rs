@@ -47,6 +47,7 @@ pub fn request_withdraw<'c: 'info, 'info>(
         &mut vp,
         clock.unix_timestamp,
         &user_stats,
+        &fuel_overflow,
     )?;
 
     Ok(())

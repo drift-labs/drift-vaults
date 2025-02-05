@@ -55,6 +55,7 @@ pub fn withdraw<'c: 'info, 'info>(ctx: Context<'_, '_, 'c, 'info, Withdraw<'info
         &mut vp,
         clock.unix_timestamp,
         &user_stats,
+        &fuel_overflow,
     )?;
 
     msg!("user_withdraw_amount: {}", user_withdraw_amount);

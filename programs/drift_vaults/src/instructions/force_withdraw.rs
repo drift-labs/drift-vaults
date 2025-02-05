@@ -53,6 +53,7 @@ pub fn force_withdraw<'c: 'info, 'info>(
         &mut vp,
         clock.unix_timestamp,
         &user_stats,
+        &fuel_overflow,
     )?;
 
     msg!("force_withdraw_amount: {}", withdraw_amount);
