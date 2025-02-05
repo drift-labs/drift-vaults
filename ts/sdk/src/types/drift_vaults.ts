@@ -277,6 +277,32 @@ export type DriftVaults = {
 			];
 		},
 		{
+			name: 'updateCumulativeFuelAmount';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'vaultDepositor';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: true;
+					isSigner: false;
+				}
+			];
+			args: [];
+		},
+		{
 			name: 'initializeVaultDepositor';
 			accounts: [
 				{
@@ -3006,6 +3032,32 @@ export const IDL: DriftVaults = {
 					},
 				},
 			],
+		},
+		{
+			name: 'updateCumulativeFuelAmount',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'vaultDepositor',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: true,
+					isSigner: false,
+				},
+			],
+			args: [],
 		},
 		{
 			name: 'initializeVaultDepositor',

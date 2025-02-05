@@ -130,6 +130,12 @@ pub mod drift_vaults {
         instructions::reset_delegate(ctx)
     }
 
+    pub fn reset_fuel_season<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, ResetFuelSeason<'info>>,
+    ) -> Result<()> {
+        instructions::reset_fuel_season(ctx)
+    }
+
     pub fn manager_deposit<'c: 'info, 'info>(
         ctx: Context<'_, '_, 'c, 'info, ManagerDeposit<'info>>,
         amount: u64,

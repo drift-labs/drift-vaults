@@ -11,6 +11,7 @@ use drift::math::insurance::{
 };
 use drift::math::margin::{meets_initial_margin_requirement, validate_spot_margin_trading};
 use drift::math::safe_math::SafeMath;
+use drift::state::events::FuelSeasonRecord;
 use drift::state::oracle_map::OracleMap;
 use drift::state::perp_market_map::PerpMarketMap;
 use drift::state::spot_market::SpotBalanceType;
@@ -902,6 +903,17 @@ impl VaultDepositor {
     }
 
     pub fn reset_fuel_amount(&mut self, now: i64) {
+        emit!(FuelSeasonRecord {
+            ts: now,
+            authority: self.authority,
+            fuel_insurance: 0,
+            fuel_deposits: 0,
+            fuel_borrows: 0,
+            fuel_positions: 0,
+            fuel_taker: 0,
+            fuel_maker: 0,
+            fuel_total: self.fuel_amount,
+        });
         self.fuel_amount = 0;
         self.cumulative_fuel_amount = 0;
         self.last_cumulative_fuel_amount_ts = now as u32;
