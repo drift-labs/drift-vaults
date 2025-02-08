@@ -102,7 +102,15 @@ export type Vault = {
 	permissioned: boolean;
 	lastManagerWithdrawRequest: WithdrawRequest;
 	vaultProtocol: boolean;
+	fuelDistributionMode: FuelDistributionMode;
+	padding1: number[];
+	padding: BN[];
 };
+
+export enum FuelDistributionMode {
+	UsersOnly = 0,
+	UsersAndManager = 1,
+}
 
 export type VaultDepositor = {
 	vault: PublicKey;

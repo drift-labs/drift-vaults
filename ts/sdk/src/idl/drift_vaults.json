@@ -290,7 +290,7 @@
           "isSigner": false
         },
         {
-          "name": "manager",
+          "name": "signer",
           "isMut": false,
           "isSigner": true
         },
@@ -792,6 +792,11 @@
         {
           "name": "driftUserStats",
           "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "driftState",
+          "isMut": false,
           "isSigner": false
         }
       ],

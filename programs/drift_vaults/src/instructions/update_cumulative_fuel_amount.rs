@@ -8,6 +8,8 @@ use crate::constraints::{
 use crate::state::{FuelOverflowProvider, Vault, VaultProtocolProvider};
 use crate::VaultDepositor;
 
+use super::constraints::is_authority_for_vault_depositor;
+
 pub fn update_cumulative_fuel_amount<'c: 'info, 'info>(
     ctx: Context<'_, '_, 'c, 'info, UpdateCumulativeFuelAmount<'info>>,
 ) -> Result<()> {
@@ -40,7 +42,7 @@ pub fn update_cumulative_fuel_amount<'c: 'info, 'info>(
 #[derive(Accounts)]
 pub struct UpdateCumulativeFuelAmount<'info> {
     #[account(
-        constraint = is_manager_for_vault(&vault, &manager)? || is_delegate_for_vault(&vault, &manager)?
+        constraint = is_manager_for_vault(&vault, &signer)? || is_delegate_for_vault(&vault, &signer)? || is_authority_for_vault_depositor(&vault_depositor, &signer)?
     )]
     pub vault: AccountLoader<'info, Vault>,
     #[account(
@@ -48,7 +50,7 @@ pub struct UpdateCumulativeFuelAmount<'info> {
         constraint = is_vault_for_vault_depositor(&vault_depositor, &vault)?
     )]
     pub vault_depositor: AccountLoader<'info, VaultDepositor>,
-    pub manager: Signer<'info>,
+    pub signer: Signer<'info>,
     #[account(
         mut,
         constraint = is_user_stats_for_vault(&vault, &drift_user_stats.key())?

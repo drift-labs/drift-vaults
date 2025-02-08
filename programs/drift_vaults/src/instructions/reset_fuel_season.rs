@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
-use drift::ids::admin_hot_wallet;
+use drift::state::events::FuelSeasonRecord;
+use drift::state::state::State;
 use drift::state::user::{FuelOverflowStatus, UserStats};
 
 use crate::constraints::{is_user_stats_for_vault, is_vault_for_vault_depositor};
@@ -32,6 +33,18 @@ pub fn reset_fuel_season<'c: 'info, 'info>(
     )?;
     msg!("new fuel_amount: {}", fuel_amount);
 
+    emit!(FuelSeasonRecord {
+        ts: clock.unix_timestamp,
+        authority: vault_depositor.authority,
+        fuel_insurance: 0,
+        fuel_deposits: 0,
+        fuel_borrows: 0,
+        fuel_positions: 0,
+        fuel_taker: 0,
+        fuel_maker: 0,
+        fuel_total: fuel_amount,
+    });
+
     vault_depositor.reset_fuel_amount(clock.unix_timestamp);
 
     Ok(())
@@ -46,7 +59,7 @@ pub struct ResetFuelSeason<'info> {
     )]
     pub vault_depositor: AccountLoader<'info, VaultDepositor>,
     #[account(
-        constraint = admin.key() == admin_hot_wallet::id()
+        constraint = admin.key() == drift_state.admin
     )]
     pub admin: Signer<'info>,
     #[account(
@@ -55,4 +68,5 @@ pub struct ResetFuelSeason<'info> {
     )]
     /// CHECK: checked in drift cpi
     pub drift_user_stats: AccountLoader<'info, UserStats>,
+    pub drift_state: Box<Account<'info, State>>,
 }

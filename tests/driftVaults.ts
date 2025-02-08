@@ -34,6 +34,7 @@ import {
 	isVariant,
 	WRAPPED_SOL_MINT,
 	convertToNumber,
+	UserStatsAccount,
 } from '@drift-labs/sdk';
 import {
 	bootstrapSignerClientAndUser,
@@ -73,6 +74,7 @@ import {
 } from '../ts/sdk';
 
 import { Metaplex } from '@metaplex-foundation/js';
+import { VaultDepositor, VaultDepositorAccount } from '../ts/sdk/src';
 
 // ammInvariant == k == x * y
 const mantissaSqrtScale = new BN(100_000);
@@ -3583,5 +3585,336 @@ describe('TestWithdrawFromVaults', () => {
 		});
 		console.log('final vault equity:', vaultEquity2.toNumber() / 1e6);
 		assert(vaultEquity2.gt(ZERO));
+	});
+});
+
+describe('TestFuelDistribution', () => {
+	const bulkAccountLoader = new BulkAccountLoader(connection, 'confirmed', 1);
+	let managerSigner: Signer;
+	let managerClient: VaultClient;
+	let managerDriftClient: DriftClient;
+	let managerUsdcAccount: PublicKey;
+
+	let adminVaultClient: VaultClient;
+
+	let vd0Signer: Signer;
+	let vd0Client: VaultClient;
+	let vd0DriftClient: DriftClient;
+	let vd0UsdcAccount: PublicKey;
+
+	let vd1Signer: Signer;
+	let vd1Client: VaultClient;
+	let vd1DriftClient: DriftClient;
+	let vd1UsdcAccount: PublicKey;
+
+	const usdcAmount = new BN(1_000_000_000).mul(QUOTE_PRECISION);
+
+	const commonVaultName = 'withdraw test vault';
+	const commonVaultKey = getVaultAddressSync(
+		program.programId,
+		encodeName(commonVaultName)
+	);
+	let firstVaultInitd = false;
+
+	const VAULT_PROTOCOL_DISCRIM: number[] = [106, 130, 5, 195, 126, 82, 249, 53];
+
+	before(async () => {
+		while (!adminInitialized) {
+			console.log(
+				'TestTokenizedDriftVaults: waiting for drift initialization...'
+			);
+			await sleep(1000);
+		}
+
+		await adminClient.subscribe();
+
+		const bootstrapManager = await bootstrapSignerClientAndUser({
+			payer: provider,
+			programId: program.programId,
+			usdcMint,
+			usdcAmount,
+			driftClientConfig: {
+				accountSubscription: {
+					type: 'websocket',
+					resubTimeoutMs: 30_000,
+				},
+				opts,
+				activeSubAccountId: 0,
+			},
+			metaplex,
+		});
+		managerSigner = bootstrapManager.signer;
+		managerClient = bootstrapManager.vaultClient;
+		managerDriftClient = bootstrapManager.driftClient;
+		managerUsdcAccount = bootstrapManager.userUSDCAccount.publicKey;
+
+		adminVaultClient = new VaultClient({
+			driftClient: adminClient,
+			program: program,
+		});
+
+		const vd0Bootstrap = await bootstrapSignerClientAndUser({
+			payer: provider,
+			programId: program.programId,
+			usdcMint,
+			usdcAmount,
+			driftClientConfig: {
+				accountSubscription: {
+					type: 'websocket',
+					resubTimeoutMs: 30_000,
+				},
+				opts,
+				activeSubAccountId: 0,
+			},
+			metaplex,
+		});
+		vd0Signer = vd0Bootstrap.signer;
+		vd0Client = vd0Bootstrap.vaultClient;
+		vd0DriftClient = vd0Bootstrap.driftClient;
+		vd0UsdcAccount = vd0Bootstrap.userUSDCAccount.publicKey;
+
+		const vd1Bootstrap = await bootstrapSignerClientAndUser({
+			payer: provider,
+			programId: program.programId,
+			usdcMint,
+			usdcAmount,
+			driftClientConfig: {
+				accountSubscription: {
+					type: 'websocket',
+					resubTimeoutMs: 30_000,
+				},
+				opts,
+				activeSubAccountId: 0,
+			},
+			metaplex,
+		});
+		vd1Signer = vd1Bootstrap.signer;
+		vd1Client = vd1Bootstrap.vaultClient;
+		vd1DriftClient = vd1Bootstrap.driftClient;
+		vd1UsdcAccount = vd1Bootstrap.userUSDCAccount.publicKey;
+
+		if (!firstVaultInitd) {
+			await managerClient.initializeVault({
+				name: encodeName(commonVaultName),
+				spotMarketIndex: 0,
+				redeemPeriod: ZERO,
+				maxTokens: ZERO,
+				managementFee: ZERO,
+				profitShare: 0,
+				hurdleRate: 0,
+				permissioned: false,
+				minDepositAmount: ZERO,
+			});
+
+			const vaultAcct = await program.account.vault.fetch(commonVaultKey);
+			assert(vaultAcct.manager.equals(managerSigner.publicKey));
+
+			await vd0Client.initializeVaultDepositor(
+				commonVaultKey,
+				vd0Signer.publicKey
+			);
+			let vaultDepositor = getVaultDepositorAddressSync(
+				program.programId,
+				commonVaultKey,
+				vd0Signer.publicKey
+			);
+			let vdAcct = await program.account.vaultDepositor.fetch(vaultDepositor);
+			assert(vdAcct.vault.equals(commonVaultKey));
+
+			await vd1Client.initializeVaultDepositor(
+				commonVaultKey,
+				vd1Signer.publicKey
+			);
+			vaultDepositor = getVaultDepositorAddressSync(
+				program.programId,
+				commonVaultKey,
+				vd1Signer.publicKey
+			);
+			vdAcct = await program.account.vaultDepositor.fetch(vaultDepositor);
+			assert(vdAcct.vault.equals(commonVaultKey));
+
+			firstVaultInitd = true;
+		}
+
+		// start account loader
+		bulkAccountLoader.startPolling();
+		await bulkAccountLoader.load();
+	});
+
+	after(async () => {
+		bulkAccountLoader.stopPolling();
+
+		await adminClient.unsubscribe();
+		await managerClient.unsubscribe();
+		await managerDriftClient.unsubscribe();
+		await vd0Client.unsubscribe();
+		await vd0DriftClient.unsubscribe();
+		await vd1Client.unsubscribe();
+		await vd1DriftClient.unsubscribe();
+	});
+
+	it('Test Fuel', async () => {
+		const managerTokenBalance0 = await connection.getTokenAccountBalance(
+			managerUsdcAccount
+		);
+		const vd0TokenBalance0 = await connection.getTokenAccountBalance(
+			vd0UsdcAccount
+		);
+		const vd1TokenBalance0 = await connection.getTokenAccountBalance(
+			vd1UsdcAccount
+		);
+
+		let tx = await adminClient.updateSpotMarketFuel(0, 255, 255, 255, 255, 255);
+		await printTxLogs(connection, tx);
+
+		const vd0VaultDepositor = getVaultDepositorAddressSync(
+			program.programId,
+			commonVaultKey,
+			vd0Signer.publicKey
+		);
+		await vd0Client.deposit(
+			vd0VaultDepositor,
+			usdcAmount,
+			undefined,
+			undefined,
+			vd0UsdcAccount
+		);
+
+		const userStatsKey = getUserStatsAccountPublicKey(
+			managerDriftClient.program.programId,
+			commonVaultKey
+		);
+		const userStats0 = (await vd0DriftClient.program.account.userStats.fetch(
+			userStatsKey
+		)) as UserStatsAccount;
+		const userStats0FuelDeposits = userStats0.fuelDeposits;
+
+		const vaultUser = await getUserAccountPublicKey(
+			managerDriftClient.program.programId,
+			commonVaultKey,
+			0
+		);
+		const vaultUserAccount = (await vd0DriftClient.program.account.user.fetch(
+			vaultUser
+		)) as UserAccount;
+		tx = await vd0DriftClient.updateUserFuelBonus(
+			vaultUser,
+			vaultUserAccount,
+			commonVaultKey
+		);
+		await printTxLogs(connection, tx);
+
+		console.log('waitin...');
+		await sleep(1_000);
+
+		const userStats1 = (await vd0DriftClient.program.account.userStats.fetch(
+			userStatsKey
+		)) as UserStatsAccount;
+		const userStats1FuelDeposits = userStats1.fuelDeposits;
+		assert(
+			userStats1FuelDeposits > userStats0FuelDeposits,
+			'fuel deposits should increase'
+		);
+
+		let vd0VaultDepositorAccount =
+			await vd0Client.program.account.vaultDepositor.fetch(vd0VaultDepositor);
+
+		try {
+			tx = await managerClient.updateCumulativeFuelAmount(vd0VaultDepositor, {
+				noLut: true,
+			});
+			await printTxLogs(connection, tx);
+		} catch (e) {
+			console.error(e);
+			assert(false);
+		}
+		vd0VaultDepositorAccount =
+			await vd0Client.program.account.vaultDepositor.fetch(vd0VaultDepositor);
+
+		// vd1 deposits 1/2 of what vd0 did
+		const vd1VaultDepositor = getVaultDepositorAddressSync(
+			program.programId,
+			commonVaultKey,
+			vd1Signer.publicKey
+		);
+		await vd1Client.deposit(
+			vd1VaultDepositor,
+			usdcAmount.div(new BN(2)),
+			undefined,
+			undefined,
+			vd1UsdcAccount
+		);
+
+		// update both user fuel
+		tx = await managerClient.updateCumulativeFuelAmount(vd0VaultDepositor, {
+			noLut: true,
+		});
+		await printTxLogs(connection, tx);
+		tx = await managerClient.updateCumulativeFuelAmount(vd1VaultDepositor, {
+			noLut: true,
+		});
+		await printTxLogs(connection, tx);
+
+		const userStats2 = (await vd0DriftClient.program.account.userStats.fetch(
+			userStatsKey
+		)) as UserStatsAccount;
+		const vd0VaultDepositorAccount1 =
+			(await vd0Client.program.account.vaultDepositor.fetch(
+				vd0VaultDepositor
+			)) as VaultDepositor;
+		const vd1VaultDepositorAccount1 =
+			(await vd1Client.program.account.vaultDepositor.fetch(
+				vd1VaultDepositor
+			)) as VaultDepositor;
+		const totalUserFuel =
+			vd0VaultDepositorAccount1.fuelAmount.toNumber() +
+			vd1VaultDepositorAccount1.fuelAmount.toNumber();
+		assert(totalUserFuel === userStats2.fuelDeposits);
+		assert(
+			vd0VaultDepositorAccount1.fuelAmount.gt(
+				vd1VaultDepositorAccount1.fuelAmount
+			)
+		);
+
+		try {
+			const state = adminClient.getStateAccount();
+			tx = await adminVaultClient.resetFuelSeason(vd0VaultDepositor, {
+				noLut: true,
+			});
+			// @ts-ignore
+			await printTxLogs(connection, tx, true, program);
+
+			tx = await adminVaultClient.resetFuelSeason(vd1VaultDepositor, {
+				noLut: true,
+			});
+			// @ts-ignore
+			await printTxLogs(connection, tx, true, program);
+		} catch (e) {
+			console.error(e);
+			assert(false);
+		}
+
+		const userStats3 = (await vd0DriftClient.program.account.userStats.fetch(
+			userStatsKey
+		)) as UserStatsAccount;
+		const vd0VaultDepositorAccount2 =
+			(await vd0Client.program.account.vaultDepositor.fetch(
+				vd0VaultDepositor
+			)) as VaultDepositor;
+		const vd1VaultDepositorAccount2 =
+			(await vd1Client.program.account.vaultDepositor.fetch(
+				vd1VaultDepositor
+			)) as VaultDepositor;
+		assert(vd0VaultDepositorAccount2.fuelAmount.toNumber() === 0);
+		assert(vd1VaultDepositorAccount2.fuelAmount.toNumber() === 0);
+		console.log('total fuel in drift user stats:', userStats3.fuelDeposits);
+		console.log(
+			'vd0 vault depositor fuel amount:',
+			vd0VaultDepositorAccount2.fuelAmount.toNumber()
+		);
+		console.log(
+			'vd1 vault depositor fuel amount:',
+			vd1VaultDepositorAccount2.fuelAmount.toNumber()
+		);
 	});
 });
