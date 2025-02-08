@@ -39,7 +39,6 @@ import {
 	Transaction,
 	TransactionInstruction,
 	TransactionSignature,
-	TransactionVersion,
 	VersionedTransaction,
 } from '@solana/web3.js';
 import {
@@ -683,7 +682,7 @@ export class VaultClient {
 
 		const user = await this.getSubscribedVaultUser(vaultAccount.user);
 
-		let remainingAccounts: AccountMeta[] = [];
+		const remainingAccounts: AccountMeta[] = [];
 		try {
 			const userStatsKey = getUserStatsAccountPublicKey(
 				this.driftClient.program.programId,
@@ -692,11 +691,13 @@ export class VaultClient {
 			const userStats = (await this.driftClient.program.account.userStats.fetch(
 				userStatsKey
 			)) as UserStatsAccount;
-			const remainingAccounts = this.getRemainingAccountsForUser(
-				[user.getUserAccount()],
-				[],
-				vaultAccount,
-				userStats
+			remainingAccounts.push(
+				...this.getRemainingAccountsForUser(
+					[user.getUserAccount()],
+					[],
+					vaultAccount,
+					userStats
+				)
 			);
 		} catch (err) {
 			console.error('failed to get remaining accounts', err);
