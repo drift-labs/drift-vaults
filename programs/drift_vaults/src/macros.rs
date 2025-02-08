@@ -104,7 +104,7 @@ macro_rules! implement_deposit {
         let cpi_accounts = DriftDeposit {
             state: $self.accounts.drift_state.clone(),
             user: $self.accounts.drift_user.to_account_info().clone(),
-            user_stats: $self.accounts.drift_user_stats.clone(),
+            user_stats: $self.accounts.drift_user_stats.to_account_info().clone(),
             authority: $self.accounts.vault.to_account_info().clone(),
             spot_market_vault: $self
                 .accounts

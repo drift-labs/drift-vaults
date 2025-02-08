@@ -277,6 +277,32 @@
       ]
     },
     {
+      "name": "updateCumulativeFuelAmount",
+      "accounts": [
+        {
+          "name": "vault",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "vaultDepositor",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "signer",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "driftUserStats",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "initializeVaultDepositor",
       "accounts": [
         {
@@ -746,6 +772,37 @@
       "args": []
     },
     {
+      "name": "resetFuelSeason",
+      "accounts": [
+        {
+          "name": "vault",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "vaultDepositor",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "admin",
+          "isMut": false,
+          "isSigner": true
+        },
+        {
+          "name": "driftUserStats",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "driftState",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
       "name": "managerDeposit",
       "accounts": [
         {
@@ -929,6 +986,27 @@
         }
       ],
       "args": []
+    },
+    {
+      "name": "managerUpdateFuelDistributionMode",
+      "accounts": [
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "manager",
+          "isMut": false,
+          "isSigner": true
+        }
+      ],
+      "args": [
+        {
+          "name": "fuelDistributionMode",
+          "type": "u8"
+        }
+      ]
     },
     {
       "name": "applyProfitShare",
@@ -1754,15 +1832,23 @@
             "type": "u32"
           },
           {
-            "name": "padding1",
+            "name": "lastCumulativeFuelAmountTs",
             "type": "u32"
+          },
+          {
+            "name": "cumulativeFuelAmount",
+            "type": "u128"
+          },
+          {
+            "name": "fuelAmount",
+            "type": "u128"
           },
           {
             "name": "padding",
             "type": {
               "array": [
                 "u64",
-                8
+                4
               ]
             }
           }
@@ -2104,11 +2190,18 @@
             "type": "bool"
           },
           {
+            "name": "fuelDistributionMode",
+            "docs": [
+              "How fuel distribution should be treated [`FuelDistributionMode`]. Default is `UsersOnly`"
+            ],
+            "type": "u8"
+          },
+          {
             "name": "padding1",
             "type": {
               "array": [
                 "u8",
-                7
+                6
               ]
             }
           },
@@ -2398,6 +2491,20 @@
           },
           {
             "name": "RedeemTokens"
+          }
+        ]
+      }
+    },
+    {
+      "name": "FuelDistributionMode",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "UsersOnly"
+          },
+          {
+            "name": "UsersAndManager"
           }
         ]
       }
@@ -2816,6 +2923,11 @@
       "code": 6023,
       "name": "InvalidTokenization",
       "msg": "InvalidTokenization"
+    },
+    {
+      "code": 6024,
+      "name": "InvalidFuelDistributionMode",
+      "msg": "InvalidFuelDistributionMode"
     }
   ],
   "metadata": {

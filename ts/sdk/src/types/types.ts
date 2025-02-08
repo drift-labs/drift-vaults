@@ -102,16 +102,21 @@ export type Vault = {
 	permissioned: boolean;
 	lastManagerWithdrawRequest: WithdrawRequest;
 	vaultProtocol: boolean;
+	fuelDistributionMode: FuelDistributionMode;
+	padding1: number[];
+	padding: BN[];
 };
+
+export enum FuelDistributionMode {
+	UsersOnly = 0,
+	UsersAndManager = 1,
+}
 
 export type VaultDepositor = {
 	vault: PublicKey;
 	pubkey: PublicKey;
 	authority: PublicKey;
 	vaultShares: BN;
-	// lastWithdrawRequestShares: BN;
-	// lastWithdrawRequestValue: BN;
-	// lastWithdrawRequestTs: BN;
 	lastWithdrawRequest: WithdrawRequest;
 	lastValidTs: BN;
 	netDeposits: BN;
@@ -120,8 +125,10 @@ export type VaultDepositor = {
 	cumulativeProfitShareAmount: BN;
 	vaultSharesBase: number;
 	profitShareFeePaid: BN;
-	padding1: number | number[];
-	padding: number[] | BN[];
+	lastCumulativeFuelAmountTs: number;
+	cumulativeFuelAmount: BN;
+	fuelAmount: BN;
+	padding: BN | BN[];
 };
 
 export type VaultProtocol = {
