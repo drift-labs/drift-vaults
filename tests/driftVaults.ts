@@ -74,7 +74,7 @@ import {
 } from '../ts/sdk';
 
 import { Metaplex } from '@metaplex-foundation/js';
-import { VaultDepositor, VaultDepositorAccount } from '../ts/sdk/src';
+import { VaultDepositor } from '../ts/sdk/src';
 
 // ammInvariant == k == x * y
 const mantissaSqrtScale = new BN(100_000);
@@ -3537,7 +3537,7 @@ describe('TestWithdrawFromVaults', () => {
 				doSell: false,
 			});
 
-			const solMarket = adminClient.getSpotMarketAccount(1);
+			const solMarket = adminClient.getSpotMarketAccount(1)!;
 
 			// increase oracle
 			const newOraclePrice = convertToNumber(oracle0.price) * 1.25;
@@ -3550,7 +3550,7 @@ describe('TestWithdrawFromVaults', () => {
 			await setFeedPrice(
 				anchor.workspace.Pyth,
 				newOraclePrice,
-				solMarket!.oracle
+				solMarket.oracle
 			);
 
 			await managerDriftClient.fetchAccounts();
@@ -3593,7 +3593,6 @@ describe('TestFuelDistribution', () => {
 	let managerSigner: Signer;
 	let managerClient: VaultClient;
 	let managerDriftClient: DriftClient;
-	let managerUsdcAccount: PublicKey;
 
 	let adminVaultClient: VaultClient;
 
@@ -3615,8 +3614,6 @@ describe('TestFuelDistribution', () => {
 		encodeName(commonVaultName)
 	);
 	let firstVaultInitd = false;
-
-	const VAULT_PROTOCOL_DISCRIM: number[] = [106, 130, 5, 195, 126, 82, 249, 53];
 
 	before(async () => {
 		while (!adminInitialized) {
@@ -3646,7 +3643,6 @@ describe('TestFuelDistribution', () => {
 		managerSigner = bootstrapManager.signer;
 		managerClient = bootstrapManager.vaultClient;
 		managerDriftClient = bootstrapManager.driftClient;
-		managerUsdcAccount = bootstrapManager.userUSDCAccount.publicKey;
 
 		adminVaultClient = new VaultClient({
 			driftClient: adminClient,
@@ -3754,16 +3750,6 @@ describe('TestFuelDistribution', () => {
 	});
 
 	it('Test Fuel', async () => {
-		const managerTokenBalance0 = await connection.getTokenAccountBalance(
-			managerUsdcAccount
-		);
-		const vd0TokenBalance0 = await connection.getTokenAccountBalance(
-			vd0UsdcAccount
-		);
-		const vd1TokenBalance0 = await connection.getTokenAccountBalance(
-			vd1UsdcAccount
-		);
-
 		let tx = await adminClient.updateSpotMarketFuel(0, 255, 255, 255, 255, 255);
 		await printTxLogs(connection, tx);
 
@@ -3816,9 +3802,6 @@ describe('TestFuelDistribution', () => {
 			'fuel deposits should increase'
 		);
 
-		let vd0VaultDepositorAccount =
-			await vd0Client.program.account.vaultDepositor.fetch(vd0VaultDepositor);
-
 		try {
 			tx = await managerClient.updateCumulativeFuelAmount(vd0VaultDepositor, {
 				noLut: true,
@@ -3828,8 +3811,6 @@ describe('TestFuelDistribution', () => {
 			console.error(e);
 			assert(false);
 		}
-		vd0VaultDepositorAccount =
-			await vd0Client.program.account.vaultDepositor.fetch(vd0VaultDepositor);
 
 		// vd1 deposits 1/2 of what vd0 did
 		const vd1VaultDepositor = getVaultDepositorAddressSync(
@@ -3877,7 +3858,6 @@ describe('TestFuelDistribution', () => {
 		);
 
 		try {
-			const state = adminClient.getStateAccount();
 			tx = await adminVaultClient.resetFuelSeason(vd0VaultDepositor, {
 				noLut: true,
 			});
