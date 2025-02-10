@@ -951,8 +951,8 @@ dependencies = [
 
 [[package]]
 name = "drift"
-version = "2.108.0"
-source = "git+https://github.com/drift-labs/protocol-v2.git?rev=b61bbe403cf526d75e71d673b3120598eab3131c#b61bbe403cf526d75e71d673b3120598eab3131c"
+version = "2.109.0"
+source = "git+https://github.com/drift-labs/protocol-v2.git?rev=v2.109.0#e99b9cd00b03136092749447af1b25a6880a9b4c"
 dependencies = [
  "ahash 0.8.6",
  "anchor-lang",
@@ -1712,7 +1712,7 @@ checksum = "624a8340c38c1b80fd549087862da4ba43e08858af025b236e509b6649fc13d5"
 [[package]]
 name = "openbook-v2-light"
 version = "0.1.0"
-source = "git+https://github.com/drift-labs/protocol-v2.git?rev=b61bbe403cf526d75e71d673b3120598eab3131c#b61bbe403cf526d75e71d673b3120598eab3131c"
+source = "git+https://github.com/drift-labs/protocol-v2.git?rev=v2.109.0#e99b9cd00b03136092749447af1b25a6880a9b4c"
 dependencies = [
  "anchor-lang",
  "borsh 0.10.3",
@@ -2881,7 +2881,7 @@ checksum = "6bdef32e8150c2a081110b42772ffe7d7c9032b606bc226c8260fd97e0976601"
 [[package]]
 name = "switchboard"
 version = "0.1.0"
-source = "git+https://github.com/drift-labs/protocol-v2.git?rev=b61bbe403cf526d75e71d673b3120598eab3131c#b61bbe403cf526d75e71d673b3120598eab3131c"
+source = "git+https://github.com/drift-labs/protocol-v2.git?rev=v2.109.0#e99b9cd00b03136092749447af1b25a6880a9b4c"
 dependencies = [
  "anchor-lang",
 ]
@@ -2889,7 +2889,7 @@ dependencies = [
 [[package]]
 name = "switchboard-on-demand"
 version = "0.1.0"
-source = "git+https://github.com/drift-labs/protocol-v2.git?rev=b61bbe403cf526d75e71d673b3120598eab3131c#b61bbe403cf526d75e71d673b3120598eab3131c"
+source = "git+https://github.com/drift-labs/protocol-v2.git?rev=v2.109.0#e99b9cd00b03136092749447af1b25a6880a9b4c"
 dependencies = [
  "anchor-lang",
  "bytemuck",

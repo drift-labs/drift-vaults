@@ -3608,7 +3608,7 @@ describe('TestFuelDistribution', () => {
 
 	const usdcAmount = new BN(1_000_000_000).mul(QUOTE_PRECISION);
 
-	const commonVaultName = 'withdraw test vault';
+	const commonVaultName = 'fuel test vault';
 	const commonVaultKey = getVaultAddressSync(
 		program.programId,
 		encodeName(commonVaultName)

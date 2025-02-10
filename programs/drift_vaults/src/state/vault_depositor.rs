@@ -232,6 +232,7 @@ impl VaultDepositor {
         Ok((0, 0))
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn deposit(
         &mut self,
         amount: u64,
@@ -1739,8 +1740,10 @@ mod vault_v1_tests {
     #[test]
     fn test_vault_depositor_shares_fuel_users_only() {
         let now = 1000;
-        let mut vault = Vault::default();
-        vault.total_shares = 1_000_000;
+        let mut vault = Vault {
+            total_shares: 1_000_000,
+            ..Vault::default()
+        };
         // default is users only
         // vault.fuel_digtribution_mode = FuelDistributionMode::UsersOnly as u8;
 
@@ -1752,13 +1755,15 @@ mod vault_v1_tests {
         vd_1.vault_shares = 300_000;
         vault.user_shares = 500_000;
 
-        let mut vault_user_stats = UserStats::default();
-        vault_user_stats.fuel_insurance = 10_000;
-        vault_user_stats.fuel_deposits = 10_000;
-        vault_user_stats.fuel_borrows = 10_000;
-        vault_user_stats.fuel_positions = 10_000;
-        vault_user_stats.fuel_taker = 10_000;
-        vault_user_stats.fuel_maker = 10_000; // total = 60k
+        let mut vault_user_stats = UserStats {
+            fuel_insurance: 10_000,
+            fuel_deposits: 10_000,
+            fuel_borrows: 10_000,
+            fuel_positions: 10_000,
+            fuel_taker: 10_000,
+            fuel_maker: 10_000, // total = 60k
+            ..UserStats::default()
+        };
 
         // 1) first crank
         let now = 1000;
@@ -1841,8 +1846,10 @@ mod vault_v1_tests {
     #[test]
     fn test_vault_depositor_shares_fuel_users_and_manager() {
         let now = 1000;
-        let mut vault = Vault::default();
-        vault.total_shares = 1_000_000;
+        let mut vault = Vault {
+            total_shares: 1_000_000,
+            ..Vault::default()
+        };
         vault.fuel_distribution_mode = FuelDistributionMode::UsersAndManager as u8;
 
         let vd_0 =
@@ -1853,13 +1860,15 @@ mod vault_v1_tests {
         vd_1.vault_shares = 300_000;
         vault.user_shares = 500_000;
 
-        let mut vault_user_stats = UserStats::default();
-        vault_user_stats.fuel_insurance = 10_000;
-        vault_user_stats.fuel_deposits = 10_000;
-        vault_user_stats.fuel_borrows = 10_000;
-        vault_user_stats.fuel_positions = 10_000;
-        vault_user_stats.fuel_taker = 10_000;
-        vault_user_stats.fuel_maker = 10_000; // total = 60k
+        let mut vault_user_stats = UserStats {
+            fuel_insurance: 10_000,
+            fuel_deposits: 10_000,
+            fuel_borrows: 10_000,
+            fuel_positions: 10_000,
+            fuel_taker: 10_000,
+            fuel_maker: 10_000, // total = 60k
+            ..UserStats::default()
+        };
 
         // 1) first crank
         let now = 1000;
@@ -1942,8 +1951,10 @@ mod vault_v1_tests {
     #[test]
     fn test_vault_depositor_shares_fuel_changing_user_shares() {
         let now = 1000;
-        let mut vault = Vault::default();
-        vault.total_shares = 1_000_000;
+        let mut vault = Vault {
+            total_shares: 1_000_000,
+            ..Vault::default()
+        };
         // default is users only
         // vault.fuel_digtribution_mode = FuelDistributionMode::UsersOnly as u8;
 
@@ -1956,13 +1967,15 @@ mod vault_v1_tests {
         vd_1.vault_shares = 300_000;
         vault.user_shares = 500_000;
 
-        let mut vault_user_stats = UserStats::default();
-        vault_user_stats.fuel_insurance = 10_000;
-        vault_user_stats.fuel_deposits = 10_000;
-        vault_user_stats.fuel_borrows = 10_000;
-        vault_user_stats.fuel_positions = 10_000;
-        vault_user_stats.fuel_taker = 10_000;
-        vault_user_stats.fuel_maker = 10_000; // total = 60k
+        let mut vault_user_stats = UserStats {
+            fuel_insurance: 10_000,
+            fuel_deposits: 10_000,
+            fuel_borrows: 10_000,
+            fuel_positions: 10_000,
+            fuel_taker: 10_000,
+            fuel_maker: 10_000, // total = 60k
+            ..UserStats::default()
+        };
 
         // 1) first crank
         let now = 1000;
