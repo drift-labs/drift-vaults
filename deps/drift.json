@@ -244,6 +244,11 @@
           "name": "authority",
           "isMut": false,
           "isSigner": false
+        },
+        {
+          "name": "signer",
+          "isMut": false,
+          "isSigner": true
         }
       ],
       "args": []
@@ -14950,8 +14955,5 @@
       "name": "FuelOverflowAccountNotFound",
       "msg": "FuelOverflow account not found"
     }
-  ],
-  "metadata": {
-    "address": "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
-  }
+  ]
 }
