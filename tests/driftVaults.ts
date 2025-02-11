@@ -1854,7 +1854,7 @@ describe('TestTokenizedDriftVaults', () => {
 			provider,
 			usdcMint,
 			new anchor.Program(
-				managerDriftClient.program.idl,
+				managerDriftClient.program.idl as anchor.Idl,
 				managerDriftClient.program.programId,
 				provider
 			),
@@ -1874,7 +1874,7 @@ describe('TestTokenizedDriftVaults', () => {
 				provider,
 				usdcMint,
 				new anchor.Program(
-					managerDriftClient.program.idl,
+					managerDriftClient.program.idl as anchor.Idl,
 					managerDriftClient.program.programId,
 					provider
 				),
@@ -2179,7 +2179,7 @@ describe('TestTokenizedDriftVaults', () => {
 				provider,
 				usdcMint,
 				new anchor.Program(
-					managerDriftClient.program.idl,
+					managerDriftClient.program.idl as anchor.Idl,
 					managerDriftClient.program.programId,
 					provider
 				),
@@ -3471,7 +3471,7 @@ describe('TestWithdrawFromVaults', () => {
 				provider,
 				usdcMint,
 				new anchor.Program(
-					managerDriftClient.program.idl,
+					managerDriftClient.program.idl as anchor.Idl,
 					managerDriftClient.program.programId,
 					provider
 				),
