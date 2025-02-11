@@ -2080,14 +2080,14 @@
   dependencies:
     "@types/istanbul-lib-report" "*"
 
-"@types/jest-expect-message@^1.1.0":
+"@types/jest-expect-message@1.1.0":
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/@types/jest-expect-message/-/jest-expect-message-1.1.0.tgz#34947da81c92b7fc4c7a41bbd5088b4f97ad2717"
   integrity sha512-PbmZ6pTBpJTzj7KdGP8l8qTyf6RA5BVWg0C51XjCb0GuifXVcu3jAR6+U/W47nmE5S3tLPPEo70UcuhSlSS1hg==
   dependencies:
     jest-expect-message "*"
 
-"@types/jest@^29.5.14":
+"@types/jest@29.5.14":
   version "29.5.14"
   resolved "https://registry.yarnpkg.com/@types/jest/-/jest-29.5.14.tgz#2b910912fa1d6856cadcd0c1f95af7df1d6049e5"
   integrity sha512-ZN+4sdnLUbo8EVvVc2ao0GFW6oVrQRPn4K2lglySj7APvSrgzxHiNNK99us4WDMi57xxA2yggblIAMNhXOotLQ==

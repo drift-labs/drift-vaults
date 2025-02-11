@@ -10,5 +10,6 @@
     "module": "commonjs",
     "target": "es6",
     "esModuleInterop": true
-  }
+  },
+  "files": ["node_modules/jest-expect-message/types/index.d.ts"]
 }

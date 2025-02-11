@@ -24,7 +24,6 @@ import {
 	Transaction,
 	TransactionSignature,
 } from '@solana/web3.js';
-import { expect } from '@jest/globals';
 import buffer from 'buffer';
 import {
 	BN,
@@ -1609,5 +1608,5 @@ export async function doWashTrading({
 }
 
 export function assert(condition: boolean, message?: string) {
-	expect(condition).toBe(true);
+	expect(condition, message).toBe(true);
 }
