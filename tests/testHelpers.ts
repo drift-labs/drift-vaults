@@ -64,6 +64,7 @@ import {
 	VaultClient,
 } from '../ts/sdk';
 import { Metaplex } from '@metaplex-foundation/js';
+import 'jest-expect-message';
 
 export async function mockOracle(
 	price: number = 50 * 10e7,
@@ -1607,6 +1608,6 @@ export async function doWashTrading({
 	);
 }
 
-export function assert(condition: boolean, message?: string) {
+export function assert(condition: boolean, message = '') {
 	expect(condition, message).toBe(true);
 }
