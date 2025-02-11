@@ -24,7 +24,7 @@ import {
 	Transaction,
 	TransactionSignature,
 } from '@solana/web3.js';
-import { assert } from 'chai';
+import { expect } from '@jest/globals';
 import buffer from 'buffer';
 import {
 	BN,
@@ -94,7 +94,7 @@ export async function mockOracle(
 	if (feedData.price !== price) {
 		console.log('mockOracle precision error:', feedData.price, '!=', price);
 	}
-	assert.ok(Math.abs(feedData.price - price) < 1e-10);
+	assert(Math.abs(feedData.price - price) < 1e-10);
 
 	return priceFeedAddress;
 }
@@ -267,7 +267,7 @@ export async function isDriftInitialized(driftClient: DriftClient) {
 
 export async function initializeAndSubscribeDriftClient(
 	connection: Connection,
-	program: Program,
+	program: Program<DriftVaults>,
 	userKeyPair: Keypair,
 	marketIndexes: number[],
 	bankIndexes: number[],
@@ -319,6 +319,7 @@ export async function createUserWithUSDCAccount(
 
 	const driftClient = await initializeAndSubscribeDriftClient(
 		provider.connection,
+		// @ts-ignore
 		chProgram,
 		userKeyPair,
 		marketIndexes,
@@ -382,6 +383,7 @@ export async function createUserWithUSDCAndWSOLAccount(
 	);
 	const driftClient = await initializeAndSubscribeDriftClient(
 		provider.connection,
+		// @ts-ignore
 		chProgram,
 		userKeyPair,
 		marketIndexes,
@@ -1126,6 +1128,7 @@ export async function bootstrapSignerClientAndUser(params: {
 	const program = new Program(IDL, programId, provider);
 	const vaultClient = new VaultClient({
 		driftClient,
+		// @ts-ignore
 		program,
 		cliMode: vaultClientCliMode ?? true,
 		metaplex: params.metaplex,
@@ -1274,6 +1277,7 @@ export async function getVaultDepositorValue(params: {
 	}
 
 	const vaultDepositorEquity = vaultEquity
+		// @ts-ignore
 		.mul(vaultDepositorAccount.vaultShares)
 		.div(vaultAccount.totalShares);
 	const vaultDepositorShareOfVault =
@@ -1322,6 +1326,7 @@ export async function getVaultDepositorValue(params: {
 	return {
 		vaultEquity,
 		vaultShares: vaultAccount.totalShares,
+		// @ts-ignore
 		vaultDepositorShares: vaultDepositorAccount.vaultShares,
 		vaultDepositorEquity,
 		vaultDepositorShareOfVault,
@@ -1601,4 +1606,8 @@ export async function doWashTrading({
 			QUOTE_PRECISION
 		).toString()} (${diff * 100}% from start, ${i} iters)\n`
 	);
+}
+
+export function assert(condition: boolean, message?: string) {
+	expect(condition).toBe(true);
 }

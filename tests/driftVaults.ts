@@ -52,6 +52,7 @@ import {
 	setFeedPrice,
 	sleep,
 	validateTotalUserShares,
+	assert,
 } from './testHelpers';
 import { getMint } from '@solana/spl-token';
 import {
@@ -60,7 +61,7 @@ import {
 	LAMPORTS_PER_SOL,
 	Signer,
 } from '@solana/web3.js';
-import { assert } from 'chai';
+import { describe, beforeAll, afterAll, it } from '@jest/globals';
 import {
 	VaultClient,
 	getTokenizedVaultMintAddressSync,
@@ -189,7 +190,7 @@ describe('driftVaults', () => {
 
 	const usdcAmount = new BN(1_000).mul(QUOTE_PRECISION);
 
-	before(async () => {
+	beforeAll(async () => {
 		while (!adminInitialized || !(await isDriftInitialized(adminClient))) {
 			console.log('TestDriftVaults: waiting for AdminClient...');
 			await sleep(1000);
@@ -271,7 +272,7 @@ describe('driftVaults', () => {
 		await bulkAccountLoader.load();
 	});
 
-	after(async () => {
+	afterAll(async () => {
 		bulkAccountLoader.stopPolling();
 
 		await adminClient.unsubscribe();
@@ -338,6 +339,7 @@ describe('driftVaults', () => {
 		});
 
 		await vd2Client.program.methods
+			// @ts-ignore
 			.deposit(usdcAmount)
 			.accounts({
 				userTokenAccount: vd2UserUSDCAccount,
@@ -382,6 +384,7 @@ describe('driftVaults', () => {
 		// request withdraw
 		console.log('request withdraw');
 		const requestTxSig = await vd2Client.program.methods
+			// @ts-ignore
 			.requestWithdraw(usdcAmount, WithdrawUnit.TOKEN)
 			.accounts({
 				vault,
@@ -495,7 +498,7 @@ describe('TestProtocolVaults', () => {
 	const usdcAmount = new BN(1_000).mul(QUOTE_PRECISION);
 	const baseAssetAmount = new BN(1).mul(BASE_PRECISION);
 
-	before(async () => {
+	beforeAll(async () => {
 		while (!adminInitialized || !(await isDriftInitialized(adminClient))) {
 			console.log('TestProtocolVault: waiting for AdminClient...');
 			await sleep(1000);
@@ -646,7 +649,7 @@ describe('TestProtocolVaults', () => {
 		await bulkAccountLoader.load();
 	});
 
-	after(async () => {
+	afterAll(async () => {
 		bulkAccountLoader.stopPolling();
 
 		await adminClient.unsubscribe();
@@ -763,6 +766,7 @@ describe('TestProtocolVaults', () => {
 		}
 
 		await vdClient.program.methods
+			// @ts-ignore
 			.deposit(usdcAmount)
 			.accounts({
 				vault: protocolVault,
@@ -1186,6 +1190,7 @@ describe('TestProtocolVaults', () => {
 
 		try {
 			await vdClient.program.methods
+				// @ts-ignore
 				.requestWithdraw(withdrawAmount, WithdrawUnit.TOKEN)
 				.accounts({
 					vault: protocolVault,
@@ -1301,6 +1306,7 @@ describe('TestProtocolVaults', () => {
 
 		try {
 			await protocolClient.program.methods
+				// @ts-ignore
 				.protocolRequestWithdraw(withdrawAmount, WithdrawUnit.TOKEN)
 				.accounts({
 					vault: protocolVault,
@@ -1414,7 +1420,7 @@ describe('TestTokenizedDriftVaults', () => {
 	);
 	let firstVaultInitd = false;
 
-	before(async () => {
+	beforeAll(async () => {
 		while (!adminInitialized) {
 			console.log(
 				'TestTokenizedDriftVaults: waiting for drift initialization...'
@@ -1502,7 +1508,7 @@ describe('TestTokenizedDriftVaults', () => {
 		await bulkAccountLoader.load();
 	});
 
-	after(async () => {
+	afterAll(async () => {
 		bulkAccountLoader.stopPolling();
 
 		await adminClient.unsubscribe();
@@ -1894,6 +1900,7 @@ describe('TestTokenizedDriftVaults', () => {
 		const testVaultClient = new VaultClient({
 			// @ts-ignore
 			driftClient: adminClient,
+			// @ts-ignore
 			program: program,
 			metaplex: metaplex,
 			cliMode: true,
@@ -1901,6 +1908,7 @@ describe('TestTokenizedDriftVaults', () => {
 		const depositorVaultClient = new VaultClient({
 			// @ts-ignore
 			driftClient: driftClient,
+			// @ts-ignore
 			program: new anchor.Program(
 				program.idl,
 				program.programId,
@@ -2637,7 +2645,7 @@ describe('TestInsuranceFundStake', () => {
 	const commonVaultName = 'vault with IF';
 	let firstVaultInitd = false;
 
-	before(async () => {
+	beforeAll(async () => {
 		while (!adminInitialized) {
 			console.log(
 				'TestInsuranceFundStake: waiting for drift initialization...'
@@ -2736,7 +2744,7 @@ describe('TestInsuranceFundStake', () => {
 		await vd1DriftClient.subscribe();
 	});
 
-	after(async () => {
+	afterAll(async () => {
 		bulkAccountLoader.stopPolling();
 
 		await adminClient.unsubscribe();
@@ -2798,7 +2806,7 @@ describe('TestInsuranceFundStake', () => {
 				ifStakeAccountPublicKey
 			)) as InsuranceFundStake;
 
-		assert(ifStakeAccount, "Couldn't fetch IF stake account");
+		assert(ifStakeAccount !== null, "Couldn't fetch IF stake account");
 		assert(
 			ifStakeAccount.marketIndex === marketIndex,
 			'Market index is incorrect'
@@ -2951,7 +2959,7 @@ describe('TestSOLDenomindatedVault', () => {
 	);
 	let firstVaultInitd = false;
 
-	before(async () => {
+	beforeAll(async () => {
 		while (!adminInitialized) {
 			console.log(
 				'TestTokenizedDriftVaults: waiting for drift initialization...'
@@ -3018,7 +3026,7 @@ describe('TestSOLDenomindatedVault', () => {
 		await bulkAccountLoader.load();
 	});
 
-	after(async () => {
+	afterAll(async () => {
 		bulkAccountLoader.stopPolling();
 
 		await adminClient.unsubscribe();
@@ -3143,7 +3151,7 @@ describe('TestWithdrawFromVaults', () => {
 
 	const VAULT_PROTOCOL_DISCRIM: number[] = [106, 130, 5, 195, 126, 82, 249, 53];
 
-	before(async () => {
+	beforeAll(async () => {
 		while (!adminInitialized) {
 			console.log(
 				'TestTokenizedDriftVaults: waiting for drift initialization...'
@@ -3272,7 +3280,7 @@ describe('TestWithdrawFromVaults', () => {
 		await bulkAccountLoader.load();
 	});
 
-	after(async () => {
+	afterAll(async () => {
 		bulkAccountLoader.stopPolling();
 
 		await adminClient.unsubscribe();
@@ -3616,7 +3624,7 @@ describe('TestFuelDistribution', () => {
 	);
 	let firstVaultInitd = false;
 
-	before(async () => {
+	beforeAll(async () => {
 		while (!adminInitialized) {
 			console.log(
 				'TestTokenizedDriftVaults: waiting for drift initialization...'
@@ -3647,7 +3655,8 @@ describe('TestFuelDistribution', () => {
 
 		adminVaultClient = new VaultClient({
 			driftClient: adminClient,
-			program: program,
+			// @ts-ignore
+			program,
 		});
 
 		const vd0Bootstrap = await bootstrapSignerClientAndUser({
@@ -3738,7 +3747,7 @@ describe('TestFuelDistribution', () => {
 		await bulkAccountLoader.load();
 	});
 
-	after(async () => {
+	afterAll(async () => {
 		bulkAccountLoader.stopPolling();
 
 		await adminClient.unsubscribe();
@@ -3841,10 +3850,12 @@ describe('TestFuelDistribution', () => {
 			userStatsKey
 		)) as UserStatsAccount;
 		const vd0VaultDepositorAccount1 =
+			// @ts-ignore
 			(await vd0Client.program.account.vaultDepositor.fetch(
 				vd0VaultDepositor
 			)) as VaultDepositor;
 		const vd1VaultDepositorAccount1 =
+			// @ts-ignore
 			(await vd1Client.program.account.vaultDepositor.fetch(
 				vd1VaultDepositor
 			)) as VaultDepositor;
@@ -3879,10 +3890,12 @@ describe('TestFuelDistribution', () => {
 			userStatsKey
 		)) as UserStatsAccount;
 		const vd0VaultDepositorAccount2 =
+			// @ts-ignore
 			(await vd0Client.program.account.vaultDepositor.fetch(
 				vd0VaultDepositor
 			)) as VaultDepositor;
 		const vd1VaultDepositorAccount2 =
+			// @ts-ignore
 			(await vd1Client.program.account.vaultDepositor.fetch(
 				vd1VaultDepositor
 			)) as VaultDepositor;

@@ -17,8 +17,8 @@ import {
 	UserStatsAccount,
 	FuelOverflowStatus,
 	getFuelOverflowAccountPublicKey,
+	FUEL_RESET_LOG_ACCOUNT,
 } from '@drift-labs/sdk';
-import { FUEL_RESET_LOG_ACCOUNT } from '@drift-labs/sdk/src/constants/txConstants';
 import { BorshAccountsCoder, Program, ProgramAccount } from '@coral-xyz/anchor';
 import { DriftVaults } from './types/drift_vaults';
 import {
