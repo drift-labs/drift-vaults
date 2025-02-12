@@ -2218,8 +2218,8 @@ export class VaultClient {
 			preFlightCommitment: 'confirmed',
 			forceVersionedTransaction: true,
 			txVersion: 0,
-			fetchMarketLookupTableAccount:
-				this.driftClient.fetchMarketLookupTableAccount.bind(this.driftClient),
+			fetchAllMarketLookupTableAccounts:
+				this.driftClient.fetchAllLookupTableAccounts.bind(this.driftClient),
 		})) as VersionedTransaction;
 	}
 
