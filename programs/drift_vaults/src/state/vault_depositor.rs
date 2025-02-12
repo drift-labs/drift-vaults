@@ -11,11 +11,12 @@ use drift::math::insurance::{
 };
 use drift::math::margin::{meets_initial_margin_requirement, validate_spot_margin_trading};
 use drift::math::safe_math::SafeMath;
+use drift::state::events::FuelSeasonRecord;
 use drift::state::oracle_map::OracleMap;
 use drift::state::perp_market_map::PerpMarketMap;
 use drift::state::spot_market::SpotBalanceType;
 use drift::state::spot_market_map::SpotMarketMap;
-use drift::state::user::User;
+use drift::state::user::{FuelOverflow, User, UserStats};
 use drift_macros::assert_no_slop;
 use static_assertions::const_assert_eq;
 
@@ -27,6 +28,8 @@ use crate::state::withdraw_unit::WithdrawUnit;
 use crate::state::{Vault, VaultDepositorBase, VaultFee, VaultProtocol};
 use crate::validate;
 use crate::Size;
+
+use super::FuelDistributionMode;
 
 #[assert_no_slop]
 #[account(zero_copy(unsafe))]
@@ -56,8 +59,10 @@ pub struct VaultDepositor {
     pub profit_share_fee_paid: u64,
     /// the exponent for vault_shares decimal places
     pub vault_shares_base: u32,
-    pub padding1: u32,
-    pub padding: [u64; 8],
+    pub last_cumulative_fuel_amount_ts: u32, // overflows on 2106-02-07 06:28:15 UTC
+    pub cumulative_fuel_amount: u128,
+    pub fuel_amount: u128,
+    pub padding: [u64; 4],
 }
 
 impl Size for VaultDepositor {
@@ -127,9 +132,11 @@ impl VaultDepositor {
             total_deposits: 0,
             total_withdraws: 0,
             cumulative_profit_share_amount: 0,
-            padding1: 0,
             profit_share_fee_paid: 0,
-            padding: [0u64; 8],
+            last_cumulative_fuel_amount_ts: 0,
+            cumulative_fuel_amount: 0,
+            fuel_amount: 0,
+            padding: [0u64; 4],
         }
     }
 
@@ -225,6 +232,7 @@ impl VaultDepositor {
         Ok((0, 0))
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn deposit(
         &mut self,
         amount: u64,
@@ -232,6 +240,8 @@ impl VaultDepositor {
         vault: &mut Vault,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
         now: i64,
+        user_stats: &UserStats,
+        fuel_overflow: &Option<AccountLoader<FuelOverflow>>,
     ) -> Result<()> {
         validate!(
             vault.max_tokens == 0 || vault.max_tokens > vault_equity.safe_add(amount)?,
@@ -274,8 +284,14 @@ impl VaultDepositor {
             protocol_fee_payment,
             protocol_fee_shares,
         } = vault.apply_fee(vault_protocol, vault_equity, now)?;
-        let (manager_profit_share, protocol_profit_share) =
-            self.apply_profit_share(vault_equity, vault, vault_protocol)?;
+        let (manager_profit_share, protocol_profit_share) = self.apply_profit_share(
+            vault_equity,
+            vault,
+            vault_protocol,
+            now,
+            user_stats,
+            fuel_overflow,
+        )?;
 
         let n_shares = vault_amount_to_depositor_shares(amount, vault.total_shares, vault_equity)?;
 
@@ -344,6 +360,7 @@ impl VaultDepositor {
         Ok(())
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn request_withdraw(
         &mut self,
         withdraw_amount: u64,
@@ -352,6 +369,8 @@ impl VaultDepositor {
         vault: &mut Vault,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
         now: i64,
+        user_stats: &UserStats,
+        fuel_overflow: &Option<AccountLoader<FuelOverflow>>,
     ) -> Result<()> {
         let rebase_divisor = self.apply_rebase(vault, vault_protocol, vault_equity)?;
         let VaultFee {
@@ -360,8 +379,14 @@ impl VaultDepositor {
             protocol_fee_payment,
             protocol_fee_shares,
         } = vault.apply_fee(vault_protocol, vault_equity, now)?;
-        let (manager_profit_share, protocol_profit_share) =
-            self.apply_profit_share(vault_equity, vault, vault_protocol)?;
+        let (manager_profit_share, protocol_profit_share) = self.apply_profit_share(
+            vault_equity,
+            vault,
+            vault_protocol,
+            now,
+            user_stats,
+            fuel_overflow,
+        )?;
 
         let (withdraw_value, n_shares) = withdraw_unit.get_withdraw_value_and_shares(
             withdraw_amount,
@@ -451,6 +476,8 @@ impl VaultDepositor {
         vault: &mut Vault,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
         now: i64,
+        user_stats: &UserStats,
+        fuel_overflow: &Option<AccountLoader<FuelOverflow>>,
     ) -> Result<()> {
         self.apply_rebase(vault, vault_protocol, vault_equity)?;
 
@@ -465,6 +492,8 @@ impl VaultDepositor {
             protocol_fee_payment,
             protocol_fee_shares,
         } = vault.apply_fee(vault_protocol, vault_equity, now)?;
+
+        self.update_cumulative_fuel_amount(now, vault, user_stats, fuel_overflow)?;
 
         let vault_shares_lost = self
             .last_withdraw_request
@@ -546,11 +575,15 @@ impl VaultDepositor {
         vault: &mut Vault,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
         now: i64,
+        user_stats: &UserStats,
+        fuel_overflow: &Option<AccountLoader<FuelOverflow>>,
     ) -> Result<(u64, bool)> {
         self.last_withdraw_request
             .check_redeem_period_finished(vault, now)?;
 
         self.apply_rebase(vault, vault_protocol, vault_equity)?;
+
+        self.update_cumulative_fuel_amount(now, vault, user_stats, fuel_overflow)?;
 
         let vault_shares_before: u128 = self.checked_vault_shares(vault)?;
         let total_vault_shares_before = vault.total_shares;
@@ -669,12 +702,16 @@ impl VaultDepositor {
         vault_equity: u64,
         vault: &mut Vault,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
+        now: i64,
+        user_stats: &UserStats,
+        fuel_overflow: &Option<AccountLoader<FuelOverflow>>,
     ) -> Result<(u64, u64)> {
         validate!(
             !self.last_withdraw_request.pending(),
             ErrorCode::InvalidVaultDeposit,
             "Cannot apply profit share to depositor with pending withdraw request"
         )?;
+        self.update_cumulative_fuel_amount(now, vault, user_stats, fuel_overflow)?;
         VaultDepositorBase::apply_profit_share(self, vault_equity, vault, vault_protocol)
     }
 
@@ -684,6 +721,8 @@ impl VaultDepositor {
         vault: &mut Vault,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
         now: i64,
+        user_stats: &UserStats,
+        fuel_overflow: &Option<AccountLoader<FuelOverflow>>,
     ) -> Result<u64> {
         let VaultFee {
             management_fee_payment,
@@ -697,8 +736,14 @@ impl VaultDepositor {
         let user_vault_shares_before = vault.user_shares;
         let protocol_shares_before = vault.get_protocol_shares(vault_protocol);
 
-        let (manager_profit_share, protocol_profit_share) =
-            self.apply_profit_share(vault_equity, vault, vault_protocol)?;
+        let (manager_profit_share, protocol_profit_share) = self.apply_profit_share(
+            vault_equity,
+            vault,
+            vault_protocol,
+            now,
+            user_stats,
+            fuel_overflow,
+        )?;
         let profit_share = manager_profit_share.saturating_add(protocol_profit_share);
         let protocol_shares_after = vault.get_protocol_shares(vault_protocol);
 
@@ -825,6 +870,63 @@ impl VaultDepositor {
 
         Ok(())
     }
+
+    pub fn update_cumulative_fuel_amount(
+        &mut self,
+        now: i64,
+        vault: &Vault,
+        user_stats: &UserStats,
+        fuel_overflow: &Option<AccountLoader<FuelOverflow>>,
+    ) -> Result<u128> {
+        if (now as u32) > self.last_cumulative_fuel_amount_ts {
+            let overflow_total_fuel = if let Some(overflow) = fuel_overflow {
+                overflow.load()?.total_fuel()?
+            } else {
+                0
+            };
+            let total_fuel = user_stats.total_fuel()?.safe_add(overflow_total_fuel)?;
+
+            let share_denominator =
+                match FuelDistributionMode::try_from(vault.fuel_distribution_mode)? {
+                    FuelDistributionMode::UsersOnly => vault.user_shares,
+                    FuelDistributionMode::UsersAndManager => vault.total_shares,
+                };
+
+            let vd_shares = self.checked_vault_shares(vault)?;
+            let vd_share_of_delta = if vd_shares == 0 || share_denominator == 0 {
+                0
+            } else {
+                let fuel_delta = total_fuel.safe_sub(self.cumulative_fuel_amount)?;
+                fuel_delta
+                    .cast::<u128>()?
+                    .safe_mul(vd_shares)?
+                    .safe_div(share_denominator)?
+            };
+
+            self.fuel_amount = self.fuel_amount.safe_add(vd_share_of_delta)?;
+            self.cumulative_fuel_amount = total_fuel;
+            self.last_cumulative_fuel_amount_ts = now as u32;
+        }
+
+        Ok(self.fuel_amount)
+    }
+
+    pub fn reset_fuel_amount(&mut self, now: i64) {
+        emit!(FuelSeasonRecord {
+            ts: now,
+            authority: self.authority,
+            fuel_insurance: 0,
+            fuel_deposits: 0,
+            fuel_borrows: 0,
+            fuel_positions: 0,
+            fuel_taker: 0,
+            fuel_maker: 0,
+            fuel_total: self.fuel_amount,
+        });
+        self.fuel_amount = 0;
+        self.cumulative_fuel_amount = 0;
+        self.last_cumulative_fuel_amount_ts = now as u32;
+    }
 }
 
 #[cfg(test)]
@@ -835,7 +937,9 @@ mod vault_v1_tests {
     use drift::math::casting::Cast;
     use drift::math::constants::{PERCENTAGE_PRECISION_U64, QUOTE_PRECISION_U64};
     use drift::math::insurance::if_shares_to_vault_amount;
+    use drift::state::user::UserStats;
 
+    use crate::state::FuelDistributionMode;
     use crate::{Vault, VaultDepositor, VaultProtocol, WithdrawUnit};
 
     #[test]
@@ -863,6 +967,8 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now + 20,
+            &UserStats::default(),
+            &None,
         )
         .unwrap();
 
@@ -875,6 +981,8 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now + 20,
+            &UserStats::default(),
+            &None,
         )
         .unwrap();
 
@@ -884,6 +992,8 @@ mod vault_v1_tests {
                 &mut vault,
                 &mut Some(vp.borrow_mut()),
                 now + 20,
+                &UserStats::default(),
+                &None,
             )
             .unwrap();
         assert_eq!(vd.vault_shares_base, 0);
@@ -907,6 +1017,8 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now + 20,
+            &UserStats::default(),
+            &None,
         )
         .unwrap();
         assert_eq!(vd.vault_shares_base, 0);
@@ -926,6 +1038,8 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now + 20,
+            &UserStats::default(),
+            &None,
         )
         .unwrap();
         // 100M shares, 50M of which are profit. 15% profit share on 50M shares is 7.5M shares. 100M - 7.5M = 92.5M shares
@@ -941,6 +1055,8 @@ mod vault_v1_tests {
                 &mut vault,
                 &mut Some(vp.borrow_mut()),
                 now + 20,
+                &UserStats::default(),
+                &None,
             )
             .unwrap();
         // 100M shares minus 50M shares of profit and 15% or 7.5M profit share = 42.5M shares
@@ -1004,6 +1120,8 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now + 20,
+            &UserStats::default(),
+            &None,
         )
         .unwrap();
         assert_eq!(vd.vault_shares_base, 0);
@@ -1022,6 +1140,8 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now + 20,
+            &UserStats::default(),
+            &None,
         )
         .unwrap();
         assert_eq!(vd.checked_vault_shares(&vault).unwrap(), 95_000_000);
@@ -1036,6 +1156,8 @@ mod vault_v1_tests {
                 &mut vault,
                 &mut Some(vp.borrow_mut()),
                 now + 20,
+                &UserStats::default(),
+                &None,
             )
             .unwrap();
         assert_eq!(vd.checked_vault_shares(&vault).unwrap(), 45_000_000);
@@ -1084,6 +1206,8 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now + 20,
+            &UserStats::default(),
+            &None,
         )
         .unwrap();
         assert_eq!(vd.vault_shares_base, 0);
@@ -1103,6 +1227,8 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now + 20,
+            &UserStats::default(),
+            &None,
         )
         .unwrap();
         // user has 100M shares, with 100% profit, so 50M shares are profit.
@@ -1119,6 +1245,8 @@ mod vault_v1_tests {
                 &mut vault,
                 &mut Some(vp.borrow_mut()),
                 now + 20,
+                &UserStats::default(),
+                &None,
             )
             .unwrap();
         let profit = amount;
@@ -1199,6 +1327,8 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now + 20,
+            &UserStats::default(),
+            &None,
         )
         .unwrap();
         assert_eq!(vd.vault_shares_base, 0);
@@ -1217,6 +1347,8 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now + 20,
+            &UserStats::default(),
+            &None,
         )
         .unwrap();
         // user has 100M shares, with 100% profit, so 50M shares are profit.
@@ -1233,6 +1365,8 @@ mod vault_v1_tests {
                 &mut vault,
                 &mut Some(vp.borrow_mut()),
                 now + 20,
+                &UserStats::default(),
+                &None,
             )
             .unwrap();
         let profit = amount;
@@ -1313,6 +1447,8 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now,
+            &UserStats::default(),
+            &None,
         )
         .unwrap();
         assert_eq!(vd.vault_shares_base, 0);
@@ -1324,8 +1460,15 @@ mod vault_v1_tests {
                                       // vault_protocol.protocol_profit_share = 50_000; // 5% profit share
         vault_equity = 400 * QUOTE_PRECISION_U64; // up 100%
 
-        vd.realize_profits(vault_equity, &mut vault, &mut Some(vp.borrow_mut()), now)
-            .unwrap();
+        vd.realize_profits(
+            vault_equity,
+            &mut vault,
+            &mut Some(vp.borrow_mut()),
+            now,
+            &UserStats::default(),
+            &None,
+        )
+        .unwrap();
 
         println!("vault shares: {}", vd.checked_vault_shares(&vault).unwrap());
         println!(
@@ -1347,6 +1490,8 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now + 20,
+            &UserStats::default(),
+            &None,
         )
         .unwrap();
         assert_eq!(vd.checked_vault_shares(&vault).unwrap(), 95000000);
@@ -1361,6 +1506,8 @@ mod vault_v1_tests {
                 &mut vault,
                 &mut Some(vp.borrow_mut()),
                 now + 20,
+                &UserStats::default(),
+                &None,
             )
             .unwrap();
         // assert_eq!(vd.checked_vault_shares(vault).unwrap(), 0);
@@ -1401,6 +1548,8 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now,
+            &UserStats::default(),
+            &None,
         )
         .unwrap();
         assert_eq!(vd.vault_shares_base, 0);
@@ -1426,8 +1575,15 @@ mod vault_v1_tests {
         println!("total shares: {}", vault.total_shares);
 
         // let vault_before = vault;
-        vd.realize_profits(vault_equity, &mut vault, &mut Some(vp.borrow_mut()), now)
-            .unwrap(); // should be noop
+        vd.realize_profits(
+            vault_equity,
+            &mut vault,
+            &mut Some(vp.borrow_mut()),
+            now,
+            &UserStats::default(),
+            &None,
+        )
+        .unwrap(); // should be noop
 
         // request withdraw all
         vd.request_withdraw(
@@ -1437,6 +1593,8 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now + 20,
+            &UserStats::default(),
+            &None,
         )
         .unwrap();
         // assert_eq!(vd.checked_vault_shares(vault).unwrap(), 100000000);
@@ -1454,6 +1612,8 @@ mod vault_v1_tests {
                 &mut vault,
                 &mut Some(vp.borrow_mut()),
                 now + 20 + 3600,
+                &UserStats::default(),
+                &None,
             )
             .unwrap();
         // assert_eq!(vd.checked_vault_shares(vault).unwrap(), 0);
@@ -1494,6 +1654,8 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now,
+            &UserStats::default(),
+            &None,
         )
         .unwrap();
         assert_eq!(vd.vault_shares_base, 0);
@@ -1519,8 +1681,15 @@ mod vault_v1_tests {
         println!("total shares: {}", vault.total_shares);
 
         // let vault_before = vault;
-        vd.realize_profits(vault_equity, &mut vault, &mut Some(vp.borrow_mut()), now)
-            .unwrap(); // should be noop
+        vd.realize_profits(
+            vault_equity,
+            &mut vault,
+            &mut Some(vp.borrow_mut()),
+            now,
+            &UserStats::default(),
+            &None,
+        )
+        .unwrap(); // should be noop
 
         // request withdraw all
         vd.request_withdraw(
@@ -1530,6 +1699,8 @@ mod vault_v1_tests {
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now + 20,
+            &UserStats::default(),
+            &None,
         )
         .unwrap();
         // assert_eq!(vd.checked_vault_shares(vault).unwrap(), 100000000);
@@ -1546,6 +1717,8 @@ mod vault_v1_tests {
                 &mut vault,
                 &mut Some(vp.borrow_mut()),
                 now + 20 + 3600,
+                &UserStats::default(),
+                &None,
             )
             .unwrap();
         // assert_eq!(vd.checked_vault_shares(vault).unwrap(), 0);
@@ -1562,5 +1735,281 @@ mod vault_v1_tests {
             "cum profit share amount: {}",
             vd.cumulative_profit_share_amount
         );
+    }
+
+    #[test]
+    fn test_vault_depositor_shares_fuel_users_only() {
+        let now = 1000;
+        let mut vault = Vault {
+            total_shares: 1_000_000,
+            ..Vault::default()
+        };
+        // default is users only
+        // vault.fuel_digtribution_mode = FuelDistributionMode::UsersOnly as u8;
+
+        let vd_0 =
+            &mut VaultDepositor::new(Pubkey::default(), Pubkey::default(), Pubkey::default(), now);
+        vd_0.vault_shares = 200_000;
+        let vd_1 =
+            &mut VaultDepositor::new(Pubkey::default(), Pubkey::default(), Pubkey::default(), now);
+        vd_1.vault_shares = 300_000;
+        vault.user_shares = 500_000;
+
+        let mut vault_user_stats = UserStats {
+            fuel_insurance: 10_000,
+            fuel_deposits: 10_000,
+            fuel_borrows: 10_000,
+            fuel_positions: 10_000,
+            fuel_taker: 10_000,
+            fuel_maker: 10_000, // total = 60k
+            ..UserStats::default()
+        };
+
+        // 1) first crank
+        let now = 1000;
+        let vd_0_fuel_amount = vd_0
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats, &None)
+            .unwrap();
+        assert_eq!(vd_0_fuel_amount, 24_000);
+        assert_eq!(vd_0.fuel_amount, 24_000);
+
+        let vd_1_fuel_amount = vd_1
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats, &None)
+            .unwrap();
+        assert_eq!(vd_1_fuel_amount, 36_000);
+        assert_eq!(vd_1.fuel_amount, 36_000);
+
+        // 2) time advances, no new fuel
+        let now = 2000;
+        let vd_0_fuel_amount = vd_0
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats, &None)
+            .unwrap();
+        assert_eq!(vd_0_fuel_amount, 24_000);
+        assert_eq!(vd_0.fuel_amount, 24_000);
+
+        let vd_1_fuel_amount = vd_1
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats, &None)
+            .unwrap();
+        assert_eq!(vd_1_fuel_amount, 36_000);
+        assert_eq!(vd_1.fuel_amount, 36_000);
+
+        // 3) time advances, 10k more fuel
+        let now = 3000;
+        vault_user_stats.fuel_maker += 10_000; // total = 70k
+        let vd_0_fuel_amount = vd_0
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats, &None)
+            .unwrap();
+        assert_eq!(vd_0_fuel_amount, 28_000);
+        assert_eq!(vd_0.fuel_amount, 28_000);
+
+        let vd_1_fuel_amount = vd_1
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats, &None)
+            .unwrap();
+        assert_eq!(vd_1_fuel_amount, 42_000);
+        assert_eq!(vd_1.fuel_amount, 42_000);
+        assert_eq!(vd_0.cumulative_fuel_amount, 70_000);
+        assert_eq!(vd_1.cumulative_fuel_amount, 70_000);
+
+        // 4) time advances, more fuel, vd_0 cranks twice, vd_1 cranks once
+        let now = 4000;
+        vault_user_stats.fuel_maker += 10_000; // total = 80k
+        let vd_0_fuel_amount = vd_0
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats, &None)
+            .unwrap();
+        assert_eq!(vd_0_fuel_amount, 32_000);
+        assert_eq!(vd_0.fuel_amount, 32_000);
+        assert_eq!(vd_1.fuel_amount, 42_000);
+        assert_eq!(vd_0.cumulative_fuel_amount, 80_000);
+        assert_eq!(vd_1.cumulative_fuel_amount, 70_000);
+
+        let now = 5000;
+        vault_user_stats.fuel_maker += 10_000; // total = 90k
+        let vd_0_fuel_amount = vd_0
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats, &None)
+            .unwrap();
+        assert_eq!(vd_0_fuel_amount, 36_000);
+        assert_eq!(vd_1.fuel_amount, 42_000);
+        assert_eq!(vd_0.cumulative_fuel_amount, 90_000);
+        assert_eq!(vd_1.cumulative_fuel_amount, 70_000);
+
+        let vd_1_fuel_amount = vd_1
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats, &None)
+            .unwrap();
+        assert_eq!(vd_1_fuel_amount, 54_000);
+        assert_eq!(vd_1.fuel_amount, 54_000);
+        assert_eq!(vd_0.fuel_amount, 36_000);
+
+        assert_eq!(vd_0.cumulative_fuel_amount, 90_000);
+        assert_eq!(vd_1.cumulative_fuel_amount, 90_000);
+    }
+
+    #[test]
+    fn test_vault_depositor_shares_fuel_users_and_manager() {
+        let now = 1000;
+        let mut vault = Vault {
+            total_shares: 1_000_000,
+            ..Vault::default()
+        };
+        vault.fuel_distribution_mode = FuelDistributionMode::UsersAndManager as u8;
+
+        let vd_0 =
+            &mut VaultDepositor::new(Pubkey::default(), Pubkey::default(), Pubkey::default(), now);
+        vd_0.vault_shares = 200_000;
+        let vd_1 =
+            &mut VaultDepositor::new(Pubkey::default(), Pubkey::default(), Pubkey::default(), now);
+        vd_1.vault_shares = 300_000;
+        vault.user_shares = 500_000;
+
+        let mut vault_user_stats = UserStats {
+            fuel_insurance: 10_000,
+            fuel_deposits: 10_000,
+            fuel_borrows: 10_000,
+            fuel_positions: 10_000,
+            fuel_taker: 10_000,
+            fuel_maker: 10_000, // total = 60k
+            ..UserStats::default()
+        };
+
+        // 1) first crank
+        let now = 1000;
+        let vd_0_fuel_amount = vd_0
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats, &None)
+            .unwrap();
+        assert_eq!(vd_0_fuel_amount, 12_000);
+        assert_eq!(vd_0.fuel_amount, 12_000);
+
+        let vd_1_fuel_amount = vd_1
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats, &None)
+            .unwrap();
+        assert_eq!(vd_1_fuel_amount, 18_000);
+        assert_eq!(vd_1.fuel_amount, 18_000);
+
+        // 2) time advances, no new fuel
+        let now = 2000;
+        let vd_0_fuel_amount = vd_0
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats, &None)
+            .unwrap();
+        assert_eq!(vd_0_fuel_amount, 12_000);
+        assert_eq!(vd_0.fuel_amount, 12_000);
+
+        let vd_1_fuel_amount = vd_1
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats, &None)
+            .unwrap();
+        assert_eq!(vd_1_fuel_amount, 18_000);
+        assert_eq!(vd_1.fuel_amount, 18_000);
+
+        // 3) time advances, 10k more fuel
+        let now = 3000;
+        vault_user_stats.fuel_maker += 10_000; // total = 70k
+        let vd_0_fuel_amount = vd_0
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats, &None)
+            .unwrap();
+        assert_eq!(vd_0_fuel_amount, 14_000);
+        assert_eq!(vd_0.fuel_amount, 14_000);
+
+        let vd_1_fuel_amount = vd_1
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats, &None)
+            .unwrap();
+        assert_eq!(vd_1_fuel_amount, 21_000);
+        assert_eq!(vd_1.fuel_amount, 21_000);
+        assert_eq!(vd_0.cumulative_fuel_amount, 70_000);
+        assert_eq!(vd_1.cumulative_fuel_amount, 70_000);
+
+        // 4) time advances, more fuel, vd_0 cranks twice, vd_1 cranks once
+        let now = 4000;
+        vault_user_stats.fuel_maker += 10_000; // total = 80k
+        let vd_0_fuel_amount = vd_0
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats, &None)
+            .unwrap();
+        assert_eq!(vd_0_fuel_amount, 16_000);
+        assert_eq!(vd_0.fuel_amount, 16_000);
+        assert_eq!(vd_1.fuel_amount, 21_000);
+        assert_eq!(vd_0.cumulative_fuel_amount, 80_000);
+        assert_eq!(vd_1.cumulative_fuel_amount, 70_000);
+
+        let now = 5000;
+        vault_user_stats.fuel_maker += 10_000; // total = 90k
+        let vd_0_fuel_amount = vd_0
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats, &None)
+            .unwrap();
+        assert_eq!(vd_0_fuel_amount, 18_000);
+        assert_eq!(vd_1.fuel_amount, 21_000);
+        assert_eq!(vd_0.cumulative_fuel_amount, 90_000);
+        assert_eq!(vd_1.cumulative_fuel_amount, 70_000);
+
+        let vd_1_fuel_amount = vd_1
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats, &None)
+            .unwrap();
+        assert_eq!(vd_1_fuel_amount, 27_000);
+        assert_eq!(vd_1.fuel_amount, 27_000);
+        assert_eq!(vd_0.fuel_amount, 18_000);
+
+        assert_eq!(vd_0.cumulative_fuel_amount, 90_000);
+        assert_eq!(vd_1.cumulative_fuel_amount, 90_000);
+    }
+
+    #[test]
+    fn test_vault_depositor_shares_fuel_changing_user_shares() {
+        let now = 1000;
+        let mut vault = Vault {
+            total_shares: 1_000_000,
+            ..Vault::default()
+        };
+        // default is users only
+        // vault.fuel_digtribution_mode = FuelDistributionMode::UsersOnly as u8;
+
+        // initial state, users own 50% of vault, earns all fuel
+        let vd_0 =
+            &mut VaultDepositor::new(Pubkey::default(), Pubkey::default(), Pubkey::default(), now);
+        vd_0.vault_shares = 200_000;
+        let vd_1 =
+            &mut VaultDepositor::new(Pubkey::default(), Pubkey::default(), Pubkey::default(), now);
+        vd_1.vault_shares = 300_000;
+        vault.user_shares = 500_000;
+
+        let mut vault_user_stats = UserStats {
+            fuel_insurance: 10_000,
+            fuel_deposits: 10_000,
+            fuel_borrows: 10_000,
+            fuel_positions: 10_000,
+            fuel_taker: 10_000,
+            fuel_maker: 10_000, // total = 60k
+            ..UserStats::default()
+        };
+
+        // 1) first crank
+        let now = 1000;
+        let vd_0_fuel_amount = vd_0
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats, &None)
+            .unwrap();
+        assert_eq!(vd_0_fuel_amount, 24_000);
+        assert_eq!(vd_0.fuel_amount, 24_000);
+
+        let vd_1_fuel_amount = vd_1
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats, &None)
+            .unwrap();
+        assert_eq!(vd_1_fuel_amount, 36_000);
+        assert_eq!(vd_1.fuel_amount, 36_000);
+
+        // 2) time advances, and some new fuel earned, vd_0 doubles their deposit,
+        let now = 2000;
+        vault_user_stats.fuel_maker += 10_000; // total = 70k
+        vd_0.vault_shares = 400_000;
+        vault.user_shares = 700_000;
+        let vd_0_fuel_amount = vd_0
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats, &None)
+            .unwrap();
+        assert_eq!(vd_0_fuel_amount, 29_714); // +5,714.2857142857
+        assert_eq!(vd_0.fuel_amount, 29_714);
+        assert_eq!(vd_0.cumulative_fuel_amount, 70_000);
+        assert_eq!(vd_1.cumulative_fuel_amount, 60_000);
+
+        let vd_1_fuel_amount = vd_1
+            .update_cumulative_fuel_amount(now, &vault, &vault_user_stats, &None)
+            .unwrap();
+        assert_eq!(vd_1_fuel_amount, 40_285); // +4,285.7142857143
+        assert_eq!(vd_1.fuel_amount, 40_285);
+        assert_eq!(vd_0.cumulative_fuel_amount, 70_000);
+        assert_eq!(vd_1.cumulative_fuel_amount, 70_000);
     }
 }

@@ -1,6 +1,7 @@
 use std::cell::RefMut;
 
 use anchor_lang::prelude::*;
+use borsh::{BorshDeserialize, BorshSerialize};
 use drift::math::casting::Cast;
 use drift::math::constants::{ONE_YEAR, PERCENTAGE_PRECISION, PERCENTAGE_PRECISION_I128};
 use drift::math::insurance::calculate_rebase_info;
@@ -101,7 +102,9 @@ pub struct Vault {
     pub permissioned: bool,
     /// The optional [`VaultProtocol`] account.
     pub vault_protocol: bool,
-    pub padding1: [u8; 7],
+    /// How fuel distribution should be treated [`FuelDistributionMode`]. Default is `UsersOnly`
+    pub fuel_distribution_mode: u8,
+    pub padding1: [u8; 6],
     pub padding: [u64; 7],
 }
 
@@ -1151,6 +1154,44 @@ impl Vault {
             }
         };
         Ok(())
+    }
+
+    pub fn update_fuel_distribution_mode(&mut self, mode: u8) {
+        msg!(
+            "Updating fuel distribution mode {} -> {}",
+            self.fuel_distribution_mode,
+            mode
+        );
+        self.fuel_distribution_mode = mode;
+    }
+}
+
+#[derive(Clone, Copy, BorshSerialize, BorshDeserialize, PartialEq, Debug, Eq)]
+#[repr(u8)]
+pub enum FuelDistributionMode {
+    UsersOnly = 0b00000000,
+    UsersAndManager = 0b00000001,
+}
+
+impl TryFrom<u8> for FuelDistributionMode {
+    type Error = ErrorCode;
+
+    fn try_from(value: u8) -> std::result::Result<Self, ErrorCode> {
+        match value {
+            0 => Ok(FuelDistributionMode::UsersOnly),
+            1 => Ok(FuelDistributionMode::UsersAndManager),
+            _ => Err(ErrorCode::InvalidFuelDistributionMode),
+        }
+    }
+}
+
+impl FuelDistributionMode {
+    pub fn is_users_only(mode: u8) -> bool {
+        mode & FuelDistributionMode::UsersOnly as u8 != 0
+    }
+
+    pub fn is_users_and_manager(mode: u8) -> bool {
+        mode & FuelDistributionMode::UsersAndManager as u8 != 0
     }
 }
 

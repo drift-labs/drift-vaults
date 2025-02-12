@@ -26,7 +26,7 @@ pub fn protocol_request_withdraw<'c: 'info, 'info>(
         perp_market_map,
         spot_market_map,
         mut oracle_map,
-    } = ctx.load_maps(clock.slot, Some(spot_market_index), vp.is_some())?;
+    } = ctx.load_maps(clock.slot, Some(spot_market_index), vp.is_some(), false)?;
 
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
@@ -50,7 +50,7 @@ pub struct ProtocolRequestWithdraw<'info> {
     pub vault_protocol: AccountLoader<'info, VaultProtocol>,
     pub protocol: Signer<'info>,
     #[account(
-        constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?
+        constraint = is_user_stats_for_vault(&vault, &drift_user_stats.key())?
     )]
     /// CHECK: unused, for future proofing
     pub drift_user_stats: AccountInfo<'info>,
