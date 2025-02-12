@@ -886,25 +886,39 @@ impl VaultDepositor {
             };
             let total_fuel = user_stats.total_fuel()?.safe_add(overflow_total_fuel)?;
 
-            let share_denominator =
-                match FuelDistributionMode::try_from(vault.fuel_distribution_mode)? {
-                    FuelDistributionMode::UsersOnly => vault.user_shares,
-                    FuelDistributionMode::UsersAndManager => vault.total_shares,
-                };
-
-            let vd_shares = self.checked_vault_shares(vault)?;
-            let vd_share_of_delta = if vd_shares == 0 || share_denominator == 0 {
-                0
+            if self.last_cumulative_fuel_amount_ts == 0 {
+                // first time the vd is updating their fuel share, initialize the cumulative amount
+                self.cumulative_fuel_amount = total_fuel
             } else {
-                let fuel_delta = total_fuel.safe_sub(self.cumulative_fuel_amount)?;
-                fuel_delta
-                    .cast::<u128>()?
-                    .safe_mul(vd_shares)?
-                    .safe_div(share_denominator)?
-            };
+                if self.cumulative_fuel_amount > total_fuel {
+                    // this should happen under SOP, if it does happen then the UserStats fuel was reset
+                    // before this vd. Reset the vd and continue as if it is a fuel season.
+                    msg!("self.cumulative_fuel_amount > total_fuel. Resetting the vd.");
+                    self.reset_fuel_amount(now);
+                    self.cumulative_fuel_amount = total_fuel;
+                } else {
+                    // calculate the user's pro-rata share of pending fuel
+                    let share_denominator =
+                        match FuelDistributionMode::try_from(vault.fuel_distribution_mode)? {
+                            FuelDistributionMode::UsersOnly => vault.user_shares,
+                            FuelDistributionMode::UsersAndManager => vault.total_shares,
+                        };
 
-            self.fuel_amount = self.fuel_amount.safe_add(vd_share_of_delta)?;
-            self.cumulative_fuel_amount = total_fuel;
+                    let vd_shares = self.checked_vault_shares(vault)?;
+                    let vd_share_of_delta = if vd_shares == 0 || share_denominator == 0 {
+                        0
+                    } else {
+                        let fuel_delta = total_fuel.safe_sub(self.cumulative_fuel_amount)?;
+                        fuel_delta
+                            .cast::<u128>()?
+                            .safe_mul(vd_shares)?
+                            .safe_div(share_denominator)?
+                    };
+
+                    self.fuel_amount = self.fuel_amount.safe_add(vd_share_of_delta)?;
+                    self.cumulative_fuel_amount = total_fuel;
+                }
+            }
             self.last_cumulative_fuel_amount_ts = now as u32;
         }
 
