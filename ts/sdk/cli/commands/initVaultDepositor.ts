@@ -36,7 +36,7 @@ export const initVaultDepositor = async (program: Command, cmdOpts: OptionValues
         vaultAddress,
         depositAuthority,
     );
-    const tx = await driftVault.initializeVaultDepositor(vaultAddress, depositAuthority);
+    const tx = await driftVault.initializeVaultDepositor(vaultAddress, depositAuthority, driftVault.driftClient.wallet.publicKey);
     console.log(`VaultDepositor initialized for ${depositAuthority}: ${tx}`);
     console.log(`VaultDepositor address: ${vaultDepositorAddress}`);
 };

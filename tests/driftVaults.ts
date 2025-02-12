@@ -1129,6 +1129,7 @@ describe('TestProtocolVaults', () => {
 		}
 
 		// vault user account is delegated to "delegate"
+		await delegateClient.driftClient.fetchAccounts();
 		const vaultUserAcct = delegateClient.driftClient
 			.getUser(0, protocolVault)
 			.getUserAccount();
