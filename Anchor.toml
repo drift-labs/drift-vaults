@@ -16,19 +16,19 @@ wallet = "~/.config/solana/id.json"
 
 [[test.genesis]]
 address = "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
-program = "./deps/drift.so"
+program = "./tests/fixtures/drift.so"
 
 [[test.genesis]]
 address = "FsJ3A3u2vn5cTVofAjvy6y5kwABJAqYWpe4975bi2epH"
-program = "./deps/pyth.so"
+program = "./tests/fixtures/pyth.so"
 
 [[test.genesis]]
 address = "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s"
-program = "./deps/metaplex/metaplex.so"
+program = "./tests/fixtures/metaplex/metaplex.so"
 
 [[test.validator.account]]
 address = "PwDiXFxQsGra4sFFTT8r1QWRMd4vfumiWC1jfWNfdYT"
-filename = "./deps/metaplex/PwDiXFxQsGra4sFFTT8r1QWRMd4vfumiWC1jfWNfdYT.json"
+filename = "./tests/fixtures/metaplex/PwDiXFxQsGra4sFFTT8r1QWRMd4vfumiWC1jfWNfdYT.json"
 
 [scripts]
 test = "yarn anchor-tests"

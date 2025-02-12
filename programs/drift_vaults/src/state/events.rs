@@ -1,5 +1,6 @@
 use anchor_lang::prelude::*;
 use borsh::{BorshDeserialize, BorshSerialize};
+pub use drift::state::events::FuelSeasonRecord;
 
 #[event]
 #[derive(Default)]

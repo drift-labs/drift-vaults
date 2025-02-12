@@ -1,9 +1,10 @@
 use anchor_lang::prelude::*;
-use drift::state::events::FuelSeasonRecord;
+use drift::ids::admin_hot_wallet;
 use drift::state::state::State;
 use drift::state::user::{FuelOverflowStatus, UserStats};
 
 use crate::constraints::{is_user_stats_for_vault, is_vault_for_vault_depositor};
+use crate::state::events::FuelSeasonRecord;
 use crate::state::{FuelOverflowProvider, Vault, VaultProtocolProvider};
 use crate::VaultDepositor;
 
@@ -59,7 +60,7 @@ pub struct ResetFuelSeason<'info> {
     )]
     pub vault_depositor: AccountLoader<'info, VaultDepositor>,
     #[account(
-        constraint = admin.key() == drift_state.admin
+        constraint = admin.key() == drift_state.admin || admin.key() == admin_hot_wallet::id()
     )]
     pub admin: Signer<'info>,
     #[account(
