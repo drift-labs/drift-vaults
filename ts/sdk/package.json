@@ -1,6 +1,6 @@
 {
 	"name": "@drift-labs/vaults-sdk",
-	"version": "0.4.2",
+	"version": "0.4.3",
 	"main": "lib/index.js",
 	"types": "lib/index.d.ts",
 	"directories": {
@@ -8,7 +8,7 @@
 	},
 	"dependencies": {
 		"@coral-xyz/anchor": "0.28.0",
-		"@drift-labs/sdk": "2.110.0-beta.5",
+		"@drift-labs/sdk": "2.110.0-beta.6",
 		"@ledgerhq/hw-app-solana": "7.2.4",
 		"@ledgerhq/hw-transport": "6.31.4",
 		"@ledgerhq/hw-transport-node-hid": "6.29.5",
