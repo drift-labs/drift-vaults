@@ -12,15 +12,19 @@ import {
 	VAULT_PROGRAM_ID,
 	IDL,
 	VaultDepositor,
+	WithdrawUnit,
 } from '../ts/sdk/lib';
 import {
 	BulkAccountLoader,
 	DRIFT_PROGRAM_ID,
 	DriftClient,
+	FuelOverflowStatus,
+	getFuelOverflowAccountPublicKey,
 	getUserAccountPublicKey,
 	getUserStatsAccountPublicKey,
 	OracleSource,
 	PEG_PRECISION,
+	PERCENTAGE_PRECISION,
 	PublicKey,
 	QUOTE_PRECISION,
 	TestClient,
@@ -37,7 +41,7 @@ import {
 	mockUSDCMintBankrun,
 	printTxLogs,
 } from './common/testHelpers';
-import { Keypair } from '@solana/web3.js';
+import { AccountInfo, Keypair } from '@solana/web3.js';
 import { mockOracleNoProgram } from './common/bankrunOracle';
 import { BankrunProvider } from 'anchor-bankrun';
 
@@ -77,7 +81,7 @@ describe('driftVaults', () => {
 	let vd1DriftClient: DriftClient;
 	let vd1UserUSDCAccount: PublicKey;
 
-	beforeAll(async () => {
+	beforeEach(async () => {
 		const context = await startAnchor(
 			'',
 			[
@@ -251,7 +255,7 @@ describe('driftVaults', () => {
 		);
 	});
 
-	afterAll(async () => {
+	afterEach(async () => {
 		await adminClient.unsubscribe();
 		await adminVaultClient.unsubscribe();
 		await managerClient.unsubscribe();
@@ -450,4 +454,215 @@ describe('driftVaults', () => {
 			vd1VaultDepositorAccount2.fuelAmount.toNumber()
 		);
 	});
+
+	it('Test Fuel With Overflow account', async () => {
+		const startFuel = new BN(4_100_000_000);
+		await createVaultWithFuelOverflow(adminClient, bankrunContextWrapper, commonVaultKey, startFuel);
+
+		const vaultUserStats = getUserStatsAccountPublicKey(
+			adminClient.program.programId,
+			commonVaultKey
+		);
+
+		// user deposits
+		const vd1VaultDepositor = getVaultDepositorAddressSync(
+			vaultProgram.programId,
+			commonVaultKey,
+			vd1Signer.publicKey
+		);
+		await vd1Client.deposit(
+			vd1VaultDepositor,
+			usdcAmount,
+			undefined,
+			undefined,
+			vd1UserUSDCAccount
+		);
+
+		// user earns no fuel on deposit
+		let vd1 = await vd1Client.program.account.vaultDepositor.fetch(vd1VaultDepositor);
+		expect(vd1.fuelAmount.toNumber()).toBe(0);
+		expect(vd1.cumulativeFuelAmount.toNumber()).toBe(startFuel.toNumber());
+
+		// vault earns 100k fuel
+		const userStatsBefore = await getUserStatsDecoded(
+			adminClient,
+			bankrunContextWrapper,
+			vaultUserStats
+		);
+		userStatsBefore.data.fuelTaker += 100_000;
+		await overWriteUserStats(
+			adminClient,
+			bankrunContextWrapper,
+			vaultUserStats,
+			userStatsBefore
+		);
+
+		await bankrunContextWrapper.moveTimeForward(1000);
+		await vd1Client.updateCumulativeFuelAmount(vd1VaultDepositor, {
+			noLut: true,
+		});
+
+		// vd1 earns 100k fuel (they're 100% of vault)
+		vd1 = await vd1Client.program.account.vaultDepositor.fetch(vd1VaultDepositor);
+		expect(vd1.fuelAmount.toNumber()).toBe(100_000);
+		expect(vd1.cumulativeFuelAmount.toNumber()).toBe(startFuel.toNumber() + 100_000);
+
+		// vd0 deposits to be 50% of vault
+		const vd0VaultDepositor = getVaultDepositorAddressSync(
+			vaultProgram.programId,
+			commonVaultKey,
+			vd0Signer.publicKey
+		);
+		await vd0Client.deposit(
+			vd0VaultDepositor,
+			usdcAmount,
+			undefined,
+			undefined,
+			vd0UserUSDCAccount
+		);
+
+		let vd0 = await vd0Client.program.account.vaultDepositor.fetch(vd0VaultDepositor);
+		expect(vd0.fuelAmount.toNumber()).toBe(0);
+		expect(vd0.cumulativeFuelAmount.toNumber()).toBe(startFuel.toNumber() + 100_000);
+
+		// vault earns another 100k fuel
+		await bankrunContextWrapper.moveTimeForward(1000);
+		userStatsBefore.data.fuelTaker += 100_000;
+		await overWriteUserStats(
+			adminClient,
+			bankrunContextWrapper,
+			vaultUserStats,
+			userStatsBefore
+		);
+
+		await vd0Client.updateCumulativeFuelAmount(vd0VaultDepositor, {
+			noLut: true,
+		});
+		await vd1Client.updateCumulativeFuelAmount(vd1VaultDepositor, {
+			noLut: true,
+		});
+
+		// both users earn 50k fuel (50% of vault)
+		vd1 = await vd1Client.program.account.vaultDepositor.fetch(vd1VaultDepositor);
+		expect(vd1.fuelAmount.toNumber()).toBe(150_000);
+		expect(vd1.cumulativeFuelAmount.toNumber()).toBe(startFuel.toNumber() + 200_000);
+
+		vd0 = await vd0Client.program.account.vaultDepositor.fetch(vd0VaultDepositor);
+		expect(vd0.fuelAmount.toNumber()).toBe(50_000);
+		expect(vd0.cumulativeFuelAmount.toNumber()).toBe(startFuel.toNumber() + 200_000);
+
+		// vault earns another 100k fuel
+		await bankrunContextWrapper.moveTimeForward(1000);
+		userStatsBefore.data.fuelTaker += 100_000;
+		await overWriteUserStats(
+			adminClient,
+			bankrunContextWrapper,
+			vaultUserStats,
+			userStatsBefore
+		);
+
+		// vd1 withdraws
+		await vd1Client.requestWithdraw(vd1VaultDepositor, PERCENTAGE_PRECISION, WithdrawUnit.SHARES_PERCENT);
+		await vd1Client.withdraw(vd1VaultDepositor);
+
+		await vd0Client.updateCumulativeFuelAmount(vd0VaultDepositor, {
+			noLut: true,
+		});
+
+		vd1 = await vd1Client.program.account.vaultDepositor.fetch(vd1VaultDepositor);
+		expect(vd1.vaultShares.toNumber()).toBe(0);
+		expect(vd1.fuelAmount.toNumber()).toBe(200_000);
+		expect(vd1.cumulativeFuelAmount.toNumber()).toBe(startFuel.toNumber() + 300_000);
+
+		vd0 = await vd0Client.program.account.vaultDepositor.fetch(vd0VaultDepositor);
+		expect(vd0.fuelAmount.toNumber()).toBe(100_000);
+		expect(vd0.cumulativeFuelAmount.toNumber()).toBe(startFuel.toNumber() + 300_000);
+
+
+	});
 });
+
+async function createVaultWithFuelOverflow(
+	driftClient: TestClient,
+	bankrunContextWrapper: BankrunContextWrapper,
+	commonVaultKey: PublicKey,
+	fuelAmount: BN = new BN(4_100_000_000),
+) {
+	const userStatsKey = getUserStatsAccountPublicKey(
+		driftClient.program.programId,
+		commonVaultKey
+	);
+	const userStatsBefore = await getUserStatsDecoded(
+		driftClient,
+		bankrunContextWrapper,
+		userStatsKey
+	);
+	userStatsBefore.data.fuelTaker = fuelAmount.toNumber();
+	await overWriteUserStats(
+		driftClient,
+		bankrunContextWrapper,
+		userStatsKey,
+		userStatsBefore
+	);
+
+	await driftClient.initializeFuelOverflow(commonVaultKey);
+	await driftClient.sweepFuel(commonVaultKey);
+
+	const userStatsAfterSweep =
+		await driftClient.program.account.userStats.fetch(userStatsKey);
+	expect(userStatsAfterSweep.fuelTaker).toBe(0);
+	expect(userStatsAfterSweep.fuelOverflowStatus as number &
+		FuelOverflowStatus.Exists
+	).toBe(FuelOverflowStatus.Exists);
+
+	const userFuelSweepAccount =
+		await driftClient.program.account.fuelOverflow.fetch(
+			getFuelOverflowAccountPublicKey(
+				driftClient.program.programId,
+				commonVaultKey
+			)
+		);
+	expect(
+		// @ts-ignore
+		userFuelSweepAccount.authority.equals(commonVaultKey)
+	).toBe(true);
+	expect((userFuelSweepAccount.fuelTaker as BN).toNumber()).toBe(fuelAmount.toNumber());
+}
+
+async function getUserStatsDecoded(
+	driftClient: TestClient,
+	bankrunContextWrapper: BankrunContextWrapper,
+	userStatsKey: PublicKey
+): Promise<AccountInfo<UserStatsAccount>> {
+	const accountInfo = await bankrunContextWrapper.connection.getAccountInfo(
+		userStatsKey
+	);
+	const userStatsBefore: UserStatsAccount =
+		driftClient.program.account.userStats.coder.accounts.decode(
+			'UserStats',
+			accountInfo!.data
+		);
+
+	// @ts-ignore
+	accountInfo.data = userStatsBefore;
+	// @ts-ignore
+	return accountInfo;
+}
+
+async function overWriteUserStats(
+	driftClient: TestClient,
+	bankrunContextWrapper: BankrunContextWrapper,
+	userStatsKey: PublicKey,
+	userStats: AccountInfo<UserStatsAccount>
+) {
+	bankrunContextWrapper.context.setAccount(userStatsKey, {
+		executable: userStats.executable,
+		owner: userStats.owner,
+		lamports: userStats.lamports,
+		data: await driftClient.program.account.userStats.coder.accounts.encode(
+			'UserStats',
+			userStats.data
+		),
+		rentEpoch: userStats.rentEpoch,
+	});
+}
