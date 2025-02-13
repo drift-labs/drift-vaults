@@ -71,15 +71,15 @@ describe('driftVaults', () => {
 
 	let adminVaultClient: VaultClient;
 
-	const vd0Signer = Keypair.generate();
-	let vd0Client: VaultClient;
-	let vd0DriftClient: DriftClient;
-	let vd0UserUSDCAccount: PublicKey;
+	const user1Signer = Keypair.generate();
+	let user1Client: VaultClient;
+	let user1DriftClient: DriftClient;
+	let user1UserUSDCAccount: PublicKey;
 
-	const vd1Signer = Keypair.generate();
-	let vd1Client: VaultClient;
-	let vd1DriftClient: DriftClient;
-	let vd1UserUSDCAccount: PublicKey;
+	const user2Signer = Keypair.generate();
+	let user2Client: VaultClient;
+	let user2DriftClient: DriftClient;
+	let user2UserUSDCAccount: PublicKey;
 
 	beforeEach(async () => {
 		const context = await startAnchor(
@@ -185,10 +185,10 @@ describe('driftVaults', () => {
 			program,
 		});
 
-		const vd0Bootstrap = await bootstrapSignerClientAndUserBankrun({
+		const user1Bootstrap = await bootstrapSignerClientAndUserBankrun({
 			bankrunContext: bankrunContextWrapper,
 			programId: VAULT_PROGRAM_ID,
-			signer: vd0Signer,
+			signer: user1Signer,
 			usdcMint: usdcMint,
 			usdcAmount,
 			vaultClientCliMode: true,
@@ -204,14 +204,14 @@ describe('driftVaults', () => {
 				oracleInfos: [{ publicKey: solPerpOracle, source: OracleSource.PYTH }],
 			},
 		});
-		vd0Client = vd0Bootstrap.vaultClient;
-		vd0DriftClient = vd0Bootstrap.driftClient;
-		vd0UserUSDCAccount = vd0Bootstrap.userUSDCAccount.publicKey;
+		user1Client = user1Bootstrap.vaultClient;
+		user1DriftClient = user1Bootstrap.driftClient;
+		user1UserUSDCAccount = user1Bootstrap.userUSDCAccount.publicKey;
 
-		const vd1Bootstrap = await bootstrapSignerClientAndUserBankrun({
+		const user2Bootstrap = await bootstrapSignerClientAndUserBankrun({
 			bankrunContext: bankrunContextWrapper,
 			programId: VAULT_PROGRAM_ID,
-			signer: vd1Signer,
+			signer: user2Signer,
 			usdcMint: usdcMint,
 			usdcAmount,
 			vaultClientCliMode: true,
@@ -227,9 +227,9 @@ describe('driftVaults', () => {
 				oracleInfos: [{ publicKey: solPerpOracle, source: OracleSource.PYTH }],
 			},
 		});
-		vd1Client = vd1Bootstrap.vaultClient;
-		vd1DriftClient = vd1Bootstrap.driftClient;
-		vd1UserUSDCAccount = vd1Bootstrap.userUSDCAccount.publicKey;
+		user2Client = user2Bootstrap.vaultClient;
+		user2DriftClient = user2Bootstrap.driftClient;
+		user2UserUSDCAccount = user2Bootstrap.userUSDCAccount.publicKey;
 
 		// initialize a vault and depositors
 		await managerClient.initializeVault({
@@ -243,15 +243,15 @@ describe('driftVaults', () => {
 			permissioned: false,
 			minDepositAmount: ZERO,
 		});
-		await vd0Client.initializeVaultDepositor(
+		await user2Client.initializeVaultDepositor(
 			commonVaultKey,
-			vd0Signer.publicKey,
-			vd0Signer.publicKey
+			user2Signer.publicKey,
+			user2Signer.publicKey
 		);
-		await vd1Client.initializeVaultDepositor(
+		await user1Client.initializeVaultDepositor(
 			commonVaultKey,
-			vd1Signer.publicKey,
-			vd1Signer.publicKey
+			user1Signer.publicKey,
+			user1Signer.publicKey
 		);
 	});
 
@@ -260,10 +260,10 @@ describe('driftVaults', () => {
 		await adminVaultClient.unsubscribe();
 		await managerClient.unsubscribe();
 		await managerDriftClient.unsubscribe();
-		await vd0Client.unsubscribe();
-		await vd0DriftClient.unsubscribe();
-		await vd1Client.unsubscribe();
-		await vd1DriftClient.unsubscribe();
+		await user2Client.unsubscribe();
+		await user2DriftClient.unsubscribe();
+		await user1Client.unsubscribe();
+		await user1DriftClient.unsubscribe();
 	});
 
 	it('vaults initialized', async () => {
@@ -273,7 +273,7 @@ describe('driftVaults', () => {
 		const vaultDepositor = getVaultDepositorAddressSync(
 			vaultProgram.programId,
 			commonVaultKey,
-			vd0Signer.publicKey
+			user2Signer.publicKey
 		);
 		const vdAcct = await vaultProgram.account.vaultDepositor.fetch(
 			vaultDepositor
@@ -283,7 +283,7 @@ describe('driftVaults', () => {
 		const vaultDepositor2 = getVaultDepositorAddressSync(
 			vaultProgram.programId,
 			commonVaultKey,
-			vd1Signer.publicKey
+			user1Signer.publicKey
 		);
 		const vdAcct2 = await vaultProgram.account.vaultDepositor.fetch(
 			vaultDepositor2
@@ -298,21 +298,21 @@ describe('driftVaults', () => {
 		const vd0VaultDepositor = getVaultDepositorAddressSync(
 			vaultProgram.programId,
 			commonVaultKey,
-			vd0Signer.publicKey
+			user2Signer.publicKey
 		);
-		await vd0Client.deposit(
+		await user2Client.deposit(
 			vd0VaultDepositor,
 			usdcAmount,
 			undefined,
 			undefined,
-			vd0UserUSDCAccount
+			user2UserUSDCAccount
 		);
 
 		const userStatsKey = getUserStatsAccountPublicKey(
 			managerDriftClient.program.programId,
 			commonVaultKey
 		);
-		const userStats0 = (await vd0DriftClient.program.account.userStats.fetch(
+		const userStats0 = (await user2DriftClient.program.account.userStats.fetch(
 			userStatsKey
 		)) as UserStatsAccount;
 		const userStats0FuelDeposits = userStats0.fuelDeposits;
@@ -322,10 +322,10 @@ describe('driftVaults', () => {
 			commonVaultKey,
 			0
 		);
-		const vaultUserAccount = (await vd0DriftClient.program.account.user.fetch(
+		const vaultUserAccount = (await user2DriftClient.program.account.user.fetch(
 			vaultUser
 		)) as UserAccount;
-		tx = await vd0DriftClient.updateUserFuelBonus(
+		tx = await user2DriftClient.updateUserFuelBonus(
 			vaultUser,
 			vaultUserAccount,
 			commonVaultKey
@@ -333,13 +333,13 @@ describe('driftVaults', () => {
 
 		await bankrunContextWrapper.moveTimeForward(1000);
 
-		tx = await vd0DriftClient.updateUserFuelBonus(
+		tx = await user2DriftClient.updateUserFuelBonus(
 			vaultUser,
 			vaultUserAccount,
 			commonVaultKey
 		);
 
-		const userStats1 = (await vd0DriftClient.program.account.userStats.fetch(
+		const userStats1 = (await user2DriftClient.program.account.userStats.fetch(
 			userStatsKey
 		)) as UserStatsAccount;
 		const userStats1FuelDeposits = userStats1.fuelDeposits;
@@ -362,18 +362,18 @@ describe('driftVaults', () => {
 		const vd1VaultDepositor = getVaultDepositorAddressSync(
 			vaultProgram.programId,
 			commonVaultKey,
-			vd1Signer.publicKey
+			user1Signer.publicKey
 		);
-		await vd1Client.deposit(
+		await user1Client.deposit(
 			vd1VaultDepositor,
 			usdcAmount.div(new BN(2)),
 			undefined,
 			undefined,
-			vd1UserUSDCAccount
+			user1UserUSDCAccount
 		);
 
 		await bankrunContextWrapper.moveTimeForward(10_000);
-		await vd0DriftClient.updateUserFuelBonus(
+		await user2DriftClient.updateUserFuelBonus(
 			vaultUser,
 			vaultUserAccount,
 			commonVaultKey
@@ -387,17 +387,17 @@ describe('driftVaults', () => {
 			noLut: true,
 		});
 
-		const userStats2 = (await vd0DriftClient.program.account.userStats.fetch(
+		const userStats2 = (await user2DriftClient.program.account.userStats.fetch(
 			userStatsKey
 		)) as UserStatsAccount;
 		const vd0VaultDepositorAccount1 =
 			// @ts-ignore
-			(await vd0Client.program.account.vaultDepositor.fetch(
+			(await user2Client.program.account.vaultDepositor.fetch(
 				vd0VaultDepositor
 			)) as VaultDepositor;
 		const vd1VaultDepositorAccount1 =
 			// @ts-ignore
-			(await vd0Client.program.account.vaultDepositor.fetch(
+			(await user2Client.program.account.vaultDepositor.fetch(
 				vd1VaultDepositor
 			)) as VaultDepositor;
 		const totalUserFuel =
@@ -429,17 +429,17 @@ describe('driftVaults', () => {
 			assert(false);
 		}
 
-		const userStats3 = (await vd0DriftClient.program.account.userStats.fetch(
+		const userStats3 = (await user2DriftClient.program.account.userStats.fetch(
 			userStatsKey
 		)) as UserStatsAccount;
 		const vd0VaultDepositorAccount2 =
 			// @ts-ignore
-			(await vd0Client.program.account.vaultDepositor.fetch(
+			(await user2Client.program.account.vaultDepositor.fetch(
 				vd0VaultDepositor
 			)) as VaultDepositor;
 		const vd1VaultDepositorAccount2 =
 			// @ts-ignore
-			(await vd0Client.program.account.vaultDepositor.fetch(
+			(await user2Client.program.account.vaultDepositor.fetch(
 				vd1VaultDepositor
 			)) as VaultDepositor;
 		assert(vd0VaultDepositorAccount2.fuelAmount.toNumber() === 0);
@@ -455,7 +455,7 @@ describe('driftVaults', () => {
 		);
 	});
 
-	it('Test Fuel With Overflow account', async () => {
+	it('Test VD Fuel Crank with shares changing', async () => {
 		const startFuel = new BN(4_100_000_000);
 		await createVaultWithFuelOverflow(adminClient, bankrunContextWrapper, commonVaultKey, startFuel);
 
@@ -465,23 +465,23 @@ describe('driftVaults', () => {
 		);
 
 		// user deposits
-		const vd1VaultDepositor = getVaultDepositorAddressSync(
+		const user1VaultDepositor = getVaultDepositorAddressSync(
 			vaultProgram.programId,
 			commonVaultKey,
-			vd1Signer.publicKey
+			user1Signer.publicKey
 		);
-		await vd1Client.deposit(
-			vd1VaultDepositor,
+		await user1Client.deposit(
+			user1VaultDepositor,
 			usdcAmount,
 			undefined,
 			undefined,
-			vd1UserUSDCAccount
+			user1UserUSDCAccount
 		);
 
 		// user earns no fuel on deposit
-		let vd1 = await vd1Client.program.account.vaultDepositor.fetch(vd1VaultDepositor);
-		expect(vd1.fuelAmount.toNumber()).toBe(0);
-		expect(vd1.cumulativeFuelAmount.toNumber()).toBe(startFuel.toNumber());
+		let vdUser1 = await user1Client.program.account.vaultDepositor.fetch(user1VaultDepositor);
+		expect(vdUser1.fuelAmount.toNumber()).toBe(0);
+		expect(vdUser1.cumulativeFuelAmount.toNumber()).toBe(startFuel.toNumber());
 
 		// vault earns 100k fuel
 		const userStatsBefore = await getUserStatsDecoded(
@@ -498,32 +498,32 @@ describe('driftVaults', () => {
 		);
 
 		await bankrunContextWrapper.moveTimeForward(1000);
-		await vd1Client.updateCumulativeFuelAmount(vd1VaultDepositor, {
+		await user1Client.updateCumulativeFuelAmount(user1VaultDepositor, {
 			noLut: true,
 		});
 
-		// vd1 earns 100k fuel (they're 100% of vault)
-		vd1 = await vd1Client.program.account.vaultDepositor.fetch(vd1VaultDepositor);
-		expect(vd1.fuelAmount.toNumber()).toBe(100_000);
-		expect(vd1.cumulativeFuelAmount.toNumber()).toBe(startFuel.toNumber() + 100_000);
+		// user1 earns 100k fuel (they're 100% of vault)
+		vdUser1 = await user1Client.program.account.vaultDepositor.fetch(user1VaultDepositor);
+		expect(vdUser1.fuelAmount.toNumber()).toBe(100_000);
+		expect(vdUser1.cumulativeFuelAmount.toNumber()).toBe(startFuel.toNumber() + 100_000);
 
-		// vd0 deposits to be 50% of vault
-		const vd0VaultDepositor = getVaultDepositorAddressSync(
+		// user2 deposits to be 50% of vault
+		const user2VaultDepositor = getVaultDepositorAddressSync(
 			vaultProgram.programId,
 			commonVaultKey,
-			vd0Signer.publicKey
+			user2Signer.publicKey
 		);
-		await vd0Client.deposit(
-			vd0VaultDepositor,
+		await user2Client.deposit(
+			user2VaultDepositor,
 			usdcAmount,
 			undefined,
 			undefined,
-			vd0UserUSDCAccount
+			user2UserUSDCAccount
 		);
 
-		let vd0 = await vd0Client.program.account.vaultDepositor.fetch(vd0VaultDepositor);
-		expect(vd0.fuelAmount.toNumber()).toBe(0);
-		expect(vd0.cumulativeFuelAmount.toNumber()).toBe(startFuel.toNumber() + 100_000);
+		let vdUser2 = await user2Client.program.account.vaultDepositor.fetch(user2VaultDepositor);
+		expect(vdUser2.fuelAmount.toNumber()).toBe(0);
+		expect(vdUser2.cumulativeFuelAmount.toNumber()).toBe(startFuel.toNumber() + 100_000);
 
 		// vault earns another 100k fuel
 		await bankrunContextWrapper.moveTimeForward(1000);
@@ -535,21 +535,21 @@ describe('driftVaults', () => {
 			userStatsBefore
 		);
 
-		await vd0Client.updateCumulativeFuelAmount(vd0VaultDepositor, {
+		await user1Client.updateCumulativeFuelAmount(user1VaultDepositor, {
 			noLut: true,
 		});
-		await vd1Client.updateCumulativeFuelAmount(vd1VaultDepositor, {
+		await user2Client.updateCumulativeFuelAmount(user2VaultDepositor, {
 			noLut: true,
 		});
 
-		// both users earn 50k fuel (50% of vault)
-		vd1 = await vd1Client.program.account.vaultDepositor.fetch(vd1VaultDepositor);
-		expect(vd1.fuelAmount.toNumber()).toBe(150_000);
-		expect(vd1.cumulativeFuelAmount.toNumber()).toBe(startFuel.toNumber() + 200_000);
+		// both users earn 50k fuel (since they each own 50% of vault)
+		vdUser1 = await user1Client.program.account.vaultDepositor.fetch(user1VaultDepositor);
+		expect(vdUser1.fuelAmount.toNumber()).toBe(150_000);
+		expect(vdUser1.cumulativeFuelAmount.toNumber()).toBe(startFuel.toNumber() + 200_000);
 
-		vd0 = await vd0Client.program.account.vaultDepositor.fetch(vd0VaultDepositor);
-		expect(vd0.fuelAmount.toNumber()).toBe(50_000);
-		expect(vd0.cumulativeFuelAmount.toNumber()).toBe(startFuel.toNumber() + 200_000);
+		vdUser2 = await user2Client.program.account.vaultDepositor.fetch(user2VaultDepositor);
+		expect(vdUser2.fuelAmount.toNumber()).toBe(50_000);
+		expect(vdUser2.cumulativeFuelAmount.toNumber()).toBe(startFuel.toNumber() + 200_000);
 
 		// vault earns another 100k fuel
 		await bankrunContextWrapper.moveTimeForward(1000);
@@ -561,22 +561,23 @@ describe('driftVaults', () => {
 			userStatsBefore
 		);
 
-		// vd1 withdraws
-		await vd1Client.requestWithdraw(vd1VaultDepositor, PERCENTAGE_PRECISION, WithdrawUnit.SHARES_PERCENT);
-		await vd1Client.withdraw(vd1VaultDepositor);
+		// user1 withdraws 100%
+		await user1Client.requestWithdraw(user1VaultDepositor, PERCENTAGE_PRECISION, WithdrawUnit.SHARES_PERCENT);
+		await user1Client.withdraw(user1VaultDepositor);
 
-		await vd0Client.updateCumulativeFuelAmount(vd0VaultDepositor, {
+		// user2 cranks their fuel
+		await user2Client.updateCumulativeFuelAmount(user2VaultDepositor, {
 			noLut: true,
 		});
 
-		vd1 = await vd1Client.program.account.vaultDepositor.fetch(vd1VaultDepositor);
-		expect(vd1.vaultShares.toNumber()).toBe(0);
-		expect(vd1.fuelAmount.toNumber()).toBe(200_000);
-		expect(vd1.cumulativeFuelAmount.toNumber()).toBe(startFuel.toNumber() + 300_000);
+		vdUser1 = await user1Client.program.account.vaultDepositor.fetch(user1VaultDepositor);
+		expect(vdUser1.vaultShares.toNumber()).toBe(0);
+		expect(vdUser1.fuelAmount.toNumber()).toBe(200_000);
+		expect(vdUser1.cumulativeFuelAmount.toNumber()).toBe(startFuel.toNumber() + 300_000);
 
-		vd0 = await vd0Client.program.account.vaultDepositor.fetch(vd0VaultDepositor);
-		expect(vd0.fuelAmount.toNumber()).toBe(100_000);
-		expect(vd0.cumulativeFuelAmount.toNumber()).toBe(startFuel.toNumber() + 300_000);
+		vdUser2 = await user2Client.program.account.vaultDepositor.fetch(user2VaultDepositor);
+		expect(vdUser2.fuelAmount.toNumber()).toBe(100_000);
+		expect(vdUser2.cumulativeFuelAmount.toNumber()).toBe(startFuel.toNumber() + 300_000);
 
 
 	});
