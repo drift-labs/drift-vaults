@@ -281,7 +281,7 @@ export type DriftVaults = {
 			accounts: [
 				{
 					name: 'vault';
-					isMut: false;
+					isMut: true;
 					isSigner: false;
 				},
 				{
@@ -776,7 +776,7 @@ export type DriftVaults = {
 			accounts: [
 				{
 					name: 'vault';
-					isMut: false;
+					isMut: true;
 					isSigner: false;
 				},
 				{
@@ -1800,11 +1800,11 @@ export type DriftVaults = {
 						type: 'u32';
 					},
 					{
-						name: 'lastCumulativeFuelAmountTs';
+						name: 'lastFuelUpdateTs';
 						type: 'u32';
 					},
 					{
-						name: 'cumulativeFuelAmount';
+						name: 'cumulativeFuelPerShareAmount';
 						type: 'u128';
 					},
 					{
@@ -2116,13 +2116,30 @@ export type DriftVaults = {
 					{
 						name: 'padding1';
 						type: {
-							array: ['u8', 6];
+							array: ['u8', 2];
 						};
+					},
+					{
+						name: 'lastCumulativeFuelPerShareTs';
+						docs: ['The timestamp cumulative_fuel_per_share was last updated'];
+						type: 'u32';
+					},
+					{
+						name: 'cumulativeFuelPerShare';
+						docs: [
+							'The cumulative fuel per share (scaled up by 1e6 to avoid losing precision)'
+						];
+						type: 'u128';
+					},
+					{
+						name: 'cumulativeFuel';
+						docs: ['The total fuel accumulated'];
+						type: 'u128';
 					},
 					{
 						name: 'padding';
 						type: {
-							array: ['u64', 7];
+							array: ['u64', 3];
 						};
 					}
 				];
@@ -3116,7 +3133,7 @@ export const IDL: DriftVaults = {
 			accounts: [
 				{
 					name: 'vault',
-					isMut: false,
+					isMut: true,
 					isSigner: false,
 				},
 				{
@@ -3611,7 +3628,7 @@ export const IDL: DriftVaults = {
 			accounts: [
 				{
 					name: 'vault',
-					isMut: false,
+					isMut: true,
 					isSigner: false,
 				},
 				{
@@ -4635,11 +4652,11 @@ export const IDL: DriftVaults = {
 						type: 'u32',
 					},
 					{
-						name: 'lastCumulativeFuelAmountTs',
+						name: 'lastFuelUpdateTs',
 						type: 'u32',
 					},
 					{
-						name: 'cumulativeFuelAmount',
+						name: 'cumulativeFuelPerShareAmount',
 						type: 'u128',
 					},
 					{
@@ -4951,13 +4968,30 @@ export const IDL: DriftVaults = {
 					{
 						name: 'padding1',
 						type: {
-							array: ['u8', 6],
+							array: ['u8', 2],
 						},
+					},
+					{
+						name: 'lastCumulativeFuelPerShareTs',
+						docs: ['The timestamp cumulative_fuel_per_share was last updated'],
+						type: 'u32',
+					},
+					{
+						name: 'cumulativeFuelPerShare',
+						docs: [
+							'The cumulative fuel per share (scaled up by 1e6 to avoid losing precision)',
+						],
+						type: 'u128',
+					},
+					{
+						name: 'cumulativeFuel',
+						docs: ['The total fuel accumulated'],
+						type: 'u128',
 					},
 					{
 						name: 'padding',
 						type: {
-							array: ['u64', 7],
+							array: ['u64', 3],
 						},
 					},
 				],

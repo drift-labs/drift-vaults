@@ -15,7 +15,7 @@ pub fn update_cumulative_fuel_amount<'c: 'info, 'info>(
 ) -> Result<()> {
     let clock = &Clock::get()?;
 
-    let vault = ctx.accounts.vault.load()?;
+    let mut vault = ctx.accounts.vault.load_mut()?;
     let mut vault_depositor = ctx.accounts.vault_depositor.load_mut()?;
 
     // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
@@ -30,7 +30,7 @@ pub fn update_cumulative_fuel_amount<'c: 'info, 'info>(
 
     let fuel_amount = vault_depositor.update_cumulative_fuel_amount(
         clock.unix_timestamp,
-        &vault,
+        &mut vault,
         &user_stats,
         &fuel_overflow,
     )?;
@@ -42,6 +42,7 @@ pub fn update_cumulative_fuel_amount<'c: 'info, 'info>(
 #[derive(Accounts)]
 pub struct UpdateCumulativeFuelAmount<'info> {
     #[account(
+        mut,
         constraint = is_manager_for_vault(&vault, &signer)? || is_delegate_for_vault(&vault, &signer)? || is_authority_for_vault_depositor(&vault_depositor, &signer)?
     )]
     pub vault: AccountLoader<'info, Vault>,

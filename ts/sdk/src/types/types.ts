@@ -104,6 +104,9 @@ export type Vault = {
 	vaultProtocol: boolean;
 	fuelDistributionMode: FuelDistributionMode;
 	padding1: number[];
+	lastCumulativeFuelPerShareTs: number;
+	cumulativeFuelPerShare: BN;
+	cumulativeFuel: BN;
 	padding: BN[];
 };
 
@@ -125,8 +128,8 @@ export type VaultDepositor = {
 	cumulativeProfitShareAmount: BN;
 	vaultSharesBase: number;
 	profitShareFeePaid: BN;
-	lastCumulativeFuelAmountTs: number;
-	cumulativeFuelAmount: BN;
+	lastFuelUpdateTs: number;
+	cumulativeFuelPerShareAmount: BN;
 	fuelAmount: BN;
 	padding: BN | BN[];
 };

@@ -13,7 +13,7 @@ pub fn reset_fuel_season<'c: 'info, 'info>(
 ) -> Result<()> {
     let clock = &Clock::get()?;
 
-    let vault = ctx.accounts.vault.load()?;
+    let mut vault = ctx.accounts.vault.load_mut()?;
     let mut vault_depositor = ctx.accounts.vault_depositor.load_mut()?;
 
     // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
@@ -28,7 +28,7 @@ pub fn reset_fuel_season<'c: 'info, 'info>(
 
     let fuel_amount = vault_depositor.update_cumulative_fuel_amount(
         clock.unix_timestamp,
-        &vault,
+        &mut vault,
         &user_stats,
         &fuel_overflow,
     )?;
@@ -53,6 +53,7 @@ pub fn reset_fuel_season<'c: 'info, 'info>(
 
 #[derive(Accounts)]
 pub struct ResetFuelSeason<'info> {
+    #[account(mut)]
     pub vault: AccountLoader<'info, Vault>,
     #[account(
         mut,

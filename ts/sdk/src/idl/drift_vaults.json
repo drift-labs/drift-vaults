@@ -281,7 +281,7 @@
       "accounts": [
         {
           "name": "vault",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -776,7 +776,7 @@
       "accounts": [
         {
           "name": "vault",
-          "isMut": false,
+          "isMut": true,
           "isSigner": false
         },
         {
@@ -1832,11 +1832,11 @@
             "type": "u32"
           },
           {
-            "name": "lastCumulativeFuelAmountTs",
+            "name": "lastFuelUpdateTs",
             "type": "u32"
           },
           {
-            "name": "cumulativeFuelAmount",
+            "name": "cumulativeFuelPerShareAmount",
             "type": "u128"
           },
           {
@@ -2201,16 +2201,37 @@
             "type": {
               "array": [
                 "u8",
-                6
+                2
               ]
             }
+          },
+          {
+            "name": "lastCumulativeFuelPerShareTs",
+            "docs": [
+              "The timestamp cumulative_fuel_per_share was last updated"
+            ],
+            "type": "u32"
+          },
+          {
+            "name": "cumulativeFuelPerShare",
+            "docs": [
+              "The cumulative fuel per share (scaled up by 1e6 to avoid losing precision)"
+            ],
+            "type": "u128"
+          },
+          {
+            "name": "cumulativeFuel",
+            "docs": [
+              "The total fuel accumulated"
+            ],
+            "type": "u128"
           },
           {
             "name": "padding",
             "type": {
               "array": [
                 "u64",
-                7
+                3
               ]
             }
           }

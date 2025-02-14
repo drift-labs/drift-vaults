@@ -8,3 +8,5 @@ pub mod permissioned_liquidator {
     use anchor_lang::prelude::declare_id;
     declare_id!("4wbNjWbj3kPDbyKnSq8SXVEtAJw4uzE8mJ2QwuK1BCYZ");
 }
+
+pub const FUEL_SHARE_PRECISION: u128 = 1_000_000_000_000_000_000; // expo -18
