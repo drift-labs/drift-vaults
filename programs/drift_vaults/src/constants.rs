@@ -10,3 +10,4 @@ pub mod permissioned_liquidator {
 }
 
 pub const FUEL_SHARE_PRECISION: u128 = 1_000_000_000_000_000_000; // expo -18
+pub const MAGIC_FUEL_START_TS: u32 = 123; // some arbitrary timestamp to identify VaultDepositors created after fuel distribution started.

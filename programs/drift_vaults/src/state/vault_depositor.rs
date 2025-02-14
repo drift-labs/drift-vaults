@@ -20,7 +20,7 @@ use drift::state::user::{FuelOverflow, User, UserStats};
 use drift_macros::assert_no_slop;
 use static_assertions::const_assert_eq;
 
-use crate::constants::FUEL_SHARE_PRECISION;
+use crate::constants::{FUEL_SHARE_PRECISION, MAGIC_FUEL_START_TS};
 use crate::error::ErrorCode;
 use crate::events::VaultDepositorAction;
 use crate::state::events::{VaultDepositorRecord, VaultDepositorV1Record};
@@ -60,7 +60,7 @@ pub struct VaultDepositor {
     pub vault_shares_base: u32,
     pub last_fuel_update_ts: u32, // overflows on 2106-02-07 06:28:15 UTC
     pub cumulative_fuel_per_share_amount: u128,
-    pub fuel_amount: u128, // can i remove this? and just calculate with `shares * cumulative_fuel_per_share_amount`
+    pub fuel_amount: u128,
     pub padding: [u64; 4],
 }
 
@@ -132,7 +132,7 @@ impl VaultDepositor {
             total_withdraws: 0,
             cumulative_profit_share_amount: 0,
             profit_share_fee_paid: 0,
-            last_fuel_update_ts: 0,
+            last_fuel_update_ts: MAGIC_FUEL_START_TS,
             cumulative_fuel_per_share_amount: 0,
             fuel_amount: 0,
             padding: [0u64; 4],
@@ -881,8 +881,15 @@ impl VaultDepositor {
             vault.update_cumulative_fuel_per_share(now, user_stats, fuel_overflow)?;
 
         if (now as u32) > self.last_fuel_update_ts {
-            // do not update the vd's pro rata share if this is their first time
-            if self.last_fuel_update_ts != 0 {
+            // self.last_fuel_update_ts == 0:
+            //   - VaultDepositors created before fuel distribution update, no fuel applied yet.
+            //   - Apply any fuel that has been accumulated so far.
+            // self.last_fuel_update_ts == MAGIC_FUEL_START_TS:
+            //   - VaultDepositors created after fuel distribution update, that have no fuel applied yet
+            //   - Do not apply fuel accumualted before they deposited, only after.
+            // self.last_fuel_update_ts == valid timestamp:
+            //   - VaultDepositor started accruing fuel, treat normally
+            if self.last_fuel_update_ts != MAGIC_FUEL_START_TS {
                 if self.cumulative_fuel_per_share_amount > cumulative_fuel_per_share {
                     // this shouldn't happen under SOP, if it does happen then the UserStats fuel was reset
                     // before this vd. Reset the vd and continue as if it is a new fuel season.
