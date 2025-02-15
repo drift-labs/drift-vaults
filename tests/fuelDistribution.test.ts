@@ -721,7 +721,7 @@ describe('driftVaults', () => {
 		);
 		expect(vault.data.userShares.toNumber()).toBe(2000000000000000);
 
-		// crank fuel
+		// deploy happens, crank fuel, expect both users to have 50% fuel
 		await managerClient.updateCumulativeFuelAmount(user1VaultDepositor, {
 			noLut: true,
 		});
@@ -732,6 +732,139 @@ describe('driftVaults', () => {
 			commonVaultKey
 		);
 		expect(vault.data.cumulativeFuel.toNumber()).toBe(100_000);
+		expect(vault.data.cumulativeFuelPerShare.toNumber()).toBe(50_000_000); // 1e5 * 1e18 / 2e15 = 50e6
+		expect(vault.data.lastCumulativeFuelPerShareTs).toBeGreaterThan(0);
+		expect(vault.data.userShares.toNumber()).toBe(
+			vault.data.totalShares.toNumber()
+		);
+		expect(vault.data.userShares.toNumber()).toBe(2000000000000000);
+
+		user1Vd = await getVaultDepositorDecoded(
+			user1Client,
+			bankrunContextWrapper,
+			user1VaultDepositor
+		);
+		expect(user1Vd.data.lastFuelUpdateTs).toBeGreaterThan(0);
+		expect(user1Vd.data.fuelAmount.toNumber()).toBe(50_000); // 50% of vault fuel
+		expect(user1Vd.data.cumulativeFuelPerShareAmount.toNumber()).toBe(
+			50_000_000
+		);
+		expect(user1Vd.data.vaultShares.toNumber()).toBe(1000000000000000);
+
+		await managerClient.updateCumulativeFuelAmount(user2VaultDepositor, {
+			noLut: true,
+		});
+		user2Vd = await getVaultDepositorDecoded(
+			user2Client,
+			bankrunContextWrapper,
+			user2VaultDepositor
+		);
+		expect(user2Vd.data.lastFuelUpdateTs).toBeGreaterThan(0);
+		expect(user2Vd.data.fuelAmount.toNumber()).toBe(50_000); // 50% of vault fuel
+		expect(user2Vd.data.cumulativeFuelPerShareAmount.toNumber()).toBe(
+			50_000_000
+		);
+		expect(user2Vd.data.vaultShares.toNumber()).toBe(1000000000000000);
+	});
+
+	it('Test new depositors dont get fuel accrued before they deposited', async () => {
+		// vault initially has 100k fuel
+		await overWriteUserStatsFuel(
+			adminClient,
+			bankrunContextWrapper,
+			vaultUserStatsKey,
+			new BN(100_000)
+		);
+		let currFuel = await getUserStatsDecoded(
+			adminClient,
+			bankrunContextWrapper,
+			vaultUserStatsKey
+		);
+		expect(currFuel.data.fuelTaker).toBe(100_000);
+
+		// both users deposit 50% of vault
+		await user1Client.deposit(
+			user1VaultDepositor,
+			usdcAmount,
+			undefined,
+			undefined,
+			user1UserUSDCAccount
+		);
+		await user2Client.deposit(
+			user2VaultDepositor,
+			usdcAmount,
+			undefined,
+			undefined,
+			user2UserUSDCAccount
+		);
+
+		// crank fuel, expect both users have 0 fuel still.
+		await managerClient.updateCumulativeFuelAmount(user1VaultDepositor, {
+			noLut: true,
+		});
+
+		let vault = await getVaultDecoded(
+			managerClient,
+			bankrunContextWrapper,
+			commonVaultKey
+		);
+		expect(vault.data.cumulativeFuel.toNumber()).toBe(100_000);
+		expect(vault.data.cumulativeFuelPerShare.toNumber()).toBe(0); // 1e5 * 1e18 / 2e15 = 50e6
+		expect(vault.data.lastCumulativeFuelPerShareTs).toBeGreaterThan(0);
+		expect(vault.data.userShares.toNumber()).toBe(
+			vault.data.totalShares.toNumber()
+		);
+		expect(vault.data.userShares.toNumber()).toBe(2000000000000000);
+
+		let user1Vd = await getVaultDepositorDecoded(
+			user1Client,
+			bankrunContextWrapper,
+			user1VaultDepositor
+		);
+		expect(user1Vd.data.lastFuelUpdateTs).toBeGreaterThan(0);
+		expect(user1Vd.data.fuelAmount.toNumber()).toBe(0); // no fuel
+		expect(user1Vd.data.cumulativeFuelPerShareAmount.toNumber()).toBe(0);
+		expect(user1Vd.data.vaultShares.toNumber()).toBe(1000000000000000);
+
+		await managerClient.updateCumulativeFuelAmount(user2VaultDepositor, {
+			noLut: true,
+		});
+		let user2Vd = await getVaultDepositorDecoded(
+			user2Client,
+			bankrunContextWrapper,
+			user2VaultDepositor
+		);
+		expect(user2Vd.data.lastFuelUpdateTs).toBeGreaterThan(0);
+		expect(user2Vd.data.fuelAmount.toNumber()).toBe(0); // no fuel
+		expect(user2Vd.data.cumulativeFuelPerShareAmount.toNumber()).toBe(0);
+		expect(user2Vd.data.vaultShares.toNumber()).toBe(1000000000000000);
+
+		// vault earns another 100k fuel
+		await overWriteUserStatsFuel(
+			adminClient,
+			bankrunContextWrapper,
+			vaultUserStatsKey,
+			new BN(200_000)
+		);
+		currFuel = await getUserStatsDecoded(
+			adminClient,
+			bankrunContextWrapper,
+			vaultUserStatsKey
+		);
+		expect(currFuel.data.fuelTaker).toBe(200_000);
+		await bankrunContextWrapper.moveTimeForward(1000);
+
+		// users crank fuel, expect both users to have 50k fuel each
+		await managerClient.updateCumulativeFuelAmount(user1VaultDepositor, {
+			noLut: true,
+		});
+
+		vault = await getVaultDecoded(
+			managerClient,
+			bankrunContextWrapper,
+			commonVaultKey
+		);
+		expect(vault.data.cumulativeFuel.toNumber()).toBe(200_000);
 		expect(vault.data.cumulativeFuelPerShare.toNumber()).toBe(50_000_000); // 1e5 * 1e18 / 2e15 = 50e6
 		expect(vault.data.lastCumulativeFuelPerShareTs).toBeGreaterThan(0);
 		expect(vault.data.userShares.toNumber()).toBe(
