@@ -250,9 +250,22 @@ export type VaultDepositorV1Record = {
 	managementFeeShares: BN;
 };
 
+export type FuelSeasonRecord = {
+	ts: BN;
+	authority: PublicKey;
+	fuelInsurance: BN;
+	fuelDeposits: BN;
+	fuelBorrows: BN;
+	fuelPositions: BN;
+	fuelTaker: BN;
+	fuelMaker: BN;
+	fuelTotal: BN;
+};
+
 export type VaultsEventMap = {
 	VaultDepositorRecord: Event<VaultDepositorRecord>;
 	VaultDepositorV1Record: Event<VaultDepositorV1Record>;
+	FuelSeasonRecord: Event<FuelSeasonRecord>;
 };
 
 export type EventType = keyof VaultsEventMap;

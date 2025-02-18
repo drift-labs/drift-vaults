@@ -535,18 +535,23 @@ export async function printTxLogs(
 	connection: Connection,
 	txSig: TransactionSignature,
 	dumpEvents = false,
-	driftProgram?: Program
-): Promise<void> {
+	program?: Program
+): Promise<Array<any>> {
 	const tx = await connection.getTransaction(txSig, {
 		commitment: 'confirmed',
 		maxSupportedTransactionVersion: 0,
 	});
-	console.log('tx logs', tx.meta.logMessages);
-	if (dumpEvents) {
-		for (const e of parseLogs(driftProgram, tx.meta.logMessages)) {
-			console.log(JSON.stringify(e));
-		}
+	console.log('tx logs', tx?.meta?.logMessages);
+	const events = [];
+	for (const e of parseLogs(program!, tx!.meta!.logMessages!, program!.programId!.toBase58()!)) {
+		// @ts-ignore
+		events.push(e);
 	}
+
+	if (dumpEvents) {
+		console.log(JSON.stringify(events));
+	}
+	return events;
 }
 
 export async function mintToInsuranceFund(

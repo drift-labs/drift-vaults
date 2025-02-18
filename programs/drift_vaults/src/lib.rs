@@ -136,6 +136,12 @@ pub mod drift_vaults {
         instructions::reset_fuel_season(ctx)
     }
 
+    pub fn reset_vault_fuel_season<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, ResetVaultFuelSeason<'info>>,
+    ) -> Result<()> {
+        instructions::reset_vault_fuel_season(ctx)
+    }
+
     pub fn manager_deposit<'c: 'info, 'info>(
         ctx: Context<'_, '_, 'c, 'info, ManagerDeposit<'info>>,
         amount: u64,

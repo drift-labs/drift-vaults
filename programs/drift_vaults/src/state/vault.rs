@@ -121,8 +121,10 @@ impl Vault {
 
     pub fn reset_cumulative_fuel_per_share(&mut self, now: i64) {
         msg!(
-            "Resetting vault fuel amount: {:?}",
-            self.cumulative_fuel_per_share
+            "Resetting vault fuel. now: {:?}, cumulative_fuel_per_share: {:?}, cumulative_fuel: {:?}",
+            now,
+            self.cumulative_fuel_per_share,
+            self.cumulative_fuel
         );
         self.cumulative_fuel_per_share = 0;
         self.cumulative_fuel = 0;
@@ -178,12 +180,6 @@ impl Vault {
 
         self.cumulative_fuel = total_fuel;
         self.last_cumulative_fuel_per_share_ts = now as u32;
-
-        msg!(
-            "Updated vault cumulative_fuel: {:?}, fuel_per_share: {:?}",
-            self.cumulative_fuel,
-            self.cumulative_fuel_per_share
-        );
 
         Ok(self.cumulative_fuel_per_share)
     }

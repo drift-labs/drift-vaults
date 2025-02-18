@@ -4,7 +4,6 @@ use drift::state::state::State;
 use drift::state::user::{FuelOverflowStatus, UserStats};
 
 use crate::constraints::{is_user_stats_for_vault, is_vault_for_vault_depositor};
-use crate::state::events::FuelSeasonRecord;
 use crate::state::{FuelOverflowProvider, Vault, VaultProtocolProvider};
 use crate::VaultDepositor;
 
@@ -26,25 +25,12 @@ pub fn reset_fuel_season<'c: 'info, 'info>(
     let fuel_overflow = ctx.fuel_overflow(vp.is_some(), has_fuel_overflow);
     user_stats.validate_fuel_overflow(&fuel_overflow)?;
 
-    let fuel_amount = vault_depositor.update_cumulative_fuel_amount(
+    vault_depositor.update_cumulative_fuel_amount(
         clock.unix_timestamp,
         &mut vault,
         &user_stats,
         &fuel_overflow,
     )?;
-    msg!("new fuel_amount: {}", fuel_amount);
-
-    emit!(FuelSeasonRecord {
-        ts: clock.unix_timestamp,
-        authority: vault_depositor.authority,
-        fuel_insurance: 0,
-        fuel_deposits: 0,
-        fuel_borrows: 0,
-        fuel_positions: 0,
-        fuel_taker: 0,
-        fuel_maker: 0,
-        fuel_total: fuel_amount,
-    });
 
     vault_depositor.reset_fuel_amount(clock.unix_timestamp);
 

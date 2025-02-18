@@ -803,6 +803,27 @@ export type DriftVaults = {
 			args: [];
 		},
 		{
+			name: 'resetVaultFuelSeason';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'admin';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'driftState';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [];
+		},
+		{
 			name: 'managerDeposit';
 			accounts: [
 				{
@@ -2719,6 +2740,56 @@ export type DriftVaults = {
 					index: false;
 				}
 			];
+		},
+		{
+			name: 'FuelSeasonRecord';
+			fields: [
+				{
+					name: 'ts';
+					type: 'i64';
+					index: false;
+				},
+				{
+					name: 'authority';
+					type: 'publicKey';
+					index: false;
+				},
+				{
+					name: 'fuelInsurance';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'fuelDeposits';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'fuelBorrows';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'fuelPositions';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'fuelTaker';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'fuelMaker';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'fuelTotal';
+					type: 'u128';
+					index: false;
+				}
+			];
 		}
 	];
 	errors: [
@@ -3645,6 +3716,27 @@ export const IDL: DriftVaults = {
 					name: 'driftUserStats',
 					isMut: true,
 					isSigner: false,
+				},
+				{
+					name: 'driftState',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [],
+		},
+		{
+			name: 'resetVaultFuelSeason',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'admin',
+					isMut: false,
+					isSigner: true,
 				},
 				{
 					name: 'driftState',
@@ -5567,6 +5659,56 @@ export const IDL: DriftVaults = {
 				},
 				{
 					name: 'toDepositorSharesAfter',
+					type: 'u128',
+					index: false,
+				},
+			],
+		},
+		{
+			name: 'FuelSeasonRecord',
+			fields: [
+				{
+					name: 'ts',
+					type: 'i64',
+					index: false,
+				},
+				{
+					name: 'authority',
+					type: 'publicKey',
+					index: false,
+				},
+				{
+					name: 'fuelInsurance',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'fuelDeposits',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'fuelBorrows',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'fuelPositions',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'fuelTaker',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'fuelMaker',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'fuelTotal',
 					type: 'u128',
 					index: false,
 				},

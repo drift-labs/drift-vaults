@@ -34,7 +34,8 @@ pub fn update_cumulative_fuel_amount<'c: 'info, 'info>(
         &user_stats,
         &fuel_overflow,
     )?;
-    msg!("new fuel_amount: {}", fuel_amount);
+
+    msg!("current fuel_amount: {}", fuel_amount);
 
     Ok(())
 }

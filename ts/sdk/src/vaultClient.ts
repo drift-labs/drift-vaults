@@ -2860,6 +2860,36 @@ export class VaultClient {
 			.instruction();
 	}
 
+	public async resetVaultFuelSeason(
+		vault: PublicKey,
+		txParams?: TxParams
+	): Promise<TransactionSignature> {
+		return await this.createAndSendTxn(
+			[await this.getResetVaultFuelSeasonIx(vault)],
+			txParams
+		);
+	}
+
+	public async getResetVaultFuelSeasonIx(
+		vault: PublicKey
+	): Promise<TransactionInstruction> {
+		const state = this.driftClient.getStateAccount();
+		if (!state.admin.equals(this.driftClient.wallet.publicKey)) {
+			throw new Error(`Only the admin wallet can reset the fuel season.`);
+		}
+
+		return this.program.methods
+			.resetVaultFuelSeason()
+			.accounts({
+				vault,
+				admin: this.driftClient.wallet.publicKey,
+				driftState: await this.driftClient.getStatePublicKey(),
+				// @ts-ignore
+				logAccount: FUEL_RESET_LOG_ACCOUNT,
+			})
+			.instruction();
+	}
+
 	public async managerUpdateFuelDistributionMode(
 		vault: PublicKey,
 		fuelDistributionMode: FuelDistributionMode,
