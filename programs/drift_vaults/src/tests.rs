@@ -926,7 +926,7 @@ mod vault_fcn {
         assert_eq!(vd.cumulative_profit_share_amount, 180 * QUOTE_PRECISION_I64);
         assert_eq!(vd.profit_share_fee_paid, 20 * QUOTE_PRECISION_U64);
         assert_eq!(vault.total_shares, 2000 * QUOTE_PRECISION);
-        assert_eq!(vd.checked_vault_shares(&vault).unwrap(), 1981_818_182);
+        assert_eq!(vd.checked_vault_shares(&vault).unwrap(), 1_981_818_182);
 
         // vault drawdown 10%
         now += 60 * 60 * 24; // 1 day later
@@ -946,7 +946,7 @@ mod vault_fcn {
         assert_eq!(vd.cumulative_profit_share_amount, 180 * QUOTE_PRECISION_I64);
         assert_eq!(vd.profit_share_fee_paid, 20 * QUOTE_PRECISION_U64);
         assert_eq!(vault.total_shares, 2000 * QUOTE_PRECISION);
-        assert_eq!(vd.checked_vault_shares(&vault).unwrap(), 1981_818_182);
+        assert_eq!(vd.checked_vault_shares(&vault).unwrap(), 1_981_818_182);
 
         // in profit again (above net hwm (2180), below gross hwm (2200))
         // vd equity = 2210*1982/2000 = 2190
@@ -963,11 +963,11 @@ mod vault_fcn {
             vault_equity,
         )
         .unwrap();
-        assert_eq!(depositor_amount_in_profit, 2188_918_182);
+        assert_eq!(depositor_amount_in_profit, 2_188_918_182);
         assert_eq!(vd.cumulative_profit_share_amount, 188_918_182);
         assert_eq!(vd.profit_share_fee_paid, 20_990_909);
         assert_eq!(vault.total_shares, 2000 * QUOTE_PRECISION);
-        assert_eq!(vd.checked_vault_shares(&vault).unwrap(), 1980_921_432);
+        assert_eq!(vd.checked_vault_shares(&vault).unwrap(), 1_980_921_432);
     }
 
     #[test]
