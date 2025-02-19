@@ -1,10 +1,15 @@
 #[cfg(test)]
 mod vault_fcn {
+    use std::str::FromStr;
+
     use crate::state::traits::VaultDepositorBase;
+    use crate::test_utils::create_account_info;
     use crate::withdraw_request::WithdrawRequest;
-    use crate::{Vault, VaultDepositor, WithdrawUnit};
-    use anchor_lang::prelude::Pubkey;
-    use drift::math::constants::{ONE_YEAR, QUOTE_PRECISION_U64};
+    use crate::{assert_eq_within, Vault, VaultDepositor, WithdrawUnit};
+    use anchor_lang::prelude::{AccountLoader, Pubkey};
+    use drift::math::constants::{
+        ONE_YEAR, QUOTE_PRECISION, QUOTE_PRECISION_I64, QUOTE_PRECISION_U64,
+    };
     use drift::math::insurance::if_shares_to_vault_amount as depositor_shares_to_vault_amount;
 
     #[test]
@@ -498,7 +503,7 @@ mod vault_fcn {
         assert_eq!(cnt, 4); // 4 days
         assert_eq!(
             vd.cumulative_profit_share_amount,
-            (1000 * QUOTE_PRECISION_U64) as i64
+            (850 * QUOTE_PRECISION_U64) as i64 // 1000 - 15% profit share
         );
         assert_eq!(vd.net_deposits, (2000 * QUOTE_PRECISION_U64) as i64);
 
@@ -746,6 +751,172 @@ mod vault_fcn {
             withdraw_amount, vault_equity
         );
         assert!(!finishing_liquidation);
+    }
+
+    #[test]
+    fn test_apply_profit_share_on_net_hwm() {
+        let mut now = 123456789;
+        let mut vault = Vault::default();
+        let mut vp = None;
+        vault.management_fee = 0;
+        vault.profit_share = 100_000; // 10%
+        vault.last_fee_update_ts = now;
+
+        let mut vault_equity: u64 = 0;
+
+        let deposit_amount = 2000 * QUOTE_PRECISION_U64;
+        let vd =
+            &mut VaultDepositor::new(Pubkey::default(), Pubkey::default(), Pubkey::default(), now);
+        vd.deposit(deposit_amount, vault_equity, &mut vault, &mut vp, now)
+            .unwrap(); // new user deposits $2000
+        vault_equity += deposit_amount;
+
+        let depositor_amount_before = depositor_shares_to_vault_amount(
+            vd.checked_vault_shares(&vault).unwrap(),
+            vault.total_shares,
+            vault_equity,
+        )
+        .unwrap();
+        assert_eq!(depositor_amount_before, vault_equity);
+
+        // vault up 10% (user +$200 gross, +$180 net)
+        now += 60 * 60 * 24; // 1 day later
+        vault_equity = 2200 * QUOTE_PRECISION_U64;
+
+        vd.apply_profit_share(vault_equity, &mut vault, &mut vp)
+            .unwrap();
+        vault.apply_fee(&mut vp, vault_equity, now).unwrap();
+
+        let depositor_amount_in_profit = depositor_shares_to_vault_amount(
+            vd.checked_vault_shares(&vault).unwrap(),
+            vault.total_shares,
+            vault_equity,
+        )
+        .unwrap();
+        assert_eq!(depositor_amount_in_profit, 2180 * QUOTE_PRECISION_U64);
+        assert_eq!(vd.cumulative_profit_share_amount, 180 * QUOTE_PRECISION_I64);
+        assert_eq!(vd.profit_share_fee_paid, 20 * QUOTE_PRECISION_U64);
+        assert_eq!(vault.total_shares, 2000 * QUOTE_PRECISION);
+        assert_eq!(vd.checked_vault_shares(&vault).unwrap(), 1981_818_182);
+
+        // vault drawdown 10%
+        now += 60 * 60 * 24; // 1 day later
+        vault_equity = 1980 * QUOTE_PRECISION_U64;
+
+        vd.apply_profit_share(vault_equity, &mut vault, &mut vp)
+            .unwrap();
+        vault.apply_fee(&mut vp, vault_equity, now).unwrap();
+
+        let depositor_amount_in_drawdown = depositor_shares_to_vault_amount(
+            vd.checked_vault_shares(&vault).unwrap(),
+            vault.total_shares,
+            vault_equity,
+        )
+        .unwrap();
+        assert_eq!(depositor_amount_in_drawdown, 1962 * QUOTE_PRECISION_U64);
+        assert_eq!(vd.cumulative_profit_share_amount, 180 * QUOTE_PRECISION_I64);
+        assert_eq!(vd.profit_share_fee_paid, 20 * QUOTE_PRECISION_U64);
+        assert_eq!(vault.total_shares, 2000 * QUOTE_PRECISION);
+        assert_eq!(vd.checked_vault_shares(&vault).unwrap(), 1981_818_182);
+
+        // in profit again (above net hwm (2180), below gross hwm (2200))
+        // vd equity = 2210*1982/2000 = 2190
+        now += 60 * 60 * 24; // 1 day later
+        vault_equity = 2210 * QUOTE_PRECISION_U64;
+
+        vd.apply_profit_share(vault_equity, &mut vault, &mut vp)
+            .unwrap();
+        vault.apply_fee(&mut vp, vault_equity, now).unwrap();
+
+        let depositor_amount_in_profit = depositor_shares_to_vault_amount(
+            vd.checked_vault_shares(&vault).unwrap(),
+            vault.total_shares,
+            vault_equity,
+        )
+        .unwrap();
+        assert_eq!(depositor_amount_in_profit, 2188_918_182);
+        assert_eq!(vd.cumulative_profit_share_amount, 188_918_182);
+        assert_eq!(vd.profit_share_fee_paid, 20_990_909);
+        assert_eq!(vault.total_shares, 2000 * QUOTE_PRECISION);
+        assert_eq!(vd.checked_vault_shares(&vault).unwrap(), 1980_921_432);
+    }
+
+    #[test]
+    fn apply_profit_share_on_net_hwm_example() {
+        let vault_str = String::from("0wjoKwKYdXdTdXBlcmNoYXJnZXIgVmF1bHQgICAgICAgICAgICAgIObOTURhcaZ/hexxlaSKNnYv57PHIZx9B8zN8k75zR8X5YskhtQuJRuc1ZuimumplgthmeBFASQW793js7pxldJCFqweTOnzcxGL+XKJx2Lif7339IdAC/KyKj8JEFZwkobFx9kGlk72vtua5uHjyHSzAViuG0/APV227Zmg8aZjmuxoym5eTWKAUNtoEdxsbA9c5IdRusnrLgc4WGs7FVYLef8oRnsVQX7JdnHagGAmJsU0t+iRQjIn8UdUnf8jwgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQjcnBxIEAAAAAAAAAAAAAMeNOt6kBAAAAAAAAAAAAAC5KoFnAAAAAAAAAAAAAAAAgDoJAAAAAADHSjWPHAAAAADgV+tIGwAAAAAAAAAAAADTz/tkAAAAAHycB+TTAgAAAEibJrr///8aotBlLSwAAJ4FyYFZKQAAAAAAAAAAAAAAuGTZRQAAAAAAAAAAAAAAEQ28vgkBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAJ//V2YAAAAAAAAAAOCTBAAAAAAAAAD/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");
+        let mut vault_decoded_bytes = base64::decode(vault_str).unwrap();
+        let vault_bytes = vault_decoded_bytes.as_mut_slice();
+        let mut lamports = 0;
+        let key = Pubkey::default();
+        let owner = Pubkey::from_str("vAuLTsyrvSfZRuRB3XgvkPwNGgYSs9YRYymVebLKoxR").unwrap();
+        let vault_account_info =
+            create_account_info(&key, true, &mut lamports, vault_bytes, &owner);
+        let vault_loader: AccountLoader<Vault> =
+            AccountLoader::try_from(&vault_account_info).unwrap();
+
+        let vd_str = String::from("V222aldgP9Pmzk1EYXGmf4XscZWkijZ2L+ezxyGcfQfMzfJO+c0fF3+94atStThJMBa2OKTfUXJGJXPLv0FNp+KPmd6vhnmEDTcLJRUaWdAPxV7zBY0GiaKVHFu9h+8uxW0VlL9rvWTAzbMLAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHJ+VZgAAAAAAAAAAAAAAAABJfw8AAAAAAEl/DwAAAAAAAAAAAAAAAKkKggIAAAAAypzAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=");
+        let mut vd_decoded_bytes = base64::decode(vd_str).unwrap();
+        let vd_bytes = vd_decoded_bytes.as_mut_slice();
+        let mut lamports = 0;
+        let key = Pubkey::default();
+        let owner = Pubkey::from_str("vAuLTsyrvSfZRuRB3XgvkPwNGgYSs9YRYymVebLKoxR").unwrap();
+        let vd_account_info = create_account_info(&key, true, &mut lamports, vd_bytes, &owner);
+        let vd_loader: AccountLoader<VaultDepositor> =
+            AccountLoader::try_from(&vd_account_info).unwrap();
+
+        let mut vault = vault_loader.load_mut().unwrap();
+        let mut vd = vd_loader.load_mut().unwrap();
+        let mut vp = None;
+
+        let vault_equity = 8_045_367_880_000;
+        let vd_amount = depositor_shares_to_vault_amount(
+            vd.checked_vault_shares(&vault).unwrap(),
+            vault.total_shares,
+            vault_equity,
+        )
+        .unwrap();
+
+        assert_eq!(vault.profit_share, 300_000);
+        let manager_total_profit_share_before = vault.manager_total_profit_share;
+        assert_eq!(manager_total_profit_share_before, 1_141_366_328_593);
+
+        let vd_hwm_before =
+            (vd.total_deposits - vd.total_withdraws) as i64 + vd.cumulative_profit_share_amount;
+        let unrealized_profit_before = vd_amount as i64 - vd_hwm_before;
+
+        assert_eq!(vd_amount, 309_346_825);
+        assert_eq!(vd_hwm_before, 302_076_841);
+        assert_eq!(unrealized_profit_before, 7_269_984);
+
+        let (manager_profit_share, protocol_profit_share) = vd
+            .apply_profit_share(vault_equity, &mut vault, &mut vp)
+            .unwrap();
+
+        assert_eq!(manager_profit_share, 2_180_995);
+        assert_eq!(protocol_profit_share, 0);
+
+        let vd_amount = depositor_shares_to_vault_amount(
+            vd.checked_vault_shares(&vault).unwrap(),
+            vault.total_shares,
+            vault_equity,
+        )
+        .unwrap();
+        let vd_hwm =
+            (vd.total_deposits - vd.total_withdraws) as i64 + vd.cumulative_profit_share_amount;
+        let unrealized_profit = vd_amount as i64 - vd_hwm;
+
+        assert_eq!(vd_amount, 307_165_832);
+        assert_eq_within!(
+            vd_hwm,
+            vd_hwm_before + unrealized_profit_before * 700_000 / 1_000_000,
+            1
+        ); // hwm increased by net pnl net of fees
+        assert_eq!(unrealized_profit, 2);
+
+        assert_eq!(
+            vault.manager_total_profit_share,
+            manager_total_profit_share_before + manager_profit_share
+        );
     }
 }
 
@@ -1511,7 +1682,7 @@ mod vault_v1_fcn {
         assert_eq!(cnt, 4); // 4 days
         assert_eq!(
             vd.cumulative_profit_share_amount,
-            (1000 * QUOTE_PRECISION_U64) as i64
+            (850 * QUOTE_PRECISION_U64) as i64 // $850 = $1000 - 15%
         );
         assert_eq!(vd.net_deposits, (2000 * QUOTE_PRECISION_U64) as i64);
 
@@ -1619,7 +1790,7 @@ mod vault_v1_fcn {
         assert_eq!(cnt, 4); // 4 days
         assert_eq!(
             vd.cumulative_profit_share_amount,
-            (1000 * QUOTE_PRECISION_U64) as i64
+            (850 * QUOTE_PRECISION_U64) as i64 // $850 = $1000 - 15%
         );
         assert_eq!(vd.net_deposits, (2000 * QUOTE_PRECISION_U64) as i64);
 
