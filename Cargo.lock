@@ -1000,6 +1000,7 @@ dependencies = [
  "ahash 0.8.6",
  "anchor-lang",
  "anchor-spl",
+ "base64 0.13.0",
  "bytemuck",
  "drift",
  "drift-macros",
