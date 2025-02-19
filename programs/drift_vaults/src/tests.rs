@@ -5,7 +5,7 @@ mod vault_fcn {
     use crate::state::traits::VaultDepositorBase;
     use crate::test_utils::create_account_info;
     use crate::withdraw_request::WithdrawRequest;
-    use crate::{Vault, VaultDepositor, WithdrawUnit};
+    use crate::{assert_eq_within, Vault, VaultDepositor, WithdrawUnit};
     use anchor_lang::prelude::{AccountLoader, Pubkey};
     use drift::math::constants::{
         ONE_YEAR, QUOTE_PRECISION, QUOTE_PRECISION_I64, QUOTE_PRECISION_U64,
@@ -876,13 +876,17 @@ mod vault_fcn {
         )
         .unwrap();
 
-        let vd_hwm =
+        assert_eq!(vault.profit_share, 300_000);
+        let manager_total_profit_share_before = vault.manager_total_profit_share;
+        assert_eq!(manager_total_profit_share_before, 1_141_366_328_593);
+
+        let vd_hwm_before =
             (vd.total_deposits - vd.total_withdraws) as i64 + vd.cumulative_profit_share_amount;
-        let unrealized_profit = vd_amount as i64 - vd_hwm;
+        let unrealized_profit_before = vd_amount as i64 - vd_hwm_before;
 
         assert_eq!(vd_amount, 309_346_825);
-        assert_eq!(vd_hwm, 302_076_841);
-        assert_eq!(unrealized_profit, 7_269_984);
+        assert_eq!(vd_hwm_before, 302_076_841);
+        assert_eq!(unrealized_profit_before, 7_269_984);
 
         let (manager_profit_share, protocol_profit_share) = vd
             .apply_profit_share(vault_equity, &mut vault, &mut vp)
@@ -902,8 +906,17 @@ mod vault_fcn {
         let unrealized_profit = vd_amount as i64 - vd_hwm;
 
         assert_eq!(vd_amount, 307_165_832);
-        assert_eq!(vd_hwm, 307_165_830);
+        assert_eq_within!(
+            vd_hwm,
+            vd_hwm_before + unrealized_profit_before * 700_000 / 1_000_000,
+            1
+        ); // hwm increased by net pnl net of fees
         assert_eq!(unrealized_profit, 2);
+
+        assert_eq!(
+            vault.manager_total_profit_share,
+            manager_total_profit_share_before + manager_profit_share
+        );
     }
 }
 
