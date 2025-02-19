@@ -1,5 +1,4 @@
 use anchor_lang::prelude::*;
-use anchor_lang::prelude::{AccountLoader, Context};
 use drift_macros::assert_no_slop;
 use static_assertions::const_assert_eq;
 
@@ -52,21 +51,5 @@ const_assert_eq!(
 impl VaultProtocol {
     pub fn get_vault_protocol_seeds<'a>(vault: &'a [u8], bump: &'a u8) -> [&'a [u8]; 3] {
         [b"vault_protocol".as_ref(), vault, bytemuck::bytes_of(bump)]
-    }
-}
-
-pub trait VaultProtocolProvider<'a> {
-    fn vault_protocol(&self) -> Option<AccountLoader<'a, VaultProtocol>>;
-}
-
-impl<'a: 'info, 'info, T: anchor_lang::Bumps> VaultProtocolProvider<'a>
-    for Context<'_, '_, 'a, 'info, T>
-{
-    fn vault_protocol(&self) -> Option<AccountLoader<'a, VaultProtocol>> {
-        let acct = match self.remaining_accounts.last() {
-            Some(acct) => acct,
-            None => return None,
-        };
-        AccountLoader::<'a, VaultProtocol>::try_from(acct).ok()
     }
 }
