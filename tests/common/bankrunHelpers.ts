@@ -5,6 +5,7 @@ import {
 	getUserStatsAccountPublicKey,
 	PublicKey,
 	TestClient,
+	UserAccount,
 	UserStatsAccount,
 } from '@drift-labs/sdk';
 import { AccountInfo } from '@solana/web3.js';
@@ -178,4 +179,70 @@ export async function overWriteVault(
 		),
 		rentEpoch: vault.rentEpoch,
 	});
+}
+
+
+export async function getUserDecoded(
+	driftClient: TestClient,
+	bankrunContextWrapper: BankrunContextWrapper,
+	userKey: PublicKey
+): Promise<AccountInfo<UserAccount>> {
+	const accountInfo = await bankrunContextWrapper.connection.getAccountInfo(
+		userKey
+	);
+	const user: UserAccount =
+		driftClient.program.account.user.coder.accounts.decodeUnchecked(
+			'User',
+			accountInfo!.data
+		);
+
+	// @ts-ignore
+	accountInfo.data = user;
+	// @ts-ignore
+	return accountInfo;
+}
+
+export async function overWriteUser(
+	driftClient: TestClient,
+	bankrunContextWrapper: BankrunContextWrapper,
+	userKey: PublicKey,
+	user: AccountInfo<UserAccount>
+) {
+	bankrunContextWrapper.context.setAccount(userKey, {
+		executable: user.executable,
+		owner: user.owner,
+		lamports: user.lamports,
+		data: await driftClient.program.account.user.coder.accounts.encode(
+			'User',
+			user.data
+		),
+		rentEpoch: user.rentEpoch,
+	});
+}
+
+export function readUnsignedBigInt64LE(buffer: Buffer, offset: number): BN {
+	return new BN(buffer.subarray(offset, offset + 8), 10, 'le');
+}
+
+export async function overWriteUserSpotBalance(
+	bankrunContextWrapper: BankrunContextWrapper,
+	userPubkey: PublicKey,
+	spotPositionIndex: number,
+	newScaledBalance: BN
+) {
+	const user = await bankrunContextWrapper.connection.getAccountInfo(userPubkey);
+	const userBuffer = Buffer.from(user!.data!);
+	const spotPositionOffset = 40;
+	const offset = 104 + spotPositionIndex * spotPositionOffset;
+	// const scaledBalance = readUnsignedBigInt64LE(userBuffer, offset);
+	userBuffer.writeBigUInt64LE(BigInt(newScaledBalance.toString()), offset);
+
+	bankrunContextWrapper.context.setAccount(userPubkey, {
+		executable: user!.executable,
+		owner: user!.owner,
+		lamports: user!.lamports,
+		data: userBuffer,
+		rentEpoch: user!.rentEpoch,
+	});
+
 }

@@ -294,17 +294,20 @@ describe('driftVaults', () => {
 
 	it('Initialize Vault', async () => {
 		const beforeStateAccount = adminClient.getStateAccount();
-		await managerClient.initializeVault({
-			name: encodeName(vaultName),
-			spotMarketIndex: 0,
-			redeemPeriod: ZERO,
-			maxTokens: ZERO,
-			managementFee: ZERO,
-			profitShare: 0,
-			hurdleRate: 0,
-			permissioned: false,
-			minDepositAmount: ZERO,
-		});
+		await managerClient.initializeVault(
+			{
+				name: encodeName(vaultName),
+				spotMarketIndex: 0,
+				redeemPeriod: ZERO,
+				maxTokens: ZERO,
+				managementFee: ZERO,
+				profitShare: 0,
+				hurdleRate: 0,
+				permissioned: false,
+				minDepositAmount: ZERO,
+			},
+			{ noLut: true }
+		);
 		await adminClient.fetchAccounts();
 		const afterStateAccount = adminClient.getStateAccount();
 
@@ -321,7 +324,9 @@ describe('driftVaults', () => {
 	});
 
 	it('Initialize Vault Depositor', async () => {
-		await vd2Client.initializeVaultDepositor(vault, vd2.publicKey);
+		await vd2Client.initializeVaultDepositor(vault, vd2.publicKey, undefined, {
+			noLut: true,
+		});
 	});
 
 	it('Deposit', async () => {
@@ -381,7 +386,7 @@ describe('driftVaults', () => {
 
 		// request withdraw
 		console.log('request withdraw');
-		const requestTxSig = await vd2Client.program.methods
+		await vd2Client.program.methods
 			// @ts-ignore
 			.requestWithdraw(usdcAmount, WithdrawUnit.TOKEN)
 			.accounts({
@@ -392,8 +397,6 @@ describe('driftVaults', () => {
 			})
 			.remainingAccounts(remainingAccounts)
 			.rpc();
-
-		await printTxLogs(provider.connection, requestTxSig);
 
 		const vaultDepositorAccountAfter =
 			await program.account.vaultDepositor.fetch(vaultDepositor);
@@ -427,7 +430,8 @@ describe('driftVaults', () => {
 				.remainingAccounts(remainingAccounts)
 				.rpc();
 
-			await printTxLogs(provider.connection, txSig);
+			// @ts-ignore
+			await printTxLogs(provider.connection, txSig, false, program);
 		} catch (e) {
 			console.error(e);
 			assert(false);
@@ -451,7 +455,8 @@ describe('driftVaults', () => {
 		)) as UserAccount;
 		assert(user.delegate.equals(delegateKeyPair.publicKey));
 
-		await printTxLogs(provider.connection, txSig);
+		// @ts-ignore
+		await printTxLogs(provider.connection, txSig, false, program);
 	});
 });
 
@@ -683,18 +688,21 @@ describe('TestProtocolVaults', () => {
 			// 100_000 = 10%
 			protocolProfitShare: 100_000,
 		};
-		await managerClient.initializeVault({
-			name: encodeName(protocolVaultName),
-			spotMarketIndex: 0,
-			redeemPeriod: ZERO,
-			maxTokens: ZERO,
-			managementFee: ZERO,
-			profitShare: 0,
-			hurdleRate: 0,
-			permissioned: false,
-			minDepositAmount: ZERO,
-			vaultProtocol: vpParams,
-		});
+		await managerClient.initializeVault(
+			{
+				name: encodeName(protocolVaultName),
+				spotMarketIndex: 0,
+				redeemPeriod: ZERO,
+				maxTokens: ZERO,
+				managementFee: ZERO,
+				profitShare: 0,
+				hurdleRate: 0,
+				permissioned: false,
+				minDepositAmount: ZERO,
+				vaultProtocol: vpParams,
+			},
+			{ noLut: true }
+		);
 		const vaultAcct = await program.account.vault.fetch(protocolVault);
 		assert(vaultAcct.manager.equals(manager.publicKey));
 		const vp = getVaultProtocolAddressSync(
@@ -729,7 +737,14 @@ describe('TestProtocolVaults', () => {
 	});
 
 	it('Initialize Vault Depositor', async () => {
-		await vdClient.initializeVaultDepositor(protocolVault, vd.publicKey);
+		await vdClient.initializeVaultDepositor(
+			protocolVault,
+			vd.publicKey,
+			undefined,
+			{
+				noLut: true,
+			}
+		);
 		const vaultDepositor = getVaultDepositorAddressSync(
 			program.programId,
 			protocolVault,
@@ -1487,17 +1502,20 @@ describe('TestTokenizedDriftVaults', () => {
 		vd1UsdcAccount = vd1Bootstrap.userUSDCAccount.publicKey;
 
 		if (!firstVaultInitd) {
-			await managerClient.initializeVault({
-				name: encodeName(commonVaultName),
-				spotMarketIndex: 0,
-				redeemPeriod: ZERO,
-				maxTokens: ZERO,
-				managementFee: ZERO,
-				profitShare: 0,
-				hurdleRate: 0,
-				permissioned: false,
-				minDepositAmount: ZERO,
-			});
+			await managerClient.initializeVault(
+				{
+					name: encodeName(commonVaultName),
+					spotMarketIndex: 0,
+					redeemPeriod: ZERO,
+					maxTokens: ZERO,
+					managementFee: ZERO,
+					profitShare: 0,
+					hurdleRate: 0,
+					permissioned: false,
+					minDepositAmount: ZERO,
+				},
+				{ noLut: true }
+			);
 			firstVaultInitd = true;
 		}
 
@@ -1543,13 +1561,16 @@ describe('TestTokenizedDriftVaults', () => {
 
 	it('Initialize TokenizedVaultDepositor', async () => {
 		try {
-			await managerClient.initializeTokenizedVaultDepositor({
-				vault: commonVaultKey,
-				tokenName: 'Tokenized Vault',
-				tokenSymbol: 'TV',
-				tokenUri: '',
-				decimals: 6,
-			});
+			await managerClient.initializeTokenizedVaultDepositor(
+				{
+					vault: commonVaultKey,
+					tokenName: 'Tokenized Vault',
+					tokenSymbol: 'TV',
+					tokenUri: '',
+					decimals: 6,
+				},
+				{ noLut: true }
+			);
 		} catch (e) {
 			console.error(e);
 			assert(false);
@@ -1589,14 +1610,18 @@ describe('TestTokenizedDriftVaults', () => {
 		const tvdAccount = await connection.getAccountInfo(tokenizedVaultDepositor);
 		assert(tvdAccount !== null, 'TokenizedVaultDepositor account should exist');
 		try {
-			const initTx = await managerClient.initializeTokenizedVaultDepositor({
-				vault: commonVaultKey,
-				tokenName: 'Tokenized Vault',
-				tokenSymbol: 'TV',
-				tokenUri: '',
-				decimals: 6,
-			});
-			await printTxLogs(provider.connection, initTx);
+			const initTx = await managerClient.initializeTokenizedVaultDepositor(
+				{
+					vault: commonVaultKey,
+					tokenName: 'Tokenized Vault',
+					tokenSymbol: 'TV',
+					tokenUri: '',
+					decimals: 6,
+				},
+				{ noLut: true }
+			);
+			// @ts-ignore
+			await printTxLogs(provider.connection, initTx, false, program);
 		} catch (e) {
 			return;
 		}
@@ -1645,7 +1670,7 @@ describe('TestTokenizedDriftVaults', () => {
 					vault: commonVaultKey,
 					authority: bootstrapVd.vaultClient.driftClient.wallet.publicKey,
 				},
-				undefined,
+				{ noLut: true },
 				bootstrapVd.userUSDCAccount.publicKey
 			);
 		} catch (e) {
@@ -1685,9 +1710,12 @@ describe('TestTokenizedDriftVaults', () => {
 			const txSig = await bootstrapVd.vaultClient.tokenizeShares(
 				vaultDepositor,
 				vdBefore.vaultShares,
-				WithdrawUnit.SHARES
+				WithdrawUnit.SHARES,
+				undefined,
+				{ noLut: true }
 			);
-			await printTxLogs(provider.connection, txSig);
+			// @ts-ignore
+			await printTxLogs(provider.connection, txSig, false, program);
 		} catch (e) {
 			console.error(e);
 			assert(false, 'tokenizeShares threw');
@@ -1756,9 +1784,12 @@ describe('TestTokenizedDriftVaults', () => {
 		try {
 			const txSig = await bootstrapVd.vaultClient.redeemTokens(
 				vaultDepositor,
-				new BN(userTokenBalanceAfterTokenize.value.amount).div(TWO)
+				new BN(userTokenBalanceAfterTokenize.value.amount).div(TWO),
+				undefined,
+				{ noLut: true }
 			);
-			await printTxLogs(provider.connection, txSig);
+			// @ts-ignore
+			await printTxLogs(provider.connection, txSig, false, program);
 		} catch (e) {
 			console.error(e);
 			assert(false, 'redeemTokens threw');
@@ -1923,19 +1954,26 @@ describe('TestTokenizedDriftVaults', () => {
 		const vaultName = `vault (${solStartPrice} -> ${solEndPrice})`;
 		const vault = getVaultAddressSync(program.programId, encodeName(vaultName));
 
-		await testVaultClient.initializeVault({
-			name: encodeName(vaultName),
-			spotMarketIndex: 0,
-			redeemPeriod: ZERO,
-			maxTokens: ZERO,
-			managementFee: PERCENTAGE_PRECISION.div(TEN),
-			profitShare: PERCENTAGE_PRECISION.toNumber() / 10, // 10%
-			hurdleRate: 0,
-			permissioned: false,
-			minDepositAmount: ZERO,
+		await testVaultClient.initializeVault(
+			{
+				name: encodeName(vaultName),
+				spotMarketIndex: 0,
+				redeemPeriod: ZERO,
+				maxTokens: ZERO,
+				managementFee: PERCENTAGE_PRECISION.div(TEN),
+				profitShare: PERCENTAGE_PRECISION.toNumber() / 10, // 10%
+				hurdleRate: 0,
+				permissioned: false,
+				minDepositAmount: ZERO,
+			},
+			{ noLut: true }
+		);
+		await testVaultClient.updateDelegate(vault, provider.wallet.publicKey, {
+			noLut: true,
 		});
-		await testVaultClient.updateDelegate(vault, provider.wallet.publicKey);
-		await testVaultClient.updateMarginTradingEnabled(vault, true);
+		await testVaultClient.updateMarginTradingEnabled(vault, true, {
+			noLut: true,
+		});
 
 		const { vaultDepositor, tokenizedVaultDepositor, userVaultTokenAta } =
 			calculateAllTokenizedVaultPdas(
@@ -1945,13 +1983,16 @@ describe('TestTokenizedDriftVaults', () => {
 				0
 			);
 
-		await testVaultClient.initializeTokenizedVaultDepositor({
-			vault,
-			tokenName: 'Tokenized Vault 2',
-			tokenSymbol: 'TV2',
-			tokenUri: '',
-			decimals: 6,
-		});
+		await testVaultClient.initializeTokenizedVaultDepositor(
+			{
+				vault,
+				tokenName: 'Tokenized Vault 2',
+				tokenSymbol: 'TV2',
+				tokenUri: '',
+				decimals: 6,
+			},
+			{ noLut: true }
+		);
 
 		try {
 			await depositorVaultClient.deposit(
@@ -1961,7 +2002,7 @@ describe('TestTokenizedDriftVaults', () => {
 					vault,
 					authority: depositorVaultClient.driftClient.wallet.publicKey,
 				},
-				undefined,
+				{ noLut: true },
 				usdcAccount
 			);
 		} catch (e) {
@@ -1977,7 +2018,9 @@ describe('TestTokenizedDriftVaults', () => {
 		await depositorVaultClient.tokenizeShares(
 			vaultDepositor,
 			vdBefore.vaultShares,
-			WithdrawUnit.SHARES
+			WithdrawUnit.SHARES,
+			undefined,
+			{ noLut: true }
 		);
 
 		const vdAfter = await program.account.vaultDepositor.fetch(vaultDepositor);
@@ -2041,7 +2084,7 @@ describe('TestTokenizedDriftVaults', () => {
 		}
 
 		try {
-			const tx = await delegateDriftClient.placeAndTakeSpotOrder(
+			await delegateDriftClient.placeAndTakeSpotOrder(
 				{
 					orderType: OrderType.LIMIT,
 					marketIndex: 1,
@@ -2064,8 +2107,6 @@ describe('TestTokenizedDriftVaults', () => {
 					order: mmOffer,
 				}
 			);
-			// await printTxLogs(provider.connection, tx, true, mmDriftClient.program);
-			await printTxLogs(provider.connection, tx);
 		} catch (e) {
 			console.error(e);
 			throw e;
@@ -2096,11 +2137,12 @@ describe('TestTokenizedDriftVaults', () => {
 			tokenizedVaultDepositor
 		);
 
-		const tx3 = await depositorVaultClient.redeemTokens(
+		await depositorVaultClient.redeemTokens(
 			vaultDepositor,
-			new BN(userTokenBalance.value.amount)
+			new BN(userTokenBalance.value.amount),
+			undefined,
+			{ noLut: true }
 		);
-		await printTxLogs(provider.connection, tx3);
 
 		const vdAfter1 = await program.account.vaultDepositor.fetch(vaultDepositor);
 		const vdtAfter1 = await program.account.tokenizedVaultDepositor.fetch(
@@ -2204,19 +2246,26 @@ describe('TestTokenizedDriftVaults', () => {
 		const vaultName = `test tokenize post rebase`;
 		const vault = getVaultAddressSync(program.programId, encodeName(vaultName));
 
-		await managerClient.initializeVault({
-			name: encodeName(vaultName),
-			spotMarketIndex: 0,
-			redeemPeriod: ZERO,
-			maxTokens: ZERO,
-			managementFee: PERCENTAGE_PRECISION.div(TEN),
-			profitShare: PERCENTAGE_PRECISION.toNumber() / 10, // 10%
-			hurdleRate: 0,
-			permissioned: false,
-			minDepositAmount: ZERO,
+		await managerClient.initializeVault(
+			{
+				name: encodeName(vaultName),
+				spotMarketIndex: 0,
+				redeemPeriod: ZERO,
+				maxTokens: ZERO,
+				managementFee: PERCENTAGE_PRECISION.div(TEN),
+				profitShare: PERCENTAGE_PRECISION.toNumber() / 10, // 10%
+				hurdleRate: 0,
+				permissioned: false,
+				minDepositAmount: ZERO,
+			},
+			{ noLut: true }
+		);
+		await managerClient.updateDelegate(vault, managerSigner.publicKey, {
+			noLut: true,
 		});
-		await managerClient.updateDelegate(vault, managerSigner.publicKey);
-		await managerClient.updateMarginTradingEnabled(vault, true);
+		await managerClient.updateMarginTradingEnabled(vault, true, {
+			noLut: true,
+		});
 
 		const { vault: vault_0 } = await fetchAccountStates(vault);
 
@@ -2231,13 +2280,16 @@ describe('TestTokenizedDriftVaults', () => {
 			vault_0.sharesBase
 		);
 
-		await managerClient.initializeTokenizedVaultDepositor({
-			vault,
-			tokenName: 'Tokenized Vault 2',
-			tokenSymbol: 'TV2',
-			tokenUri: '',
-			decimals: 6,
-		});
+		await managerClient.initializeTokenizedVaultDepositor(
+			{
+				vault,
+				tokenName: 'Tokenized Vault 2',
+				tokenSymbol: 'TV2',
+				tokenUri: '',
+				decimals: 6,
+			},
+			{ noLut: true }
+		);
 
 		// vd0 deposits 1000
 		await vd0Client.deposit(
@@ -2247,7 +2299,7 @@ describe('TestTokenizedDriftVaults', () => {
 				vault,
 				authority: vd0DriftClient.wallet.publicKey,
 			},
-			undefined,
+			{ noLut: true },
 			vd0UsdcAccount
 		);
 		await validateTotalUserShares(program, vault);
@@ -2260,8 +2312,10 @@ describe('TestTokenizedDriftVaults', () => {
 
 		await vd0Client.tokenizeShares(
 			vd0VaultDepositor,
-			vd00.vaultShares,
-			WithdrawUnit.SHARES
+			vd00!.vaultShares,
+			WithdrawUnit.SHARES,
+			undefined,
+			{ noLut: true }
 		);
 
 		const {
@@ -2352,17 +2406,16 @@ describe('TestTokenizedDriftVaults', () => {
 		);
 
 		// vd1 deposits 1000
-		const dep1Tx = await vd1Client.deposit(
+		await vd1Client.deposit(
 			vd1VaultDepositor,
 			usdcAmount,
 			{
 				vault,
 				authority: vd1DriftClient.wallet.publicKey,
 			},
-			undefined,
+			{ noLut: true },
 			vd1UsdcAccount
 		);
-		await printTxLogs(provider.connection, dep1Tx);
 
 		const { vault: vault_2, tokenizedVaultDepositor: vdt10 } =
 			await fetchAccountStates(vault, undefined, tokenizedVaultDepositor);
@@ -2372,11 +2425,14 @@ describe('TestTokenizedDriftVaults', () => {
 			undefined
 		);
 
-		assert(vd10.vaultShares.gt(ZERO), 'vd10 has shares');
-		assert(vdt10.vaultShares.gt(ZERO), 'vdt10 has no shares');
-		assert(vd10.vaultSharesBase === vault_2.sharesBase, 'vault1 didnt rebase');
-		assert(vd10.vaultSharesBase > 0, 'vd10 didnt rebase');
-		assert(vdt10.vaultSharesBase === 0, 'vdt10 should not have rebased');
+		assert(vd10!.vaultShares.gt(ZERO), 'vd10 has shares');
+		assert(vdt10!.vaultShares.gt(ZERO), 'vdt10 has no shares');
+		assert(
+			vd10!.vaultSharesBase === vault_2!.sharesBase,
+			'vault1 didnt rebase'
+		);
+		assert(vd10!.vaultSharesBase > 0, 'vd10 didnt rebase');
+		assert(vdt10!.vaultSharesBase === 0, 'vdt10 should not have rebased');
 
 		const vaultEquity2 = await managerClient.calculateVaultEquityInDepositAsset(
 			{
@@ -2399,18 +2455,17 @@ describe('TestTokenizedDriftVaults', () => {
 		});
 
 		const rebaseIx = await vd1Client.getApplyRebaseIx(vault, vd1VaultDepositor);
-		const tx = await vd1DriftClient.sendTransaction(
+		await vd1DriftClient.sendTransaction(
 			await vd1DriftClient.buildTransaction(rebaseIx, vd1DriftClient.txParams),
 			[],
 			vd1DriftClient.opts
 		);
-		await printTxLogs(provider.connection, tx.txSig);
 
 		const vdtRebaseIx = await managerClient.getApplyRebaseTokenizedDepositorIx(
 			vault,
 			tokenizedVaultDepositor
 		);
-		const tx1 = await managerDriftClient.sendTransaction(
+		await managerDriftClient.sendTransaction(
 			await managerDriftClient.buildTransaction(
 				vdtRebaseIx,
 				managerDriftClient.txParams
@@ -2418,7 +2473,6 @@ describe('TestTokenizedDriftVaults', () => {
 			[],
 			managerDriftClient.opts
 		);
-		await printTxLogs(provider.connection, tx1.txSig);
 
 		const {
 			vault: vault_3,
@@ -2436,12 +2490,13 @@ describe('TestTokenizedDriftVaults', () => {
 		assert(vdt11.vaultSharesBase > 0, 'vdt11 didnt rebase');
 
 		try {
-			const dep1TokenizeTx = await vd1Client.tokenizeShares(
+			await vd1Client.tokenizeShares(
 				vd1VaultDepositor,
-				vd10.vaultShares,
-				WithdrawUnit.SHARES
+				vd10!.vaultShares,
+				WithdrawUnit.SHARES,
+				undefined,
+				{ noLut: true }
 			);
-			await printTxLogs(provider.connection, dep1TokenizeTx);
 			assert(
 				false,
 				'vd1 should fail to tokenizeShares after a rebase has occured'
@@ -2458,7 +2513,7 @@ describe('TestTokenizedDriftVaults', () => {
 				vault,
 				vd0VaultDepositor
 			);
-			const tx = await managerDriftClient.sendTransaction(
+			await managerDriftClient.sendTransaction(
 				await managerDriftClient.buildTransaction(
 					rebaseIx,
 					managerDriftClient.txParams
@@ -2466,7 +2521,6 @@ describe('TestTokenizedDriftVaults', () => {
 				[],
 				managerDriftClient.opts
 			);
-			await printTxLogs(provider.connection, tx.txSig);
 		} catch (e) {
 			console.error(e);
 			assert(false, 'Failed to force vd0 to rebase');
@@ -2482,12 +2536,12 @@ describe('TestTokenizedDriftVaults', () => {
 			print: true,
 		});
 
-		const vd0RedeemTx = await vd0Client.redeemTokens(
+		await vd0Client.redeemTokens(
 			vd0VaultDepositor,
-			vd0Values0.ataBalance,
-			vault_1.sharesBase
+			vd0Values0.ataBalance!,
+			vault_1!.sharesBase,
+			{ noLut: true }
 		);
-		await printTxLogs(provider.connection, vd0RedeemTx);
 
 		console.log(`\nvd0 Vault Depositor Value after redeem:`);
 		const vd0Values1 = await getVaultDepositorValue({
@@ -2554,13 +2608,16 @@ describe('TestTokenizedDriftVaults', () => {
 					vault_3.sharesBase
 				}: ${tokenizedVaultDepositor2.toBase58()}`
 			);
-			await managerClient.initializeTokenizedVaultDepositor({
-				vault,
-				tokenName: 'Tokenized Vault 2',
-				tokenSymbol: 'TV2',
-				tokenUri: '',
-				decimals: 6,
-			});
+			await managerClient.initializeTokenizedVaultDepositor(
+				{
+					vault,
+					tokenName: 'Tokenized Vault 2',
+					tokenSymbol: 'TV2',
+					tokenUri: '',
+					decimals: 6,
+				},
+				{ noLut: true }
+			);
 
 			assert(
 				(await vd0DriftClient.connection.getAccountInfo(
@@ -2582,7 +2639,7 @@ describe('TestTokenizedDriftVaults', () => {
 				vd0VaultDepositor,
 				usdcAmount,
 				undefined,
-				undefined,
+				{ noLut: true },
 				vd0UsdcAccount
 			);
 			await validateTotalUserShares(program, vault);
@@ -2595,8 +2652,10 @@ describe('TestTokenizedDriftVaults', () => {
 
 			await vd0Client.tokenizeShares(
 				vd0VaultDepositor,
-				vd00.vaultShares,
-				WithdrawUnit.SHARES
+				vd00!.vaultShares,
+				WithdrawUnit.SHARES,
+				undefined,
+				{ noLut: true }
 			);
 
 			const { ataValue } = await getVaultDepositorValue({
@@ -2720,17 +2779,20 @@ describe('TestInsuranceFundStake', () => {
 		vd1DriftClient = vd1Bootstrap.driftClient;
 
 		if (!firstVaultInitd) {
-			await managerClient.initializeVault({
-				name: encodeName(commonVaultName),
-				spotMarketIndex: 0,
-				redeemPeriod: ZERO,
-				maxTokens: ZERO,
-				managementFee: ZERO,
-				profitShare: 0,
-				hurdleRate: 0,
-				permissioned: false,
-				minDepositAmount: ZERO,
-			});
+			await managerClient.initializeVault(
+				{
+					name: encodeName(commonVaultName),
+					spotMarketIndex: 0,
+					redeemPeriod: ZERO,
+					maxTokens: ZERO,
+					managementFee: ZERO,
+					profitShare: 0,
+					hurdleRate: 0,
+					permissioned: false,
+					minDepositAmount: ZERO,
+				},
+				{ noLut: true }
+			);
 			firstVaultInitd = true;
 		}
 
@@ -2759,17 +2821,20 @@ describe('TestInsuranceFundStake', () => {
 		const vault = getVaultAddressSync(program.programId, encodeName(vaultName));
 
 		const beforeStateAccount = adminClient.getStateAccount();
-		await managerClient.initializeVault({
-			name: encodeName(vaultName),
-			spotMarketIndex: 0,
-			redeemPeriod: ZERO,
-			maxTokens: ZERO,
-			managementFee: ZERO,
-			profitShare: 0,
-			hurdleRate: 0,
-			permissioned: false,
-			minDepositAmount: ZERO,
-		});
+		await managerClient.initializeVault(
+			{
+				name: encodeName(vaultName),
+				spotMarketIndex: 0,
+				redeemPeriod: ZERO,
+				maxTokens: ZERO,
+				managementFee: ZERO,
+				profitShare: 0,
+				hurdleRate: 0,
+				permissioned: false,
+				minDepositAmount: ZERO,
+			},
+			{ noLut: true }
+		);
 		await adminClient.fetchAccounts();
 		const afterStateAccount = adminClient.getStateAccount();
 
@@ -2791,7 +2856,6 @@ describe('TestInsuranceFundStake', () => {
 			vault,
 			marketIndex
 		);
-		// await printTxLogs(provider.connection, _ifStakeTx0);
 
 		// test initializing an IF stake account
 		const ifStakeAccountPublicKey = getInsuranceFundStakeAccountPublicKey(
@@ -2836,13 +2900,12 @@ describe('TestInsuranceFundStake', () => {
 
 		// test only manager can add stake
 		try {
-			const _tx = await vd0Client.addToInsuranceFundStake(
+			await vd0Client.addToInsuranceFundStake(
 				vault,
 				marketIndex,
 				new BN(vd0TokenAccountBalance.value.amount),
 				vd0TokenAccount
 			);
-			// await printTxLogs(provider.connection, _tx, true, managerDriftClient.program);
 			assert(false, 'vd0 should not be able to add to IF stake');
 		} catch (e) {
 			assert(true);
@@ -2850,13 +2913,12 @@ describe('TestInsuranceFundStake', () => {
 
 		// test add some stake
 		const ifStakeAmount = new BN(managerTokenAccountBalance.value.amount);
-		const _tx = await managerClient.addToInsuranceFundStake(
+		await managerClient.addToInsuranceFundStake(
 			vault,
 			marketIndex,
 			ifStakeAmount,
 			managerTokenAccount
 		);
-		// await printTxLogs(provider.connection, _tx, true, managerDriftClient.program);
 
 		const ifStakeAccount1 =
 			(await managerDriftClient.program.account.insuranceFundStake.fetch(
@@ -2870,12 +2932,11 @@ describe('TestInsuranceFundStake', () => {
 
 		// test request remove stake
 		const requestRemoveAmount = ifStakeAmount.sub(new BN(2));
-		const _tx1 = await managerClient.requestRemoveInsuranceFundStake(
+		await managerClient.requestRemoveInsuranceFundStake(
 			vault,
 			marketIndex,
 			requestRemoveAmount
 		);
-		// await printTxLogs(provider.connection, _tx1, true, managerDriftClient.program);
 
 		const ifStakeAccount2 =
 			(await managerDriftClient.program.account.insuranceFundStake.fetch(
@@ -2887,11 +2948,10 @@ describe('TestInsuranceFundStake', () => {
 		);
 
 		// test cancel remove stake request
-		const _tx2 = await managerClient.cancelRequestRemoveInsuranceFundStake(
+		await managerClient.cancelRequestRemoveInsuranceFundStake(
 			vault,
 			marketIndex
 		);
-		// await printTxLogs(provider.connection, _tx2, true, managerDriftClient.program);
 
 		const ifStakeAccount3 =
 			(await managerDriftClient.program.account.insuranceFundStake.fetch(
@@ -2903,22 +2963,20 @@ describe('TestInsuranceFundStake', () => {
 		);
 
 		// test remove stake
-		const _tx11 = await managerClient.requestRemoveInsuranceFundStake(
+		await managerClient.requestRemoveInsuranceFundStake(
 			vault,
 			marketIndex,
 			requestRemoveAmount
 		);
-		// await printTxLogs(provider.connection, _tx11, true, managerDriftClient.program);
 
 		// Sleep for 1 second (unstake period)
 		await new Promise((resolve) => setTimeout(resolve, 1000));
 
-		const _tx3 = await managerClient.removeInsuranceFundStake(
+		await managerClient.removeInsuranceFundStake(
 			vault,
 			marketIndex,
 			managerTokenAccount
 		);
-		// await printTxLogs(provider.connection, _tx3, true, managerDriftClient.program);
 
 		const tokenBalanceAfter =
 			await managerDriftClient.connection.getTokenAccountBalance(
@@ -3005,17 +3063,20 @@ describe('TestSOLDenomindatedVault', () => {
 		vd0DriftClient = vd0Bootstrap.driftClient;
 
 		if (!firstVaultInitd) {
-			await managerClient.initializeVault({
-				name: encodeName(commonVaultName),
-				spotMarketIndex: 1,
-				redeemPeriod: ZERO,
-				maxTokens: ZERO,
-				managementFee: ZERO,
-				profitShare: 0,
-				hurdleRate: 0,
-				permissioned: false,
-				minDepositAmount: ZERO,
-			});
+			await managerClient.initializeVault(
+				{
+					name: encodeName(commonVaultName),
+					spotMarketIndex: 1,
+					redeemPeriod: ZERO,
+					maxTokens: ZERO,
+					managementFee: ZERO,
+					profitShare: 0,
+					hurdleRate: 0,
+					permissioned: false,
+					minDepositAmount: ZERO,
+				},
+				{ noLut: true }
+			);
 			firstVaultInitd = true;
 		}
 
@@ -3064,11 +3125,15 @@ describe('TestSOLDenomindatedVault', () => {
 			commonVaultKey,
 			vd0Signer.publicKey
 		);
-		const tx0 = await vd0Client.deposit(vdKey, new BN(0.5 * LAMPORTS_PER_SOL), {
-			authority: vd0Signer.publicKey,
-			vault: commonVaultKey,
-		});
-		await printTxLogs(provider.connection, tx0);
+		await vd0Client.deposit(
+			vdKey,
+			new BN(0.5 * LAMPORTS_PER_SOL),
+			{
+				authority: vd0Signer.publicKey,
+				vault: commonVaultKey,
+			},
+			{ noLut: true, cuPriceMicroLamports: 0 }
+		);
 
 		const balanceAfter = await vd0DriftClient.connection.getBalance(
 			vd0Signer.publicKey
@@ -3079,6 +3144,7 @@ describe('TestSOLDenomindatedVault', () => {
 			'Vault depositor SOL balance not decreased'
 		);
 
+		await vd0Client.syncVaultUsers();
 		const vaultEquityAfter = await vd0Client.calculateVaultEquityInDepositAsset(
 			{
 				address: commonVaultKey,
@@ -3087,16 +3153,16 @@ describe('TestSOLDenomindatedVault', () => {
 		console.log(`vault equity: ${vaultEquityBefore} -> ${vaultEquityAfter}`);
 		assert(vaultEquityAfter > vaultEquityBefore, 'Vault equity not increased');
 
-		const tx1 = await vd0Client.requestWithdraw(
+		await vd0Client.requestWithdraw(
 			vdKey,
 			PERCENTAGE_PRECISION,
-			WithdrawUnit.SHARES_PERCENT
+			WithdrawUnit.SHARES_PERCENT,
+			{ noLut: true, cuPriceMicroLamports: 0 }
 		);
-		await printTxLogs(provider.connection, tx1);
 
-		const tx2 = await vd0Client.withdraw(vdKey);
-		await printTxLogs(provider.connection, tx2);
+		await vd0Client.withdraw(vdKey, { noLut: true, cuPriceMicroLamports: 0 });
 
+		await vd0Client.syncVaultUsers();
 		const equityEnd = await vd0Client.calculateVaultEquityInDepositAsset({
 			address: commonVaultKey,
 		});
@@ -3112,7 +3178,7 @@ describe('TestSOLDenomindatedVault', () => {
 			vd0Signer.publicKey
 		);
 		console.log(
-			`sol balance ${balanceBefore} -> ${balanceAfter} -> ${balanceEnd}`
+			`sol balance 333 ${balanceBefore} -> ${balanceAfter} -> ${balanceEnd}`
 		);
 		assert(
 			Math.abs(balanceEnd - balanceBefore) <= 0.003 * LAMPORTS_PER_SOL,
@@ -3230,18 +3296,21 @@ describe('TestWithdrawFromVaults', () => {
 				protocolProfitShare: 100_000,
 			};
 
-			await managerClient.initializeVault({
-				name: encodeName(commonVaultName),
-				spotMarketIndex: 0,
-				redeemPeriod: ZERO,
-				maxTokens: ZERO,
-				managementFee: ZERO,
-				profitShare: 0,
-				hurdleRate: 0,
-				permissioned: false,
-				minDepositAmount: ZERO,
-				vaultProtocol: vpParams,
-			});
+			await managerClient.initializeVault(
+				{
+					name: encodeName(commonVaultName),
+					spotMarketIndex: 0,
+					redeemPeriod: ZERO,
+					maxTokens: ZERO,
+					managementFee: ZERO,
+					profitShare: 0,
+					hurdleRate: 0,
+					permissioned: false,
+					minDepositAmount: ZERO,
+					vaultProtocol: vpParams,
+				},
+				{ noLut: true }
+			);
 
 			const vaultAcct = await program.account.vault.fetch(commonVaultKey);
 			assert(vaultAcct.manager.equals(managerSigner.publicKey));
@@ -3260,7 +3329,9 @@ describe('TestWithdrawFromVaults', () => {
 
 			await vd0Client.initializeVaultDepositor(
 				commonVaultKey,
-				vd0Signer.publicKey
+				vd0Signer.publicKey,
+				undefined,
+				{ noLut: true }
 			);
 			const vaultDepositor = getVaultDepositorAddressSync(
 				program.programId,
@@ -3334,7 +3405,7 @@ describe('TestWithdrawFromVaults', () => {
 		await managerClient.managerDeposit(
 			commonVaultKey,
 			new BN(100).mul(QUOTE_PRECISION),
-			undefined,
+			{ noLut: true },
 			managerUsdcAccount
 		);
 		const vdKey = getVaultDepositorAddressSync(
@@ -3346,7 +3417,7 @@ describe('TestWithdrawFromVaults', () => {
 			vdKey,
 			new BN(500).mul(QUOTE_PRECISION),
 			undefined,
-			undefined,
+			{ noLut: true },
 			vd0UsdcAccount
 		);
 
@@ -3355,12 +3426,14 @@ describe('TestWithdrawFromVaults', () => {
 		await managerClient.managerRequestWithdraw(
 			commonVaultKey,
 			PERCENTAGE_PRECISION,
-			WithdrawUnit.SHARES_PERCENT
+			WithdrawUnit.SHARES_PERCENT,
+			{ noLut: true }
 		);
 		await vd0Client.requestWithdraw(
 			vdKey,
 			PERCENTAGE_PRECISION,
-			WithdrawUnit.SHARES_PERCENT
+			WithdrawUnit.SHARES_PERCENT,
+			{ noLut: true }
 		);
 
 		const { vault: vaultState0 } = await fetchAccountStates(
@@ -3403,7 +3476,8 @@ describe('TestWithdrawFromVaults', () => {
 				.remainingAccounts(remainingAccounts)
 				.rpc();
 
-			await printTxLogs(provider.connection, txSig);
+			// @ts-ignore
+			await printTxLogs(provider.connection, txSig, false, program);
 		} catch (e) {
 			console.error(e);
 			assert(false);
@@ -3437,7 +3511,8 @@ describe('TestWithdrawFromVaults', () => {
 				.remainingAccounts(remainingAccounts)
 				.rpc();
 
-			await printTxLogs(provider.connection, txSig);
+			// @ts-ignore
+			await printTxLogs(provider.connection, txSig, false, program);
 		} catch (e) {
 			console.error(e);
 			assert(false);
@@ -3498,7 +3573,7 @@ describe('TestWithdrawFromVaults', () => {
 		await managerClient.managerDeposit(
 			commonVaultKey,
 			new BN(100).mul(QUOTE_PRECISION),
-			undefined,
+			{ noLut: true },
 			managerUsdcAccount
 		);
 
@@ -3511,9 +3586,11 @@ describe('TestWithdrawFromVaults', () => {
 		const tx0 = await managerClient.managerRequestWithdraw(
 			commonVaultKey,
 			PERCENTAGE_PRECISION,
-			WithdrawUnit.SHARES_PERCENT
+			WithdrawUnit.SHARES_PERCENT,
+			{ noLut: true }
 		);
-		await printTxLogs(provider.connection, tx0);
+		// @ts-ignore
+		await printTxLogs(provider.connection, tx0, false, program);
 
 		// 3) vault trades into profit
 		try {
@@ -3521,7 +3598,8 @@ describe('TestWithdrawFromVaults', () => {
 
 			await managerClient.updateDelegate(
 				commonVaultKey,
-				managerSigner.publicKey
+				managerSigner.publicKey,
+				{ noLut: true }
 			);
 			await managerDriftClient.addAndSubscribeToUsers(commonVaultKey);
 			await managerDriftClient.switchActiveUser(0, commonVaultKey);
@@ -3574,9 +3652,11 @@ describe('TestWithdrawFromVaults', () => {
 
 		// 4) manager cancels withdraw
 		const tx1 = await managerClient.managerCancelWithdrawRequest(
-			commonVaultKey
+			commonVaultKey,
+			{ noLut: true }
 		);
-		await printTxLogs(provider.connection, tx1);
+		// @ts-ignore
+		await printTxLogs(provider.connection, tx1, false, program);
 
 		await managerClient.driftClient.fetchAccounts();
 

@@ -1,5 +1,5 @@
 import * as anchor from '@coral-xyz/anchor';
-import { BN, Program } from '@coral-xyz/anchor';
+import { BN, Program, Wallet } from '@coral-xyz/anchor';
 import { describe, it } from '@jest/globals';
 import { BankrunContextWrapper } from './common/bankrunConnection';
 import { startAnchor } from 'solana-bankrun';
@@ -26,6 +26,7 @@ import {
 	PublicKey,
 	QUOTE_PRECISION,
 	TestClient,
+	User,
 	ZERO,
 } from '@drift-labs/sdk';
 import { TestBulkAccountLoader } from './common/testBulkAccountLoader';
@@ -35,6 +36,7 @@ import {
 	initializeQuoteSpotMarket,
 	initializeSolSpotMarket,
 	mockUSDCMintBankrun,
+	printTxLogs,
 } from './common/testHelpers';
 import {
 	getUserStatsDecoded,
@@ -46,7 +48,13 @@ import {
 	createVaultWithFuelOverflow,
 	overWriteUserStats,
 } from './common/bankrunHelpers';
-import { Keypair } from '@solana/web3.js';
+import {
+	Keypair,
+	TransactionInstruction,
+	TransactionMessage,
+	VersionedMessage,
+	VersionedTransaction,
+} from '@solana/web3.js';
 import { mockOracleNoProgram } from './common/bankrunOracle';
 import { BankrunProvider } from 'anchor-bankrun';
 
@@ -62,7 +70,7 @@ describe('driftVaults', () => {
 	let bulkAccountLoader: TestBulkAccountLoader;
 	let bankrunContextWrapper: BankrunContextWrapper;
 	let usdcMint: PublicKey;
-
+	let solPerpOracle: PublicKey;
 	const vaultName = 'fuel distribution vault';
 	const commonVaultKey = getVaultAddressSync(
 		VAULT_PROGRAM_ID,
@@ -126,7 +134,7 @@ describe('driftVaults', () => {
 
 		usdcMint = await mockUSDCMintBankrun(bankrunContextWrapper);
 
-		const solPerpOracle = await mockOracleNoProgram(
+		solPerpOracle = await mockOracleNoProgram(
 			bankrunContextWrapper,
 			initialSolPerpPrice
 		);
@@ -289,26 +297,31 @@ describe('driftVaults', () => {
 		);
 
 		// initialize a vault and depositors
-		await managerClient.initializeVault({
-			name: encodeName(vaultName),
-			spotMarketIndex: 0,
-			redeemPeriod: ZERO,
-			maxTokens: ZERO,
-			managementFee: ZERO,
-			profitShare: 0,
-			hurdleRate: 0,
-			permissioned: false,
-			minDepositAmount: ZERO,
-		});
+		await managerClient.initializeVault(
+			{
+				name: encodeName(vaultName),
+				spotMarketIndex: 0,
+				redeemPeriod: ZERO,
+				maxTokens: ZERO,
+				managementFee: ZERO,
+				profitShare: 0,
+				hurdleRate: 0,
+				permissioned: false,
+				minDepositAmount: ZERO,
+			},
+			{ noLut: true }
+		);
 		await user1Client.initializeVaultDepositor(
 			commonVaultKey,
 			user1Signer.publicKey,
-			user1Signer.publicKey
+			user1Signer.publicKey,
+			{ noLut: true }
 		);
 		await user2Client.initializeVaultDepositor(
 			commonVaultKey,
 			user2Signer.publicKey,
-			user2Signer.publicKey
+			user2Signer.publicKey,
+			{ noLut: true }
 		);
 	});
 
@@ -370,7 +383,7 @@ describe('driftVaults', () => {
 			user1VaultDepositor,
 			usdcAmount,
 			undefined,
-			undefined,
+			{ noLut: true },
 			user1UserUSDCAccount
 		);
 		await bankrunContextWrapper.moveTimeForward(1000);
@@ -407,7 +420,7 @@ describe('driftVaults', () => {
 			user2VaultDepositor,
 			usdcAmount.div(new BN(2)),
 			undefined,
-			undefined,
+			{ noLut: true },
 			user2UserUSDCAccount
 		);
 		await bankrunContextWrapper.moveTimeForward(1000);
@@ -514,7 +527,7 @@ describe('driftVaults', () => {
 			user1VaultDepositor,
 			usdcAmount,
 			undefined,
-			undefined,
+			{ noLut: true },
 			user1UserUSDCAccount
 		);
 
@@ -565,7 +578,7 @@ describe('driftVaults', () => {
 			user2VaultDepositor,
 			usdcAmount,
 			undefined,
-			undefined,
+			{ noLut: true },
 			user2UserUSDCAccount
 		);
 
@@ -624,9 +637,10 @@ describe('driftVaults', () => {
 		await user1Client.requestWithdraw(
 			user1VaultDepositor,
 			PERCENTAGE_PRECISION,
-			WithdrawUnit.SHARES_PERCENT
+			WithdrawUnit.SHARES_PERCENT,
+			{ noLut: true }
 		);
-		await user1Client.withdraw(user1VaultDepositor);
+		await user1Client.withdraw(user1VaultDepositor, { noLut: true });
 
 		// user2 cranks their fuel
 		await user2Client.updateCumulativeFuelAmount(user2VaultDepositor, {
@@ -669,14 +683,14 @@ describe('driftVaults', () => {
 			user1VaultDepositor,
 			usdcAmount,
 			undefined,
-			undefined,
+			{ noLut: true },
 			user1UserUSDCAccount
 		);
 		await user2Client.deposit(
 			user2VaultDepositor,
 			usdcAmount,
 			undefined,
-			undefined,
+			{ noLut: true },
 			user2UserUSDCAccount
 		);
 
@@ -790,13 +804,14 @@ describe('driftVaults', () => {
 		await user3Client.initializeVaultDepositor(
 			commonVaultKey,
 			user3Signer.publicKey,
-			user3Signer.publicKey
+			user3Signer.publicKey,
+			{ noLut: true }
 		);
 		await user3Client.deposit(
 			user3VaultDepositor,
 			usdcAmount,
 			undefined,
-			undefined,
+			{ noLut: true },
 			user3UserUSDCAccount
 		);
 
@@ -973,14 +988,14 @@ describe('driftVaults', () => {
 			user1VaultDepositor,
 			usdcAmount,
 			undefined,
-			undefined,
+			{ noLut: true },
 			user1UserUSDCAccount
 		);
 		await user2Client.deposit(
 			user2VaultDepositor,
 			usdcAmount,
 			undefined,
-			undefined,
+			{ noLut: true },
 			user2UserUSDCAccount
 		);
 
@@ -1045,7 +1060,7 @@ describe('driftVaults', () => {
 		await adminClient.resetFuelSeason(user1VaultDepositor, {
 			noLut: true,
 		});
-		await adminClient.resetFuelSeason(user2VaultDepositor, {
+		const tx = await adminClient.resetFuelSeason(user2VaultDepositor, {
 			noLut: true,
 		});
 		await adminDriftClient.resetFuelSeason(true, commonVaultKey);
@@ -1078,5 +1093,119 @@ describe('driftVaults', () => {
 		);
 		expect(vault.data.cumulativeFuel.toNumber()).toBe(0);
 		expect(vault.data.cumulativeFuelPerShare.toNumber()).toBe(0);
+	});
+
+	it('Test max resets before log truncation', async () => {
+		// 10 works
+		// 100 tx too large
+		// 50 tx too large
+		// 30 tx too large
+		// 20 works
+		// 25 tx too large
+		// 22 tx too large
+		const depositorsToCheck = 20;
+		const signers = Array.from({ length: depositorsToCheck }, () =>
+			Keypair.generate()
+		);
+		const depositors: Array<{
+			signer: Keypair;
+			wallet: Wallet;
+			user: User;
+			userUSDCAccount: Keypair;
+			driftClient: DriftClient;
+			vaultClient: VaultClient;
+			vaultDepositor: PublicKey;
+		}> = [];
+		for (let i = 0; i < depositorsToCheck; i++) {
+			const bootstrap = await bootstrapSignerClientAndUserBankrun({
+				bankrunContext: bankrunContextWrapper,
+				programId: VAULT_PROGRAM_ID,
+				signer: signers[i],
+				usdcMint: usdcMint,
+				usdcAmount,
+				vaultClientCliMode: true,
+				driftClientConfig: {
+					accountSubscription: {
+						type: 'polling',
+						accountLoader: bulkAccountLoader as BulkAccountLoader,
+					},
+					activeSubAccountId: 0,
+					subAccountIds: [],
+					perpMarketIndexes: [0],
+					spotMarketIndexes: [0, 1],
+					oracleInfos: [
+						{ publicKey: solPerpOracle, source: OracleSource.PYTH },
+					],
+				},
+			});
+			// @ts-ignore
+			bootstrap.vaultDepositor = getVaultDepositorAddressSync(
+				vaultProgram.programId,
+				commonVaultKey,
+				bootstrap.signer.publicKey
+			);
+
+			await bootstrap.vaultClient.initializeVaultDepositor(
+				commonVaultKey,
+				bootstrap.signer.publicKey,
+				bootstrap.signer.publicKey,
+				{ noLut: true }
+			);
+			await bootstrap.vaultClient.deposit(
+				// @ts-ignore
+				bootstrap.vaultDepositor,
+				new BN(1000).mul(QUOTE_PRECISION),
+				undefined,
+				{ noLut: true },
+				bootstrap.userUSDCAccount.publicKey
+			);
+
+			// @ts-ignore
+			depositors.push(bootstrap);
+		}
+
+		// earn 100k fuel
+		await overWriteUserStatsFuel(
+			adminDriftClient,
+			bankrunContextWrapper,
+			vaultUserStatsKey,
+			new BN(100_000)
+		);
+
+		const ixs: Array<TransactionInstruction> = [];
+		for (let i = 0; i < depositorsToCheck; i++) {
+			const vdInfo = depositors[i];
+			ixs.push(await adminClient.getResetFuelSeasonIx(vdInfo.vaultDepositor));
+		}
+
+		const msg = new TransactionMessage({
+			payerKey: adminDriftClient.wallet.payer!.publicKey,
+			instructions: ixs,
+			recentBlockhash: (
+				await bankrunContextWrapper.connection.getLatestBlockhash()
+			).blockhash,
+		});
+		const verTx = new VersionedTransaction(msg.compileToV0Message());
+		// verTx.sign([adminDriftClient.wallet.payer!]);
+
+		console.log('sending tx...');
+		const tx = await bankrunContextWrapper.connection.sendTransaction(verTx);
+
+		const eventsReceived = await printTxLogs(
+			bankrunContextWrapper.connection.toConnection(),
+			tx,
+			false,
+			// @ts-ignore
+			vaultProgram
+		);
+		// console.log(eventsReceived);
+		expect(eventsReceived.length).toBe(depositorsToCheck);
+		console.log(eventsReceived.slice(0, 3));
+
+		// teardown
+		for (const vdInfo of depositors) {
+			await vdInfo.driftClient.unsubscribe();
+			await vdInfo.vaultClient.unsubscribe();
+		}
 	});
 });

@@ -60,6 +60,7 @@ import {
 	BASE_PRECISION,
 	getUserStatsAccountPublicKey,
 	DRIFT_PROGRAM_ID,
+	UserMapConfig,
 } from '@drift-labs/sdk';
 import {
 	DriftVaults,
@@ -1665,6 +1666,7 @@ export async function bootstrapSignerClientAndUserBankrun(params: {
 	vaultClientCliMode?: boolean;
 	skipUser?: boolean;
 	driftClientConfig?: Omit<DriftClientConfig, 'connection' | 'wallet'>;
+	userMapConfig?: UserMapConfig;
 	metaplex?: Metaplex;
 }): Promise<{
 	signer: Keypair;
@@ -1700,6 +1702,7 @@ export async function bootstrapSignerClientAndUserBankrun(params: {
 		perpMarketIndexes: driftClientConfig?.perpMarketIndexes,
 		spotMarketIndexes: driftClientConfig?.spotMarketIndexes,
 		oracleInfos: driftClientConfig?.oracleInfos,
+		authority: driftClientConfig?.authority,
 	});
 
 	const provider = new BankrunProvider(bankrunContext.context, wallet as anchor.Wallet);
@@ -1710,6 +1713,7 @@ export async function bootstrapSignerClientAndUserBankrun(params: {
 		program,
 		cliMode: vaultClientCliMode ?? true,
 		metaplex: params.metaplex,
+		userMapConfig: params.userMapConfig,
 	});
 
 	const userUSDCAccount = await mockUserUSDCAccountBankrun(
@@ -1720,7 +1724,9 @@ export async function bootstrapSignerClientAndUserBankrun(params: {
 	);
 
 	await driftClient.subscribe();
-	await driftClient.initializeUserAccount(driftClientConfig?.activeSubAccountId ?? 0);
+	if (!driftClientConfig?.authority) {
+		await driftClient.initializeUserAccount(driftClientConfig?.activeSubAccountId ?? 0);
+	}
 
 	return {
 		signer,

@@ -37,7 +37,6 @@ import {
 	PublicKey,
 	SystemProgram,
 	SYSVAR_RENT_PUBKEY,
-	Transaction,
 	TransactionInstruction,
 	TransactionSignature,
 	VersionedTransaction,
@@ -89,12 +88,14 @@ export class VaultClient {
 		driftClient,
 		program,
 		metaplex,
+		// @deprecated, no longer used
 		cliMode,
 		userMapConfig,
 	}: {
 		driftClient: DriftClient;
 		program: Program<DriftVaults>;
 		metaplex?: Metaplex;
+		// @deprecated, no longer used
 		cliMode?: boolean;
 		userMapConfig?: UserMapConfig;
 	}) {
@@ -283,6 +284,13 @@ export class VaultClient {
 		return this.vaultUsers.mustGet(vaultDriftUserAccountPubKey.toBase58(), {
 			type: 'websocket',
 		});
+	}
+
+	/// useful for syncing state during tests.
+	public async syncVaultUsers() {
+		for (const user of this.vaultUsers.values()) {
+			await user.fetchAccounts();
+		}
 	}
 
 	/**
@@ -558,15 +566,6 @@ export class VaultClient {
 			driftProgram: this.driftClient.program.programId,
 		};
 
-		const preIxs = [
-			ComputeBudgetProgram.setComputeUnitLimit({
-				units: 400_000,
-			}),
-			ComputeBudgetProgram.setComputeUnitPrice({
-				microLamports: 300_000,
-			}),
-		];
-
 		if (vaultProtocolParams) {
 			const vaultProtocol = this.getVaultProtocolAddress(
 				getVaultAddressSync(this.program.programId, params.name)
@@ -576,51 +575,32 @@ export class VaultClient {
 				vaultProtocol: vaultProtocolParams,
 			};
 
-			if (this.cliMode) {
-				return await this.program.methods
-					.initializeVaultWithProtocol(_params)
-					.preInstructions(preIxs)
-					.accounts({
-						...accounts,
-						vaultProtocol,
-					})
-					.rpc();
-			} else {
-				const uiAuthority = this.driftClient.wallet.publicKey;
-				const initializeVaultWithProtocolIx = await this.program.methods
-					.initializeVaultWithProtocol(_params)
-					.accounts({
-						...accounts,
-						vaultProtocol,
-						payer: uiAuthority,
-						manager: uiAuthority,
-					})
-					.instruction();
-				const ixs = [...preIxs, initializeVaultWithProtocolIx];
-				return await this.createAndSendTxn(ixs, uiTxParams);
-			}
+			const uiAuthority = this.driftClient.wallet.publicKey;
+			const initializeVaultWithProtocolIx = await this.program.methods
+				.initializeVaultWithProtocol(_params)
+				.accounts({
+					...accounts,
+					vaultProtocol,
+					payer: uiAuthority,
+					manager: uiAuthority,
+				})
+				.instruction();
+			const ixs = [initializeVaultWithProtocolIx];
+			return await this.createAndSendTxn(ixs, uiTxParams);
 		} else {
 			const _params: VaultParams = vaultParams;
 
-			if (this.cliMode) {
-				return await this.program.methods
-					.initializeVault(_params)
-					.preInstructions(preIxs)
-					.accounts(accounts)
-					.rpc();
-			} else {
-				const uiAuthority = this.driftClient.wallet.publicKey;
-				const initializeVaultIx = await this.program.methods
-					.initializeVault(_params)
-					.accounts({
-						...accounts,
-						payer: uiAuthority,
-						manager: uiAuthority,
-					})
-					.instruction();
-				const ixs = [initializeVaultIx];
-				return await this.createAndSendTxn(ixs, uiTxParams);
-			}
+			const uiAuthority = this.driftClient.wallet.publicKey;
+			const initializeVaultIx = await this.program.methods
+				.initializeVault(_params)
+				.accounts({
+					...accounts,
+					payer: uiAuthority,
+					manager: uiAuthority,
+				})
+				.instruction();
+			const ixs = [initializeVaultIx];
+			return await this.createAndSendTxn(ixs, uiTxParams);
 		}
 	}
 
@@ -643,26 +623,11 @@ export class VaultClient {
 			driftProgram: this.driftClient.program.programId,
 		};
 
-		if (this.cliMode) {
-			return await this.program.methods
-				.updateDelegate(delegate)
-				.preInstructions([
-					ComputeBudgetProgram.setComputeUnitLimit({
-						units: 400_000,
-					}),
-					ComputeBudgetProgram.setComputeUnitPrice({
-						microLamports: 300_000,
-					}),
-				])
-				.accounts(accounts)
-				.rpc();
-		} else {
-			const updateDelegateIx = await this.program.methods
-				.updateDelegate(delegate)
-				.accounts({ ...accounts, manager: this.driftClient.wallet.publicKey })
-				.instruction();
-			return await this.createAndSendTxn([updateDelegateIx], uiTxParams);
-		}
+		const updateDelegateIx = await this.program.methods
+			.updateDelegate(delegate)
+			.accounts({ ...accounts, manager: this.driftClient.wallet.publicKey })
+			.instruction();
+		return await this.createAndSendTxn([updateDelegateIx], uiTxParams);
 	}
 
 	/**
@@ -707,23 +672,15 @@ export class VaultClient {
 			// do nothing
 		}
 
-		if (this.cliMode) {
-			return await this.program.methods
-				.updateMarginTradingEnabled(enabled)
-				.accounts(accounts)
-				.remainingAccounts(remainingAccounts)
-				.rpc();
-		} else {
-			const updateMarginTradingEnabledIx = await this.program.methods
-				.updateMarginTradingEnabled(enabled)
-				.accounts({ ...accounts, manager: this.driftClient.wallet.publicKey })
-				.remainingAccounts(remainingAccounts)
-				.instruction();
-			return await this.createAndSendTxn(
-				[updateMarginTradingEnabledIx],
-				uiTxParams
-			);
-		}
+		const updateMarginTradingEnabledIx = await this.program.methods
+			.updateMarginTradingEnabled(enabled)
+			.accounts({ ...accounts, manager: this.driftClient.wallet.publicKey })
+			.remainingAccounts(remainingAccounts)
+			.instruction();
+		return await this.createAndSendTxn(
+			[updateMarginTradingEnabledIx],
+			uiTxParams
+		);
 	}
 
 	private async handleWSolMovement(
@@ -821,29 +778,19 @@ export class VaultClient {
 			accounts.userTokenAccount
 		);
 
-		if (this.cliMode) {
-			return await this.program.methods
-				.managerDeposit(amount)
-				.accounts({ ...accounts, userTokenAccount })
-				.remainingAccounts(remainingAccounts)
-				.preInstructions(preIxs)
-				.postInstructions(postIxs)
-				.rpc();
-		} else {
-			const managerDepositIx = await this.program.methods
-				.managerDeposit(amount)
-				.accounts({
-					...accounts,
-					userTokenAccount,
-					manager: this.driftClient.wallet.publicKey,
-				})
-				.remainingAccounts(remainingAccounts)
-				.instruction();
-			return await this.createAndSendTxn(
-				[...preIxs, managerDepositIx, ...postIxs],
-				uiTxParams
-			);
-		}
+		const managerDepositIx = await this.program.methods
+			.managerDeposit(amount)
+			.accounts({
+				...accounts,
+				userTokenAccount,
+				manager: this.driftClient.wallet.publicKey,
+			})
+			.remainingAccounts(remainingAccounts)
+			.instruction();
+		return await this.createAndSendTxn(
+			[...preIxs, managerDepositIx, ...postIxs],
+			uiTxParams
+		);
 	}
 
 	public async managerRequestWithdraw(
@@ -883,29 +830,20 @@ export class VaultClient {
 			driftUserStats: userStatsKey,
 		};
 
-		if (this.cliMode) {
-			return await this.program.methods
-				// @ts-ignore, 0.29.0 anchor issues..
-				.managerRequestWithdraw(amount, withdrawUnit)
-				.accounts(accounts)
-				.remainingAccounts(remainingAccounts)
-				.rpc();
-		} else {
-			const requestWithdrawIx = this.program.instruction.managerRequestWithdraw(
-				// @ts-ignore
-				amount,
-				withdrawUnit,
-				{
-					accounts: {
-						manager: this.driftClient.wallet.publicKey,
-						...accounts,
-					},
-					remainingAccounts,
-				}
-			);
+		const requestWithdrawIx = this.program.instruction.managerRequestWithdraw(
+			// @ts-ignore
+			amount,
+			withdrawUnit,
+			{
+				accounts: {
+					manager: this.driftClient.wallet.publicKey,
+					...accounts,
+				},
+				remainingAccounts,
+			}
+		);
 
-			return await this.createAndSendTxn([requestWithdrawIx], uiTxParams);
-		}
+		return await this.createAndSendTxn([requestWithdrawIx], uiTxParams);
 	}
 
 	public async managerCancelWithdrawRequest(
@@ -937,28 +875,13 @@ export class VaultClient {
 			userStats
 		);
 
-		if (this.cliMode) {
-			return await this.program.methods
-				.mangerCancelWithdrawRequest()
-				.accounts(accounts)
-				.remainingAccounts(remainingAccounts)
-				.rpc();
-		} else {
-			const cancelRequestWithdrawIx =
-				this.program.instruction.mangerCancelWithdrawRequest({
-					accounts: {
-						...accounts,
-						driftUserStats: getUserStatsAccountPublicKey(
-							this.driftClient.program.programId,
-							vault
-						),
-						manager: this.driftClient.wallet.publicKey,
-					},
-					remainingAccounts,
-				});
+		const cancelRequestWithdrawIx =
+			this.program.instruction.mangerCancelWithdrawRequest({
+				accounts,
+				remainingAccounts,
+			});
 
-			return await this.createAndSendTxn([cancelRequestWithdrawIx], uiTxParams);
-		}
+		return await this.createAndSendTxn([cancelRequestWithdrawIx], uiTxParams);
 	}
 
 	public async managerWithdraw(
@@ -1042,14 +965,7 @@ export class VaultClient {
 				manager: this.driftClient.wallet.publicKey,
 			},
 		});
-		if (this.cliMode) {
-			return this.createAndSendTxn([ix], {
-				cuLimit: 600_000,
-				cuPriceMicroLamports: 10_000,
-			});
-		} else {
-			return this.createAndSendTxn([ix], uiTxParams);
-		}
+		return this.createAndSendTxn([ix], uiTxParams);
 	}
 
 	public async getApplyProfitShareIx(
@@ -1272,42 +1188,21 @@ export class VaultClient {
 		payer?: PublicKey,
 		uiTxParams?: TxParams
 	): Promise<TransactionSignature> {
-		const vaultDepositor = getVaultDepositorAddressSync(
-			this.program.programId,
-			vault,
-			authority || this.driftClient.wallet.publicKey
-		);
-
-		const accounts = {
-			vaultDepositor,
-			vault,
-			authority: authority || this.driftClient.wallet.publicKey,
-		};
-
-		if (this.cliMode) {
-			return this.program.methods
-				.initializeVaultDepositor()
-				.accounts({
-					...accounts,
-					payer: payer || authority || this.driftClient.wallet.publicKey,
-					rent: SYSVAR_RENT_PUBKEY,
-					systemProgram: SystemProgram.programId,
-				})
-				.rpc();
-		} else {
-			const initIx = this.createInitVaultDepositorIx(vault, authority, payer);
-			return await this.createAndSendTxn([initIx], uiTxParams);
-		}
+		const initIx = this.createInitVaultDepositorIx(vault, authority, payer);
+		return await this.createAndSendTxn([initIx], uiTxParams);
 	}
 
-	public async initializeTokenizedVaultDepositor(params: {
-		vault: PublicKey;
-		tokenName: string;
-		tokenSymbol: string;
-		tokenUri: string;
-		decimals?: number;
-		sharesBase?: number;
-	}): Promise<TransactionSignature> {
+	public async initializeTokenizedVaultDepositor(
+		params: {
+			vault: PublicKey;
+			tokenName: string;
+			tokenSymbol: string;
+			tokenUri: string;
+			decimals?: number;
+			sharesBase?: number;
+		},
+		uiTxParams?: TxParams
+	): Promise<TransactionSignature> {
 		if (!this.metaplex) {
 			throw new Error(
 				'Metaplex instance is required when constructing VaultClient to initialize a tokenized vault depositor'
@@ -1363,24 +1258,19 @@ export class VaultClient {
 			mintAddress
 		);
 
-		if (!this.cliMode) {
-			throw new Error(
-				'CLI mode is not supported for initializeTokenizedVaultDepositor'
-			);
-		}
-		return await this.program.methods
-			.initializeTokenizedVaultDepositor({
-				...params,
-				decimals: params.decimals ?? spotMarketDecimals,
-			})
-			.preInstructions([
-				ComputeBudgetProgram.setComputeUnitPrice({
-					microLamports: 50_000,
-				}),
-			])
-			.postInstructions([createAtaIx])
-			.accounts(accounts)
-			.rpc();
+		return await this.createAndSendTxn(
+			[
+				await this.program.methods
+					.initializeTokenizedVaultDepositor({
+						...params,
+						decimals: params.decimals ?? spotMarketDecimals,
+					})
+					.accounts(accounts)
+					.instruction(),
+				createAtaIx,
+			],
+			uiTxParams
+		);
 	}
 
 	public async createTokenizeSharesIx(
@@ -1479,23 +1369,7 @@ export class VaultClient {
 			unit,
 			mint
 		);
-		if (this.cliMode) {
-			try {
-				const tx = new Transaction().add(...ixs);
-				const txSig = await this.driftClient.txSender.send(
-					tx,
-					undefined,
-					undefined,
-					false
-				);
-				return txSig.txSig;
-			} catch (e) {
-				console.error(e);
-				throw e;
-			}
-		} else {
-			return await this.createAndSendTxn(ixs, txParams);
-		}
+		return await this.createAndSendTxn(ixs, txParams);
 	}
 
 	public async createRedeemTokensIx(
@@ -1582,23 +1456,7 @@ export class VaultClient {
 			tokensToBurn,
 			sharesBase
 		);
-		if (this.cliMode) {
-			try {
-				const tx = new Transaction().add(ix);
-				const txSig = await this.driftClient.txSender.send(
-					tx,
-					undefined,
-					undefined,
-					false
-				);
-				return txSig.txSig;
-			} catch (e) {
-				console.error(e);
-				throw e;
-			}
-		} else {
-			return await this.createAndSendTxn([ix], txParams);
-		}
+		return await this.createAndSendTxn([ix], txParams);
 	}
 
 	public async prepDepositTx(
@@ -1699,10 +1557,16 @@ export class VaultClient {
 			authority: PublicKey;
 			vault: PublicKey;
 		},
-		txParams?: TxParams
+		txParams?: TxParams,
+		userTokenAccount?: PublicKey
 	): Promise<VersionedTransaction> {
 		const { vaultAccount, accounts, remainingAccounts, preIxs, postIxs } =
-			await this.prepDepositTx(vaultDepositor, amount, initVaultDepositor);
+			await this.prepDepositTx(
+				vaultDepositor,
+				amount,
+				initVaultDepositor,
+				userTokenAccount
+			);
 
 		const ixs: TransactionInstruction[] = [];
 
@@ -1727,7 +1591,11 @@ export class VaultClient {
 		ixs.push(depositIx);
 		ixs.push(...postIxs);
 
-		return await this.createTxn(ixs, txParams);
+		if (txParams?.noLut ? txParams.noLut : false) {
+			return await this.createTxnNoLut(ixs, txParams);
+		} else {
+			return await this.createTxn(ixs, txParams);
+		}
 	}
 
 	/**
@@ -1748,38 +1616,15 @@ export class VaultClient {
 		txParams?: TxParams,
 		userTokenAccount?: PublicKey
 	): Promise<TransactionSignature> {
-		if (this.cliMode) {
-			const { vaultAccount, accounts, remainingAccounts, preIxs, postIxs } =
-				await this.prepDepositTx(
-					vaultDepositor,
-					amount,
-					initVaultDepositor,
-					userTokenAccount
-				);
+		const depositTxn = await this.createDepositTx(
+			vaultDepositor,
+			amount,
+			initVaultDepositor,
+			txParams,
+			userTokenAccount
+		);
 
-			if (initVaultDepositor) {
-				await this.initializeVaultDepositor(
-					vaultAccount.pubkey,
-					initVaultDepositor.authority
-				);
-			}
-			return this.program.methods
-				.deposit(amount)
-				.accounts(accounts)
-				.remainingAccounts(remainingAccounts)
-				.preInstructions(preIxs)
-				.postInstructions(postIxs)
-				.rpc();
-		} else {
-			const depositTxn = await this.createDepositTx(
-				vaultDepositor,
-				amount,
-				initVaultDepositor,
-				txParams
-			);
-
-			return this.sendTxn(depositTxn, txParams?.simulateTransaction);
-		}
+		return this.sendTxn(depositTxn, txParams?.simulateTransaction);
 	}
 
 	public async requestWithdraw(
@@ -1816,36 +1661,27 @@ export class VaultClient {
 			driftUserStats: userStatsKey,
 		};
 
-		if (this.cliMode) {
-			return await this.program.methods
-				// @ts-ignore
-				.requestWithdraw(amount, withdrawUnit)
-				.accounts(accounts)
-				.remainingAccounts(remainingAccounts)
-				.rpc();
-		} else {
-			const oracleFeedsToCrankIxs = await this.getOracleFeedsToCrank(
-				txParams?.oracleFeedsToCrank
-			);
+		const oracleFeedsToCrankIxs = await this.getOracleFeedsToCrank(
+			txParams?.oracleFeedsToCrank
+		);
 
-			const requestWithdrawIx = this.program.instruction.requestWithdraw(
-				// @ts-ignore
-				amount,
-				withdrawUnit,
-				{
-					accounts: {
-						authority: this.driftClient.wallet.publicKey,
-						...accounts,
-					},
-					remainingAccounts,
-				}
-			);
+		const requestWithdrawIx = this.program.instruction.requestWithdraw(
+			// @ts-ignore
+			amount,
+			withdrawUnit,
+			{
+				accounts: {
+					authority: this.driftClient.wallet.publicKey,
+					...accounts,
+				},
+				remainingAccounts,
+			}
+		);
 
-			return await this.createAndSendTxn(
-				[...oracleFeedsToCrankIxs, requestWithdrawIx],
-				txParams
-			);
-		}
+		return await this.createAndSendTxn(
+			[...oracleFeedsToCrankIxs, requestWithdrawIx],
+			txParams
+		);
 	}
 
 	public async withdraw(
@@ -1941,40 +1777,29 @@ export class VaultClient {
 			tokenProgram: TOKEN_PROGRAM_ID,
 		};
 
-		if (this.cliMode) {
-			return await this.program.methods
+		const oracleFeedsToCrankIxs = await this.getOracleFeedsToCrank(
+			txParams?.oracleFeedsToCrank
+		);
+
+		const ixs = [
+			...oracleFeedsToCrankIxs,
+			...preIxs,
+			await this.program.methods
 				.withdraw()
-				.accounts(accounts)
+				.accounts({
+					authority: this.driftClient.wallet.publicKey,
+					...accounts,
+				})
 				.remainingAccounts(remainingAccounts)
-				.preInstructions(preIxs)
-				.postInstructions(postIxs)
-				.rpc();
-		} else {
-			const oracleFeedsToCrankIxs = await this.getOracleFeedsToCrank(
-				txParams?.oracleFeedsToCrank
-			);
+				.instruction(),
+			...postIxs,
+		];
 
-			const ixs = [
-				...oracleFeedsToCrankIxs,
-				...preIxs,
-				await this.program.methods
-					.withdraw()
-					.accounts({
-						authority: this.driftClient.wallet.publicKey,
-						...accounts,
-					})
-					.remainingAccounts(remainingAccounts)
-					.instruction(),
-				...postIxs,
-			];
-
-			const creationIxs = preIxs.concat(postIxs).length;
-			return await this.createAndSendTxn(ixs, {
-				cuLimit:
-					(txParams?.cuLimit ?? 650_000) + (creationIxs > 0 ? 200_000 : 0),
-				...txParams,
-			});
-		}
+		const creationIxs = preIxs.concat(postIxs).length;
+		return await this.createAndSendTxn(ixs, {
+			cuLimit: (txParams?.cuLimit ?? 650_000) + (creationIxs > 0 ? 200_000 : 0),
+			...txParams,
+		});
 	}
 
 	public async forceWithdraw(
@@ -2206,7 +2031,7 @@ export class VaultClient {
 				units: txParams?.cuLimit ?? 400_000,
 			}),
 			ComputeBudgetProgram.setComputeUnitPrice({
-				microLamports: txParams?.cuPriceMicroLamports ?? 1_000_000,
+				microLamports: txParams?.cuPriceMicroLamports ?? 50_000,
 			}),
 			...vaultIxs,
 		];
@@ -2232,7 +2057,7 @@ export class VaultClient {
 				units: txParams?.cuLimit ?? 400_000,
 			}),
 			ComputeBudgetProgram.setComputeUnitPrice({
-				microLamports: txParams?.cuPriceMicroLamports ?? 1_000_000,
+				microLamports: txParams?.cuPriceMicroLamports ?? 50_000,
 			}),
 			...vaultIxs,
 		];
@@ -2276,9 +2101,6 @@ export class VaultClient {
 				this.driftClient.opts
 			);
 			if (resp.txSig !== txSig) {
-				console.error(
-					`Transaction signature mismatch with self calculated value: ${resp.txSig} !== ${txSig}`
-				);
 				txSig = resp.txSig;
 			}
 		}
