@@ -423,14 +423,13 @@ describe('driftVaults', () => {
 			WithdrawUnit.SHARES_PERCENT,
 			{ noLut: true }
 		);
-		const ev0 = await printTxLogs(
+		await printTxLogs(
 			bankrunContextWrapper.connection.toConnection(),
 			tx0,
 			true,
 			// @ts-ignore
 			user1Client.program
 		);
-		// console.log('req withdraw ev', ev0);
 		await bankrunContextWrapper.moveTimeForward(1000);
 
 		// vault -50%
@@ -445,14 +444,13 @@ describe('driftVaults', () => {
 		await user1Client.syncVaultUsers();
 		await user1DriftClient.fetchAccounts();
 		const tx = await user1Client.withdraw(user1VaultDepositor, { noLut: true });
-		const ev = await printTxLogs(
+		await printTxLogs(
 			bankrunContextWrapper.connection.toConnection(),
 			tx,
 			true,
 			// @ts-ignore
 			user1Client.program
 		);
-		// console.log('withdraw ev', ev);
 
 		vault = await user1Client.program.account.vault.fetch(commonVaultKey);
 		// console.log('vault', vault);
