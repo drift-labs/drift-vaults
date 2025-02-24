@@ -1342,4 +1342,40 @@ mod vault_fuel_tests {
         assert_eq!(vault.cumulative_fuel, 300_000);
         assert_eq!(vault.last_cumulative_fuel_per_share_ts, 3);
     }
+
+    #[test]
+    fn test_fuel_updates_with_larger_user_shares() {
+        let test_cases: [u128; 8] = [
+            10u128.pow(12),
+            10u128.pow(15),
+            10u128.pow(18),
+            10u128.pow(21),
+            10u128.pow(24),
+            10u128.pow(27),
+            10u128.pow(30),
+            10u128.pow(38),
+        ];
+        for user_shares in test_cases {
+            let mut vault = Vault {
+                user_shares,
+                ..Vault::default()
+            };
+            let user_stats = UserStats {
+                fuel_deposits: u32::MAX,
+                ..UserStats::default()
+            };
+
+            vault
+                .update_cumulative_fuel_per_share(1, &user_stats, &None)
+                .unwrap();
+            assert_eq!(
+                vault.cumulative_fuel_per_share, // u32::MAX / vault_shares
+                (u32::MAX as u128) * FUEL_SHARE_PRECISION / vault.user_shares as u128,
+                "vault.update_cumulative_fuel_per_share failed with user_shares: {}",
+                user_shares
+            );
+            assert_eq!(vault.cumulative_fuel, u32::MAX as u128);
+            assert_eq!(vault.last_cumulative_fuel_per_share_ts, 1);
+        }
+    }
 }

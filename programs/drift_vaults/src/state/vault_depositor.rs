@@ -59,7 +59,9 @@ pub struct VaultDepositor {
     /// the exponent for vault_shares decimal places
     pub vault_shares_base: u32,
     pub last_fuel_update_ts: u32, // overflows on 2106-02-07 06:28:15 UTC
+    /// precision: FUEL_SHARE_PRECISION
     pub cumulative_fuel_per_share_amount: u128,
+    /// precision: none
     pub fuel_amount: u128,
     pub padding: [u64; 4],
 }
@@ -943,7 +945,7 @@ mod vault_v1_tests {
     use drift::state::user::UserStats;
 
     use crate::state::FuelDistributionMode;
-    use crate::{Vault, VaultDepositor, VaultProtocol, WithdrawUnit};
+    use crate::{assert_eq_within, Vault, VaultDepositor, VaultProtocol, WithdrawUnit};
 
     #[test]
     fn base_init() {
@@ -2060,5 +2062,72 @@ mod vault_v1_tests {
         assert_eq!(vd_1_fuel_amount, 0);
         assert_eq!(vd_1.fuel_amount, 0);
         assert_eq!(vault.cumulative_fuel, 60_000);
+    }
+
+    #[test]
+    fn test_fuel_distributes_with_larger_user_shares() {
+        let test_cases: [u128; 4] = [
+            10u128.pow(12),
+            10u128.pow(15),
+            10u128.pow(18), // starts breaking down here with precision = 1e12
+            10u128.pow(21), // starts breaking down here with precision = 1e15
+                            // 10u128.pow(24), // starts breaking down here with precision = 1e18
+        ];
+        let vd_share_of_vault_num: [u128; 7] = [
+            1_u128, 100_u128, 1000u128, 2500u128, 5000u128, 7500u128, 10000u128,
+        ];
+        // let vd_share_of_vault_num: [u128; 3] = [5000u128, 7500u128, 10000u128];
+        let vd_share_of_vault_denom = 10_000u128;
+        let now = 1;
+        let vault_fuel = 100_000; //u32::MAX;
+        for user_shares in test_cases {
+            for vd_share_of_vault in vd_share_of_vault_num {
+                let mut vault = Vault {
+                    user_shares,
+                    ..Vault::default()
+                };
+                let user_stats = UserStats {
+                    fuel_deposits: vault_fuel,
+                    ..UserStats::default()
+                };
+
+                let vd = &mut VaultDepositor::new(
+                    Pubkey::default(),
+                    Pubkey::default(),
+                    Pubkey::default(),
+                    now,
+                );
+                vd.last_fuel_update_ts = 0;
+                vd.vault_shares = user_shares * vd_share_of_vault / vd_share_of_vault_denom;
+
+                vd.update_cumulative_fuel_amount(now, &mut vault, &user_stats, &None)
+                    .unwrap();
+
+                let approx_fuel_amount_share = (vd.fuel_amount as f64) / (vault_fuel as f64);
+                let expected_fuel_amount_share =
+                    (vd_share_of_vault as f64) / (vd_share_of_vault_denom as f64);
+                // println!(
+                //     "vd.fuel_amount: {}, vd.fuel_amount: {}. {} vs {}",
+                //     vd.fuel_amount,
+                //     (vault_fuel as u128) * vd_share_of_vault / vd_share_of_vault_denom,
+                //     approx_fuel_amount_share,
+                //     expected_fuel_amount_share,
+                // );
+                assert_eq_within!(
+                    vd.fuel_amount,
+                    (vault_fuel as u128) * vd_share_of_vault / vd_share_of_vault_denom,
+                    1000,
+                    "vd.fuel_amount failed with user_shares: {}, vd_share_of_vault: {}/{}",
+                    user_shares,
+                    vd_share_of_vault,
+                    vd_share_of_vault_denom
+                );
+                assert_eq_within!(
+                    (approx_fuel_amount_share * 1e6) as u128,
+                    (expected_fuel_amount_share * 1e6) as u128,
+                    1000
+                );
+            }
+        }
     }
 }
