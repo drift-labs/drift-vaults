@@ -896,8 +896,16 @@ mod vault_fcn {
         let deposit_amount = 2000 * QUOTE_PRECISION_U64;
         let vd =
             &mut VaultDepositor::new(Pubkey::default(), Pubkey::default(), Pubkey::default(), now);
-        vd.deposit(deposit_amount, vault_equity, &mut vault, &mut vp, now)
-            .unwrap(); // new user deposits $2000
+        vd.deposit(
+            deposit_amount,
+            vault_equity,
+            &mut vault,
+            &mut vp,
+            now,
+            &UserStats::default(),
+            &None,
+        )
+        .unwrap(); // new user deposits $2000
         vault_equity += deposit_amount;
 
         let depositor_amount_before = depositor_shares_to_vault_amount(
@@ -912,8 +920,15 @@ mod vault_fcn {
         now += 60 * 60 * 24; // 1 day later
         vault_equity = 2200 * QUOTE_PRECISION_U64;
 
-        vd.apply_profit_share(vault_equity, &mut vault, &mut vp)
-            .unwrap();
+        vd.apply_profit_share(
+            vault_equity,
+            &mut vault,
+            &mut vp,
+            now,
+            &UserStats::default(),
+            &None,
+        )
+        .unwrap();
         vault.apply_fee(&mut vp, vault_equity, now).unwrap();
 
         let depositor_amount_in_profit = depositor_shares_to_vault_amount(
@@ -932,8 +947,15 @@ mod vault_fcn {
         now += 60 * 60 * 24; // 1 day later
         vault_equity = 1980 * QUOTE_PRECISION_U64;
 
-        vd.apply_profit_share(vault_equity, &mut vault, &mut vp)
-            .unwrap();
+        vd.apply_profit_share(
+            vault_equity,
+            &mut vault,
+            &mut vp,
+            now,
+            &UserStats::default(),
+            &None,
+        )
+        .unwrap();
         vault.apply_fee(&mut vp, vault_equity, now).unwrap();
 
         let depositor_amount_in_drawdown = depositor_shares_to_vault_amount(
@@ -953,8 +975,15 @@ mod vault_fcn {
         now += 60 * 60 * 24; // 1 day later
         vault_equity = 2210 * QUOTE_PRECISION_U64;
 
-        vd.apply_profit_share(vault_equity, &mut vault, &mut vp)
-            .unwrap();
+        vd.apply_profit_share(
+            vault_equity,
+            &mut vault,
+            &mut vp,
+            now,
+            &UserStats::default(),
+            &None,
+        )
+        .unwrap();
         vault.apply_fee(&mut vp, vault_equity, now).unwrap();
 
         let depositor_amount_in_profit = depositor_shares_to_vault_amount(
@@ -1018,7 +1047,14 @@ mod vault_fcn {
         assert_eq!(unrealized_profit_before, 7_269_984);
 
         let (manager_profit_share, protocol_profit_share) = vd
-            .apply_profit_share(vault_equity, &mut vault, &mut vp)
+            .apply_profit_share(
+                vault_equity,
+                &mut vault,
+                &mut vp,
+                0,
+                &UserStats::default(),
+                &None,
+            )
             .unwrap();
 
         assert_eq!(manager_profit_share, 2_180_995);

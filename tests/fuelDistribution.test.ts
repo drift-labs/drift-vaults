@@ -52,7 +52,6 @@ import {
 	Keypair,
 	TransactionInstruction,
 	TransactionMessage,
-	VersionedMessage,
 	VersionedTransaction,
 } from '@solana/web3.js';
 import { mockOracleNoProgram } from './common/bankrunOracle';
@@ -1060,7 +1059,7 @@ describe('driftVaults', () => {
 		await adminClient.resetFuelSeason(user1VaultDepositor, {
 			noLut: true,
 		});
-		const tx = await adminClient.resetFuelSeason(user2VaultDepositor, {
+		await adminClient.resetFuelSeason(user2VaultDepositor, {
 			noLut: true,
 		});
 		await adminDriftClient.resetFuelSeason(true, commonVaultKey);
