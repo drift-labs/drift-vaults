@@ -1,7 +1,6 @@
 import {
 	BN,
 	PERCENTAGE_PRECISION,
-	UserStats,
 	ZERO,
 	unstakeSharesToAmount as depositSharesToVaultAmount,
 	stakeAmountToShares as vaultAmountToDepositorShares,
