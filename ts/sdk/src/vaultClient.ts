@@ -254,7 +254,7 @@ export class VaultClient {
 	}
 
 	public async getAllVaultDepositors(
-		vault: PublicKey
+		vault?: PublicKey
 	): Promise<ProgramAccount<VaultDepositor>[]> {
 		const filters = [
 			{
@@ -266,14 +266,16 @@ export class VaultClient {
 					),
 				},
 			},
-			{
+		];
+		if (vault) {
+			filters.push({
 				// vault = vault
 				memcmp: {
 					offset: 8,
 					bytes: vault.toBase58(),
 				},
-			},
-		];
+			});
+		}
 		// @ts-ignore
 		return (await this.program.account.vaultDepositor.all(
 			filters
