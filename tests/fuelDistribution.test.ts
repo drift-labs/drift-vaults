@@ -1187,7 +1187,7 @@ describe('driftVaults', () => {
 		const verTx = new VersionedTransaction(msg.compileToV0Message());
 		// verTx.sign([adminDriftClient.wallet.payer!]);
 
-		console.log('sending tx...');
+		// console.log('sending tx...');
 		const tx = await bankrunContextWrapper.connection.sendTransaction(verTx);
 
 		const eventsReceived = await printTxLogs(
@@ -1199,7 +1199,7 @@ describe('driftVaults', () => {
 		);
 		// console.log(eventsReceived);
 		expect(eventsReceived.length).toBe(depositorsToCheck);
-		console.log(eventsReceived.slice(0, 3));
+		// console.log(eventsReceived.slice(0, 3));
 
 		// teardown
 		for (const vdInfo of depositors) {

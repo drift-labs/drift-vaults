@@ -7,6 +7,7 @@ module.exports = {
 	],
 	testPathIgnorePatterns: [
 		'tests/common/',
+		'tests/fixtures/',
 		//'tests/driftVaults.ts'
 	],
 	testTimeout: 1000000,  // This matches your current 1000000ms timeout

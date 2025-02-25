@@ -1826,10 +1826,12 @@ export type DriftVaults = {
 					},
 					{
 						name: 'cumulativeFuelPerShareAmount';
+						docs: ['precision: FUEL_SHARE_PRECISION'];
 						type: 'u128';
 					},
 					{
 						name: 'fuelAmount';
+						docs: ['precision: none'];
 						type: 'u128';
 					},
 					{
@@ -4749,10 +4751,12 @@ export const IDL: DriftVaults = {
 					},
 					{
 						name: 'cumulativeFuelPerShareAmount',
+						docs: ['precision: FUEL_SHARE_PRECISION'],
 						type: 'u128',
 					},
 					{
 						name: 'fuelAmount',
+						docs: ['precision: none'],
 						type: 'u128',
 					},
 					{
