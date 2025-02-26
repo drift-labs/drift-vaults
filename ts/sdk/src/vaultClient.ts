@@ -13,6 +13,7 @@ import {
 	OracleSource,
 	WRAPPED_SOL_MINT,
 	SpotMarketAccount,
+	UserMapConfig,
 } from '@drift-labs/sdk';
 import { BorshAccountsCoder, Program, ProgramAccount } from '@coral-xyz/anchor';
 import { DriftVaults } from './types/drift_vaults';
@@ -54,7 +55,6 @@ import {
 	WithdrawUnit,
 } from './types/types';
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
-import { UserMapConfig } from '@drift-labs/sdk';
 import { calculateRealizedVaultDepositorEquity } from './math';
 import { Metaplex } from '@metaplex-foundation/js';
 import { getOrCreateATAInstruction } from './utils';
