@@ -1370,7 +1370,7 @@ mod vault_fuel_tests {
                 .unwrap();
             assert_eq!(
                 vault.cumulative_fuel_per_share, // u32::MAX / vault_shares
-                (u32::MAX as u128) * FUEL_SHARE_PRECISION / vault.user_shares as u128,
+                (u32::MAX as u128) * FUEL_SHARE_PRECISION / vault.user_shares,
                 "vault.update_cumulative_fuel_per_share failed with user_shares: {}",
                 user_shares
             );
