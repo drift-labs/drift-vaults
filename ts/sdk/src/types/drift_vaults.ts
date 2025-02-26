@@ -1,5 +1,5 @@
 export type DriftVaults = {
-	version: '0.2.0';
+	version: '0.4.0';
 	name: 'drift_vaults';
 	instructions: [
 		{
@@ -275,6 +275,32 @@ export type DriftVaults = {
 					};
 				}
 			];
+		},
+		{
+			name: 'updateCumulativeFuelAmount';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'vaultDepositor';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'signer';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: true;
+					isSigner: false;
+				}
+			];
+			args: [];
 		},
 		{
 			name: 'initializeVaultDepositor';
@@ -746,6 +772,58 @@ export type DriftVaults = {
 			args: [];
 		},
 		{
+			name: 'resetFuelSeason';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'vaultDepositor';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'admin';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftState';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [];
+		},
+		{
+			name: 'resetVaultFuelSeason';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'admin';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'driftState';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [];
+		},
+		{
 			name: 'managerDeposit';
 			accounts: [
 				{
@@ -929,6 +1007,27 @@ export type DriftVaults = {
 				}
 			];
 			args: [];
+		},
+		{
+			name: 'managerUpdateFuelDistributionMode';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: false;
+					isSigner: true;
+				}
+			];
+			args: [
+				{
+					name: 'fuelDistributionMode';
+					type: 'u8';
+				}
+			];
 		},
 		{
 			name: 'applyProfitShare';
@@ -1722,13 +1821,23 @@ export type DriftVaults = {
 						type: 'u32';
 					},
 					{
-						name: 'padding1';
+						name: 'lastFuelUpdateTs';
 						type: 'u32';
+					},
+					{
+						name: 'cumulativeFuelPerShareAmount';
+						docs: ['precision: FUEL_SHARE_PRECISION'];
+						type: 'u128';
+					},
+					{
+						name: 'fuelAmount';
+						docs: ['precision: none'];
+						type: 'u128';
 					},
 					{
 						name: 'padding';
 						type: {
-							array: ['u64', 8];
+							array: ['u64', 4];
 						};
 					}
 				];
@@ -2021,15 +2130,39 @@ export type DriftVaults = {
 						type: 'bool';
 					},
 					{
+						name: 'fuelDistributionMode';
+						docs: [
+							'How fuel distribution should be treated [`FuelDistributionMode`]. Default is `UsersOnly`'
+						];
+						type: 'u8';
+					},
+					{
 						name: 'padding1';
 						type: {
-							array: ['u8', 7];
+							array: ['u8', 2];
 						};
+					},
+					{
+						name: 'lastCumulativeFuelPerShareTs';
+						docs: ['The timestamp cumulative_fuel_per_share was last updated'];
+						type: 'u32';
+					},
+					{
+						name: 'cumulativeFuelPerShare';
+						docs: [
+							'The cumulative fuel per share (scaled up by 1e6 to avoid losing precision)'
+						];
+						type: 'u128';
+					},
+					{
+						name: 'cumulativeFuel';
+						docs: ['The total fuel accumulated'];
+						type: 'u128';
 					},
 					{
 						name: 'padding';
 						type: {
-							array: ['u64', 7];
+							array: ['u64', 3];
 						};
 					}
 				];
@@ -2299,6 +2432,20 @@ export type DriftVaults = {
 					},
 					{
 						name: 'RedeemTokens';
+					}
+				];
+			};
+		},
+		{
+			name: 'FuelDistributionMode';
+			type: {
+				kind: 'enum';
+				variants: [
+					{
+						name: 'UsersOnly';
+					},
+					{
+						name: 'UsersAndManager';
 					}
 				];
 			};
@@ -2595,6 +2742,56 @@ export type DriftVaults = {
 					index: false;
 				}
 			];
+		},
+		{
+			name: 'FuelSeasonRecord';
+			fields: [
+				{
+					name: 'ts';
+					type: 'i64';
+					index: false;
+				},
+				{
+					name: 'authority';
+					type: 'publicKey';
+					index: false;
+				},
+				{
+					name: 'fuelInsurance';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'fuelDeposits';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'fuelBorrows';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'fuelPositions';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'fuelTaker';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'fuelMaker';
+					type: 'u128';
+					index: false;
+				},
+				{
+					name: 'fuelTotal';
+					type: 'u128';
+					index: false;
+				}
+			];
 		}
 	];
 	errors: [
@@ -2717,12 +2914,17 @@ export type DriftVaults = {
 			code: 6023;
 			name: 'InvalidTokenization';
 			msg: 'InvalidTokenization';
+		},
+		{
+			code: 6024;
+			name: 'InvalidFuelDistributionMode';
+			msg: 'InvalidFuelDistributionMode';
 		}
 	];
 };
 
 export const IDL: DriftVaults = {
-	version: '0.2.0',
+	version: '0.4.0',
 	name: 'drift_vaults',
 	instructions: [
 		{
@@ -2998,6 +3200,32 @@ export const IDL: DriftVaults = {
 					},
 				},
 			],
+		},
+		{
+			name: 'updateCumulativeFuelAmount',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'vaultDepositor',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'signer',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: true,
+					isSigner: false,
+				},
+			],
+			args: [],
 		},
 		{
 			name: 'initializeVaultDepositor',
@@ -3469,6 +3697,58 @@ export const IDL: DriftVaults = {
 			args: [],
 		},
 		{
+			name: 'resetFuelSeason',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'vaultDepositor',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'admin',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftState',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [],
+		},
+		{
+			name: 'resetVaultFuelSeason',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'admin',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'driftState',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [],
+		},
+		{
 			name: 'managerDeposit',
 			accounts: [
 				{
@@ -3652,6 +3932,27 @@ export const IDL: DriftVaults = {
 				},
 			],
 			args: [],
+		},
+		{
+			name: 'managerUpdateFuelDistributionMode',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: false,
+					isSigner: true,
+				},
+			],
+			args: [
+				{
+					name: 'fuelDistributionMode',
+					type: 'u8',
+				},
+			],
 		},
 		{
 			name: 'applyProfitShare',
@@ -4445,13 +4746,23 @@ export const IDL: DriftVaults = {
 						type: 'u32',
 					},
 					{
-						name: 'padding1',
+						name: 'lastFuelUpdateTs',
 						type: 'u32',
+					},
+					{
+						name: 'cumulativeFuelPerShareAmount',
+						docs: ['precision: FUEL_SHARE_PRECISION'],
+						type: 'u128',
+					},
+					{
+						name: 'fuelAmount',
+						docs: ['precision: none'],
+						type: 'u128',
 					},
 					{
 						name: 'padding',
 						type: {
-							array: ['u64', 8],
+							array: ['u64', 4],
 						},
 					},
 				],
@@ -4744,15 +5055,39 @@ export const IDL: DriftVaults = {
 						type: 'bool',
 					},
 					{
+						name: 'fuelDistributionMode',
+						docs: [
+							'How fuel distribution should be treated [`FuelDistributionMode`]. Default is `UsersOnly`',
+						],
+						type: 'u8',
+					},
+					{
 						name: 'padding1',
 						type: {
-							array: ['u8', 7],
+							array: ['u8', 2],
 						},
+					},
+					{
+						name: 'lastCumulativeFuelPerShareTs',
+						docs: ['The timestamp cumulative_fuel_per_share was last updated'],
+						type: 'u32',
+					},
+					{
+						name: 'cumulativeFuelPerShare',
+						docs: [
+							'The cumulative fuel per share (scaled up by 1e6 to avoid losing precision)',
+						],
+						type: 'u128',
+					},
+					{
+						name: 'cumulativeFuel',
+						docs: ['The total fuel accumulated'],
+						type: 'u128',
 					},
 					{
 						name: 'padding',
 						type: {
-							array: ['u64', 7],
+							array: ['u64', 3],
 						},
 					},
 				],
@@ -5022,6 +5357,20 @@ export const IDL: DriftVaults = {
 					},
 					{
 						name: 'RedeemTokens',
+					},
+				],
+			},
+		},
+		{
+			name: 'FuelDistributionMode',
+			type: {
+				kind: 'enum',
+				variants: [
+					{
+						name: 'UsersOnly',
+					},
+					{
+						name: 'UsersAndManager',
 					},
 				],
 			},
@@ -5319,6 +5668,56 @@ export const IDL: DriftVaults = {
 				},
 			],
 		},
+		{
+			name: 'FuelSeasonRecord',
+			fields: [
+				{
+					name: 'ts',
+					type: 'i64',
+					index: false,
+				},
+				{
+					name: 'authority',
+					type: 'publicKey',
+					index: false,
+				},
+				{
+					name: 'fuelInsurance',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'fuelDeposits',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'fuelBorrows',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'fuelPositions',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'fuelTaker',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'fuelMaker',
+					type: 'u128',
+					index: false,
+				},
+				{
+					name: 'fuelTotal',
+					type: 'u128',
+					index: false,
+				},
+			],
+		},
 	],
 	errors: [
 		{
@@ -5440,6 +5839,11 @@ export const IDL: DriftVaults = {
 			code: 6023,
 			name: 'InvalidTokenization',
 			msg: 'InvalidTokenization',
+		},
+		{
+			code: 6024,
+			name: 'InvalidFuelDistributionMode',
+			msg: 'InvalidFuelDistributionMode',
 		},
 	],
 };

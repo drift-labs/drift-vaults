@@ -7,9 +7,9 @@ use drift::state::user::User;
 use crate::constants::permissioned_liquidator;
 use crate::constraints::{is_user_for_vault, is_user_stats_for_vault};
 use crate::drift_cpi::{UpdateUserDelegateCPI, UpdateUserReduceOnlyCPI};
-use crate::state::{Vault, VaultDepositor, VaultProtocolProvider};
+use crate::state::{Vault, VaultDepositor};
 use crate::{declare_vault_seeds, implement_update_user_delegate_cpi};
-use crate::{implement_update_user_reduce_only_cpi, AccountMapProvider};
+use crate::{implement_update_user_reduce_only_cpi, AccountMapProvider, VaultProtocolProvider};
 
 pub fn liquidate<'c: 'info, 'info>(
     ctx: Context<'_, '_, 'c, 'info, Liquidate<'info>>,
@@ -30,7 +30,12 @@ pub fn liquidate<'c: 'info, 'info>(
         perp_market_map,
         spot_market_map,
         mut oracle_map,
-    } = ctx.load_maps(clock.slot, Some(vault.spot_market_index), vp.is_some())?;
+    } = ctx.load_maps(
+        clock.slot,
+        Some(vault.spot_market_index),
+        vp.is_some(),
+        false,
+    )?;
 
     // 1. Check the vault depositor has waited the redeem period
     vault_depositor
@@ -75,7 +80,7 @@ pub struct Liquidate<'info> {
     pub authority: Signer<'info>,
     #[account(
         mut,
-        constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?
+        constraint = is_user_stats_for_vault(&vault, &drift_user_stats.key())?
     )]
     /// CHECK: checked in drift cpi
     pub drift_user_stats: AccountInfo<'info>,

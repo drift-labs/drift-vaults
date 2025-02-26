@@ -62,6 +62,12 @@ pub mod drift_vaults {
         instructions::update_vault(ctx, params)
     }
 
+    pub fn update_cumulative_fuel_amount<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, UpdateCumulativeFuelAmount<'info>>,
+    ) -> Result<()> {
+        instructions::update_cumulative_fuel_amount(ctx)
+    }
+
     pub fn initialize_vault_depositor(ctx: Context<InitializeVaultDepositor>) -> Result<()> {
         instructions::initialize_vault_depositor(ctx)
     }
@@ -127,6 +133,18 @@ pub mod drift_vaults {
         instructions::reset_delegate(ctx)
     }
 
+    pub fn reset_fuel_season<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, ResetFuelSeason<'info>>,
+    ) -> Result<()> {
+        instructions::reset_fuel_season(ctx)
+    }
+
+    pub fn reset_vault_fuel_season<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, ResetVaultFuelSeason<'info>>,
+    ) -> Result<()> {
+        instructions::reset_vault_fuel_season(ctx)
+    }
+
     pub fn manager_deposit<'c: 'info, 'info>(
         ctx: Context<'_, '_, 'c, 'info, ManagerDeposit<'info>>,
         amount: u64,
@@ -152,6 +170,13 @@ pub mod drift_vaults {
         ctx: Context<'_, '_, 'c, 'info, ManagerWithdraw<'info>>,
     ) -> Result<()> {
         instructions::manager_withdraw(ctx)
+    }
+
+    pub fn manager_update_fuel_distribution_mode<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, ManagerUpdateFuelDistributionMode<'info>>,
+        fuel_distribution_mode: u8,
+    ) -> Result<()> {
+        instructions::manager_update_fuel_distribution_mode(ctx, fuel_distribution_mode)
     }
 
     pub fn apply_profit_share<'c: 'info, 'info>(

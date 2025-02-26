@@ -51,11 +51,8 @@ pub fn is_user_for_vault(vault: &AccountLoader<Vault>, user_key: &Pubkey) -> Res
     Ok(vault.load()?.user.eq(user_key))
 }
 
-pub fn is_user_stats_for_vault(
-    vault: &AccountLoader<Vault>,
-    user_stats: &AccountInfo,
-) -> Result<bool> {
-    Ok(vault.load()?.user_stats.eq(user_stats.key))
+pub fn is_user_stats_for_vault(vault: &AccountLoader<Vault>, user_stats: &Pubkey) -> Result<bool> {
+    Ok(vault.load()?.user_stats.eq(user_stats))
 }
 
 pub fn is_vault_protocol_for_vault(

@@ -102,16 +102,24 @@ export type Vault = {
 	permissioned: boolean;
 	lastManagerWithdrawRequest: WithdrawRequest;
 	vaultProtocol: boolean;
+	fuelDistributionMode: FuelDistributionMode;
+	padding1: number[];
+	lastCumulativeFuelPerShareTs: number;
+	cumulativeFuelPerShare: BN;
+	cumulativeFuel: BN;
+	padding: BN[];
 };
+
+export enum FuelDistributionMode {
+	UsersOnly = 0,
+	UsersAndManager = 1,
+}
 
 export type VaultDepositor = {
 	vault: PublicKey;
 	pubkey: PublicKey;
 	authority: PublicKey;
 	vaultShares: BN;
-	// lastWithdrawRequestShares: BN;
-	// lastWithdrawRequestValue: BN;
-	// lastWithdrawRequestTs: BN;
 	lastWithdrawRequest: WithdrawRequest;
 	lastValidTs: BN;
 	netDeposits: BN;
@@ -120,8 +128,10 @@ export type VaultDepositor = {
 	cumulativeProfitShareAmount: BN;
 	vaultSharesBase: number;
 	profitShareFeePaid: BN;
-	padding1: number | number[];
-	padding: number[] | BN[];
+	lastFuelUpdateTs: number;
+	cumulativeFuelPerShareAmount: BN;
+	fuelAmount: BN;
+	padding: BN | BN[];
 };
 
 export type VaultProtocol = {
@@ -240,9 +250,22 @@ export type VaultDepositorV1Record = {
 	managementFeeShares: BN;
 };
 
+export type FuelSeasonRecord = {
+	ts: BN;
+	authority: PublicKey;
+	fuelInsurance: BN;
+	fuelDeposits: BN;
+	fuelBorrows: BN;
+	fuelPositions: BN;
+	fuelTaker: BN;
+	fuelMaker: BN;
+	fuelTotal: BN;
+};
+
 export type VaultsEventMap = {
 	VaultDepositorRecord: Event<VaultDepositorRecord>;
 	VaultDepositorV1Record: Event<VaultDepositorV1Record>;
+	FuelSeasonRecord: Event<FuelSeasonRecord>;
 };
 
 export type EventType = keyof VaultsEventMap;

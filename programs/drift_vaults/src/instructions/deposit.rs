@@ -3,14 +3,14 @@ use anchor_spl::token::{self, Token, TokenAccount, Transfer};
 use drift::cpi::accounts::Deposit as DriftDeposit;
 use drift::instructions::optional_accounts::AccountMaps;
 use drift::program::Drift;
-use drift::state::user::User;
+use drift::state::user::{FuelOverflowStatus, User, UserStats};
 
 use crate::constraints::{
     is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
 };
 use crate::drift_cpi::DepositCPI;
 use crate::error::ErrorCode;
-use crate::state::{Vault, VaultDepositor, VaultProtocolProvider};
+use crate::state::{FuelOverflowProvider, Vault, VaultDepositor, VaultProtocolProvider};
 use crate::token_cpi::TokenTransferCPI;
 use crate::{declare_vault_seeds, implement_deposit, validate, AccountMapProvider};
 
@@ -33,11 +33,21 @@ pub fn deposit<'c: 'info, 'info>(
     let user = ctx.accounts.drift_user.load()?;
     let spot_market_index = vault.spot_market_index;
 
+    let user_stats = ctx.accounts.drift_user_stats.load()?;
+    let has_fuel_overflow = FuelOverflowStatus::exists(user_stats.fuel_overflow_status);
+    let fuel_overflow = ctx.fuel_overflow(vp.is_some(), has_fuel_overflow);
+    user_stats.validate_fuel_overflow(&fuel_overflow)?;
+
     let AccountMaps {
         perp_market_map,
         spot_market_map,
         mut oracle_map,
-    } = ctx.load_maps(clock.slot, Some(spot_market_index), vp.is_some())?;
+    } = ctx.load_maps(
+        clock.slot,
+        Some(spot_market_index),
+        vp.is_some(),
+        has_fuel_overflow,
+    )?;
 
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
@@ -48,10 +58,13 @@ pub fn deposit<'c: 'info, 'info>(
         &mut vault,
         &mut vp,
         clock.unix_timestamp,
+        &user_stats,
+        &fuel_overflow,
     )?;
 
     drop(vault);
     drop(user);
+    drop(user_stats);
     drop(vp);
 
     ctx.token_transfer(amount)?;
@@ -81,10 +94,10 @@ pub struct Deposit<'info> {
     pub vault_token_account: Box<Account<'info, TokenAccount>>,
     #[account(
         mut,
-        constraint = is_user_stats_for_vault(&vault, &drift_user_stats)?
+        constraint = is_user_stats_for_vault(&vault, &drift_user_stats.key())?
     )]
     /// CHECK: checked in drift cpi
-    pub drift_user_stats: AccountInfo<'info>,
+    pub drift_user_stats: AccountLoader<'info, UserStats>,
     #[account(
         mut,
         constraint = is_user_for_vault(&vault, &drift_user.key())?

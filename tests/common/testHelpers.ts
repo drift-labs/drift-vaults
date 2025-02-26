@@ -15,6 +15,11 @@ import {
 	getMint,
 } from '@solana/spl-token';
 import {
+	createAccount,
+	createMint,
+	mintTo,
+} from 'spl-token-bankrun';
+import {
 	Connection,
 	Keypair,
 	LAMPORTS_PER_SOL,
@@ -23,8 +28,8 @@ import {
 	SystemProgram,
 	Transaction,
 	TransactionSignature,
+	VersionedTransaction,
 } from '@solana/web3.js';
-import { assert } from 'chai';
 import buffer from 'buffer';
 import {
 	BN,
@@ -55,6 +60,7 @@ import {
 	BASE_PRECISION,
 	getUserStatsAccountPublicKey,
 	DRIFT_PROGRAM_ID,
+	UserMapConfig,
 } from '@drift-labs/sdk';
 import {
 	DriftVaults,
@@ -63,8 +69,11 @@ import {
 	getVaultDepositorAddressSync,
 	IDL,
 	VaultClient,
-} from '../ts/sdk';
+} from '../../ts/sdk/lib';
 import { Metaplex } from '@metaplex-foundation/js';
+import 'jest-expect-message';
+import { BankrunContextWrapper } from './bankrunConnection';
+import { BankrunProvider } from 'anchor-bankrun';
 
 export async function mockOracle(
 	price: number = 50 * 10e7,
@@ -94,7 +103,7 @@ export async function mockOracle(
 	if (feedData.price !== price) {
 		console.log('mockOracle precision error:', feedData.price, '!=', price);
 	}
-	assert.ok(Math.abs(feedData.price - price) < 1e-10);
+	assert(Math.abs(feedData.price - price) < 1e-10);
 
 	return priceFeedAddress;
 }
@@ -202,6 +211,20 @@ export async function mockUserUSDCAccount(
 	}
 }
 
+export async function mockUserUSDCAccountBankrun(
+	bankrunContext: BankrunContextWrapper,
+	fakeUSDCMint: PublicKey,
+	usdcMintAmount: BN,
+	owner: Keypair,
+): Promise<Keypair> {
+	const userUSDCAccount = anchor.web3.Keypair.generate();
+	const payer = bankrunContext.provider.wallet.payer;
+	await createAccount(bankrunContext.context.banksClient, payer, fakeUSDCMint, owner.publicKey, userUSDCAccount);
+	await mintTo(bankrunContext.context.banksClient, payer, fakeUSDCMint, userUSDCAccount.publicKey, payer, usdcMintAmount.toNumber());
+
+	return userUSDCAccount;
+}
+
 export async function mintUSDCToUser(
 	fakeUSDCMint: Keypair,
 	userUSDCAccount: PublicKey,
@@ -267,7 +290,7 @@ export async function isDriftInitialized(driftClient: DriftClient) {
 
 export async function initializeAndSubscribeDriftClient(
 	connection: Connection,
-	program: Program,
+	program: Program<DriftVaults>,
 	userKeyPair: Keypair,
 	marketIndexes: number[],
 	bankIndexes: number[],
@@ -287,12 +310,12 @@ export async function initializeAndSubscribeDriftClient(
 		oracleInfos,
 		accountSubscription: accountLoader
 			? {
-					type: 'polling',
-					accountLoader,
-			  }
+				type: 'polling',
+				accountLoader,
+			}
 			: {
-					type: 'websocket',
-			  },
+				type: 'websocket',
+			},
 	});
 	await driftClient.subscribe();
 	await driftClient.initializeUserAccount();
@@ -319,6 +342,7 @@ export async function createUserWithUSDCAccount(
 
 	const driftClient = await initializeAndSubscribeDriftClient(
 		provider.connection,
+		// @ts-ignore
 		chProgram,
 		userKeyPair,
 		marketIndexes,
@@ -338,7 +362,7 @@ export async function createWSolTokenAccountForUser(
 	const tx = await provider.connection.requestAirdrop(
 		userKeypair.publicKey,
 		amount.toNumber() +
-			(await getMinimumBalanceForRentExemptAccount(provider.connection))
+		(await getMinimumBalanceForRentExemptAccount(provider.connection))
 	);
 	while (
 		(await provider.connection.getTransaction(tx, {
@@ -382,6 +406,7 @@ export async function createUserWithUSDCAndWSOLAccount(
 	);
 	const driftClient = await initializeAndSubscribeDriftClient(
 		provider.connection,
+		// @ts-ignore
 		chProgram,
 		userKeyPair,
 		marketIndexes,
@@ -511,18 +536,23 @@ export async function printTxLogs(
 	connection: Connection,
 	txSig: TransactionSignature,
 	dumpEvents = false,
-	driftProgram?: Program
-): Promise<void> {
+	program?: Program
+): Promise<Array<any>> {
 	const tx = await connection.getTransaction(txSig, {
 		commitment: 'confirmed',
 		maxSupportedTransactionVersion: 0,
 	});
-	console.log('tx logs', tx.meta.logMessages);
-	if (dumpEvents) {
-		for (const e of parseLogs(driftProgram, tx.meta.logMessages)) {
-			console.log(JSON.stringify(e));
-		}
+	console.log('tx logs', tx?.meta?.logMessages);
+	const events = [];
+	for (const e of parseLogs(program!, tx!.meta!.logMessages!, program!.programId!.toBase58()!)) {
+		// @ts-ignore
+		events.push(e);
 	}
+
+	if (dumpEvents) {
+		console.log(JSON.stringify(events));
+	}
+	return events;
 }
 
 export async function mintToInsuranceFund(
@@ -602,12 +632,12 @@ export async function initUserAccounts(
 			oracleInfos,
 			accountSubscription: accountLoader
 				? {
-						type: 'polling',
-						accountLoader,
-				  }
+					type: 'polling',
+					accountLoader,
+				}
 				: {
-						type: 'websocket',
-				  },
+					type: 'websocket',
+				},
 		});
 
 		// await driftClient1.initialize(usdcMint.publicKey, false);
@@ -784,9 +814,9 @@ function readBigInt64LE(buffer, offset = 0) {
 		(BigInt(val) << BigInt(32)) +
 		BigInt(
 			first +
-				buffer[++offset] * 2 ** 8 +
-				buffer[++offset] * 2 ** 16 +
-				buffer[++offset] * 2 ** 24
+			buffer[++offset] * 2 ** 8 +
+			buffer[++offset] * 2 ** 16 +
+			buffer[++offset] * 2 ** 24
 		)
 	);
 }
@@ -1126,6 +1156,7 @@ export async function bootstrapSignerClientAndUser(params: {
 	const program = new Program(IDL, programId, provider);
 	const vaultClient = new VaultClient({
 		driftClient,
+		// @ts-ignore
 		program,
 		cliMode: vaultClientCliMode ?? true,
 		metaplex: params.metaplex,
@@ -1206,8 +1237,8 @@ export async function getVaultDepositorValue(params: {
 	try {
 		tokenizedVaultDepositorAccount = params.tokenizedVaultDepositor
 			? await params.vaultClient.program.account.tokenizedVaultDepositor.fetch(
-					params.tokenizedVaultDepositor
-			  )
+				params.tokenizedVaultDepositor
+			)
 			: undefined;
 	} catch (e) {
 		console.log('failed to get tokenized vault depositor account', e);
@@ -1225,7 +1256,7 @@ export async function getVaultDepositorValue(params: {
 	if (tokenizedVaultDepositorAccount) {
 		assert(
 			tokenizedVaultDepositorAccount.vaultSharesBase ===
-				vaultAccount.sharesBase,
+			vaultAccount.sharesBase,
 			'tokenizedVaultDepositorAccount.vaultSharesBase is not equal to vaultAccount.sharesBase'
 		);
 	}
@@ -1274,6 +1305,7 @@ export async function getVaultDepositorValue(params: {
 	}
 
 	const vaultDepositorEquity = vaultEquity
+		// @ts-ignore
 		.mul(vaultDepositorAccount.vaultShares)
 		.div(vaultAccount.totalShares);
 	const vaultDepositorShareOfVault =
@@ -1308,8 +1340,7 @@ export async function getVaultDepositorValue(params: {
 			).toString()}`
 		);
 		console.log(
-			`  tokenizedVaultDepositorShareOfVault: ${
-				tokenizedVaultDepositorShareOfVault * 100
+			`  tokenizedVaultDepositorShareOfVault: ${tokenizedVaultDepositorShareOfVault * 100
 			}%`
 		);
 		console.log(`  ataBalance: ${ataBalance?.toString()}`);
@@ -1322,6 +1353,7 @@ export async function getVaultDepositorValue(params: {
 	return {
 		vaultEquity,
 		vaultShares: vaultAccount.totalShares,
+		// @ts-ignore
 		vaultDepositorShares: vaultDepositorAccount.vaultShares,
 		vaultDepositorEquity,
 		vaultDepositorShareOfVault,
@@ -1450,8 +1482,7 @@ export async function doWashTrading({
 	stopPnlDiffPct = stopPnlDiffPct ?? -0.999;
 	maxIters = maxIters ?? 100;
 	console.log(
-		`Trading against MM until pnl is ${
-			stopPnlDiffPct * 100
+		`Trading against MM until pnl is ${stopPnlDiffPct * 100
 		}%, starting at ${convertToNumber(
 			startVaultEquity,
 			QUOTE_PRECISION
@@ -1601,4 +1632,109 @@ export async function doWashTrading({
 			QUOTE_PRECISION
 		).toString()} (${diff * 100}% from start, ${i} iters)\n`
 	);
+}
+
+export const isVersionedTransaction = (
+	tx: Transaction | VersionedTransaction
+): boolean => {
+	const version = (tx as VersionedTransaction)?.version;
+	const isVersionedTx =
+		tx instanceof VersionedTransaction || version !== undefined;
+
+	return isVersionedTx;
+};
+
+export function assert(condition: boolean, message = '') {
+	expect(condition, message).toBe(true);
+}
+
+export async function mockUSDCMintBankrun(
+	context: BankrunContextWrapper,
+): Promise<PublicKey> {
+	const payer = context.provider.wallet.payer;
+	const mint = await createMint(context.context.banksClient, payer, payer.publicKey, null, 6);
+	return mint;
+}
+
+export async function bootstrapSignerClientAndUserBankrun(params: {
+	bankrunContext: BankrunContextWrapper;
+	signer: Keypair;
+	usdcMint: PublicKey;
+	usdcAmount: BN;
+	programId: PublicKey;
+	// depositCollateral?: boolean;
+	vaultClientCliMode?: boolean;
+	skipUser?: boolean;
+	driftClientConfig?: Omit<DriftClientConfig, 'connection' | 'wallet'>;
+	userMapConfig?: UserMapConfig;
+	metaplex?: Metaplex;
+}): Promise<{
+	signer: Keypair;
+	wallet: Wallet;
+	user: User;
+	userUSDCAccount: Keypair;
+	// userWSOLAccount: PublicKey;
+	driftClient: DriftClient;
+	vaultClient: VaultClient;
+}> {
+
+	const {
+		signer,
+		usdcMint,
+		usdcAmount,
+		// depositCollateral,
+		vaultClientCliMode,
+		driftClientConfig,
+		bankrunContext
+	} = params;
+
+	await bankrunContext.fundKeypair(signer, LAMPORTS_PER_SOL);
+
+	const wallet = new Wallet(signer);
+
+	const driftClient = new TestClient({
+		connection: bankrunContext.connection.toConnection(),
+		wallet: new Wallet(signer),
+		txVersion: 'legacy',
+		activeSubAccountId: driftClientConfig?.activeSubAccountId,
+		subAccountIds: driftClientConfig?.subAccountIds,
+		accountSubscription: driftClientConfig?.accountSubscription,
+		perpMarketIndexes: driftClientConfig?.perpMarketIndexes,
+		spotMarketIndexes: driftClientConfig?.spotMarketIndexes,
+		oracleInfos: driftClientConfig?.oracleInfos,
+		authority: driftClientConfig?.authority,
+	});
+
+	const provider = new BankrunProvider(bankrunContext.context, wallet as anchor.Wallet);
+	const program = new Program(IDL, params.programId, provider);
+	const vaultClient = new VaultClient({
+		driftClient,
+		// @ts-ignore
+		program,
+		cliMode: vaultClientCliMode ?? true,
+		metaplex: params.metaplex,
+		userMapConfig: params.userMapConfig,
+	});
+
+	const userUSDCAccount = await mockUserUSDCAccountBankrun(
+		bankrunContext,
+		usdcMint,
+		usdcAmount,
+		signer
+	);
+
+	await driftClient.subscribe();
+	if (!driftClientConfig?.authority) {
+		await driftClient.initializeUserAccount(driftClientConfig?.activeSubAccountId ?? 0);
+	}
+
+	return {
+		signer,
+		wallet,
+		user: driftClient.getUser(),
+		userUSDCAccount,
+		// userWSOLAccount,
+		driftClient,
+		vaultClient,
+	};
 }

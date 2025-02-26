@@ -1,6 +1,7 @@
 use std::cell::RefMut;
 
 use anchor_lang::prelude::*;
+use borsh::{BorshDeserialize, BorshSerialize};
 use drift::math::casting::Cast;
 use drift::math::constants::{ONE_YEAR, PERCENTAGE_PRECISION, PERCENTAGE_PRECISION_I128};
 use drift::math::insurance::calculate_rebase_info;
@@ -13,11 +14,11 @@ use drift::math::safe_math::SafeMath;
 use drift::state::oracle_map::OracleMap;
 use drift::state::perp_market_map::PerpMarketMap;
 use drift::state::spot_market_map::SpotMarketMap;
-use drift::state::user::User;
+use drift::state::user::{FuelOverflow, User, UserStats};
 use drift_macros::assert_no_slop;
 use static_assertions::const_assert_eq;
 
-use crate::constants::TIME_FOR_LIQUIDATION;
+use crate::constants::{FUEL_SHARE_PRECISION, TIME_FOR_LIQUIDATION};
 use crate::error::{ErrorCode, VaultResult};
 use crate::events::{VaultDepositorAction, VaultDepositorV1Record};
 use crate::state::events::VaultDepositorRecord;
@@ -101,13 +102,86 @@ pub struct Vault {
     pub permissioned: bool,
     /// The optional [`VaultProtocol`] account.
     pub vault_protocol: bool,
-    pub padding1: [u8; 7],
-    pub padding: [u64; 7],
+    /// How fuel distribution should be treated [`FuelDistributionMode`]. Default is `UsersOnly`
+    pub fuel_distribution_mode: u8,
+    pub padding1: [u8; 2],
+    /// The timestamp cumulative_fuel_per_share was last updated
+    pub last_cumulative_fuel_per_share_ts: u32,
+    /// The cumulative fuel per share (scaled up by 1e6 to avoid losing precision)
+    pub cumulative_fuel_per_share: u128,
+    /// The total fuel accumulated
+    pub cumulative_fuel: u128,
+    pub padding: [u64; 3],
 }
 
 impl Vault {
     pub fn get_vault_signer_seeds<'a>(name: &'a [u8], bump: &'a u8) -> [&'a [u8]; 3] {
         [b"vault".as_ref(), name, bytemuck::bytes_of(bump)]
+    }
+
+    pub fn reset_cumulative_fuel_per_share(&mut self, now: i64) {
+        msg!(
+            "Resetting vault fuel. now: {:?}, cumulative_fuel_per_share: {:?}, cumulative_fuel: {:?}",
+            now,
+            self.cumulative_fuel_per_share,
+            self.cumulative_fuel
+        );
+        self.cumulative_fuel_per_share = 0;
+        self.cumulative_fuel = 0;
+        self.last_cumulative_fuel_per_share_ts = now as u32;
+    }
+
+    pub fn update_cumulative_fuel_per_share(
+        &mut self,
+        now: i64,
+        user_stats: &UserStats,
+        fuel_overflow: &Option<AccountLoader<FuelOverflow>>,
+    ) -> Result<u128> {
+        let overflow_total_fuel = if let Some(overflow) = fuel_overflow {
+            overflow.load()?.total_fuel()?
+        } else {
+            0
+        };
+        let total_fuel = user_stats.total_fuel()?.safe_add(overflow_total_fuel)?;
+
+        if (now as u32) > self.last_cumulative_fuel_per_share_ts {
+            if self.cumulative_fuel > total_fuel {
+                // this shouldn't happen under SOP, if it does happen then the UserStats fuel was reset
+                // before this vault. Reset the vault and continue as if it is a new fuel season.
+                msg!("self.cumulative_fuel_per_share > total_fuel. Resetting the vault.");
+                self.reset_cumulative_fuel_per_share(now);
+            } else {
+                // calculate the user's pro-rata share of pending fuel
+                let share_denominator =
+                    match FuelDistributionMode::try_from(self.fuel_distribution_mode)? {
+                        FuelDistributionMode::UsersOnly => {
+                            if self.user_shares == 0 {
+                                // if no users, then all shares are manager shares
+                                self.total_shares
+                            } else {
+                                self.user_shares
+                            }
+                        }
+                        FuelDistributionMode::UsersAndManager => self.total_shares,
+                    };
+
+                if share_denominator > 0 {
+                    let fuel_delta = total_fuel.safe_sub(self.cumulative_fuel)?;
+                    let fuel_delta_per_share = fuel_delta
+                        .safe_mul(FUEL_SHARE_PRECISION)?
+                        .safe_div(share_denominator)?;
+
+                    self.cumulative_fuel_per_share = self
+                        .cumulative_fuel_per_share
+                        .safe_add(fuel_delta_per_share)?;
+                }
+            }
+        }
+
+        self.cumulative_fuel = total_fuel;
+        self.last_cumulative_fuel_per_share_ts = now as u32;
+
+        Ok(self.cumulative_fuel_per_share)
     }
 }
 
@@ -1152,6 +1226,44 @@ impl Vault {
         };
         Ok(())
     }
+
+    pub fn update_fuel_distribution_mode(&mut self, mode: u8) {
+        msg!(
+            "Updating fuel distribution mode {} -> {}",
+            self.fuel_distribution_mode,
+            mode
+        );
+        self.fuel_distribution_mode = mode;
+    }
+}
+
+#[derive(Clone, Copy, BorshSerialize, BorshDeserialize, PartialEq, Debug, Eq)]
+#[repr(u8)]
+pub enum FuelDistributionMode {
+    UsersOnly = 0b00000000,
+    UsersAndManager = 0b00000001,
+}
+
+impl TryFrom<u8> for FuelDistributionMode {
+    type Error = ErrorCode;
+
+    fn try_from(value: u8) -> std::result::Result<Self, ErrorCode> {
+        match value {
+            0 => Ok(FuelDistributionMode::UsersOnly),
+            1 => Ok(FuelDistributionMode::UsersAndManager),
+            _ => Err(ErrorCode::InvalidFuelDistributionMode),
+        }
+    }
+}
+
+impl FuelDistributionMode {
+    pub fn is_users_only(mode: u8) -> bool {
+        mode & FuelDistributionMode::UsersOnly as u8 != 0
+    }
+
+    pub fn is_users_and_manager(mode: u8) -> bool {
+        mode & FuelDistributionMode::UsersAndManager as u8 != 0
+    }
 }
 
 struct VaultDepositorRecordParams {
@@ -1180,4 +1292,90 @@ struct VaultDepositorRecordProtocolParams {
 
     pub protocol_shares_before: u128,
     pub protocol_shares_after: u128,
+}
+
+#[cfg(test)]
+mod vault_fuel_tests {
+    use super::*;
+
+    #[test]
+    fn test_update_cumulative_fuel_per_share() {
+        let mut vault = Vault {
+            user_shares: 1_000_000,
+            ..Vault::default()
+        };
+        let mut user_stats = UserStats {
+            fuel_deposits: 100_000,
+            ..UserStats::default()
+        };
+
+        vault
+            .update_cumulative_fuel_per_share(1, &user_stats, &None)
+            .unwrap();
+        assert_eq!(
+            vault.cumulative_fuel_per_share, // 100e3/1e6 = 0.1
+            FUEL_SHARE_PRECISION / 10
+        );
+        assert_eq!(vault.cumulative_fuel, 100_000);
+        assert_eq!(vault.last_cumulative_fuel_per_share_ts, 1);
+
+        // add 100k fuel
+        user_stats.fuel_deposits += 100_000;
+        vault
+            .update_cumulative_fuel_per_share(2, &user_stats, &None)
+            .unwrap();
+        assert_eq!(
+            vault.cumulative_fuel_per_share, // 100e3/1e6 + 100e3/2e6 = 0.2
+            FUEL_SHARE_PRECISION / 5
+        );
+        assert_eq!(vault.cumulative_fuel, 200_000);
+        assert_eq!(vault.last_cumulative_fuel_per_share_ts, 2);
+
+        // another user comes in, owns 50% of vault
+        vault.user_shares = 2_000_000;
+        // add 100k fuel
+        user_stats.fuel_deposits += 100_000;
+        vault
+            .update_cumulative_fuel_per_share(3, &user_stats, &None)
+            .unwrap();
+        assert_eq!(vault.cumulative_fuel_per_share, FUEL_SHARE_PRECISION / 4); // 200e3/1e6 + 100e3/2e6 = 0.25
+        assert_eq!(vault.cumulative_fuel, 300_000);
+        assert_eq!(vault.last_cumulative_fuel_per_share_ts, 3);
+    }
+
+    #[test]
+    fn test_fuel_updates_with_larger_user_shares() {
+        let test_cases: [u128; 8] = [
+            10u128.pow(12),
+            10u128.pow(15),
+            10u128.pow(18),
+            10u128.pow(21),
+            10u128.pow(24),
+            10u128.pow(27),
+            10u128.pow(30),
+            10u128.pow(38),
+        ];
+        for user_shares in test_cases {
+            let mut vault = Vault {
+                user_shares,
+                ..Vault::default()
+            };
+            let user_stats = UserStats {
+                fuel_deposits: u32::MAX,
+                ..UserStats::default()
+            };
+
+            vault
+                .update_cumulative_fuel_per_share(1, &user_stats, &None)
+                .unwrap();
+            assert_eq!(
+                vault.cumulative_fuel_per_share, // u32::MAX / vault_shares
+                (u32::MAX as u128) * FUEL_SHARE_PRECISION / vault.user_shares as u128,
+                "vault.update_cumulative_fuel_per_share failed with user_shares: {}",
+                user_shares
+            );
+            assert_eq!(vault.cumulative_fuel, u32::MAX as u128);
+            assert_eq!(vault.last_cumulative_fuel_per_share_ts, 1);
+        }
+    }
 }
