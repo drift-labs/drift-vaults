@@ -22,7 +22,7 @@ export class PollingVaultDepositorSubscriber
 
 		this.callbackId = await this.accountLoader.addAccount(
 			this.pubkey,
-			(buffer, slot) => {
+			(buffer: any, slot: number) => {
 				if (!buffer) return;
 
 				if (this.account && this.account.slot > slot) {
@@ -40,7 +40,7 @@ export class PollingVaultDepositorSubscriber
 			}
 		);
 
-		this.errorCallbackId = this.accountLoader.addErrorCallbacks((error) => {
+		this.errorCallbackId = this.accountLoader.addErrorCallbacks((error: any) => {
 			this._eventEmitter.emit('error', error);
 		});
 	}
