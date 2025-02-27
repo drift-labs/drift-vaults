@@ -40,9 +40,11 @@ export class PollingVaultDepositorSubscriber
 			}
 		);
 
-		this.errorCallbackId = this.accountLoader.addErrorCallbacks((error: any) => {
-			this._eventEmitter.emit('error', error);
-		});
+		this.errorCallbackId = this.accountLoader.addErrorCallbacks(
+			(error: any) => {
+				this._eventEmitter.emit('error', error);
+			}
+		);
 	}
 
 	async fetch(): Promise<void> {
