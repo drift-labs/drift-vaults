@@ -16,7 +16,8 @@ export const managerUpdateVaultDelegate = async (program: Command, cmdOpts: Opti
     }
 
     const {
-        driftVault
+        driftVault,
+        driftClient
     } = await getCommandContext(program, true);
 
     let delegate = cmdOpts.delegate;
@@ -31,5 +32,5 @@ export const managerUpdateVaultDelegate = async (program: Command, cmdOpts: Opti
     }
 
     const tx = await driftVault.updateDelegate(vaultAddress, delegate);
-    console.log(`Updated vault delegate to ${delegate.toBase58()}: https://solscan.io/tx/${tx}`);
+    console.log(`Updated vault delegate to ${delegate.toBase58()}: https://solscan.io/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
 };

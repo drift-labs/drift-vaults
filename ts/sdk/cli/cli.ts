@@ -30,7 +30,8 @@ const program = new Command();
 program
     .addOption(new Option("-u, --url <url>", "RPC URL to use for requests").env("RPC_URL").makeOptionMandatory(true))
     .addOption(new Option("-k, --keypair <filepath>", "Path to keypair file").env("KEYPAIR_PATH"))
-    .addOption(new Option("--commitment <commitment>", "State commitment to use").default("confirmed"));
+    .addOption(new Option("--commitment <commitment>", "State commitment to use").default("confirmed"))
+    .addOption(new Option("--env <env>", "Environment to use (devnet, mainnet-beta)").default("mainnet-beta").env("ENV"));
 program
     .command("init-vault")
     .description("Initialize a new vault")
@@ -126,20 +127,25 @@ program
     .action((opts) => initVaultDepositor(program, opts));
 program
     .command("deposit")
-    .description("Deposit into a vault via VaultDepositor")
-    .addOption(new Option("--vault-depositor-address <vaultDepositorAddress>", "VaultDepositor address").makeOptionMandatory(true))
+    .description("Deposit into a vault via VaultDepositor (creates a VaultDepositor if one does not exist)")
+    .addOption(new Option("--vault-depositor-address <vaultDepositorAddress>", "VaultDepositor address").makeOptionMandatory(false))
+    .addOption(new Option("--vault-address <address>", "Address of the vault to deposit into").makeOptionMandatory(false))
+    .addOption(new Option("--deposit-authority <vaultDepositorAuthority>", "VaultDepositor authority address").makeOptionMandatory(false))
     .addOption(new Option("--amount <amount>", "Amount to deposit (human format, 5 for 5 USDC)").makeOptionMandatory(true))
     .action((opts) => deposit(program, opts));
 program
     .command("request-withdraw")
     .description("Make a request to withdraw shares from the vaultm, redeem period starts now")
-    .addOption(new Option("--vault-depositor-address <vaultDepositorAddress>", "VaultDepositor address").makeOptionMandatory(true))
+    .addOption(new Option("--vault-depositor-address <vaultDepositorAddress>", "VaultDepositor address").makeOptionMandatory(false))
+    .addOption(new Option("--vault-address <address>", "Address of the vault to deposit into").makeOptionMandatory(false))
+    .addOption(new Option("--authority <vaultDepositorAuthority>", "VaultDepositor authority address").makeOptionMandatory(false))
     .addOption(new Option("--amount <amount>", "Amount of shares to withdraw (raw format, as expected in the program)").makeOptionMandatory(true))
     .action((opts) => requestWithdraw(program, opts));
 program
     .command("withdraw")
     .description("Initiate the withdraw, after the redeem period has passed")
     .addOption(new Option("--vault-depositor-address <vaultDepositorAddress>", "VaultDepositor address").makeOptionMandatory(false))
+    .addOption(new Option("--vault-address <address>", "Address of the vault to deposit into").makeOptionMandatory(false))
     .addOption(new Option("--authority <vaultDepositorAuthority>", "VaultDepositor authority address").makeOptionMandatory(false))
     .action((opts) => withdraw(program, opts));
 program

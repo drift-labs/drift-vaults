@@ -131,12 +131,12 @@ export const initVault = async (program: Command, cmdOpts: OptionValues) => {
         permissioned,
         minDepositAmount: minDepositAmountBN,
     });
-    console.log(`Initialized vault, tx: https://solscan.io/tx/${initTx}`);
+    console.log(`Initialized vault, tx: https://solscan.io/tx/${initTx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
 
     const vaultAddress = getVaultAddressSync(VAULT_PROGRAM_ID, vaultNameBytes);
     console.log(`\nNew vault address: ${vaultAddress}\n`);
 
     console.log(`Updating the drift account delegate to: ${delegate}...`);
     const updateDelegateTx = await driftVault.updateDelegate(vaultAddress, delegate);
-    console.log(`update delegate tx: https://solscan.io/tx/${updateDelegateTx}`);
+    console.log(`update delegate tx: https://solscan.io/tx/${updateDelegateTx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
 };
