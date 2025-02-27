@@ -131,14 +131,17 @@ export async function getCommandContext(program: Command, needToSign: boolean): 
         console.log("opts.keypair:", opts.keypair.replace(/./g, '*'));
     }
 
+    let loadedKeypair = false;
     wallet = new Wallet(Keypair.generate());
 
     if (isLedgerUrl) {
         wallet = await getLedgerWallet(opts.keypair) as unknown as Wallet;
+        loadedKeypair = true;
     } else if (opts.keypair) {
         try {
             const keypair = loadKeypair(opts.keypair as string);
             wallet = new Wallet(keypair);
+            loadedKeypair = true;
         } catch (e) {
             console.error(`Need to provide a valid keypair: ${e}`);
             process.exit(1);
@@ -149,13 +152,19 @@ export async function getCommandContext(program: Command, needToSign: boolean): 
         }
     }
 
-    console.log(`Loaded wallet address: ${wallet.publicKey.toBase58()}`);
+
+    const driftEnv = opts.env as DriftEnv;
+    console.log("driftEnv:", driftEnv);
+
+    if (loadedKeypair) {
+        console.log(`Loaded wallet address: ${wallet.publicKey.toBase58()}`);
+    }
 
     const connection = new Connection(opts.url, {
         commitment: opts.commitment,
     });
 
-    const driftEnv = process.env.DRIFT_ENV ?? "mainnet-beta";
+
     const driftClient = new DriftClient({
         connection,
         wallet,
