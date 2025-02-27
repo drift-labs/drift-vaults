@@ -282,6 +282,33 @@ export class VaultClient {
 		)) as ProgramAccount<VaultDepositor>[];
 	}
 
+	public async getAllVaultDepositorsForAuthority(
+		authority: PublicKey
+	): Promise<ProgramAccount<VaultDepositor>[]> {
+		const filters = [
+			{
+				// discriminator = VaultDepositor
+				memcmp: {
+					offset: 0,
+					bytes: bs58.encode(
+						BorshAccountsCoder.accountDiscriminator('VaultDepositor')
+					),
+				},
+			},
+		];
+		filters.push({
+			// authority = authority
+			memcmp: {
+				offset: 8 + 32 + 32,
+				bytes: authority.toBase58(),
+			},
+		});
+		// @ts-ignore
+		return (await this.program.account.vaultDepositor.all(
+			filters
+		)) as ProgramAccount<VaultDepositor>[];
+	}
+
 	public async getSubscribedVaultUser(vaultDriftUserAccountPubKey: PublicKey) {
 		return this.vaultUsers.mustGet(vaultDriftUserAccountPubKey.toBase58(), {
 			type: 'websocket',
