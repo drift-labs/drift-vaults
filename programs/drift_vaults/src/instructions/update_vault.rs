@@ -1,6 +1,7 @@
 use crate::constraints::is_manager_for_vault;
 use crate::{error::ErrorCode, validate, Vault};
 use anchor_lang::prelude::*;
+use drift::math::constants::PERCENTAGE_PRECISION_I64;
 
 pub fn update_vault<'info>(
     ctx: Context<'_, '_, '_, 'info, UpdateVault<'info>>,
@@ -29,18 +30,18 @@ pub fn update_vault<'info>(
 
     if let Some(management_fee) = params.management_fee {
         validate!(
-            management_fee < vault.management_fee,
+            management_fee < 30 * PERCENTAGE_PRECISION_I64 / PERCENTAGE_PRECISION_I64,
             ErrorCode::InvalidVaultUpdate,
-            "new management fee must be less than existing management fee"
+            "new management fee must be less than 30%"
         )?;
         vault.management_fee = management_fee;
     }
 
     if let Some(profit_share) = params.profit_share {
         validate!(
-            profit_share < vault.profit_share,
+            profit_share < PERCENTAGE_PRECISION_I64 as u32,
             ErrorCode::InvalidVaultUpdate,
-            "new profit share must be less than existing profit share"
+            "new profit share must be less than 100%"
         )?;
         vault.profit_share = profit_share;
     }
