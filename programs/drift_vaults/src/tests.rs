@@ -2139,8 +2139,10 @@ mod vault_v1_fcn {
         assert_eq!(vault.manager_total_profit_share, 0);
 
         // vault up 11%, profit share now
+        let vault_equity_profit_share = vault_equity * 111 / 100;
+        assert_eq!(vault_equity_profit_share, 111000000);
         vd.apply_profit_share(
-            vault_equity * 111 / 100,
+            vault_equity_profit_share,
             &mut vault,
             &mut Some(vp.borrow_mut()),
             now,
@@ -2153,6 +2155,52 @@ mod vault_v1_fcn {
         assert_eq!(vault.user_shares, vd.get_vault_shares()); //
         assert_eq!(vault.user_shares, 98513514); // 109.35 / 111 = 0.98513514
         assert_eq!(vault.total_shares, amount as u128);
+
+        let user_equity =
+            vault_equity_profit_share * (vault.user_shares as u64) / (vault.total_shares as u64);
+        assert_eq!(user_equity, 109350000);
+
+        // vault up 10% since last profit share, no profit share yet (below hurdle)
+        let vault_equity_final = vault_equity_profit_share * 110 / 100;
+        assert_eq!(vault_equity_final, 122_100_000);
+        vd.apply_profit_share(
+            vault_equity_final,
+            &mut vault,
+            &mut Some(vp.borrow_mut()),
+            now,
+            &UserStats::default(),
+            &None,
+        )
+        .unwrap();
+        assert_eq!(vd.cumulative_profit_share_amount, 9350000); // $11 * 0.85 = 9.35
+        assert_eq!(vault.manager_total_profit_share, 1650000); // $11 * 0.15 = 1.65
+        assert_eq!(vault.user_shares, vd.get_vault_shares()); //
+        assert_eq!(vault.user_shares, 98513514); // 109.35 / 111 = 0.98513514
+        assert_eq!(vault.total_shares, amount as u128);
+
+        // vault up 11% since last profit share, profit share now (above hurdle)
+        let vault_equity_final = vault_equity_profit_share * 111 / 100;
+        assert_eq!(vault_equity_final, 123_210_000);
+        let user_equity = vault_equity_final * 98513514 / vault.total_shares as u64;
+        assert_eq!(user_equity, 121_378_500); // 121,378,500.5994
+
+        vd.apply_profit_share(
+            vault_equity_final,
+            &mut vault,
+            &mut Some(vp.borrow_mut()),
+            now,
+            &UserStats::default(),
+            &None,
+        )
+        .unwrap();
+        assert_eq!(vd.cumulative_profit_share_amount, 19_574_225); // (121.378500 - 109.35) * 0.85 + 9.35 = 19.574225
+        assert_eq!(vault.manager_total_profit_share, 3_454_275); // (121.378500 - 109.35) * 0.15 + 1.65 = 3.454275
+        assert_eq!(vault.user_shares, vd.get_vault_shares()); //
+        assert_eq!(vault.user_shares, 97049124);
+        assert_eq!(vault.total_shares, amount as u128);
+
+        let user_equity = vault_equity_final * vault.user_shares as u64 / vault.total_shares as u64;
+        assert_eq!(user_equity, 119_574_225); // 109.35 + (121.3785 - 109.35) * 0.85 = 119.574225
     }
 }
 
