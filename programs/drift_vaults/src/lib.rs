@@ -48,6 +48,13 @@ pub mod drift_vaults {
         instructions::update_margin_trading_enabled(ctx, enabled)
     }
 
+    pub fn update_user_pool_id<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, UpdatePoolId<'info>>,
+        pool_id: u8,
+    ) -> Result<()> {
+        instructions::update_pool_id(ctx, pool_id)
+    }
+
     pub fn update_vault_protocol<'c: 'info, 'info>(
         ctx: Context<'_, '_, 'c, 'info, UpdateVaultProtocol<'info>>,
         params: UpdateVaultProtocolParams,

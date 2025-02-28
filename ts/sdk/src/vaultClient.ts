@@ -712,6 +712,79 @@ export class VaultClient {
 		);
 	}
 
+	/**
+	 * Updates the vault's pool id (for isolated pools).
+	 * @param vault vault address to update
+	 * @param poolId pool id to update to
+	 * @returns
+	 */
+	public async updateUserPoolId(
+		vault: PublicKey,
+		poolId: number,
+		uiTxParams?: TxParams
+	): Promise<TransactionSignature> {
+		const vaultAccount = await this.program.account.vault.fetch(vault);
+		const updatePoolIdIx = await this.getUpdatePoolIdIx(
+			vault,
+			poolId,
+			vaultAccount
+		);
+		return await this.createAndSendTxn([updatePoolIdIx], uiTxParams);
+	}
+
+	/**
+	 * Gets the instruction to update the pool id for a vault.
+	 * @param vault vault address to update
+	 * @param vaultAccount vault account data (optional, will be fetched if not provided)
+	 * @param poolId pool id to update to
+	 * @returns instruction to update pool id
+	 */
+	public async getUpdatePoolIdIx(
+		vault: PublicKey,
+		poolId: number,
+		vaultAccount?: any
+	): Promise<TransactionInstruction> {
+		if (!vaultAccount) {
+			vaultAccount = await this.program.account.vault.fetch(vault);
+		}
+
+		const accounts = {
+			vault: vault,
+			driftUser: vaultAccount.user,
+			driftProgram: this.driftClient.program.programId,
+		};
+
+		const user = await this.getSubscribedVaultUser(vaultAccount.user);
+
+		const remainingAccounts: AccountMeta[] = [];
+		try {
+			const userStatsKey = getUserStatsAccountPublicKey(
+				this.driftClient.program.programId,
+				vault
+			);
+			const userStats = (await this.driftClient.program.account.userStats.fetch(
+				userStatsKey
+			)) as UserStatsAccount;
+			remainingAccounts.push(
+				...this.getRemainingAccountsForUser(
+					[user.getUserAccount()],
+					[],
+					vaultAccount,
+					userStats
+				)
+			);
+		} catch (err) {
+			console.error('failed to get remaining accounts', err);
+			// do nothing
+		}
+
+		return await this.program.methods
+			.updateUserPoolId(poolId)
+			.accounts({ ...accounts, manager: this.driftClient.wallet.publicKey })
+			.remainingAccounts(remainingAccounts)
+			.instruction();
+	}
+
 	private async handleWSolMovement(
 		amount: BN,
 		driftSpotMarket: SpotMarketAccount,
