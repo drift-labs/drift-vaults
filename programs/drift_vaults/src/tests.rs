@@ -1094,7 +1094,7 @@ mod vault_v1_fcn {
     use drift::math::insurance::if_shares_to_vault_amount as depositor_shares_to_vault_amount;
     use drift::state::user::UserStats;
 
-    use crate::state::{Vault, VaultProtocol};
+    use crate::state::{Vault, VaultDepositorBase, VaultProtocol};
     use crate::{VaultDepositor, WithdrawUnit};
 
     const USER_SHARES_AFTER_1500_BPS_FEE: u64 = 99_850_025;
@@ -2066,6 +2066,93 @@ mod vault_v1_fcn {
             vd_amount + protocol_amount_after + manager_amount,
             vault_equity - 1
         );
+    }
+
+    #[test]
+    fn test_profit_share_with_hurdle_rate() {
+        let mut now = 123456789;
+        let mut vault = Vault::default();
+        let vp = RefCell::new(VaultProtocol::default());
+        vault.management_fee = 0;
+        vault.profit_share = 150_000; // 15%
+        vault.hurdle_rate = 100_000; // 10%
+        vault.last_fee_update_ts = now;
+        let mut vault_equity: u64 = 0;
+        let amount: u64 = 100 * QUOTE_PRECISION_U64;
+
+        let vd =
+            &mut VaultDepositor::new(Pubkey::default(), Pubkey::default(), Pubkey::default(), now);
+        vd.deposit(
+            amount,
+            vault_equity,
+            &mut vault,
+            &mut Some(vp.borrow_mut()),
+            now,
+            &UserStats::default(),
+            &None,
+        )
+        .unwrap(); // new user deposits $2000
+        now += 60 * 60;
+        assert_eq!(vault.user_shares, amount as u128);
+        assert_eq!(vault.total_shares, amount as u128);
+        vault_equity += amount;
+
+        now += 60 * 60 * 24; // 1 day later
+
+        // no profit share yet
+        vd.apply_profit_share(
+            vault_equity,
+            &mut vault,
+            &mut Some(vp.borrow_mut()),
+            now,
+            &UserStats::default(),
+            &None,
+        )
+        .unwrap();
+        assert_eq!(vd.cumulative_profit_share_amount, 0);
+        assert_eq!(vault.manager_total_profit_share, 0);
+
+        // vault up 5%, no profit share yet, less than hurdle
+        vd.apply_profit_share(
+            vault_equity * 105 / 100,
+            &mut vault,
+            &mut Some(vp.borrow_mut()),
+            now,
+            &UserStats::default(),
+            &None,
+        )
+        .unwrap();
+        assert_eq!(vd.cumulative_profit_share_amount, 0);
+        assert_eq!(vault.manager_total_profit_share, 0);
+
+        // vault up 10%, no profit share yet, less than hurdle
+        vd.apply_profit_share(
+            vault_equity * 110 / 100,
+            &mut vault,
+            &mut Some(vp.borrow_mut()),
+            now,
+            &UserStats::default(),
+            &None,
+        )
+        .unwrap();
+        assert_eq!(vd.cumulative_profit_share_amount, 0);
+        assert_eq!(vault.manager_total_profit_share, 0);
+
+        // vault up 11%, profit share now
+        vd.apply_profit_share(
+            vault_equity * 111 / 100,
+            &mut vault,
+            &mut Some(vp.borrow_mut()),
+            now,
+            &UserStats::default(),
+            &None,
+        )
+        .unwrap();
+        assert_eq!(vd.cumulative_profit_share_amount, 9350000); // $11 * 0.85 = 9.35
+        assert_eq!(vault.manager_total_profit_share, 1650000); // $11 * 0.15 = 1.65
+        assert_eq!(vault.user_shares, vd.get_vault_shares()); //
+        assert_eq!(vault.user_shares, 98513514); // 109.35 / 111 = 0.98513514
+        assert_eq!(vault.total_shares, amount as u128);
     }
 }
 
