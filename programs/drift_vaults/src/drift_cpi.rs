@@ -26,6 +26,10 @@ pub trait UpdateUserMarginTradingEnabledCPI {
     fn drift_update_user_margin_trading_enabled(&self, enabled: bool) -> Result<()>;
 }
 
+pub trait UpdatePoolIdCPI {
+    fn drift_update_pool_id(&self, pool_id: u8) -> Result<()>;
+}
+
 pub trait InitializeInsuranceFundStakeCPI {
     fn drift_initialize_insurance_fund_stake(&self, market_index: u16) -> Result<()>;
 }

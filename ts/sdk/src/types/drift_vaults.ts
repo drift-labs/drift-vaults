@@ -226,6 +226,37 @@ export type DriftVaults = {
 			];
 		},
 		{
+			name: 'updateUserPoolId';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'driftUser';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [
+				{
+					name: 'poolId';
+					type: 'u8';
+				}
+			];
+		},
+		{
 			name: 'updateVaultProtocol';
 			accounts: [
 				{
@@ -3147,6 +3178,37 @@ export const IDL: DriftVaults = {
 				{
 					name: 'enabled',
 					type: 'bool',
+				},
+			],
+		},
+		{
+			name: 'updateUserPoolId',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'driftUser',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [
+				{
+					name: 'poolId',
+					type: 'u8',
 				},
 			],
 		},
