@@ -448,6 +448,10 @@ impl Vault {
                         .safe_div(_rebase_divisor)?;
                 }
 
+                if self.last_manager_withdraw_request.shares != 0 {
+                    self.last_manager_withdraw_request.rebase(_rebase_divisor)?;
+                }
+
                 rebase_divisor = Some(_rebase_divisor);
 
                 msg!("rebasing vault: expo_diff={}", expo_diff);
