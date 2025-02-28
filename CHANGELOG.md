@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 * program: apply rebase to manager withdrawal if present ([#74](https://github.com/drift-labs/drift-vaults/pull/74))
 * program: update pool id ([#73](https://github.com/drift-labs/drift-vaults/pull/73))
+* auto distribute fuel to vault depositors ([#64](https://github.com/drift-labs/drift-vaults/pull/64))
+
 
 ### Features
 
