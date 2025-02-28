@@ -30,9 +30,9 @@ pub fn update_vault<'info>(
 
     if let Some(management_fee) = params.management_fee {
         validate!(
-            management_fee < PERCENTAGE_PRECISION_I64,
+            management_fee < 30 * PERCENTAGE_PRECISION_I64 / PERCENTAGE_PRECISION_I64,
             ErrorCode::InvalidVaultUpdate,
-            "new management fee must be less than 100%"
+            "new management fee must be less than 30%"
         )?;
         vault.management_fee = management_fee;
     }
