@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+* program: apply rebase to manager withdrawal if present ([#74](https://github.com/drift-labs/drift-vaults/pull/74))
+
 ### Features
 
 ### Fixes
