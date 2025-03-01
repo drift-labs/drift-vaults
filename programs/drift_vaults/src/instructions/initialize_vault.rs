@@ -49,11 +49,6 @@ pub fn initialize_vault<'info>(
     )?;
     vault.profit_share = params.profit_share;
 
-    validate!(
-        params.hurdle_rate == 0,
-        ErrorCode::InvalidVaultInitialization,
-        "hurdle rate not implemented"
-    )?;
     vault.hurdle_rate = params.hurdle_rate;
     vault.bump = bump;
     vault.permissioned = params.permissioned;
