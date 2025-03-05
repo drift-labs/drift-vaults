@@ -265,7 +265,6 @@ export type FuelSeasonRecord = {
 export type VaultsEventMap = {
 	VaultDepositorRecord: Event<VaultDepositorRecord>;
 	VaultDepositorV1Record: Event<VaultDepositorV1Record>;
-	FuelSeasonRecord: Event<FuelSeasonRecord>;
 };
 
 export type EventType = keyof VaultsEventMap;
