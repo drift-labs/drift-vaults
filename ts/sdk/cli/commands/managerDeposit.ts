@@ -30,5 +30,5 @@ export const managerDeposit = async (program: Command, cmdOpts: OptionValues) =>
     const depositBN = new BN(cmdOpts.amount * spotPrecision.toNumber());
 
     const tx = await driftVault.managerDeposit(vaultAddress, depositBN);
-    console.log(`Deposited ${cmdOpts.amount} to vault as manager: ${tx}`);
+    console.log(`Deposited ${cmdOpts.amount} to vault as manager: https://solscan.io/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
 };
