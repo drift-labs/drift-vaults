@@ -97,6 +97,7 @@ pub fn redeem_tokens<'info>(
     let vault_name = vault.name;
     let vault_bump = vault.bump;
 
+    drop(spot_market);
     drop(vault);
     drop(vault_depositor);
     drop(tokenized_vault_depositor);

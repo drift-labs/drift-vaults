@@ -66,6 +66,7 @@ pub fn deposit<'c: 'info, 'info>(
         oracle.price,
     )?;
 
+    drop(spot_market);
     drop(vault);
     drop(user);
     drop(user_stats);

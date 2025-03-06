@@ -62,6 +62,7 @@ pub fn force_withdraw<'c: 'info, 'info>(
 
     msg!("force_withdraw_amount: {}", withdraw_amount);
 
+    drop(spot_market);
     drop(vault);
     drop(user);
     drop(user_stats);

@@ -47,6 +47,7 @@ pub fn manager_deposit<'c: 'info, 'info>(
         oracle.price,
     )?;
 
+    drop(spot_market);
     drop(vault);
     drop(user);
     drop(vp);

@@ -1,5 +1,5 @@
 export type DriftVaults = {
-	version: '0.4.0';
+	version: '0.5.0';
 	name: 'drift_vaults';
 	instructions: [
 		{
@@ -2604,6 +2604,11 @@ export type DriftVaults = {
 					name: 'managementFeeShares';
 					type: 'i64';
 					index: false;
+				},
+				{
+					name: 'depositOraclePrice';
+					type: 'i64';
+					index: false;
 				}
 			];
 		},
@@ -2714,6 +2719,11 @@ export type DriftVaults = {
 				},
 				{
 					name: 'managementFeeShares';
+					type: 'i64';
+					index: false;
+				},
+				{
+					name: 'depositOraclePrice';
 					type: 'i64';
 					index: false;
 				}
@@ -2955,7 +2965,7 @@ export type DriftVaults = {
 };
 
 export const IDL: DriftVaults = {
-	version: '0.4.0',
+	version: '0.5.0',
 	name: 'drift_vaults',
 	instructions: [
 		{
@@ -5561,6 +5571,11 @@ export const IDL: DriftVaults = {
 					type: 'i64',
 					index: false,
 				},
+				{
+					name: 'depositOraclePrice',
+					type: 'i64',
+					index: false,
+				},
 			],
 		},
 		{
@@ -5670,6 +5685,11 @@ export const IDL: DriftVaults = {
 				},
 				{
 					name: 'managementFeeShares',
+					type: 'i64',
+					index: false,
+				},
+				{
+					name: 'depositOraclePrice',
 					type: 'i64',
 					index: false,
 				},

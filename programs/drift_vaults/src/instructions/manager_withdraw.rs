@@ -52,6 +52,7 @@ pub fn manager_withdraw<'c: 'info, 'info>(
     let manager_withdraw_amount =
         vault.manager_withdraw(&mut vp, vault_equity, now, oracle.price)?;
 
+    drop(spot_market);
     drop(vault);
     drop(user);
     drop(user_stats);

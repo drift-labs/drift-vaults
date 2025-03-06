@@ -64,6 +64,7 @@ pub fn withdraw<'c: 'info, 'info>(ctx: Context<'_, '_, 'c, 'info, Withdraw<'info
 
     msg!("user_withdraw_amount: {}", user_withdraw_amount);
 
+    drop(spot_market);
     drop(vault);
     drop(user);
     drop(user_stats);

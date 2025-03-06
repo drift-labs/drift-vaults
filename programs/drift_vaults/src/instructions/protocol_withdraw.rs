@@ -41,6 +41,7 @@ pub fn protocol_withdraw<'c: 'info, 'info>(
     let protocol_withdraw_amount =
         vault.protocol_withdraw(&mut vp, vault_equity, now, oracle.price)?;
 
+    drop(spot_market);
     drop(vault);
     drop(user);
     drop(vp);
