@@ -16,11 +16,12 @@ export const managerUpdateMarginTradingEnabled= async (program: Command, cmdOpts
     }
 
     const {
-        driftVault
+        driftVault,
+        driftClient
     } = await getCommandContext(program, true);
 
     const enabled = cmdOpts.enabled ? (cmdOpts.enabled as string).toLowerCase() === "true" : false;
 
     const tx = await driftVault.updateMarginTradingEnabled(vaultAddress, enabled);
-    console.log(`Updated margin trading vault manager: https://solscan.io/tx/${tx}`);
+    console.log(`Updated margin trading vault manager: https://solscan.io/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
 };
