@@ -47,6 +47,9 @@ pub fn force_withdraw<'c: 'info, 'info>(
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
+    let spot_market = spot_market_map.get_ref(&spot_market_index)?;
+    let oracle = oracle_map.get_price_data(&spot_market.oracle_id())?;
+
     let (withdraw_amount, _) = vault_depositor.withdraw(
         vault_equity,
         &mut vault,
@@ -54,6 +57,7 @@ pub fn force_withdraw<'c: 'info, 'info>(
         clock.unix_timestamp,
         &user_stats,
         &fuel_overflow,
+        oracle.price,
     )?;
 
     msg!("force_withdraw_amount: {}", withdraw_amount);

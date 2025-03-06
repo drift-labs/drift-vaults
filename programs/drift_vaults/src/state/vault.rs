@@ -505,6 +505,7 @@ impl Vault {
         amount: u64,
         vault_equity: u64,
         now: i64,
+        deposit_oracle_price: i64,
     ) -> Result<()> {
         self.apply_rebase(vault_protocol, vault_equity)?;
         let VaultFee {
@@ -545,6 +546,7 @@ impl Vault {
                 manager_profit_share: 0,
                 management_fee: management_fee_payment,
                 management_fee_shares,
+                deposit_oracle_price,
             },
             vault_protocol
                 .as_mut()
@@ -554,6 +556,7 @@ impl Vault {
                     protocol_fee_shares,
                     protocol_shares_before,
                     protocol_shares_after,
+                    deposit_oracle_price,
                 }),
         )?;
 
@@ -583,6 +586,7 @@ impl Vault {
         withdraw_unit: WithdrawUnit,
         vault_equity: u64,
         now: i64,
+        deposit_oracle_price: i64,
     ) -> Result<()> {
         let rebase_divisor = self.apply_rebase(vault_protocol, vault_equity)?;
         let VaultFee {
@@ -645,6 +649,7 @@ impl Vault {
                 manager_profit_share: 0,
                 management_fee: management_fee_payment,
                 management_fee_shares,
+                deposit_oracle_price,
             },
             Some(VaultDepositorRecordProtocolParams {
                 protocol_profit_share: 0,
@@ -652,6 +657,7 @@ impl Vault {
                 protocol_fee_shares,
                 protocol_shares_before,
                 protocol_shares_after,
+                deposit_oracle_price,
             }),
         )?;
 
@@ -663,6 +669,7 @@ impl Vault {
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
         vault_equity: u64,
         now: i64,
+        deposit_oracle_price: i64,
     ) -> Result<()> {
         self.apply_rebase(vault_protocol, vault_equity)?;
 
@@ -706,6 +713,7 @@ impl Vault {
                 manager_profit_share: 0,
                 management_fee: management_fee_payment,
                 management_fee_shares,
+                deposit_oracle_price,
             },
             Some(VaultDepositorRecordProtocolParams {
                 protocol_profit_share: 0,
@@ -713,6 +721,7 @@ impl Vault {
                 protocol_fee_shares,
                 protocol_shares_before,
                 protocol_shares_after,
+                deposit_oracle_price,
             }),
         )?;
 
@@ -729,6 +738,7 @@ impl Vault {
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
         vault_equity: u64,
         now: i64,
+        deposit_oracle_price: i64,
     ) -> Result<u64> {
         self.last_manager_withdraw_request
             .check_redeem_period_finished(self, now)?;
@@ -798,6 +808,7 @@ impl Vault {
                 manager_profit_share: 0,
                 management_fee: management_fee_payment,
                 management_fee_shares,
+                deposit_oracle_price,
             },
             Some(VaultDepositorRecordProtocolParams {
                 protocol_profit_share: 0,
@@ -805,6 +816,7 @@ impl Vault {
                 protocol_fee_shares,
                 protocol_shares_before,
                 protocol_shares_after,
+                deposit_oracle_price,
             }),
         )?;
 
@@ -847,6 +859,7 @@ impl Vault {
         withdraw_unit: WithdrawUnit,
         vault_equity: u64,
         now: i64,
+        deposit_oracle_price: i64,
     ) -> Result<()> {
         if vault_protocol.is_none() {
             validate!(
@@ -921,6 +934,7 @@ impl Vault {
                     manager_profit_share: 0,
                     management_fee: management_fee_payment,
                     management_fee_shares,
+                    deposit_oracle_price,
                 },
                 Some(VaultDepositorRecordProtocolParams {
                     protocol_profit_share: 0,
@@ -928,6 +942,7 @@ impl Vault {
                     protocol_fee_shares,
                     protocol_shares_before,
                     protocol_shares_after,
+                    deposit_oracle_price,
                 }),
             )?;
         }
@@ -940,6 +955,7 @@ impl Vault {
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
         vault_equity: u64,
         now: i64,
+        deposit_oracle_price: i64,
     ) -> Result<()> {
         if vault_protocol.is_none() {
             validate!(
@@ -1008,6 +1024,7 @@ impl Vault {
                     manager_profit_share: 0,
                     management_fee: management_fee_payment,
                     management_fee_shares,
+                    deposit_oracle_price,
                 },
                 Some(VaultDepositorRecordProtocolParams {
                     protocol_profit_share: 0,
@@ -1015,6 +1032,7 @@ impl Vault {
                     protocol_fee_shares,
                     protocol_shares_before,
                     protocol_shares_after,
+                    deposit_oracle_price,
                 }),
             )?;
         }
@@ -1027,6 +1045,7 @@ impl Vault {
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
         vault_equity: u64,
         now: i64,
+        deposit_oracle_price: i64,
     ) -> Result<u64> {
         if vault_protocol.is_none() {
             validate!(
@@ -1113,6 +1132,7 @@ impl Vault {
                     manager_profit_share: 0,
                     management_fee: management_fee_payment,
                     management_fee_shares,
+                    deposit_oracle_price,
                 },
                 Some(VaultDepositorRecordProtocolParams {
                     protocol_profit_share: 0,
@@ -1120,6 +1140,7 @@ impl Vault {
                     protocol_fee_shares,
                     protocol_shares_before,
                     protocol_shares_after,
+                    deposit_oracle_price,
                 }),
             )?;
 
@@ -1199,6 +1220,7 @@ impl Vault {
                     profit_share: params.manager_profit_share,
                     management_fee: params.management_fee,
                     management_fee_shares: params.management_fee_shares,
+                    deposit_oracle_price: params.deposit_oracle_price,
                 });
             }
             Some(protocol_params) => {
@@ -1225,6 +1247,7 @@ impl Vault {
                     protocol_fee_shares: protocol_params.protocol_fee_shares,
                     protocol_shares_before: protocol_params.protocol_shares_before,
                     protocol_shares_after: protocol_params.protocol_shares_after,
+                    deposit_oracle_price: protocol_params.deposit_oracle_price,
                 });
             }
         };
@@ -1287,6 +1310,8 @@ struct VaultDepositorRecordParams {
     pub manager_profit_share: u64,
     pub management_fee: i64,
     pub management_fee_shares: i64,
+
+    pub deposit_oracle_price: i64,
 }
 
 struct VaultDepositorRecordProtocolParams {
@@ -1296,6 +1321,8 @@ struct VaultDepositorRecordProtocolParams {
 
     pub protocol_shares_before: u128,
     pub protocol_shares_after: u128,
+
+    pub deposit_oracle_price: i64,
 }
 
 #[cfg(test)]

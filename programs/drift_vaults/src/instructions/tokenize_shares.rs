@@ -65,6 +65,9 @@ pub fn tokenize_shares<'info>(
 
     let total_supply_before = ctx.accounts.mint.supply;
 
+    let spot_market = spot_market_map.get_ref(&spot_market_index)?;
+    let oracle = oracle_map.get_price_data(&spot_market.oracle_id())?;
+
     let (shares_transferred, _) = vault_depositor.transfer_shares(
         &mut *tokenized_vault_depositor,
         &mut vault,
@@ -73,7 +76,9 @@ pub fn tokenize_shares<'info>(
         unit,
         vault_equity,
         clock.unix_timestamp,
+        oracle.price,
     )?;
+
     let tokens_to_mint = tokenized_vault_depositor.tokenize_shares(
         &mut vault,
         &mut vp,
@@ -81,6 +86,7 @@ pub fn tokenize_shares<'info>(
         vault_equity,
         shares_transferred,
         clock.unix_timestamp,
+        oracle.price,
     )?;
 
     let total_shares_after = vault_depositor
