@@ -47,9 +47,9 @@ pub fn update_vault<'info>(
 
     if let Some(hurdle_rate) = params.hurdle_rate {
         validate!(
-            hurdle_rate < vault.hurdle_rate,
+            hurdle_rate > vault.hurdle_rate,
             ErrorCode::InvalidVaultUpdate,
-            "new hurdle rate must be less than existing hurdle rate"
+            "new hurdle rate must be greater than existing hurdle rate"
         )?;
         vault.hurdle_rate = hurdle_rate;
     }
