@@ -151,6 +151,7 @@ impl TokenizedVaultDepositor {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn tokenize_shares(
         self: &mut TokenizedVaultDepositor,
         vault: &mut Vault,
@@ -159,6 +160,7 @@ impl TokenizedVaultDepositor {
         vault_equity: u64,
         shares_transferred: u128,
         now: i64,
+        deposit_oracle_price: i64,
     ) -> Result<u64> {
         let rebase_divisor = self.apply_rebase(vault, vault_protocol, vault_equity)?;
         if rebase_divisor.is_some() {
@@ -226,6 +228,7 @@ impl TokenizedVaultDepositor {
                         .cast()?,
                     management_fee: management_fee_payment,
                     management_fee_shares,
+                    deposit_oracle_price,
                 });
             }
             Some(_) => {
@@ -251,6 +254,7 @@ impl TokenizedVaultDepositor {
                     management_fee_shares,
                     protocol_shares_before,
                     protocol_shares_after: vault.get_protocol_shares(vault_protocol),
+                    deposit_oracle_price,
                 });
             }
         }
@@ -258,6 +262,7 @@ impl TokenizedVaultDepositor {
         Ok(tokens_to_mint.cast()?)
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn redeem_tokens<'a>(
         self: &mut TokenizedVaultDepositor,
         vault: &mut Vault,
@@ -266,6 +271,7 @@ impl TokenizedVaultDepositor {
         vault_equity: u64,
         tokens_to_burn: u64,
         now: i64,
+        deposit_oracle_price: i64,
     ) -> Result<(u64, Option<RefMut<'a, VaultProtocol>>)> {
         self.apply_rebase(vault, vault_protocol, vault_equity)?;
 
@@ -320,6 +326,7 @@ impl TokenizedVaultDepositor {
                         .cast()?,
                     management_fee: management_fee_payment,
                     management_fee_shares,
+                    deposit_oracle_price
                 });
             }
             Some(_) => {
@@ -345,6 +352,7 @@ impl TokenizedVaultDepositor {
                     management_fee_shares,
                     protocol_shares_before,
                     protocol_shares_after: vault.get_protocol_shares(vault_protocol),
+                    deposit_oracle_price
                 });
             }
         }
@@ -387,6 +395,7 @@ mod tests {
                 vault_equity,
                 shares_transferred,
                 now,
+                0,
             )
             .unwrap();
 
@@ -409,6 +418,7 @@ mod tests {
                 vault_equity,
                 shares_transferred,
                 now,
+                0,
             )
             .unwrap();
 
@@ -452,6 +462,7 @@ mod tests {
                 vault_equity,
                 tokens_to_burn as u64,
                 now,
+                0,
             )
             .expect("redeem_tokens");
         assert_eq!(shares_to_transfer.0, tokens_to_burn as u64);
@@ -485,6 +496,7 @@ mod tests {
                 vault_equity,
                 shares_transferred,
                 now,
+                0,
             )
             .unwrap();
 
@@ -509,6 +521,7 @@ mod tests {
             vault_equity,
             shares_transferred,
             now,
+            0,
         );
 
         assert!(
@@ -553,6 +566,7 @@ mod tests {
                 vault_equity,
                 shares_transferred,
                 now,
+                0,
             )
             .unwrap();
 

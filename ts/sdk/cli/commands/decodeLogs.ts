@@ -59,10 +59,16 @@ export const decodeLogs = async (program: Command, cmdOpts: OptionValues) => {
                 console.log(` profitShare:    ${data.profitShare.toNumber()}`);
                 console.log(` managementFee:  ${data.managementFee.toNumber()}`);
                 console.log(` managementFeeShares:  ${data.managementFeeShares.toNumber()}`);
+                // @ts-ignore
+                console.log(` depositOraclePrice:  ${data.depositOraclePrice?.toNumber()}`);
                 break;
             default:
                 console.log(event);
         }
+
+        console.log("----------Raw Event-------------");
+        console.log(event);
+        console.log("--------------------------------");
     }
 
 };

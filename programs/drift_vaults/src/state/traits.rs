@@ -238,6 +238,7 @@ pub trait VaultDepositorBase {
         withdraw_unit: WithdrawUnit,
         vault_equity: u64,
         now: i64,
+        deposit_oracle_price: i64,
     ) -> Result<(u128, Option<RefMut<'a, VaultProtocol>>)> {
         let from_rebase_divisor = self.apply_rebase(vault, vault_protocol, vault_equity)?;
         let to_rebase_divisor = to.apply_rebase(vault, vault_protocol, vault_equity)?;
@@ -334,6 +335,7 @@ pub trait VaultDepositorBase {
                         .cast()?,
                     management_fee: management_fee_payment,
                     management_fee_shares,
+                    deposit_oracle_price,
                 });
 
                 emit!(VaultDepositorRecord {
@@ -355,6 +357,7 @@ pub trait VaultDepositorBase {
                         .cast()?,
                     management_fee: management_fee_payment,
                     management_fee_shares,
+                    deposit_oracle_price,
                 });
             }
             Some(_) => {
@@ -380,6 +383,7 @@ pub trait VaultDepositorBase {
                     management_fee_shares,
                     protocol_shares_before,
                     protocol_shares_after: vault.get_protocol_shares(vault_protocol),
+                    deposit_oracle_price,
                 });
 
                 emit!(VaultDepositorV1Record {
@@ -404,6 +408,7 @@ pub trait VaultDepositorBase {
                     management_fee_shares,
                     protocol_shares_before,
                     protocol_shares_after: vault.get_protocol_shares(vault_protocol),
+                    deposit_oracle_price,
                 });
             }
         }

@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+* add `deposit_oracle_price` to `VaultDepositorRecord` and `VaultDepositorV1Record` ([#80](https://github.com/drift-labs/drift-vaults/pull/80))
+
 ### Features
 
 ### Fixes

@@ -52,6 +52,9 @@ pub fn deposit<'c: 'info, 'info>(
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
+    let spot_market = spot_market_map.get_ref(&spot_market_index)?;
+    let oracle = oracle_map.get_price_data(&spot_market.oracle_id())?;
+
     vault_depositor.deposit(
         amount,
         vault_equity,
@@ -60,8 +63,10 @@ pub fn deposit<'c: 'info, 'info>(
         clock.unix_timestamp,
         &user_stats,
         &fuel_overflow,
+        oracle.price,
     )?;
 
+    drop(spot_market);
     drop(vault);
     drop(user);
     drop(user_stats);

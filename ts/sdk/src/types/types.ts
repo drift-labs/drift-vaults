@@ -220,6 +220,8 @@ export type VaultDepositorRecord = {
 	profitShare: BN;
 	managementFee: BN;
 	managementFeeShares: BN;
+
+	depositOraclePrice: BN;
 };
 
 export type VaultDepositorV1Record = {
@@ -248,6 +250,8 @@ export type VaultDepositorV1Record = {
 	managerProfitShare: BN;
 	managementFee: BN;
 	managementFeeShares: BN;
+
+	depositOraclePrice: BN;
 };
 
 export type FuelSeasonRecord = {
