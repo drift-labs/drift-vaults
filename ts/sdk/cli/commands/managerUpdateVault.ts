@@ -123,7 +123,7 @@ export const managerUpdateVault = async (program: Command, cmdOpts: OptionValues
     while (!done) {
         try {
             const tx = await driftVault.managerUpdateVault(vaultAddress, newParams);
-            console.log(`Updated vault params as vault manager: https://solana.fm/tx/${tx}`);
+            console.log(`Updated vault params as vault manager: https://solana.fm/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
             done = true;
             break;
         } catch (e) {

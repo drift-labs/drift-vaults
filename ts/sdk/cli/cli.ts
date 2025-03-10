@@ -9,6 +9,7 @@ import {
     managerCancelWithdraw,
     managerWithdraw,
     managerUpdateVault,
+    managerUpdateVaultManager,
     managerUpdateVaultDelegate,
     applyProfitShare,
     initVaultDepositor,
@@ -91,6 +92,12 @@ program
     .option("-s, --profit-share <percent>", "The new profit share percentage (can only be lowered)")
     .option("-p, --permissioned <boolean>", "Set the vault as permissioned (true) or open (false)")
     .action((opts) => managerUpdateVault(program, opts));
+program
+    .command("manager-update-vault-manager")
+    .description("Update the manager of a vault")
+    .addOption(new Option("--vault-address <address>", "Address of the vault to update ").makeOptionMandatory(true))
+    .addOption(new Option("--new-manager <publickey>", "The new manager for the vault").makeOptionMandatory(true))
+    .action((opts) => managerUpdateVaultManager(program, opts));
 program
     .command("manager-update-delegate")
     .description("Update vault params for a manager")

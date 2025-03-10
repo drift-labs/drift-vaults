@@ -1070,6 +1070,27 @@ export class VaultClient {
 		return this.createAndSendTxn([ix], uiTxParams);
 	}
 
+	public async managerUpdateVaultManager(
+		vault: PublicKey,
+		manager: PublicKey,
+		uiTxParams?: TxParams
+	): Promise<TransactionSignature> {
+		const ix = await this.getManagerUpdateVaultManagerIx(vault, manager);
+		return this.createAndSendTxn([ix], uiTxParams);
+	}
+
+	public async getManagerUpdateVaultManagerIx(
+		vault: PublicKey,
+		manager: PublicKey
+	): Promise<TransactionInstruction> {
+		return this.program.instruction.updateVaultManager(manager, {
+			accounts: {
+				vault,
+				manager: this.driftClient.wallet.publicKey,
+			},
+		});
+	}
+
 	public async getApplyProfitShareIx(
 		vault: PublicKey,
 		vaultDepositor: PublicKey
