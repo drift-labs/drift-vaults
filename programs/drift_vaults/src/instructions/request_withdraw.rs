@@ -39,6 +39,9 @@ pub fn request_withdraw<'c: 'info, 'info>(
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
+    let spot_market = spot_market_map.get_ref(&vault.spot_market_index)?;
+    let oracle = oracle_map.get_price_data(&spot_market.oracle_id())?;
+
     vault_depositor.request_withdraw(
         withdraw_amount.cast()?,
         withdraw_unit,
@@ -48,6 +51,7 @@ pub fn request_withdraw<'c: 'info, 'info>(
         clock.unix_timestamp,
         &user_stats,
         &fuel_overflow,
+        oracle.price,
     )?;
 
     Ok(())

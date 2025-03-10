@@ -1,5 +1,5 @@
 {
-  "version": "0.4.0",
+  "version": "0.5.0",
   "name": "drift_vaults",
   "instructions": [
     {
@@ -2711,6 +2711,11 @@
           "name": "managementFeeShares",
           "type": "i64",
           "index": false
+        },
+        {
+          "name": "depositOraclePrice",
+          "type": "i64",
+          "index": false
         }
       ]
     },
@@ -2821,6 +2826,11 @@
         },
         {
           "name": "managementFeeShares",
+          "type": "i64",
+          "index": false
+        },
+        {
+          "name": "depositOraclePrice",
           "type": "i64",
           "index": false
         }

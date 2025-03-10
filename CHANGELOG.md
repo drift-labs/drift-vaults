@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 * program: implement hurdle rate ([#76](https://github.com/drift-labs/drift-vaults/pull/76))
 
+* add `deposit_oracle_price` to `VaultDepositorRecord` and `VaultDepositorV1Record` ([#80](https://github.com/drift-labs/drift-vaults/pull/80))
+
 ### Features
 
 ### Fixes

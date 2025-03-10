@@ -29,7 +29,15 @@ pub fn manager_cancel_withdraw_request<'c: 'info, 'info>(
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
-    vault.manager_cancel_withdraw_request(&mut vp, vault_equity.cast()?, clock.unix_timestamp)?;
+    let spot_market = spot_market_map.get_ref(&vault.spot_market_index)?;
+    let oracle = oracle_map.get_price_data(&spot_market.oracle_id())?;
+
+    vault.manager_cancel_withdraw_request(
+        &mut vp,
+        vault_equity.cast()?,
+        clock.unix_timestamp,
+        oracle.price,
+    )?;
 
     Ok(())
 }
