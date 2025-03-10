@@ -7,7 +7,6 @@ import {
 	VaultClient,
 	getVaultAddressSync,
 	encodeName,
-	DriftVaults,
 	VAULT_PROGRAM_ID,
 	IDL,
 } from '../ts/sdk/lib';
