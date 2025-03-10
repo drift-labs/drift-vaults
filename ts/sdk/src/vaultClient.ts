@@ -555,9 +555,27 @@ export class VaultClient {
 			hurdleRate: number;
 			permissioned: boolean;
 			vaultProtocol?: VaultProtocolParams;
+			manager?: PublicKey;
 		},
 		uiTxParams?: TxParams
 	): Promise<TransactionSignature> {
+		const ix = await this.getInitializeVaultIx(params);
+		return await this.createAndSendTxn([ix], uiTxParams);
+	}
+
+	public async getInitializeVaultIx(params: {
+		name: number[];
+		spotMarketIndex: number;
+		redeemPeriod: BN;
+		maxTokens: BN;
+		minDepositAmount: BN;
+		managementFee: BN;
+		profitShare: number;
+		hurdleRate: number;
+		permissioned: boolean;
+		vaultProtocol?: VaultProtocolParams;
+		manager?: PublicKey;
+	}): Promise<TransactionInstruction> {
 		const { vaultProtocol: vaultProtocolParams, ...vaultParams } = params;
 		const vault = getVaultAddressSync(this.program.programId, params.name);
 		const tokenAccount = getTokenVaultAddressSync(
@@ -610,12 +628,11 @@ export class VaultClient {
 				.accounts({
 					...accounts,
 					vaultProtocol,
-					payer: uiAuthority,
-					manager: uiAuthority,
+					payer: params.manager ?? uiAuthority,
+					manager: params.manager ?? uiAuthority,
 				})
 				.instruction();
-			const ixs = [initializeVaultWithProtocolIx];
-			return await this.createAndSendTxn(ixs, uiTxParams);
+			return initializeVaultWithProtocolIx;
 		} else {
 			const _params: VaultParams = vaultParams;
 
@@ -624,12 +641,11 @@ export class VaultClient {
 				.initializeVault(_params)
 				.accounts({
 					...accounts,
-					payer: uiAuthority,
-					manager: uiAuthority,
+					payer: params.manager ?? uiAuthority,
+					manager: params.manager ?? uiAuthority,
 				})
 				.instruction();
-			const ixs = [initializeVaultIx];
-			return await this.createAndSendTxn(ixs, uiTxParams);
+			return initializeVaultIx;
 		}
 	}
 
@@ -645,6 +661,14 @@ export class VaultClient {
 		delegate: PublicKey,
 		uiTxParams?: TxParams
 	): Promise<TransactionSignature> {
+		const updateDelegateIx = await this.getUpdateDelegateIx(vault, delegate);
+		return await this.createAndSendTxn([updateDelegateIx], uiTxParams);
+	}
+
+	public async getUpdateDelegateIx(
+		vault: PublicKey,
+		delegate: PublicKey
+	): Promise<TransactionInstruction> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
 		const accounts = {
 			vault: vault,
@@ -652,11 +676,10 @@ export class VaultClient {
 			driftProgram: this.driftClient.program.programId,
 		};
 
-		const updateDelegateIx = await this.program.methods
+		return await this.program.methods
 			.updateDelegate(delegate)
-			.accounts({ ...accounts, manager: this.driftClient.wallet.publicKey })
+			.accounts({ ...accounts, manager: vaultAccount.manager })
 			.instruction();
-		return await this.createAndSendTxn([updateDelegateIx], uiTxParams);
 	}
 
 	/**
@@ -670,6 +693,18 @@ export class VaultClient {
 		enabled: boolean,
 		uiTxParams?: TxParams
 	): Promise<TransactionSignature> {
+		const updateMarginTradingEnabledIx =
+			await this.getUpdateMarginTradingEnabledIx(vault, enabled);
+		return await this.createAndSendTxn(
+			[updateMarginTradingEnabledIx],
+			uiTxParams
+		);
+	}
+
+	public async getUpdateMarginTradingEnabledIx(
+		vault: PublicKey,
+		enabled: boolean
+	): Promise<TransactionInstruction> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
 		const accounts = {
 			vault: vault,
@@ -701,15 +736,11 @@ export class VaultClient {
 			// do nothing
 		}
 
-		const updateMarginTradingEnabledIx = await this.program.methods
+		return await this.program.methods
 			.updateMarginTradingEnabled(enabled)
-			.accounts({ ...accounts, manager: this.driftClient.wallet.publicKey })
+			.accounts({ ...accounts, manager: vaultAccount.manager })
 			.remainingAccounts(remainingAccounts)
 			.instruction();
-		return await this.createAndSendTxn(
-			[updateMarginTradingEnabledIx],
-			uiTxParams
-		);
 	}
 
 	/**
@@ -780,7 +811,7 @@ export class VaultClient {
 
 		return await this.program.methods
 			.updateUserPoolId(poolId)
-			.accounts({ ...accounts, manager: this.driftClient.wallet.publicKey })
+			.accounts({ ...accounts, manager: vaultAccount.manager })
 			.remainingAccounts(remainingAccounts)
 			.instruction();
 	}
@@ -826,6 +857,25 @@ export class VaultClient {
 		uiTxParams?: TxParams,
 		managerTokenAccount?: PublicKey
 	): Promise<TransactionSignature> {
+		const managerDepositIxs = await this.getManagerDepositIx(
+			vault,
+			amount,
+			managerTokenAccount
+		);
+		return await this.createAndSendTxn(managerDepositIxs, uiTxParams);
+	}
+
+	/**
+	 *
+	 * @param vault vault address to deposit to
+	 * @param amount amount to deposit
+	 * @returns
+	 */
+	public async getManagerDepositIx(
+		vault: PublicKey,
+		amount: BN,
+		managerTokenAccount?: PublicKey
+	): Promise<Array<TransactionInstruction>> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
 		const driftSpotMarket = this.driftClient.getSpotMarketAccount(
 			vaultAccount.spotMarketIndex
@@ -885,14 +935,11 @@ export class VaultClient {
 			.accounts({
 				...accounts,
 				userTokenAccount,
-				manager: this.driftClient.wallet.publicKey,
+				manager: vaultAccount.manager,
 			})
 			.remainingAccounts(remainingAccounts)
 			.instruction();
-		return await this.createAndSendTxn(
-			[...preIxs, managerDepositIx, ...postIxs],
-			uiTxParams
-		);
+		return [...preIxs, managerDepositIx, ...postIxs];
 	}
 
 	public async managerRequestWithdraw(
@@ -901,6 +948,19 @@ export class VaultClient {
 		withdrawUnit: WithdrawUnit,
 		uiTxParams?: TxParams
 	): Promise<TransactionSignature> {
+		const requestWithdrawIx = await this.getManagerRequestWithdrawIx(
+			vault,
+			amount,
+			withdrawUnit
+		);
+		return await this.createAndSendTxn([requestWithdrawIx], uiTxParams);
+	}
+
+	public async getManagerRequestWithdrawIx(
+		vault: PublicKey,
+		amount: BN,
+		withdrawUnit: WithdrawUnit
+	): Promise<TransactionInstruction> {
 		this.program.idl.types;
 		// @ts-ignore
 		const vaultAccount = (await this.program.account.vault.fetch(
@@ -932,26 +992,31 @@ export class VaultClient {
 			driftUserStats: userStatsKey,
 		};
 
-		const requestWithdrawIx = this.program.instruction.managerRequestWithdraw(
+		return this.program.instruction.managerRequestWithdraw(
 			// @ts-ignore
 			amount,
 			withdrawUnit,
 			{
 				accounts: {
-					manager: this.driftClient.wallet.publicKey,
+					manager: vaultAccount.manager,
 					...accounts,
 				},
 				remainingAccounts,
 			}
 		);
-
-		return await this.createAndSendTxn([requestWithdrawIx], uiTxParams);
 	}
 
 	public async managerCancelWithdrawRequest(
 		vault: PublicKey,
 		uiTxParams?: TxParams
 	): Promise<TransactionSignature> {
+		const ix = await this.getManagerCancelWithdrawRequestIx(vault);
+		return await this.createAndSendTxn([ix], uiTxParams);
+	}
+
+	public async getManagerCancelWithdrawRequestIx(
+		vault: PublicKey
+	): Promise<TransactionInstruction> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
 
 		const userStatsKey = getUserStatsAccountPublicKey(
@@ -960,7 +1025,7 @@ export class VaultClient {
 		);
 
 		const accounts = {
-			manager: this.driftClient.wallet.publicKey,
+			manager: vaultAccount.manager,
 			vault,
 			driftUser: vaultAccount.user,
 			driftUserStats: userStatsKey,
@@ -977,19 +1042,23 @@ export class VaultClient {
 			userStats
 		);
 
-		const cancelRequestWithdrawIx =
-			this.program.instruction.mangerCancelWithdrawRequest({
-				accounts,
-				remainingAccounts,
-			});
-
-		return await this.createAndSendTxn([cancelRequestWithdrawIx], uiTxParams);
+		return this.program.instruction.mangerCancelWithdrawRequest({
+			accounts,
+			remainingAccounts,
+		});
 	}
 
 	public async managerWithdraw(
 		vault: PublicKey,
 		uiTxParams?: TxParams
 	): Promise<TransactionSignature> {
+		const ix = await this.getManagerWithdrawIx(vault);
+		return this.createAndSendTxn([ix], uiTxParams);
+	}
+
+	public async getManagerWithdrawIx(
+		vault: PublicKey
+	): Promise<TransactionInstruction> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
 
 		if (!this.driftClient.wallet.publicKey.equals(vaultAccount.manager)) {
@@ -1020,10 +1089,10 @@ export class VaultClient {
 			);
 		}
 
-		const ix = this.program.instruction.managerWithdraw({
+		return this.program.instruction.managerWithdraw({
 			accounts: {
 				vault,
-				manager: this.driftClient.wallet.publicKey,
+				manager: vaultAccount.manager,
 				vaultTokenAccount: vaultAccount.tokenAccount,
 				driftUser: await getUserAccountPublicKey(
 					this.driftClient.program.programId,
@@ -1045,7 +1114,6 @@ export class VaultClient {
 			},
 			remainingAccounts,
 		});
-		return this.createAndSendTxn([ix], uiTxParams);
 	}
 
 	public async managerUpdateVault(
@@ -1061,13 +1129,29 @@ export class VaultClient {
 		},
 		uiTxParams?: TxParams
 	): Promise<TransactionSignature> {
-		const ix = this.program.instruction.updateVault(params, {
+		const ix = await this.getManagerUpdateVaultIx(vault, params);
+		return this.createAndSendTxn([ix], uiTxParams);
+	}
+
+	public async getManagerUpdateVaultIx(
+		vault: PublicKey,
+		params: {
+			redeemPeriod: BN | null;
+			maxTokens: BN | null;
+			managementFee: BN | null;
+			minDepositAmount: BN | null;
+			profitShare: number | null;
+			hurdleRate: number | null;
+			permissioned: boolean | null;
+		}
+	): Promise<TransactionInstruction> {
+		const vaultAccount = await this.program.account.vault.fetch(vault);
+		return this.program.instruction.updateVault(params, {
 			accounts: {
 				vault,
-				manager: this.driftClient.wallet.publicKey,
+				manager: vaultAccount.manager,
 			},
 		});
-		return this.createAndSendTxn([ix], uiTxParams);
 	}
 
 	public async managerUpdateVaultManager(
@@ -1083,12 +1167,22 @@ export class VaultClient {
 		vault: PublicKey,
 		manager: PublicKey
 	): Promise<TransactionInstruction> {
+		const vaultAccount = await this.program.account.vault.fetch(vault);
 		return this.program.instruction.updateVaultManager(manager, {
 			accounts: {
 				vault,
-				manager: this.driftClient.wallet.publicKey,
+				manager: vaultAccount.manager,
 			},
 		});
+	}
+
+	public async applyProfitShare(
+		vault: PublicKey,
+		vaultDepositor: PublicKey,
+		uiTxParams?: TxParams
+	): Promise<TransactionSignature> {
+		const ix = await this.getApplyProfitShareIx(vault, vaultDepositor);
+		return this.createAndSendTxn([ix], uiTxParams);
 	}
 
 	public async getApplyProfitShareIx(
@@ -1125,7 +1219,7 @@ export class VaultClient {
 		const accounts = {
 			vault,
 			vaultDepositor,
-			manager: this.driftClient.wallet.publicKey,
+			manager: vaultAccount.manager,
 			driftUserStats: getUserStatsAccountPublicKey(
 				this.driftClient.program.programId,
 				vault
@@ -1992,7 +2086,7 @@ export class VaultClient {
 		}
 
 		const accounts = {
-			manager: this.driftClient.wallet.publicKey,
+			manager: vaultAccount.manager,
 			vault: vaultDepositorAccount.vault,
 			vaultDepositor,
 			vaultTokenAccount: vaultAccount.tokenAccount,
@@ -2394,7 +2488,7 @@ export class VaultClient {
 			.requestRemoveInsuranceFundStake(spotMarketIndex, amount)
 			.accounts({
 				vault,
-				manager: this.driftClient.wallet.publicKey,
+				manager: vaultAccount.manager,
 				driftSpotMarket: spotMarket.pubkey,
 				insuranceFundStake: ifStakeAccountPublicKey,
 				insuranceFundVault: ifVaultPublicKey,
@@ -2429,7 +2523,7 @@ export class VaultClient {
 			.cancelRequestRemoveInsuranceFundStake(spotMarketIndex)
 			.accounts({
 				vault: vault,
-				manager: this.driftClient.wallet.publicKey,
+				manager: vaultAccount.manager,
 				driftSpotMarket: spotMarket.pubkey,
 				insuranceFundStake: ifStakeAccountPublicKey,
 				insuranceFundVault: ifVaultPublicKey,
@@ -2545,7 +2639,7 @@ export class VaultClient {
 				withdrawUnit,
 				{
 					accounts: {
-						manager: this.driftClient.wallet.publicKey,
+						manager: vaultAccount.manager,
 						...accounts,
 					},
 					remainingAccounts,
@@ -2567,7 +2661,7 @@ export class VaultClient {
 		);
 
 		const accounts = {
-			manager: this.driftClient.wallet.publicKey,
+			manager: vaultAccount.manager,
 			vault,
 			driftUserStats: userStatsKey,
 			driftUser: vaultAccount.user,
@@ -2595,7 +2689,7 @@ export class VaultClient {
 				this.program.instruction.mangerCancelWithdrawRequest({
 					accounts: {
 						...accounts,
-						manager: this.driftClient.wallet.publicKey,
+						manager: vaultAccount.manager,
 					},
 					remainingAccounts,
 				});
@@ -2640,7 +2734,7 @@ export class VaultClient {
 		const ix = this.program.instruction.managerWithdraw({
 			accounts: {
 				vault,
-				manager: this.driftClient.wallet.publicKey,
+				manager: vaultAccount.manager,
 				vaultTokenAccount: vaultAccount.tokenAccount,
 				driftUser: await getUserAccountPublicKey(
 					this.driftClient.program.programId,
@@ -2855,11 +2949,12 @@ export class VaultClient {
 		vault: PublicKey,
 		fuelDistributionMode: FuelDistributionMode
 	): Promise<TransactionInstruction> {
+		const vaultAccount = await this.program.account.vault.fetch(vault);
 		return this.program.methods
 			.managerUpdateFuelDistributionMode(fuelDistributionMode as number)
 			.accounts({
 				vault,
-				manager: this.driftClient.wallet.publicKey,
+				manager: vaultAccount.manager,
 			})
 			.instruction();
 	}

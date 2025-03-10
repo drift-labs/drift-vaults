@@ -5,7 +5,7 @@ import {
 } from "commander";
 import { dumpTransactionMessage, getCommandContext } from "../utils";
 
-export const managerCancelWithdraw = async (program: Command, cmdOpts: OptionValues) => {
+export const managerUpdatePoolId = async (program: Command, cmdOpts: OptionValues) => {
 
     let vaultAddress: PublicKey;
     try {
@@ -20,11 +20,17 @@ export const managerCancelWithdraw = async (program: Command, cmdOpts: OptionVal
         driftClient
     } = await getCommandContext(program, true);
 
+    const poolId = cmdOpts.poolId ? Number(cmdOpts.poolId) : null;
+    if (poolId === null) {
+        console.error("Invalid pool id");
+        process.exit(1);
+    }
+
     if (cmdOpts.dumpTransactionMessage) {
-        const tx = await driftVault.getManagerCancelWithdrawRequestIx(vaultAddress);
+        const tx = await driftVault.getUpdatePoolIdIx(vaultAddress, poolId);
         console.log(dumpTransactionMessage(driftClient.wallet.publicKey, [tx]));
     } else {
-        const tx = await driftVault.managerCancelWithdrawRequest(vaultAddress);
-        console.log(`Canceled withdraw as vault manager: https://solscan.io/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+        const tx = await driftVault.updateUserPoolId(vaultAddress, poolId);
+        console.log(`Updated pool id vault manager: https://solscan.io/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
     }
 };

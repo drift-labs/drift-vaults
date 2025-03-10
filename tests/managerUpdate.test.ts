@@ -28,7 +28,6 @@ import {
 	initializeQuoteSpotMarket,
 	initializeSolSpotMarket,
 	mockUSDCMintBankrun,
-	printTxLogs,
 } from './common/testHelpers';
 import { Keypair } from '@solana/web3.js';
 import { mockOracleNoProgram } from './common/bankrunOracle';
@@ -40,7 +39,6 @@ const ammInitialQuoteAssetReserve = new BN(5 * 10 ** 13).mul(mantissaSqrtScale);
 const ammInitialBaseAssetReserve = new BN(5 * 10 ** 13).mul(mantissaSqrtScale);
 
 describe('driftVaults', () => {
-	let vaultProgram: Program<DriftVaults>;
 	const initialSolPerpPrice = 100;
 	let adminDriftClient: TestClient;
 	let bulkAccountLoader: TestBulkAccountLoader;
@@ -78,12 +76,6 @@ describe('driftVaults', () => {
 
 		// wrap the context to use it with the test helpers
 		bankrunContextWrapper = new BankrunContextWrapper(context);
-
-		vaultProgram = new Program<DriftVaults>(
-			IDL,
-			VAULT_PROGRAM_ID,
-			bankrunContextWrapper.provider
-		);
 
 		bulkAccountLoader = new TestBulkAccountLoader(
 			bankrunContextWrapper.connection.toConnection(),
@@ -192,7 +184,7 @@ describe('driftVaults', () => {
 	});
 
 	it('vaults initialized', async () => {
-		let vault0 = await managerClient.program.account.vault.fetch(
+		const vault0 = await managerClient.program.account.vault.fetch(
 			commonVaultKey
 		);
 
@@ -203,7 +195,7 @@ describe('driftVaults', () => {
 			{ noLut: true }
 		);
 
-		let vault1 = await managerClient.program.account.vault.fetch(
+		const vault1 = await managerClient.program.account.vault.fetch(
 			commonVaultKey
 		);
 

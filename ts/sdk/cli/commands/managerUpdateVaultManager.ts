@@ -3,7 +3,7 @@ import {
     OptionValues,
     Command
 } from "commander";
-import { getCommandContext } from "../utils";
+import { dumpTransactionMessage, getCommandContext } from "../utils";
 
 export const managerUpdateVaultManager = async (program: Command, cmdOpts: OptionValues) => {
 
@@ -54,9 +54,14 @@ export const managerUpdateVaultManager = async (program: Command, cmdOpts: Optio
     let done = false;
     while (!done) {
         try {
-            const tx = await driftVault.managerUpdateVaultManager(vaultAddress, manager);
-            console.log(`Updated vault manager: https://solana.fm/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
-            done = true;
+            if (cmdOpts.dumpTransactionMessage) {
+                const tx = await driftVault.getManagerUpdateVaultManagerIx(vaultAddress, manager);
+                console.log(dumpTransactionMessage(driftClient.wallet.publicKey, [tx]));
+            } else {
+                const tx = await driftVault.managerUpdateVaultManager(vaultAddress, manager);
+                console.log(`Updated vault manager: https://solana.fm/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+                done = true;
+            }
             break;
         } catch (e) {
             const err = e as Error;

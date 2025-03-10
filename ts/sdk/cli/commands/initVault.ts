@@ -14,7 +14,7 @@ import {
     encodeName,
     getVaultAddressSync,
 } from "../../src";
-import { getCommandContext } from "../utils";
+import { dumpTransactionMessage, getCommandContext } from "../utils";
 import { VAULT_PROGRAM_ID } from "../../src/types/types";
 
 export const initVault = async (program: Command, cmdOpts: OptionValues) => {
@@ -101,6 +101,7 @@ export const initVault = async (program: Command, cmdOpts: OptionValues) => {
     console.log(`  ProfitShare:            ${convertToNumber(profitShareBN, PERCENTAGE_PRECISION) * 100.0}%`);
     console.log(`  Permissioned:           ${permissioned}`);
     console.log(`  Delegate:               ${delegate.toBase58()}`);
+    console.log(`  Manager:                ${cmdOpts.manager ? cmdOpts.manager : driftClient.wallet.publicKey.toBase58()}`);
 
     const readline = require('readline').createInterface({
         input: process.stdin,
@@ -118,25 +119,49 @@ export const initVault = async (program: Command, cmdOpts: OptionValues) => {
         readline.close();
         process.exit(0);
     }
-    console.log('Creating vault...');
-
-    const initTx = await driftVault.initializeVault({
-        name: vaultNameBytes,
-        spotMarketIndex,
-        redeemPeriod: new BN(redeemPeriodSec),
-        maxTokens: maxTokensBN,
-        managementFee: managementFeeBN,
-        profitShare: profitShareBN.toNumber(),
-        hurdleRate: 0,
-        permissioned,
-        minDepositAmount: minDepositAmountBN,
-    });
-    console.log(`Initialized vault, tx: https://solscan.io/tx/${initTx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
 
     const vaultAddress = getVaultAddressSync(VAULT_PROGRAM_ID, vaultNameBytes);
-    console.log(`\nNew vault address: ${vaultAddress}\n`);
 
-    console.log(`Updating the drift account delegate to: ${delegate}...`);
-    const updateDelegateTx = await driftVault.updateDelegate(vaultAddress, delegate);
-    console.log(`update delegate tx: https://solscan.io/tx/${updateDelegateTx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+    if (cmdOpts.dumpTransactionMessage) {
+        const initIx = await driftVault.getInitializeVaultIx({
+            name: vaultNameBytes,
+            spotMarketIndex,
+            redeemPeriod: new BN(redeemPeriodSec),
+            maxTokens: maxTokensBN,
+            managementFee: managementFeeBN,
+            profitShare: profitShareBN.toNumber(),
+            hurdleRate: 0,
+            permissioned,
+            minDepositAmount: minDepositAmountBN,
+            manager: cmdOpts.manager,
+        });
+        const updateDelegateIx = await driftVault.getUpdateDelegateIx(vaultAddress, delegate);
+
+        console.log(`New vault address will be: ${vaultAddress.toBase58()}`);
+        console.log(`Setting trading delegate to: ${delegate.toBase58()}`);
+
+        console.log('');
+        console.log(`Base 58 encoded transaction:`);
+        console.log(dumpTransactionMessage(cmdOpts.manager ? new PublicKey(cmdOpts.manager) : driftClient.wallet.publicKey, [initIx, updateDelegateIx]));
+    } else {
+        const initTx = await driftVault.initializeVault({
+            name: vaultNameBytes,
+            spotMarketIndex,
+            redeemPeriod: new BN(redeemPeriodSec),
+            maxTokens: maxTokensBN,
+            managementFee: managementFeeBN,
+            profitShare: profitShareBN.toNumber(),
+            hurdleRate: 0,
+            permissioned,
+            minDepositAmount: minDepositAmountBN,
+            manager: cmdOpts.manager,
+        });
+        console.log(`Initialized vault, tx: https://solscan.io/tx/${initTx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+
+        console.log(`\nNew vault address: ${vaultAddress}\n`);
+
+        console.log(`Updating the drift account delegate to: ${delegate}...`);
+        const updateDelegateTx = await driftVault.updateDelegate(vaultAddress, delegate);
+        console.log(`update delegate tx: https://solscan.io/tx/${updateDelegateTx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+    }
 };

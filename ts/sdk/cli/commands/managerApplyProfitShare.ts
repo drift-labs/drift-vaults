@@ -5,7 +5,7 @@ import {
 } from "commander";
 import { dumpTransactionMessage, getCommandContext } from "../utils";
 
-export const managerCancelWithdraw = async (program: Command, cmdOpts: OptionValues) => {
+export const managerApplyProfitShare = async (program: Command, cmdOpts: OptionValues) => {
 
     let vaultAddress: PublicKey;
     try {
@@ -20,11 +20,13 @@ export const managerCancelWithdraw = async (program: Command, cmdOpts: OptionVal
         driftClient
     } = await getCommandContext(program, true);
 
+    const vaultDepositorAddress = new PublicKey(cmdOpts.vaultDepositor as string);
+
     if (cmdOpts.dumpTransactionMessage) {
-        const tx = await driftVault.getManagerCancelWithdrawRequestIx(vaultAddress);
+        const tx = await driftVault.getApplyProfitShareIx(vaultAddress, vaultDepositorAddress);
         console.log(dumpTransactionMessage(driftClient.wallet.publicKey, [tx]));
     } else {
-        const tx = await driftVault.managerCancelWithdrawRequest(vaultAddress);
-        console.log(`Canceled withdraw as vault manager: https://solscan.io/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+        const tx = await driftVault.applyProfitShare(vaultAddress, vaultDepositorAddress);
+        console.log(`Applied profit share: https://solscan.io/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
     }
 };
