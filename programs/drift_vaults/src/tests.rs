@@ -2141,6 +2141,7 @@ mod vault_v1_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap(); // new user deposits $2000
         now += 60 * 60;
