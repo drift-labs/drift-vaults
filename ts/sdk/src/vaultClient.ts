@@ -919,7 +919,8 @@ export class VaultClient {
 				managerTokenAccount ??
 				getAssociatedTokenAddressSync(
 					driftSpotMarket.mint,
-					this.driftClient.wallet.publicKey
+					vaultAccount.manager,
+					true
 				),
 			tokenProgram: TOKEN_PROGRAM_ID,
 		};
@@ -966,10 +967,6 @@ export class VaultClient {
 		const vaultAccount = (await this.program.account.vault.fetch(
 			vault
 		)) as Vault;
-
-		if (!this.driftClient.wallet.publicKey.equals(vaultAccount.manager)) {
-			throw new Error(`Only the manager of the vault can request a withdraw.`);
-		}
 
 		const user = await this.getSubscribedVaultUser(vaultAccount.user);
 		const userStatsKey = getUserStatsAccountPublicKey(
@@ -1061,10 +1058,6 @@ export class VaultClient {
 	): Promise<TransactionInstruction> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
 
-		if (!this.driftClient.wallet.publicKey.equals(vaultAccount.manager)) {
-			throw new Error(`Only the manager of the vault can request a withdraw.`);
-		}
-
 		const user = await this.getSubscribedVaultUser(vaultAccount.user);
 		const userStatsKey = getUserStatsAccountPublicKey(
 			this.driftClient.program.programId,
@@ -1107,7 +1100,8 @@ export class VaultClient {
 				driftSpotMarketVault: spotMarket.vault,
 				userTokenAccount: getAssociatedTokenAddressSync(
 					spotMarket.mint,
-					this.driftClient.wallet.publicKey
+					vaultAccount.manager,
+					true
 				),
 				driftSigner: this.driftClient.getStateAccount().signer,
 				tokenProgram: TOKEN_PROGRAM_ID,
@@ -1448,6 +1442,8 @@ export class VaultClient {
 			sharesBase
 		);
 
+		const vaultAccount = await this.program.account.vault.fetch(params.vault);
+
 		const accounts = {
 			vault: params.vault,
 			vaultDepositor: getTokenizedVaultAddressSync(
@@ -1460,7 +1456,7 @@ export class VaultClient {
 				mint: mintAddress,
 			}),
 			tokenMetadataProgram: this.metaplex.programs().getTokenMetadata().address,
-			payer: this.driftClient.wallet.publicKey,
+			payer: vaultAccount.manager,
 		};
 
 		const vaultTokenAta = getAssociatedTokenAddressSync(
@@ -1469,7 +1465,7 @@ export class VaultClient {
 			true
 		);
 		const createAtaIx = createAssociatedTokenAccountInstruction(
-			this.driftClient.wallet.publicKey,
+			vaultAccount.manager,
 			vaultTokenAta,
 			params.vault,
 			mintAddress
@@ -1905,6 +1901,20 @@ export class VaultClient {
 		vaultDepositor: PublicKey,
 		txParams?: TxParams
 	): Promise<TransactionSignature> {
+		const ixs = await this.getWithdrawIx(
+			vaultDepositor,
+			txParams?.oracleFeedsToCrank
+		);
+		return await this.createAndSendTxn(ixs, {
+			cuLimit: 850_000, // overestimating to be safe
+			...txParams,
+		});
+	}
+
+	public async getWithdrawIx(
+		vaultDepositor: PublicKey,
+		oracleFeedsToCrank?: { feed: PublicKey; oracleSource: OracleSource }[]
+	): Promise<TransactionInstruction[]> {
 		const vaultDepositorAccount =
 			await this.program.account.vaultDepositor.fetch(vaultDepositor);
 		const vaultAccount = await this.program.account.vault.fetch(
@@ -1995,7 +2005,7 @@ export class VaultClient {
 		};
 
 		const oracleFeedsToCrankIxs = await this.getOracleFeedsToCrank(
-			txParams?.oracleFeedsToCrank
+			oracleFeedsToCrank
 		);
 
 		const ixs = [
@@ -2012,11 +2022,7 @@ export class VaultClient {
 			...postIxs,
 		];
 
-		const creationIxs = preIxs.concat(postIxs).length;
-		return await this.createAndSendTxn(ixs, {
-			cuLimit: (txParams?.cuLimit ?? 650_000) + (creationIxs > 0 ? 200_000 : 0),
-			...txParams,
-		});
+		return ixs;
 	}
 
 	public async forceWithdraw(
@@ -2432,7 +2438,8 @@ export class VaultClient {
 		if (!managerTokenAccount) {
 			managerTokenAccount = getAssociatedTokenAddressSync(
 				spotMarket.mint,
-				this.driftClient.wallet.publicKey
+				vaultAccount.manager,
+				true
 			);
 		}
 
@@ -2558,7 +2565,8 @@ export class VaultClient {
 		if (!managerTokenAccount) {
 			managerTokenAccount = getAssociatedTokenAddressSync(
 				spotMarket.mint,
-				this.driftClient.wallet.publicKey
+				vaultAccount.manager,
+				true
 			);
 		}
 
