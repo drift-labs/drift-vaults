@@ -1846,6 +1846,21 @@ export class VaultClient {
 		withdrawUnit: WithdrawUnit,
 		txParams?: TxParams
 	): Promise<TransactionSignature> {
+		const ixs = await this.getRequestWithdrawIx(
+			vaultDepositor,
+			amount,
+			withdrawUnit,
+			txParams?.oracleFeedsToCrank
+		);
+		return await this.createAndSendTxn(ixs, txParams);
+	}
+
+	public async getRequestWithdrawIx(
+		vaultDepositor: PublicKey,
+		amount: BN,
+		withdrawUnit: WithdrawUnit,
+		oracleFeedsToCrank?: { feed: PublicKey; oracleSource: OracleSource }[]
+	): Promise<TransactionInstruction[]> {
 		const vaultDepositorAccount =
 			await this.program.account.vaultDepositor.fetch(vaultDepositor);
 		const vaultAccount = await this.program.account.vault.fetch(
@@ -1875,7 +1890,7 @@ export class VaultClient {
 		};
 
 		const oracleFeedsToCrankIxs = await this.getOracleFeedsToCrank(
-			txParams?.oracleFeedsToCrank
+			oracleFeedsToCrank
 		);
 
 		const requestWithdrawIx = this.program.instruction.requestWithdraw(
@@ -1891,10 +1906,7 @@ export class VaultClient {
 			}
 		);
 
-		return await this.createAndSendTxn(
-			[...oracleFeedsToCrankIxs, requestWithdrawIx],
-			txParams
-		);
+		return [...oracleFeedsToCrankIxs, requestWithdrawIx];
 	}
 
 	public async withdraw(
@@ -2127,6 +2139,17 @@ export class VaultClient {
 		vaultDepositor: PublicKey,
 		txParams?: TxParams
 	): Promise<TransactionSignature> {
+		const ixs = await this.getCancelRequestWithdrawIx(
+			vaultDepositor,
+			txParams?.oracleFeedsToCrank
+		);
+		return await this.createAndSendTxn(ixs, txParams);
+	}
+
+	public async getCancelRequestWithdrawIx(
+		vaultDepositor: PublicKey,
+		oracleFeedsToCrank: TxParams['oracleFeedsToCrank']
+	): Promise<TransactionInstruction[]> {
 		const vaultDepositorAccount =
 			await this.program.account.vaultDepositor.fetch(vaultDepositor);
 		const vaultAccount = await this.program.account.vault.fetch(
@@ -2157,14 +2180,16 @@ export class VaultClient {
 		);
 
 		if (this.cliMode) {
-			return await this.program.methods
-				.cancelRequestWithdraw()
-				.accounts(accounts)
-				.remainingAccounts(remainingAccounts)
-				.rpc();
+			return [
+				await this.program.methods
+					.cancelRequestWithdraw()
+					.accounts(accounts)
+					.remainingAccounts(remainingAccounts)
+					.instruction(),
+			];
 		} else {
 			const oracleFeedsToCrankIxs = await this.getOracleFeedsToCrank(
-				txParams?.oracleFeedsToCrank
+				oracleFeedsToCrank
 			);
 
 			const cancelRequestWithdrawIx =
@@ -2176,10 +2201,7 @@ export class VaultClient {
 					remainingAccounts,
 				});
 
-			return await this.createAndSendTxn(
-				[...oracleFeedsToCrankIxs, cancelRequestWithdrawIx],
-				txParams
-			);
+			return [...oracleFeedsToCrankIxs, cancelRequestWithdrawIx];
 		}
 	}
 
@@ -2193,6 +2215,13 @@ export class VaultClient {
 		vaultDepositor: PublicKey,
 		txParams?: TxParams
 	): Promise<TransactionSignature> {
+		const ix = await this.getLiquidateIx(vaultDepositor);
+		return await this.createAndSendTxn([ix], txParams);
+	}
+
+	public async getLiquidateIx(
+		vaultDepositor: PublicKey
+	): Promise<TransactionInstruction> {
 		const vaultDepositorAccount =
 			await this.program.account.vaultDepositor.fetch(vaultDepositor);
 		const vault = vaultDepositorAccount.vault;
@@ -2231,17 +2260,15 @@ export class VaultClient {
 				.liquidate()
 				.accounts(accounts)
 				.remainingAccounts(remainingAccounts)
-				.rpc();
+				.instruction();
 		} else {
-			const liquidateIx = this.program.instruction.liquidate({
+			return this.program.instruction.liquidate({
 				accounts: {
 					authority: this.driftClient.wallet.publicKey,
 					...accounts,
 				},
 				remainingAccounts,
 			});
-
-			return await this.createAndSendTxn([liquidateIx], txParams);
 		}
 	}
 
@@ -2359,8 +2386,20 @@ export class VaultClient {
 	 */
 	public async initializeInsuranceFundStake(
 		vault: PublicKey,
-		spotMarketIndex: number
+		spotMarketIndex: number,
+		txParams?: TxParams
 	): Promise<TransactionSignature> {
+		const ixs = await this.getInitializeInsuranceFundStakeIx(
+			vault,
+			spotMarketIndex
+		);
+		return await this.createAndSendTxn([ixs], txParams);
+	}
+
+	public async getInitializeInsuranceFundStakeIx(
+		vault: PublicKey,
+		spotMarketIndex: number
+	): Promise<TransactionInstruction> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
 
 		const ifStakeAccountPublicKey = getInsuranceFundStakeAccountPublicKey(
@@ -2394,7 +2433,7 @@ export class VaultClient {
 				driftState: await this.driftClient.getStatePublicKey(),
 				driftProgram: this.driftClient.program.programId,
 			})
-			.rpc();
+			.instruction();
 	}
 
 	/**
@@ -2408,8 +2447,24 @@ export class VaultClient {
 		vault: PublicKey,
 		spotMarketIndex: number,
 		amount: BN,
-		managerTokenAccount?: PublicKey
+		managerTokenAccount?: PublicKey,
+		txParams?: TxParams
 	): Promise<TransactionSignature> {
+		const ixs = await this.getAddToInsuranceFundStakeIx(
+			vault,
+			spotMarketIndex,
+			amount,
+			managerTokenAccount
+		);
+		return await this.createAndSendTxn([ixs], txParams);
+	}
+
+	public async getAddToInsuranceFundStakeIx(
+		vault: PublicKey,
+		spotMarketIndex: number,
+		amount: BN,
+		managerTokenAccount?: PublicKey
+	): Promise<TransactionInstruction> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
 
 		if (!vaultAccount.manager.equals(this.driftClient.wallet.publicKey)) {
@@ -2465,14 +2520,28 @@ export class VaultClient {
 				driftSigner: this.driftClient.getStateAccount().signer,
 				tokenProgram: TOKEN_PROGRAM_ID,
 			})
-			.rpc();
+			.instruction();
 	}
 
 	public async requestRemoveInsuranceFundStake(
 		vault: PublicKey,
 		spotMarketIndex: number,
-		amount: BN
+		amount: BN,
+		txParams?: TxParams
 	): Promise<TransactionSignature> {
+		const ix = await this.getRequestRemoveInsuranceFundStakeIx(
+			vault,
+			spotMarketIndex,
+			amount
+		);
+		return await this.createAndSendTxn([ix], txParams);
+	}
+
+	public async getRequestRemoveInsuranceFundStakeIx(
+		vault: PublicKey,
+		spotMarketIndex: number,
+		amount: BN
+	): Promise<TransactionInstruction> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
 		const ifStakeAccountPublicKey = getInsuranceFundStakeAccountPublicKey(
 			this.driftClient.program.programId,
@@ -2502,13 +2571,25 @@ export class VaultClient {
 				driftUserStats: vaultAccount.userStats,
 				driftProgram: this.driftClient.program.programId,
 			})
-			.rpc();
+			.instruction();
 	}
 
 	public async cancelRequestRemoveInsuranceFundStake(
 		vault: PublicKey,
-		spotMarketIndex: number
+		spotMarketIndex: number,
+		txParams?: TxParams
 	): Promise<TransactionSignature> {
+		const ix = await this.getCancelRequestRemoveInsuranceFundStakeIx(
+			vault,
+			spotMarketIndex
+		);
+		return await this.createAndSendTxn([ix], txParams);
+	}
+
+	public async getCancelRequestRemoveInsuranceFundStakeIx(
+		vault: PublicKey,
+		spotMarketIndex: number
+	): Promise<TransactionInstruction> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
 		const ifStakeAccountPublicKey = getInsuranceFundStakeAccountPublicKey(
 			this.driftClient.program.programId,
@@ -2537,14 +2618,28 @@ export class VaultClient {
 				driftUserStats: vaultAccount.userStats,
 				driftProgram: this.driftClient.program.programId,
 			})
-			.rpc();
+			.instruction();
 	}
 
 	public async removeInsuranceFundStake(
 		vault: PublicKey,
 		spotMarketIndex: number,
-		managerTokenAccount?: PublicKey
+		managerTokenAccount?: PublicKey,
+		txParams?: TxParams
 	): Promise<TransactionSignature> {
+		const ixs = await this.getRemoveInsuranceFundStakeIx(
+			vault,
+			spotMarketIndex,
+			managerTokenAccount
+		);
+		return await this.createAndSendTxn([ixs], txParams);
+	}
+
+	public async getRemoveInsuranceFundStakeIx(
+		vault: PublicKey,
+		spotMarketIndex: number,
+		managerTokenAccount?: PublicKey
+	): Promise<TransactionInstruction> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
 		const ifStakeAccountPublicKey = getInsuranceFundStakeAccountPublicKey(
 			this.driftClient.program.programId,
@@ -2591,14 +2686,28 @@ export class VaultClient {
 				driftProgram: this.driftClient.program.programId,
 				tokenProgram: TOKEN_PROGRAM_ID,
 			})
-			.rpc();
+			.instruction();
 	}
 
 	public async protocolRequestWithdraw(
 		vault: PublicKey,
 		amount: BN,
-		withdrawUnit: WithdrawUnit
+		withdrawUnit: WithdrawUnit,
+		txParams?: TxParams
 	): Promise<TransactionSignature> {
+		const ix = await this.getProtocolRequestWithdrawIx(
+			vault,
+			amount,
+			withdrawUnit
+		);
+		return await this.createAndSendTxn([ix], txParams);
+	}
+
+	public async getProtocolRequestWithdrawIx(
+		vault: PublicKey,
+		amount: BN,
+		withdrawUnit: WithdrawUnit
+	): Promise<TransactionInstruction> {
 		// @ts-ignore
 		const vaultAccount = (await this.program.account.vault.fetch(
 			vault
@@ -2639,7 +2748,7 @@ export class VaultClient {
 				.managerRequestWithdraw(amount, withdrawUnit)
 				.accounts(accounts)
 				.remainingAccounts(remainingAccounts)
-				.rpc();
+				.instruction();
 		} else {
 			const requestWithdrawIx = this.program.instruction.managerRequestWithdraw(
 				// @ts-ignore
@@ -2654,13 +2763,21 @@ export class VaultClient {
 				}
 			);
 
-			return await this.createAndSendTxn([requestWithdrawIx]);
+			return requestWithdrawIx;
 		}
 	}
 
 	public async protocolCancelWithdrawRequest(
-		vault: PublicKey
+		vault: PublicKey,
+		txParams?: TxParams
 	): Promise<TransactionSignature> {
+		const ixs = await this.getProtocolCancelWithdrawRequestIx(vault);
+		return await this.createAndSendTxn(ixs, txParams);
+	}
+
+	public async getProtocolCancelWithdrawRequestIx(
+		vault: PublicKey
+	): Promise<TransactionInstruction[]> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
 
 		const userStatsKey = getUserStatsAccountPublicKey(
@@ -2687,11 +2804,13 @@ export class VaultClient {
 		);
 
 		if (this.cliMode) {
-			return await this.program.methods
-				.mangerCancelWithdrawRequest()
-				.accounts(accounts)
-				.remainingAccounts(remainingAccounts)
-				.rpc();
+			return [
+				await this.program.methods
+					.mangerCancelWithdrawRequest()
+					.accounts(accounts)
+					.remainingAccounts(remainingAccounts)
+					.instruction(),
+			];
 		} else {
 			const cancelRequestWithdrawIx =
 				this.program.instruction.mangerCancelWithdrawRequest({
@@ -2702,13 +2821,21 @@ export class VaultClient {
 					remainingAccounts,
 				});
 
-			return await this.createAndSendTxn([cancelRequestWithdrawIx]);
+			return [cancelRequestWithdrawIx];
 		}
 	}
 
 	public async protocolWithdraw(
-		vault: PublicKey
+		vault: PublicKey,
+		txParams?: TxParams
 	): Promise<TransactionSignature> {
+		const ixs = await this.getProtocolWithdrawIx(vault);
+		return await this.createAndSendTxn(ixs, txParams);
+	}
+
+	public async getProtocolWithdrawIx(
+		vault: PublicKey
+	): Promise<TransactionInstruction[]> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
 
 		if (!this.driftClient.wallet.publicKey.equals(vaultAccount.manager)) {
@@ -2761,9 +2888,7 @@ export class VaultClient {
 			},
 			remainingAccounts,
 		});
-		return this.createAndSendTxn([ix], {
-			cuLimit: 1_000_000,
-		});
+		return [ix];
 	}
 
 	private async getOracleFeedsToCrank(
@@ -2799,15 +2924,24 @@ export class VaultClient {
 		},
 		txParams?: TxParams
 	): Promise<TransactionSignature> {
-		const ix = await this.program.methods
+		const ix = await this.getUpdateVaultProtocolIx(vault, params);
+		return await this.createAndSendTxn([ix], txParams);
+	}
+
+	public async getUpdateVaultProtocolIx(
+		vault: PublicKey,
+		params: {
+			protocolFee: BN | null;
+			protocolProfitShare: number | null;
+		}
+	): Promise<TransactionInstruction> {
+		return this.program.methods
 			.updateVaultProtocol(params)
 			.accounts({
 				vault,
 				vaultProtocol: this.getVaultProtocolAddress(vault),
 			})
 			.instruction();
-
-		return await this.createAndSendTxn([ix], txParams);
 	}
 
 	public async updateCumulativeFuelAmount(
