@@ -2980,7 +2980,8 @@ describe('TestInsuranceFundStake', () => {
 		await managerClient.removeInsuranceFundStake(
 			vault,
 			marketIndex,
-			managerTokenAccount
+			managerTokenAccount,
+			{ noLut: true }
 		);
 
 		const tokenBalanceAfter =
