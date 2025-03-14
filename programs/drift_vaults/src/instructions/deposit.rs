@@ -54,10 +54,10 @@ pub fn deposit<'c: 'info, 'info>(
 
     let deposit_room_remaining = vault.max_tokens.saturating_sub(vault_equity);
     let mut deposit_amount = amount;
-    if deposit_room_remaining < amount {
+    if vault.max_tokens > 0 && deposit_room_remaining < amount {
         msg!(
             "Deposting {}/{} to stay within vault max tokens {}",
-            deposit_amount,
+            deposit_room_remaining,
             amount,
             vault.max_tokens
         );

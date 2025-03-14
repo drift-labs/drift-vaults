@@ -229,7 +229,7 @@ describe('driftVaults', () => {
 			);
 		expect(Number(user1TokenBalance0.amount)).toEqual(usdcAmount.toNumber());
 
-		const tx = await user1Client.deposit(
+		await user1Client.deposit(
 			user1VaultDepositor,
 			usdcAmount,
 			{
