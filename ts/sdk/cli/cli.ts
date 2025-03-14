@@ -47,7 +47,7 @@ program
     .option("-p, --permissioned", "Provide this flag to make the vault permissioned, vault-depositors will need to be initialized by the manager", false)
     .option("-a, --min-deposit-amount <number", "The minimum token amount allowed to deposit", "0")
     .option("-d, --delegate <publicKey>", "The address to make the delegate of the vault")
-    .addOption(new Option("--manager <publickey>", "The manager for the vault").makeOptionMandatory(true))
+    .addOption(new Option("--manager <publickey>", "The manager for the vault"))
     .addOption(new Option("--dump-transaction-message", "Dump the transaction message to the console").makeOptionMandatory(false))
     .action((opts) => initVault(program, opts));
 program
