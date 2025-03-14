@@ -1,12 +1,13 @@
 import { BASE_PRECISION, BN, DriftClient, DriftEnv, OraclePriceData, PRICE_PRECISION, QUOTE_PRECISION, SpotMarketAccount, TEN, User, Wallet, WhileValidTxSender, convertToNumber, getSignedTokenAmount, getTokenAmount, loadKeypair } from "@drift-labs/sdk";
 import { VAULT_PROGRAM_ID, Vault, VaultClient, VaultDepositor, decodeName } from "../src";
 import { Command } from "commander";
-import { Connection, Keypair } from "@solana/web3.js";
+import { Connection, Keypair, PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
 import { AnchorProvider, Wallet as AnchorWallet } from "@coral-xyz/anchor";
 import * as anchor from '@coral-xyz/anchor';
 import { IDL } from "../src/types/drift_vaults";
 import { getLedgerWallet } from "./ledgerWallet";
 import fs from 'fs';
+import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 
 
 export async function printVault(slot: number, driftClient: DriftClient, vault: Vault, vaultEquity: BN, spotMarket: SpotMarketAccount, spotOracle: OraclePriceData) {
@@ -201,4 +202,16 @@ export async function getCommandContext(program: Command, needToSign: boolean): 
         driftVault,
         wallet,
     };
+}
+
+/// a valid blockhash to allow tx simulation
+export const BLOCKHASH_PLACEHOLDER = 'CHNfFRxxeCTyy1RRnKGsV2dkrJfKwVEa8zE7cZgK4TSe';
+
+export function dumpTransactionMessage(payer: PublicKey, ixs: Array<TransactionInstruction>): string {
+	const tx = new Transaction();
+	tx.add(...ixs);
+	tx.feePayer = payer;
+	tx.recentBlockhash = BLOCKHASH_PLACEHOLDER;
+
+	return bs58.encode(tx.serialize({ requireAllSignatures: false }));
 }

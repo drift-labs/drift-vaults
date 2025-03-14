@@ -308,6 +308,27 @@ export type DriftVaults = {
 			];
 		},
 		{
+			name: 'updateVaultManager';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: false;
+					isSigner: true;
+				}
+			];
+			args: [
+				{
+					name: 'manager';
+					type: 'publicKey';
+				}
+			];
+		},
+		{
 			name: 'updateCumulativeFuelAmount';
 			accounts: [
 				{
@@ -3270,6 +3291,27 @@ export const IDL: DriftVaults = {
 					type: {
 						defined: 'UpdateVaultParams',
 					},
+				},
+			],
+		},
+		{
+			name: 'updateVaultManager',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: false,
+					isSigner: true,
+				},
+			],
+			args: [
+				{
+					name: 'manager',
+					type: 'publicKey',
 				},
 			],
 		},

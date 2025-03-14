@@ -3,7 +3,7 @@ import {
     OptionValues,
     Command
 } from "commander";
-import { getCommandContext } from "../utils";
+import { dumpTransactionMessage, getCommandContext } from "../utils";
 
 export const managerWithdraw = async (program: Command, cmdOpts: OptionValues) => {
 
@@ -20,6 +20,11 @@ export const managerWithdraw = async (program: Command, cmdOpts: OptionValues) =
         driftClient
     } = await getCommandContext(program, true);
 
-    const tx = await driftVault.managerWithdraw(vaultAddress);
-    console.log(`Withrew as vault manager: https://solscan.io/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+    if (cmdOpts.dumpTransactionMessage) {
+        const tx = await driftVault.getManagerWithdrawIx(vaultAddress);
+        console.log(dumpTransactionMessage(driftClient.wallet.publicKey, [tx]));
+    } else {
+        const tx = await driftVault.managerWithdraw(vaultAddress);
+        console.log(`Withrew as vault manager: https://solscan.io/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+    }
 };

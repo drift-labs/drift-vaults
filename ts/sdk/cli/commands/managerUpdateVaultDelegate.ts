@@ -3,7 +3,7 @@ import {
     OptionValues,
     Command
 } from "commander";
-import { getCommandContext } from "../utils";
+import { dumpTransactionMessage, getCommandContext } from "../utils";
 
 export const managerUpdateVaultDelegate = async (program: Command, cmdOpts: OptionValues) => {
 
@@ -31,6 +31,12 @@ export const managerUpdateVaultDelegate = async (program: Command, cmdOpts: Opti
         }
     }
 
-    const tx = await driftVault.updateDelegate(vaultAddress, delegate);
-    console.log(`Updated vault delegate to ${delegate.toBase58()}: https://solscan.io/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+    if (cmdOpts.dumpTransactionMessage) {
+        const tx = await driftVault.getUpdateDelegateIx(vaultAddress, delegate);
+        console.log(dumpTransactionMessage(driftClient.wallet.publicKey, [tx]));
+    } else {
+        const tx = await driftVault.updateDelegate(vaultAddress, delegate);
+        console.log(`Updated vault delegate to ${delegate.toBase58()}: https://solscan.io/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+    }
+
 };

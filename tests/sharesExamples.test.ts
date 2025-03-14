@@ -177,6 +177,7 @@ describe('driftVaults', () => {
 		);
 		const program = new Program(IDL, VAULT_PROGRAM_ID, provider);
 		adminClient = new VaultClient({
+			// @ts-ignore
 			driftClient: adminDriftClient,
 			// @ts-ignore
 			program,
