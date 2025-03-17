@@ -52,11 +52,23 @@ pub fn deposit<'c: 'info, 'info>(
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
+    let deposit_room_remaining = vault.max_tokens.saturating_sub(vault_equity);
+    let mut deposit_amount = amount;
+    if vault.max_tokens > 0 && deposit_room_remaining < amount {
+        msg!(
+            "Deposting {}/{} to stay within vault max tokens {}",
+            deposit_room_remaining,
+            amount,
+            vault.max_tokens
+        );
+        deposit_amount = deposit_room_remaining;
+    }
+
     let spot_market = spot_market_map.get_ref(&spot_market_index)?;
     let oracle = oracle_map.get_price_data(&spot_market.oracle_id())?;
 
     vault_depositor.deposit(
-        amount,
+        deposit_amount,
         vault_equity,
         &mut vault,
         &mut vp,
@@ -72,9 +84,9 @@ pub fn deposit<'c: 'info, 'info>(
     drop(user_stats);
     drop(vp);
 
-    ctx.token_transfer(amount)?;
+    ctx.token_transfer(deposit_amount)?;
 
-    ctx.drift_deposit(amount)?;
+    ctx.drift_deposit(deposit_amount)?;
 
     Ok(())
 }
