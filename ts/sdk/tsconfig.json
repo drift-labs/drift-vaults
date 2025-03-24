@@ -12,7 +12,10 @@
 		"resolveJsonModule": true,
 		"skipLibCheck": true,
 		"strict": true,
-		"declarationMap":  true
+		"declarationMap":  true,
+		"paths": {
+			"@drift-labs/sdk": ["./node_modules/@drift-labs/sdk"]
+		}
 	},
 	"include": [
 		"src/**/*"
