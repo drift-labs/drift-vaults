@@ -3025,12 +3025,12 @@ export class VaultClient {
 				.filter(Boolean) as number[];
 			const pythLazerMsgHex = await pythLazerMsgHexGetter(pythLazerFeedIds);
 
-			const oracleUpdateIxs =
-				await this.driftClient.getPostPythLazerOracleUpdateIxs(
-					pythLazerFeedIds,
-					pythLazerMsgHex,
-					undefined
-				);
+			const oracleUpdateIxs = await this.driftClient.getPostPythLazerOracleUpdateIxs(
+				pythLazerFeedIds,
+				pythLazerMsgHex,
+				undefined,
+				3
+			);
 
 			return oracleUpdateIxs;
 		} catch (err) {
@@ -3048,15 +3048,17 @@ export class VaultClient {
 
 		const oracleFeedsToCrankIxs: TransactionInstruction[] = (
 			await Promise.all([
+				// TODO: may not be working at this moment
+				// this.getPythLazerOracleCrankIxs( // pyth lazer oracle cranks need to be first because num of preceeding ixs matters to it
+				// 	oracleFeedsToCrank.feedsToCrank,
+				// 	oracleFeedsToCrank.pythLazerMsgHexGetter
+				// ),
 				this.getPythPullOracleCrankIxs(
 					oracleFeedsToCrank.feedsToCrank,
 					oracleFeedsToCrank.pythPullVaaGetter
 				),
 				this.getSwitchboardOracleCrankIxs(oracleFeedsToCrank.feedsToCrank),
-				this.getPythLazerOracleCrankIxs(
-					oracleFeedsToCrank.feedsToCrank,
-					oracleFeedsToCrank.pythLazerMsgHexGetter
-				),
+
 			])
 		).flat();
 
