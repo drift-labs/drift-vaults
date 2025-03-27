@@ -407,6 +407,7 @@ mod vault_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         vault.apply_fee(&mut vp, vault_equity, now).unwrap();
@@ -489,6 +490,7 @@ mod vault_fcn {
                 now,
                 &UserStats::default(),
                 &None,
+                0,
             )
             .unwrap();
             vault.apply_fee(&mut vp, vault_equity, now).unwrap();
@@ -593,6 +595,7 @@ mod vault_fcn {
                 now,
                 &UserStats::default(),
                 &None,
+                0,
             )
             .unwrap();
             vault.apply_fee(&mut vp, vault_equity, now).unwrap();
@@ -961,6 +964,7 @@ mod vault_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         vault.apply_fee(&mut vp, vault_equity, now).unwrap();
@@ -988,6 +992,7 @@ mod vault_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         vault.apply_fee(&mut vp, vault_equity, now).unwrap();
@@ -1016,6 +1021,7 @@ mod vault_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         vault.apply_fee(&mut vp, vault_equity, now).unwrap();
@@ -1088,6 +1094,7 @@ mod vault_fcn {
                 0,
                 &UserStats::default(),
                 &None,
+                0,
             )
             .unwrap();
 
@@ -1720,6 +1727,7 @@ mod vault_v1_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         vault
@@ -1811,6 +1819,7 @@ mod vault_v1_fcn {
                 now,
                 &UserStats::default(),
                 &None,
+                0,
             )
             .unwrap();
             vault
@@ -1924,6 +1933,7 @@ mod vault_v1_fcn {
                 now,
                 &UserStats::default(),
                 &None,
+                0,
             )
             .unwrap();
             vault
@@ -2043,6 +2053,7 @@ mod vault_v1_fcn {
                 now,
                 &UserStats::default(),
                 &None,
+                0,
             )
             .unwrap();
             vault
@@ -2159,6 +2170,7 @@ mod vault_v1_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         assert_eq!(vd.cumulative_profit_share_amount, 0);
@@ -2172,6 +2184,7 @@ mod vault_v1_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         assert_eq!(vd.cumulative_profit_share_amount, 0);
@@ -2185,6 +2198,7 @@ mod vault_v1_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         assert_eq!(vd.cumulative_profit_share_amount, 0);
@@ -2200,6 +2214,7 @@ mod vault_v1_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         assert_eq!(vd.cumulative_profit_share_amount, 9350000); // $11 * 0.85 = 9.35
@@ -2222,6 +2237,7 @@ mod vault_v1_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         assert_eq!(vd.cumulative_profit_share_amount, 9350000); // $11 * 0.85 = 9.35
@@ -2243,6 +2259,7 @@ mod vault_v1_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         assert_eq!(vd.cumulative_profit_share_amount, 19_574_225); // (121.378500 - 109.35) * 0.85 + 9.35 = 19.574225
