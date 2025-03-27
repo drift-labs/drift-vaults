@@ -3025,12 +3025,13 @@ export class VaultClient {
 				.filter(Boolean) as number[];
 			const pythLazerMsgHex = await pythLazerMsgHexGetter(pythLazerFeedIds);
 
-			const oracleUpdateIxs = await this.driftClient.getPostPythLazerOracleUpdateIxs(
-				pythLazerFeedIds,
-				pythLazerMsgHex,
-				undefined,
-				3
-			);
+			const oracleUpdateIxs =
+				await this.driftClient.getPostPythLazerOracleUpdateIxs(
+					pythLazerFeedIds,
+					pythLazerMsgHex,
+					undefined,
+					3
+				);
 
 			return oracleUpdateIxs;
 		} catch (err) {
@@ -3058,7 +3059,6 @@ export class VaultClient {
 					oracleFeedsToCrank.pythPullVaaGetter
 				),
 				this.getSwitchboardOracleCrankIxs(oracleFeedsToCrank.feedsToCrank),
-
 			])
 		).flat();
 
