@@ -3025,11 +3025,12 @@ export class VaultClient {
 				.filter(Boolean) as number[];
 			const pythLazerMsgHex = await pythLazerMsgHexGetter(pythLazerFeedIds);
 
-			const oracleUpdateIxs = await this.driftClient.getPostPythLazerOracleUpdateIxs(
-				pythLazerFeedIds,
-				pythLazerMsgHex,
-				undefined
-			);
+			const oracleUpdateIxs =
+				await this.driftClient.getPostPythLazerOracleUpdateIxs(
+					pythLazerFeedIds,
+					pythLazerMsgHex,
+					undefined
+				);
 
 			return oracleUpdateIxs;
 		} catch (err) {
