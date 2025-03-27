@@ -64,12 +64,23 @@ import { calculateRealizedVaultDepositorEquity } from './math';
 import { Metaplex } from '@metaplex-foundation/js';
 import { getOrCreateATAInstruction } from './utils';
 
+type OracleFeedConfig = {
+	feed: PublicKey;
+	oracleSource: OracleSource;
+	pythFeedId?: string;
+	pythLazerId?: number;
+};
+
 export type TxParams = {
 	cuLimit?: number;
 	cuPriceMicroLamports?: number;
 	simulateTransaction?: boolean;
 	lookupTables?: AddressLookupTableAccount[];
-	oracleFeedsToCrank?: { feed: PublicKey; oracleSource: OracleSource }[];
+	oracleFeedsToCrank?: {
+		feedsToCrank: OracleFeedConfig[];
+		pythPullVaaGetter?: (feedIds: string[]) => Promise<string>;
+		pythLazerMsgHexGetter?: (feedIds: number[]) => Promise<string>;
+	};
 	noLut?: boolean;
 };
 
@@ -2643,27 +2654,162 @@ export class VaultClient {
 		});
 	}
 
-	private async getOracleFeedsToCrank(
-		oracleFeedsToCrank: TxParams['oracleFeedsToCrank']
+	private async getSwitchboardOracleCrankIxs(
+		oracleFeedsToCrank: OracleFeedConfig[] = []
 	) {
-		const oracleFeedsToCrankIxs: TransactionInstruction[] = oracleFeedsToCrank
-			? ((await Promise.all(
-					oracleFeedsToCrank.map(async (feedConfig) => {
-						if (
-							JSON.stringify(feedConfig.oracleSource) !==
-							JSON.stringify(OracleSource.SWITCHBOARD_ON_DEMAND)
-						) {
-							throw new Error(
-								'Only SWITCHBOARD_ON_DEMAND oracle feeds are supported for cranking'
-							);
-						}
+		try {
+			const switchboardOracles = oracleFeedsToCrank.filter(
+				(config) =>
+					JSON.stringify(config.oracleSource) ===
+					JSON.stringify(OracleSource.SWITCHBOARD_ON_DEMAND)
+			);
 
+			if (switchboardOracles.length === 0) {
+				return [];
+			}
+
+			const switchboardOracleFeedsToCrankIx: TransactionInstruction[] =
+				(await Promise.all(
+					switchboardOracles.map(async (feedConfig) => {
 						return this.driftClient.getPostSwitchboardOnDemandUpdateAtomicIx(
 							feedConfig.feed
 						);
 					})
-			  )) as TransactionInstruction[])
-			: [];
+				)) as TransactionInstruction[];
+
+			return switchboardOracleFeedsToCrankIx;
+		} catch (err) {
+			console.error('Error cranking switchboard oracles', err);
+			return [];
+		}
+	}
+
+	private async getPythPullOracleCrankIxs(
+		oracleFeedsToCrank: OracleFeedConfig[] = [],
+		pythVaaGetter?: (feedIds: string[]) => Promise<string>
+	) {
+		try {
+			const isPythPullOracle = (oracleSource: OracleSource) => {
+				const pythPullStr = JSON.stringify(OracleSource.PYTH_PULL);
+				const pythPull1kStr = JSON.stringify(OracleSource.PYTH_1K_PULL);
+				const pythPull1mStr = JSON.stringify(OracleSource.PYTH_1M_PULL);
+				const pythStableCoinPullStr = JSON.stringify(
+					OracleSource.PYTH_STABLE_COIN_PULL
+				);
+				const targetOracleSourceStr = JSON.stringify(oracleSource);
+				return (
+					targetOracleSourceStr === pythPullStr ||
+					targetOracleSourceStr === pythPull1kStr ||
+					targetOracleSourceStr === pythPull1mStr ||
+					targetOracleSourceStr === pythStableCoinPullStr
+				);
+			};
+
+			const pythOracles = oracleFeedsToCrank.filter((config) =>
+				isPythPullOracle(config.oracleSource)
+			);
+
+			if (pythOracles.length === 0) {
+				return [];
+			}
+
+			if (!pythVaaGetter) {
+				console.error('pythVaaGetter is required to crank pyth pull oracles');
+				return [];
+			}
+
+			const pythFeedIds = pythOracles
+				.map((config) => config.pythFeedId)
+				.filter(Boolean) as string[];
+			const vaaString = await pythVaaGetter(pythFeedIds);
+
+			const pythOracleFeedsToCrankIx: TransactionInstruction[] =
+				await this.driftClient.getPostPythPullOracleUpdateAtomicIxs(
+					vaaString,
+					pythFeedIds
+				);
+
+			return pythOracleFeedsToCrankIx;
+		} catch (err) {
+			console.error('Error cranking pyth pull oracles', err);
+			return [];
+		}
+	}
+
+	private async getPythLazerOracleCrankIxs(
+		oracleFeedsToCrank: OracleFeedConfig[] = [],
+		pythLazerMsgHexGetter?: (feedIds: number[]) => Promise<string>
+	) {
+		try {
+			const isPythLazerOracle = (oracleSource: OracleSource) => {
+				const pythLazerStr = JSON.stringify(OracleSource.PYTH_LAZER);
+				const pythLazer1kStr = JSON.stringify(OracleSource.PYTH_LAZER_1K);
+				const pythLazer1mStr = JSON.stringify(OracleSource.PYTH_LAZER_1M);
+				const pythLazerStableCoinStr = JSON.stringify(
+					OracleSource.PYTH_LAZER_STABLE_COIN
+				);
+				const targetOracleSourceStr = JSON.stringify(oracleSource);
+				return (
+					targetOracleSourceStr === pythLazerStr ||
+					targetOracleSourceStr === pythLazer1kStr ||
+					targetOracleSourceStr === pythLazer1mStr ||
+					targetOracleSourceStr === pythLazerStableCoinStr
+				);
+			};
+
+			const pythLazerOracles = oracleFeedsToCrank.filter((config) =>
+				isPythLazerOracle(config.oracleSource)
+			);
+
+			if (pythLazerOracles.length === 0) {
+				return [];
+			}
+
+			if (!pythLazerMsgHexGetter) {
+				console.error(
+					'pythLazerMsgHexGetter is required to crank pyth lazer oracles'
+				);
+				return [];
+			}
+
+			const pythLazerFeedIds = pythLazerOracles
+				.map((config) => config.pythLazerId)
+				.filter(Boolean) as number[];
+			const pythLazerMsgHex = await pythLazerMsgHexGetter(pythLazerFeedIds);
+
+			const oracleUpdateIxs = await this.driftClient.getPostPythLazerOracleUpdateIxs(
+				pythLazerFeedIds,
+				pythLazerMsgHex,
+				undefined
+			);
+
+			return oracleUpdateIxs;
+		} catch (err) {
+			console.error('Error cranking pyth lazer oracles', err);
+			return [];
+		}
+	}
+
+	private async getOracleFeedsToCrank(
+		oracleFeedsToCrank: TxParams['oracleFeedsToCrank']
+	) {
+		if (!oracleFeedsToCrank?.feedsToCrank) {
+			return [];
+		}
+
+		const oracleFeedsToCrankIxs: TransactionInstruction[] = (
+			await Promise.all([
+				this.getPythPullOracleCrankIxs(
+					oracleFeedsToCrank.feedsToCrank,
+					oracleFeedsToCrank.pythPullVaaGetter
+				),
+				this.getSwitchboardOracleCrankIxs(oracleFeedsToCrank.feedsToCrank),
+				this.getPythLazerOracleCrankIxs(
+					oracleFeedsToCrank.feedsToCrank,
+					oracleFeedsToCrank.pythLazerMsgHexGetter
+				),
+			])
+		).flat();
 
 		return oracleFeedsToCrankIxs;
 	}
