@@ -1,5 +1,5 @@
 export type DriftVaults = {
-	version: '0.4.0';
+	version: '0.5.0';
 	name: 'drift_vaults';
 	instructions: [
 		{
@@ -304,6 +304,27 @@ export type DriftVaults = {
 					type: {
 						defined: 'UpdateVaultParams';
 					};
+				}
+			];
+		},
+		{
+			name: 'updateVaultManager';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: false;
+					isSigner: true;
+				}
+			];
+			args: [
+				{
+					name: 'manager';
+					type: 'publicKey';
 				}
 			];
 		},
@@ -2604,6 +2625,11 @@ export type DriftVaults = {
 					name: 'managementFeeShares';
 					type: 'i64';
 					index: false;
+				},
+				{
+					name: 'depositOraclePrice';
+					type: 'i64';
+					index: false;
 				}
 			];
 		},
@@ -2714,6 +2740,11 @@ export type DriftVaults = {
 				},
 				{
 					name: 'managementFeeShares';
+					type: 'i64';
+					index: false;
+				},
+				{
+					name: 'depositOraclePrice';
 					type: 'i64';
 					index: false;
 				}
@@ -2955,7 +2986,7 @@ export type DriftVaults = {
 };
 
 export const IDL: DriftVaults = {
-	version: '0.4.0',
+	version: '0.5.0',
 	name: 'drift_vaults',
 	instructions: [
 		{
@@ -3260,6 +3291,27 @@ export const IDL: DriftVaults = {
 					type: {
 						defined: 'UpdateVaultParams',
 					},
+				},
+			],
+		},
+		{
+			name: 'updateVaultManager',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: false,
+					isSigner: true,
+				},
+			],
+			args: [
+				{
+					name: 'manager',
+					type: 'publicKey',
 				},
 			],
 		},
@@ -5561,6 +5613,11 @@ export const IDL: DriftVaults = {
 					type: 'i64',
 					index: false,
 				},
+				{
+					name: 'depositOraclePrice',
+					type: 'i64',
+					index: false,
+				},
 			],
 		},
 		{
@@ -5670,6 +5727,11 @@ export const IDL: DriftVaults = {
 				},
 				{
 					name: 'managementFeeShares',
+					type: 'i64',
+					index: false,
+				},
+				{
+					name: 'depositOraclePrice',
 					type: 'i64',
 					index: false,
 				},

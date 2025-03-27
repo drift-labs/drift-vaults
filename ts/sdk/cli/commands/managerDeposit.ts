@@ -4,7 +4,7 @@ import {
     OptionValues,
     Command
 } from "commander";
-import { getCommandContext } from "../utils";
+import { dumpTransactionMessage, getCommandContext } from "../utils";
 
 export const managerDeposit = async (program: Command, cmdOpts: OptionValues) => {
 
@@ -29,6 +29,11 @@ export const managerDeposit = async (program: Command, cmdOpts: OptionValues) =>
     const spotPrecision = TEN.pow(new BN(spotMarket.decimals));
     const depositBN = new BN(cmdOpts.amount * spotPrecision.toNumber());
 
-    const tx = await driftVault.managerDeposit(vaultAddress, depositBN);
-    console.log(`Deposited ${cmdOpts.amount} to vault as manager: https://solscan.io/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+    if (cmdOpts.dumpTransactionMessage) {
+        const txs = await driftVault.getManagerDepositIx(vaultAddress, depositBN);
+        console.log(dumpTransactionMessage(driftClient.wallet.publicKey, txs));
+    } else {
+        const tx = await driftVault.managerDeposit(vaultAddress, depositBN);
+        console.log(`Deposited ${cmdOpts.amount} to vault as manager: https://solscan.io/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+    }
 };

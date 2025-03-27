@@ -243,9 +243,10 @@ impl VaultDepositor {
         now: i64,
         user_stats: &UserStats,
         fuel_overflow: &Option<AccountLoader<FuelOverflow>>,
+        deposit_oracle_price: i64,
     ) -> Result<()> {
         validate!(
-            vault.max_tokens == 0 || vault.max_tokens > vault_equity.safe_add(amount)?,
+            vault.max_tokens == 0 || vault.max_tokens >= vault_equity.safe_add(amount)?,
             ErrorCode::VaultIsAtCapacity,
             "after deposit vault equity is {} > {}",
             vault_equity.safe_add(amount)?,
@@ -329,6 +330,7 @@ impl VaultDepositor {
                     profit_share: manager_profit_share,
                     management_fee: management_fee_payment,
                     management_fee_shares,
+                    deposit_oracle_price,
                 });
             }
             Some(_) => {
@@ -354,6 +356,7 @@ impl VaultDepositor {
                     management_fee_shares,
                     protocol_shares_before,
                     protocol_shares_after,
+                    deposit_oracle_price,
                 });
             }
         }
@@ -372,6 +375,7 @@ impl VaultDepositor {
         now: i64,
         user_stats: &UserStats,
         fuel_overflow: &Option<AccountLoader<FuelOverflow>>,
+        deposit_oracle_price: i64,
     ) -> Result<()> {
         let rebase_divisor = self.apply_rebase(vault, vault_protocol, vault_equity)?;
         let VaultFee {
@@ -439,6 +443,7 @@ impl VaultDepositor {
                     profit_share: manager_profit_share,
                     management_fee: management_fee_payment,
                     management_fee_shares,
+                    deposit_oracle_price,
                 });
             }
             Some(_) => {
@@ -464,6 +469,7 @@ impl VaultDepositor {
                     management_fee_shares,
                     protocol_shares_before,
                     protocol_shares_after,
+                    deposit_oracle_price,
                 });
             }
         }
@@ -471,6 +477,7 @@ impl VaultDepositor {
         Ok(())
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn cancel_withdraw_request(
         &mut self,
         vault_equity: u64,
@@ -479,6 +486,7 @@ impl VaultDepositor {
         now: i64,
         user_stats: &UserStats,
         fuel_overflow: &Option<AccountLoader<FuelOverflow>>,
+        deposit_oracle_price: i64,
     ) -> Result<()> {
         self.apply_rebase(vault, vault_protocol, vault_equity)?;
 
@@ -532,6 +540,7 @@ impl VaultDepositor {
                     profit_share: 0,
                     management_fee: management_fee_payment,
                     management_fee_shares,
+                    deposit_oracle_price,
                 });
             }
             Some(_) => {
@@ -557,6 +566,7 @@ impl VaultDepositor {
                     management_fee_shares,
                     protocol_shares_before,
                     protocol_shares_after,
+                    deposit_oracle_price,
                 });
             }
         }
@@ -570,6 +580,7 @@ impl VaultDepositor {
         Ok(())
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn withdraw(
         &mut self,
         vault_equity: u64,
@@ -578,6 +589,7 @@ impl VaultDepositor {
         now: i64,
         user_stats: &UserStats,
         fuel_overflow: &Option<AccountLoader<FuelOverflow>>,
+        deposit_oracle_price: i64,
     ) -> Result<(u64, bool)> {
         self.last_withdraw_request
             .check_redeem_period_finished(vault, now)?;
@@ -664,6 +676,7 @@ impl VaultDepositor {
                     profit_share: 0,
                     management_fee: management_fee_payment,
                     management_fee_shares,
+                    deposit_oracle_price,
                 });
             }
             Some(_) => {
@@ -689,6 +702,7 @@ impl VaultDepositor {
                     management_fee_shares,
                     protocol_shares_before,
                     protocol_shares_after,
+                    deposit_oracle_price,
                 });
             }
         }
@@ -716,6 +730,7 @@ impl VaultDepositor {
         VaultDepositorBase::apply_profit_share(self, vault_equity, vault, vault_protocol)
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn realize_profits(
         &mut self,
         vault_equity: u64,
@@ -724,6 +739,7 @@ impl VaultDepositor {
         now: i64,
         user_stats: &UserStats,
         fuel_overflow: &Option<AccountLoader<FuelOverflow>>,
+        deposit_oracle_price: i64,
     ) -> Result<u64> {
         let VaultFee {
             management_fee_payment,
@@ -767,6 +783,7 @@ impl VaultDepositor {
                     profit_share: manager_profit_share,
                     management_fee: management_fee_payment,
                     management_fee_shares,
+                    deposit_oracle_price,
                 });
             }
             Some(_) => {
@@ -792,6 +809,7 @@ impl VaultDepositor {
                     management_fee_shares,
                     protocol_shares_before,
                     protocol_shares_after,
+                    deposit_oracle_price,
                 });
             }
         }
@@ -974,6 +992,7 @@ mod vault_v1_tests {
             now + 20,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
 
@@ -988,6 +1007,7 @@ mod vault_v1_tests {
             now + 20,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
 
@@ -999,6 +1019,7 @@ mod vault_v1_tests {
                 now + 20,
                 &UserStats::default(),
                 &None,
+                0,
             )
             .unwrap();
         assert_eq!(vd.vault_shares_base, 0);
@@ -1024,6 +1045,7 @@ mod vault_v1_tests {
             now + 20,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         assert_eq!(vd.vault_shares_base, 0);
@@ -1045,6 +1067,7 @@ mod vault_v1_tests {
             now + 20,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         // 100M shares, 50M of which are profit. 15% profit share on 50M shares is 7.5M shares. 100M - 7.5M = 92.5M shares
@@ -1062,6 +1085,7 @@ mod vault_v1_tests {
                 now + 20,
                 &UserStats::default(),
                 &None,
+                0,
             )
             .unwrap();
         // 100M shares minus 50M shares of profit and 15% or 7.5M profit share = 42.5M shares
@@ -1127,6 +1151,7 @@ mod vault_v1_tests {
             now + 20,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         assert_eq!(vd.vault_shares_base, 0);
@@ -1147,6 +1172,7 @@ mod vault_v1_tests {
             now + 20,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         assert_eq!(vd.checked_vault_shares(&vault).unwrap(), 95_000_000);
@@ -1163,6 +1189,7 @@ mod vault_v1_tests {
                 now + 20,
                 &UserStats::default(),
                 &None,
+                0,
             )
             .unwrap();
         assert_eq!(vd.checked_vault_shares(&vault).unwrap(), 45_000_000);
@@ -1213,6 +1240,7 @@ mod vault_v1_tests {
             now + 20,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         assert_eq!(vd.vault_shares_base, 0);
@@ -1234,6 +1262,7 @@ mod vault_v1_tests {
             now + 20,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         // user has 100M shares, with 100% profit, so 50M shares are profit.
@@ -1252,6 +1281,7 @@ mod vault_v1_tests {
                 now + 20,
                 &UserStats::default(),
                 &None,
+                0,
             )
             .unwrap();
         let profit = amount;
@@ -1334,6 +1364,7 @@ mod vault_v1_tests {
             now + 20,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         assert_eq!(vd.vault_shares_base, 0);
@@ -1354,6 +1385,7 @@ mod vault_v1_tests {
             now + 20,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         // user has 100M shares, with 100% profit, so 50M shares are profit.
@@ -1372,6 +1404,7 @@ mod vault_v1_tests {
                 now + 20,
                 &UserStats::default(),
                 &None,
+                0,
             )
             .unwrap();
         let profit = amount;
@@ -1454,6 +1487,7 @@ mod vault_v1_tests {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         assert_eq!(vd.vault_shares_base, 0);
@@ -1472,6 +1506,7 @@ mod vault_v1_tests {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
 
@@ -1497,6 +1532,7 @@ mod vault_v1_tests {
             now + 20,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         assert_eq!(vd.checked_vault_shares(&vault).unwrap(), 95000000);
@@ -1513,6 +1549,7 @@ mod vault_v1_tests {
                 now + 20,
                 &UserStats::default(),
                 &None,
+                0,
             )
             .unwrap();
         // assert_eq!(vd.checked_vault_shares(vault).unwrap(), 0);
@@ -1555,6 +1592,7 @@ mod vault_v1_tests {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         assert_eq!(vd.vault_shares_base, 0);
@@ -1587,6 +1625,7 @@ mod vault_v1_tests {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap(); // should be noop
 
@@ -1600,6 +1639,7 @@ mod vault_v1_tests {
             now + 20,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         // assert_eq!(vd.checked_vault_shares(vault).unwrap(), 100000000);
@@ -1619,6 +1659,7 @@ mod vault_v1_tests {
                 now + 20 + 3600,
                 &UserStats::default(),
                 &None,
+                0,
             )
             .unwrap();
         // assert_eq!(vd.checked_vault_shares(vault).unwrap(), 0);
@@ -1661,6 +1702,7 @@ mod vault_v1_tests {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         assert_eq!(vd.vault_shares_base, 0);
@@ -1693,6 +1735,7 @@ mod vault_v1_tests {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap(); // should be noop
 
@@ -1706,6 +1749,7 @@ mod vault_v1_tests {
             now + 20,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         // assert_eq!(vd.checked_vault_shares(vault).unwrap(), 100000000);
@@ -1724,6 +1768,7 @@ mod vault_v1_tests {
                 now + 20 + 3600,
                 &UserStats::default(),
                 &None,
+                0,
             )
             .unwrap();
         // assert_eq!(vd.checked_vault_shares(vault).unwrap(), 0);

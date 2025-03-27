@@ -33,6 +33,9 @@ pub struct VaultDepositorRecord {
     pub profit_share: u64,
     pub management_fee: i64,
     pub management_fee_shares: i64,
+
+    /// precision: PRICE_PRECISION
+    pub deposit_oracle_price: i64,
 }
 
 #[event]
@@ -66,6 +69,9 @@ pub struct VaultDepositorV1Record {
     pub manager_profit_share: u64,
     pub management_fee: i64,
     pub management_fee_shares: i64,
+
+    /// precision: PRICE_PRECISION
+    pub deposit_oracle_price: i64,
 }
 
 #[derive(Clone, Copy, BorshSerialize, BorshDeserialize, PartialEq, Eq, Default)]

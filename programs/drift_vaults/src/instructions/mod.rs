@@ -33,6 +33,7 @@ pub use update_delegate::*;
 pub use update_margin_trading_enabled::*;
 pub use update_pool_id::*;
 pub use update_vault::*;
+pub use update_vault_manager::*;
 pub use update_vault_protocol::*;
 pub use withdraw::*;
 
@@ -72,5 +73,6 @@ mod update_delegate;
 mod update_margin_trading_enabled;
 mod update_pool_id;
 mod update_vault;
+mod update_vault_manager;
 pub mod update_vault_protocol;
 mod withdraw;

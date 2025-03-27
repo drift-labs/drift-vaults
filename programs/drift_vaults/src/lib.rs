@@ -69,6 +69,13 @@ pub mod drift_vaults {
         instructions::update_vault(ctx, params)
     }
 
+    pub fn update_vault_manager<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, UpdateVault<'info>>,
+        manager: Pubkey,
+    ) -> Result<()> {
+        instructions::update_vault_manager(ctx, manager)
+    }
+
     pub fn update_cumulative_fuel_amount<'c: 'info, 'info>(
         ctx: Context<'_, '_, 'c, 'info, UpdateCumulativeFuelAmount<'info>>,
     ) -> Result<()> {

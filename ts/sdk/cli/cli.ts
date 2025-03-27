@@ -9,6 +9,7 @@ import {
     managerCancelWithdraw,
     managerWithdraw,
     managerUpdateVault,
+    managerUpdateVaultManager,
     managerUpdateVaultDelegate,
     applyProfitShare,
     initVaultDepositor,
@@ -25,6 +26,8 @@ import {
 
 import { Command, Option } from 'commander';
 import { viewVaultDepositor } from "./commands/viewVaultDepositor";
+import { managerUpdatePoolId } from "./commands/managerUpdatePoolId";
+import { managerApplyProfitShare } from "./commands/managerApplyProfitShare";
 
 const program = new Command();
 program
@@ -44,6 +47,8 @@ program
     .option("-p, --permissioned", "Provide this flag to make the vault permissioned, vault-depositors will need to be initialized by the manager", false)
     .option("-a, --min-deposit-amount <number", "The minimum token amount allowed to deposit", "0")
     .option("-d, --delegate <publicKey>", "The address to make the delegate of the vault")
+    .addOption(new Option("--manager <publickey>", "The manager for the vault"))
+    .addOption(new Option("--dump-transaction-message", "Dump the transaction message to the console").makeOptionMandatory(false))
     .action((opts) => initVault(program, opts));
 program
     .command("view-vault")
@@ -72,6 +77,7 @@ program
     .description("Make a deposit to your vault")
     .addOption(new Option("--vault-address <address>", "Address of the vault to deposit to").makeOptionMandatory(true))
     .addOption(new Option("--amount <amount>", "Amount to deposit (human format, 5 for 5 USDC)").makeOptionMandatory(true))
+    .addOption(new Option("--dump-transaction-message", "Dump the transaction message to the console").makeOptionMandatory(false))
     .action((opts) => managerDeposit(program, opts));
 program
     .command("manager-request-withdraw")
@@ -79,6 +85,7 @@ program
     .addOption(new Option("--vault-address <address>", "Address of the vault to withdraw from").makeOptionMandatory(true))
     .addOption(new Option("--shares <shares>", "Amount of shares to withdraw (raw precision, as expected by contract)").makeOptionMandatory(false))
     .addOption(new Option("--amount <amount>", "Amount of spot asset to withdraw (human format, 5 for 5 USDC)").makeOptionMandatory(false))
+    .addOption(new Option("--dump-transaction-message", "Dump the transaction message to the console").makeOptionMandatory(false))
     .action((opts) => managerRequestWithdraw(program, opts));
 program
     .command("manager-update-vault")
@@ -90,28 +97,54 @@ program
     .option("-m, --management-fee <percent>", "The new management fee (can only be lowered)")
     .option("-s, --profit-share <percent>", "The new profit share percentage (can only be lowered)")
     .option("-p, --permissioned <boolean>", "Set the vault as permissioned (true) or open (false)")
+    .addOption(new Option("--dump-transaction-message", "Dump the transaction message to the console").makeOptionMandatory(false))
     .action((opts) => managerUpdateVault(program, opts));
+program
+    .command("manager-update-vault-manager")
+    .description("Update the manager of a vault")
+    .addOption(new Option("--vault-address <address>", "Address of the vault to update ").makeOptionMandatory(true))
+    .addOption(new Option("--new-manager <publickey>", "The new manager for the vault").makeOptionMandatory(true))
+    .addOption(new Option("--dump-transaction-message", "Dump the transaction message to the console").makeOptionMandatory(false))
+    .action((opts) => managerUpdateVaultManager(program, opts));
 program
     .command("manager-update-delegate")
     .description("Update vault params for a manager")
     .addOption(new Option("--vault-address <address>", "Address of the vault to update ").makeOptionMandatory(true))
     .addOption(new Option("-d, --delegate <publickey>", "The new delegate authority for the vault").makeOptionMandatory(true))
+    .addOption(new Option("--dump-transaction-message", "Dump the transaction message to the console").makeOptionMandatory(false))
     .action((opts) => managerUpdateVaultDelegate(program, opts));
 program
     .command("manager-update-margin-trading-enabled")
     .description("Update vault margin trading permissiones a manager")
     .addOption(new Option("--vault-address <address>", "Address of the vault to view").makeOptionMandatory(true))
     .addOption(new Option("--enabled <enabled>", "true to enable, false to disable").makeOptionMandatory(true))
+    .addOption(new Option("--dump-transaction-message", "Dump the transaction message to the console").makeOptionMandatory(false))
     .action((opts) => managerUpdateMarginTradingEnabled(program, opts));
+program
+    .command("manager-update-pool-id")
+    .description("Update the pool id for a vault")
+    .addOption(new Option("--vault-address <address>", "Address of the vault to view").makeOptionMandatory(true))
+    .addOption(new Option("--pool-id <pool-id>", "New pool id for the vault").makeOptionMandatory(true))
+    .addOption(new Option("--dump-transaction-message", "Dump the transaction message to the console").makeOptionMandatory(false))
+    .action((opts) => managerUpdatePoolId(program, opts));
+program
+    .command("manager-apply-profit-share")
+    .description("Update the pool id for a vault")
+    .addOption(new Option("--vault-address <address>", "Address of the vault to view").makeOptionMandatory(true))
+    .addOption(new Option("--vault-depositor <address>", "Address of the vault depositor to apply profit share for").makeOptionMandatory(true))
+    .addOption(new Option("--dump-transaction-message", "Dump the transaction message to the console").makeOptionMandatory(false))
+    .action((opts) => managerApplyProfitShare(program, opts));
 program
     .command("manager-withdraw")
     .description("Make a withdraw from your vault")
     .addOption(new Option("--vault-address <address>", "Address of the vault to view").makeOptionMandatory(true))
+    .addOption(new Option("--dump-transaction-message", "Dump the transaction message to the console").makeOptionMandatory(false))
     .action((opts) => managerWithdraw(program, opts));
 program
     .command("manager-cancel-withdraw")
     .description("Cancel a pending manager withdraw withdraw from your vault")
     .addOption(new Option("--vault-address <address>", "Address of the vault to view").makeOptionMandatory(true))
+    .addOption(new Option("--dump-transaction-message", "Dump the transaction message to the console").makeOptionMandatory(false))
     .action((opts) => managerCancelWithdraw(program, opts));
 program
     .command("apply-profit-share-all")

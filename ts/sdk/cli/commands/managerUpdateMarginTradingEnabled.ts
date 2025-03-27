@@ -3,9 +3,9 @@ import {
     OptionValues,
     Command
 } from "commander";
-import { getCommandContext } from "../utils";
+import { dumpTransactionMessage, getCommandContext } from "../utils";
 
-export const managerUpdateMarginTradingEnabled= async (program: Command, cmdOpts: OptionValues) => {
+export const managerUpdateMarginTradingEnabled = async (program: Command, cmdOpts: OptionValues) => {
 
     let vaultAddress: PublicKey;
     try {
@@ -22,6 +22,11 @@ export const managerUpdateMarginTradingEnabled= async (program: Command, cmdOpts
 
     const enabled = cmdOpts.enabled ? (cmdOpts.enabled as string).toLowerCase() === "true" : false;
 
-    const tx = await driftVault.updateMarginTradingEnabled(vaultAddress, enabled);
-    console.log(`Updated margin trading vault manager: https://solscan.io/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+    if (cmdOpts.dumpTransactionMessage) {
+        const tx = await driftVault.getUpdateMarginTradingEnabledIx(vaultAddress, enabled);
+        console.log(dumpTransactionMessage(driftClient.wallet.publicKey, [tx]));
+    } else {
+        const tx = await driftVault.updateMarginTradingEnabled(vaultAddress, enabled);
+        console.log(`Updated margin trading vault manager: https://solscan.io/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+    }
 };

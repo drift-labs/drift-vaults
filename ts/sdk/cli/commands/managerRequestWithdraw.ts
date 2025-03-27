@@ -4,7 +4,7 @@ import {
     OptionValues,
     Command
 } from "commander";
-import { getCommandContext } from "../utils";
+import { dumpTransactionMessage, getCommandContext } from "../utils";
 import { WithdrawUnit } from "../../src/types/types";
 
 export const managerRequestWithdraw = async (program: Command, cmdOpts: OptionValues) => {
@@ -27,8 +27,13 @@ export const managerRequestWithdraw = async (program: Command, cmdOpts: OptionVa
     }
 
     if (cmdOpts.shares && !cmdOpts.amount) {
-        const tx = await driftVault.managerRequestWithdraw(vaultAddress, new BN(cmdOpts.shares), WithdrawUnit.SHARES);
-        console.log(`Requested to withraw ${cmdOpts.shares} shares as vault manager: https://solscan.io/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+        if (cmdOpts.dumpTransactionMessage) {
+            const tx = await driftVault.getManagerRequestWithdrawIx(vaultAddress, new BN(cmdOpts.shares), WithdrawUnit.SHARES);
+            console.log(dumpTransactionMessage(driftClient.wallet.publicKey, [tx]));
+        } else {
+            const tx = await driftVault.managerRequestWithdraw(vaultAddress, new BN(cmdOpts.shares), WithdrawUnit.SHARES);
+            console.log(`Requested to withraw ${cmdOpts.shares} shares as vault manager: https://solscan.io/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+        }
     } else if (cmdOpts.amount && !cmdOpts.shares) {
         const vault = await driftVault.getVault(vaultAddress);
         const spotMarket = driftClient.getSpotMarketAccount(vault.spotMarketIndex);
@@ -39,8 +44,15 @@ export const managerRequestWithdraw = async (program: Command, cmdOpts: OptionVa
         const spotPrecision = TEN.pow(new BN(spotMarket.decimals));
         const amount = parseFloat(cmdOpts.amount);
         const amountBN = numberToSafeBN(amount, spotPrecision);
-        const tx = await driftVault.managerRequestWithdraw(vaultAddress, amountBN, WithdrawUnit.TOKEN);
-        console.log(`Requested to withdraw ${amount} ${decodeName(spotMarket.name)} as vault manager: https://solscan.io/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+
+        if (cmdOpts.dumpTransactionMessage) {
+            const tx = await driftVault.getManagerRequestWithdrawIx(vaultAddress, amountBN, WithdrawUnit.TOKEN);
+            console.log(dumpTransactionMessage(driftClient.wallet.publicKey, [tx]));
+        } else {
+            const tx = await driftVault.managerRequestWithdraw(vaultAddress, amountBN, WithdrawUnit.TOKEN);
+            console.log(`Requested to withdraw ${amount} ${decodeName(spotMarket.name)} as vault manager: https://solscan.io/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+        }
+
 
     } else {
         console.error("Error: Either shares or amount must be provided, but not both.");

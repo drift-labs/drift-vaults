@@ -24,7 +24,7 @@ mod vault_fcn {
         let mut vault_equity = 0;
         let amount = 100_000_000; // $100
         vault
-            .manager_deposit(&mut vp, amount, vault_equity, now)
+            .manager_deposit(&mut vp, amount, vault_equity, now, 0)
             .unwrap();
         vault_equity += amount;
         vault_equity -= 1;
@@ -36,7 +36,14 @@ mod vault_fcn {
         assert_eq!(vault.manager_total_withdraws, 0);
 
         vault
-            .manager_request_withdraw(&mut vp, amount - 1, WithdrawUnit::Token, vault_equity, now)
+            .manager_request_withdraw(
+                &mut vp,
+                amount - 1,
+                WithdrawUnit::Token,
+                vault_equity,
+                now,
+                0,
+            )
             .unwrap();
 
         assert_eq!(vault.user_shares, 0);
@@ -46,12 +53,12 @@ mod vault_fcn {
         assert_eq!(vault.manager_total_withdraws, 0);
 
         let err = vault
-            .manager_withdraw(&mut vp, vault_equity, now + 50)
+            .manager_withdraw(&mut vp, vault_equity, now + 50, 0)
             .is_err();
         assert!(err);
 
         let withdraw = vault
-            .manager_withdraw(&mut vp, vault_equity, now + 60)
+            .manager_withdraw(&mut vp, vault_equity, now + 60, 0)
             .unwrap();
         assert_eq!(vault.user_shares, 0);
         assert_eq!(vault.total_shares, 0);
@@ -83,6 +90,7 @@ mod vault_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         assert_eq!(vault.user_shares, 100000000);
@@ -132,6 +140,7 @@ mod vault_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         assert_eq!(vault.user_shares, 100000000);
@@ -178,6 +187,7 @@ mod vault_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         assert_eq!(vault.user_shares, 100000000);
@@ -209,7 +219,7 @@ mod vault_fcn {
         let mut vault_equity: u64 = 0;
         let amount: u64 = 100 * QUOTE_PRECISION_U64;
         vault
-            .manager_deposit(&mut vp, amount, vault_equity, now)
+            .manager_deposit(&mut vp, amount, vault_equity, now, 0)
             .unwrap();
         vault_equity += amount;
 
@@ -227,10 +237,12 @@ mod vault_fcn {
         assert_eq!(vault_manager_amount, 100000000);
 
         vault
-            .manager_request_withdraw(&mut vp, amount, WithdrawUnit::Token, vault_equity, now)
+            .manager_request_withdraw(&mut vp, amount, WithdrawUnit::Token, vault_equity, now, 0)
             .unwrap();
 
-        let withdrew = vault.manager_withdraw(&mut vp, vault_equity, now).unwrap();
+        let withdrew = vault
+            .manager_withdraw(&mut vp, vault_equity, now, 0)
+            .unwrap();
         assert_eq!(amount, withdrew);
         assert_eq!(vault.user_shares, 0);
         assert_eq!(vault.total_shares, 0);
@@ -267,6 +279,7 @@ mod vault_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         assert_eq!(vault.user_shares, 100000000);
@@ -329,7 +342,7 @@ mod vault_fcn {
         let amount: u64 = 100 * QUOTE_PRECISION_U64;
         now += 100000;
         vault
-            .manager_deposit(&mut vp, amount, vault_equity, now)
+            .manager_deposit(&mut vp, amount, vault_equity, now, 0)
             .unwrap();
 
         assert_eq!(vault.user_shares, 0);
@@ -339,9 +352,11 @@ mod vault_fcn {
 
         now += 100000;
         vault
-            .manager_request_withdraw(&mut vp, amount, WithdrawUnit::Token, vault_equity, now)
+            .manager_request_withdraw(&mut vp, amount, WithdrawUnit::Token, vault_equity, now, 0)
             .unwrap();
-        let withdrew = vault.manager_withdraw(&mut vp, vault_equity, now).unwrap();
+        let withdrew = vault
+            .manager_withdraw(&mut vp, vault_equity, now, 0)
+            .unwrap();
         assert_eq!(withdrew, amount);
     }
 
@@ -357,7 +372,7 @@ mod vault_fcn {
         let mut vault_equity: u64 = 0;
         let amount: u64 = 100 * QUOTE_PRECISION_U64;
         vault
-            .manager_deposit(&mut vp, amount, vault_equity, now)
+            .manager_deposit(&mut vp, amount, vault_equity, now, 0)
             .unwrap();
         vault_equity += amount;
 
@@ -375,6 +390,7 @@ mod vault_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap(); // new user deposits $2000
         now += 60 * 60;
@@ -404,10 +420,12 @@ mod vault_fcn {
 
         assert_eq!(vault_manager_amount, 100000000);
         vault
-            .manager_request_withdraw(&mut vp, amount, WithdrawUnit::Token, vault_equity, now)
+            .manager_request_withdraw(&mut vp, amount, WithdrawUnit::Token, vault_equity, now, 0)
             .unwrap();
 
-        let withdrew = vault.manager_withdraw(&mut vp, vault_equity, now).unwrap();
+        let withdrew = vault
+            .manager_withdraw(&mut vp, vault_equity, now, 0)
+            .unwrap();
         assert_eq!(amount, withdrew);
         assert_eq!(vault.user_shares, 2000000000);
         assert_eq!(vault.total_shares, 2000000000);
@@ -434,7 +452,7 @@ mod vault_fcn {
         let mut vault_equity: u64 = 0;
         let amount: u64 = 100 * QUOTE_PRECISION_U64;
         vault
-            .manager_deposit(&mut vp, amount, vault_equity, now)
+            .manager_deposit(&mut vp, amount, vault_equity, now, 0)
             .unwrap();
         vault_equity += amount;
 
@@ -452,6 +470,7 @@ mod vault_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap(); // new user deposits $2000
         now += 60 * 60;
@@ -488,10 +507,12 @@ mod vault_fcn {
 
         assert_eq!(vault_manager_amount, 100001999);
         vault
-            .manager_request_withdraw(&mut vp, amount, WithdrawUnit::Token, vault_equity, now)
+            .manager_request_withdraw(&mut vp, amount, WithdrawUnit::Token, vault_equity, now, 0)
             .unwrap();
 
-        let withdrew = vault.manager_withdraw(&mut vp, vault_equity, now).unwrap();
+        let withdrew = vault
+            .manager_withdraw(&mut vp, vault_equity, now, 0)
+            .unwrap();
         assert_eq!(amount, withdrew);
         assert_eq!(vault.user_shares, 2000000000);
         assert_eq!(vault.total_shares, 2000002000);
@@ -529,7 +550,7 @@ mod vault_fcn {
         let mut vault_equity: u64 = 0;
         let amount: u64 = 100 * QUOTE_PRECISION_U64;
         vault
-            .manager_deposit(&mut vp, amount, vault_equity, now)
+            .manager_deposit(&mut vp, amount, vault_equity, now, 0)
             .unwrap();
         vault_equity += amount;
 
@@ -547,6 +568,7 @@ mod vault_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap(); // new user deposits $2000
         now += 60 * 60;
@@ -595,11 +617,13 @@ mod vault_fcn {
         assert_eq!(vault_manager_amount, 300002849); //$300??
 
         vault
-            .manager_request_withdraw(&mut vp, amount, WithdrawUnit::Token, vault_equity, now)
+            .manager_request_withdraw(&mut vp, amount, WithdrawUnit::Token, vault_equity, now, 0)
             .unwrap();
         assert_eq!(amount, vault.last_manager_withdraw_request.value);
 
-        let withdrew = vault.manager_withdraw(&mut vp, vault_equity, now).unwrap();
+        let withdrew = vault
+            .manager_withdraw(&mut vp, vault_equity, now, 0)
+            .unwrap();
         assert_eq!(amount - 1, withdrew); // todo: slight round out of favor
         assert_eq!(vault.user_shares, 1900000000);
         assert_eq!(vault.total_shares, 2033335367);
@@ -651,6 +675,7 @@ mod vault_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap(); // new user deposits $2000
         let vd_shares = vd.get_vault_shares();
@@ -675,6 +700,7 @@ mod vault_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .expect("request withdraw");
 
@@ -699,6 +725,7 @@ mod vault_fcn {
                 now,
                 &UserStats::default(),
                 &None,
+                0,
             )
             .expect("withdraw");
         assert_eq!(withdraw_amount, vault_equity);
@@ -732,6 +759,7 @@ mod vault_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap(); // new user deposits $2000
         let vd_shares = vd.checked_vault_shares(vault).unwrap();
@@ -757,6 +785,7 @@ mod vault_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .expect("request withdraw");
 
@@ -786,6 +815,7 @@ mod vault_fcn {
                 now,
                 &UserStats::default(),
                 &None,
+                0,
             )
             .expect("withdraw");
         assert_eq!(withdraw_amount, vault_equity);
@@ -823,6 +853,7 @@ mod vault_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap(); // new user deposits $2000
         let vd_shares = vd.checked_vault_shares(vault).unwrap();
@@ -843,6 +874,7 @@ mod vault_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .expect("request withdraw");
 
@@ -872,6 +904,7 @@ mod vault_fcn {
                 now,
                 &UserStats::default(),
                 &None,
+                0,
             )
             .expect("withdraw");
         assert_eq!(withdraw_amount, vault_equity);
@@ -904,6 +937,7 @@ mod vault_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap(); // new user deposits $2000
         vault_equity += deposit_amount;
@@ -1094,7 +1128,7 @@ mod vault_v1_fcn {
     use drift::math::insurance::if_shares_to_vault_amount as depositor_shares_to_vault_amount;
     use drift::state::user::UserStats;
 
-    use crate::state::{Vault, VaultProtocol};
+    use crate::state::{Vault, VaultDepositorBase, VaultProtocol};
     use crate::{VaultDepositor, WithdrawUnit};
 
     const USER_SHARES_AFTER_1500_BPS_FEE: u64 = 99_850_025;
@@ -1111,7 +1145,7 @@ mod vault_v1_fcn {
         let mut vault_equity = 0;
         let amount = 100_000_000; // $100
         vault
-            .manager_deposit(&mut Some(vp.borrow_mut()), amount, vault_equity, now)
+            .manager_deposit(&mut Some(vp.borrow_mut()), amount, vault_equity, now, 0)
             .unwrap();
         vault_equity += amount;
         vault_equity -= 1;
@@ -1129,6 +1163,7 @@ mod vault_v1_fcn {
                 WithdrawUnit::Token,
                 vault_equity,
                 now,
+                0,
             )
             .unwrap();
 
@@ -1139,12 +1174,12 @@ mod vault_v1_fcn {
         assert_eq!(vault.manager_total_withdraws, 0);
 
         let err = vault
-            .manager_withdraw(&mut Some(vp.borrow_mut()), vault_equity, now + 50)
+            .manager_withdraw(&mut Some(vp.borrow_mut()), vault_equity, now + 50, 0)
             .is_err();
         assert!(err);
 
         let withdraw = vault
-            .manager_withdraw(&mut Some(vp.borrow_mut()), vault_equity, now + 60)
+            .manager_withdraw(&mut Some(vp.borrow_mut()), vault_equity, now + 60, 0)
             .unwrap();
         assert_eq!(vault.user_shares, 0);
         assert_eq!(vault.total_shares, 0);
@@ -1177,6 +1212,7 @@ mod vault_v1_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         assert_eq!(vault.user_shares, 100000000);
@@ -1244,6 +1280,7 @@ mod vault_v1_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         assert_eq!(vault.user_shares, 100000000);
@@ -1319,6 +1356,7 @@ mod vault_v1_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         assert_eq!(vault.user_shares, 100000000);
@@ -1385,6 +1423,7 @@ mod vault_v1_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         assert_eq!(vault.user_shares, 100000000);
@@ -1437,6 +1476,7 @@ mod vault_v1_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         assert_eq!(vault.user_shares, 100000000);
@@ -1472,7 +1512,7 @@ mod vault_v1_fcn {
         let mut vault_equity: u64 = 0;
         let amount: u64 = 100 * QUOTE_PRECISION_U64;
         vault
-            .manager_deposit(&mut Some(vp.borrow_mut()), amount, vault_equity, now)
+            .manager_deposit(&mut Some(vp.borrow_mut()), amount, vault_equity, now, 0)
             .unwrap();
         vault_equity += amount;
 
@@ -1496,11 +1536,12 @@ mod vault_v1_fcn {
                 WithdrawUnit::Token,
                 vault_equity,
                 now,
+                0,
             )
             .unwrap();
 
         let withdrew = vault
-            .manager_withdraw(&mut Some(vp.borrow_mut()), vault_equity, now)
+            .manager_withdraw(&mut Some(vp.borrow_mut()), vault_equity, now, 0)
             .unwrap();
         assert_eq!(amount, withdrew);
         assert_eq!(vault.user_shares, 0);
@@ -1538,6 +1579,7 @@ mod vault_v1_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap();
         assert_eq!(vault.user_shares, 100000000);
@@ -1606,7 +1648,7 @@ mod vault_v1_fcn {
         let amount: u64 = 100 * QUOTE_PRECISION_U64;
         now += 100000;
         vault
-            .manager_deposit(&mut Some(vp.borrow_mut()), amount, vault_equity, now)
+            .manager_deposit(&mut Some(vp.borrow_mut()), amount, vault_equity, now, 0)
             .unwrap();
 
         assert_eq!(vault.user_shares, 0);
@@ -1622,10 +1664,11 @@ mod vault_v1_fcn {
                 WithdrawUnit::Token,
                 vault_equity,
                 now,
+                0,
             )
             .unwrap();
         let withdrew = vault
-            .manager_withdraw(&mut Some(vp.borrow_mut()), vault_equity, now)
+            .manager_withdraw(&mut Some(vp.borrow_mut()), vault_equity, now, 0)
             .unwrap();
         assert_eq!(withdrew, amount);
     }
@@ -1642,7 +1685,7 @@ mod vault_v1_fcn {
         let mut vault_equity: u64 = 0;
         let amount: u64 = 100 * QUOTE_PRECISION_U64;
         vault
-            .manager_deposit(&mut Some(vp.borrow_mut()), amount, vault_equity, now)
+            .manager_deposit(&mut Some(vp.borrow_mut()), amount, vault_equity, now, 0)
             .unwrap();
         vault_equity += amount;
 
@@ -1660,6 +1703,7 @@ mod vault_v1_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap(); // new user deposits $2000
         now += 60 * 60;
@@ -1697,11 +1741,12 @@ mod vault_v1_fcn {
                 WithdrawUnit::Token,
                 vault_equity,
                 now,
+                0,
             )
             .unwrap();
 
         let withdrew = vault
-            .manager_withdraw(&mut Some(vp.borrow_mut()), vault_equity, now)
+            .manager_withdraw(&mut Some(vp.borrow_mut()), vault_equity, now, 0)
             .unwrap();
         assert_eq!(amount, withdrew);
         assert_eq!(vault.user_shares, 2000000000);
@@ -1729,7 +1774,7 @@ mod vault_v1_fcn {
         let mut vault_equity: u64 = 0;
         let amount: u64 = 100 * QUOTE_PRECISION_U64;
         vault
-            .manager_deposit(&mut Some(vp.borrow_mut()), amount, vault_equity, now)
+            .manager_deposit(&mut Some(vp.borrow_mut()), amount, vault_equity, now, 0)
             .unwrap();
         vault_equity += amount;
 
@@ -1747,6 +1792,7 @@ mod vault_v1_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap(); // new user deposits $2000
         now += 60 * 60;
@@ -1791,11 +1837,12 @@ mod vault_v1_fcn {
                 WithdrawUnit::Token,
                 vault_equity,
                 now,
+                0,
             )
             .unwrap();
 
         let withdrew = vault
-            .manager_withdraw(&mut Some(vp.borrow_mut()), vault_equity, now)
+            .manager_withdraw(&mut Some(vp.borrow_mut()), vault_equity, now, 0)
             .unwrap();
         assert_eq!(amount, withdrew);
         assert_eq!(vault.user_shares, 2000000000);
@@ -1834,7 +1881,7 @@ mod vault_v1_fcn {
         let mut vault_equity: u64 = 0;
         let amount: u64 = 100 * QUOTE_PRECISION_U64;
         vault
-            .manager_deposit(&mut Some(vp.borrow_mut()), amount, vault_equity, now)
+            .manager_deposit(&mut Some(vp.borrow_mut()), amount, vault_equity, now, 0)
             .unwrap();
         vault_equity += amount;
 
@@ -1852,6 +1899,7 @@ mod vault_v1_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap(); // new user deposits $2000
         now += 60 * 60;
@@ -1907,12 +1955,13 @@ mod vault_v1_fcn {
                 WithdrawUnit::Token,
                 vault_equity,
                 now,
+                0,
             )
             .unwrap();
         assert_eq!(amount, vault.last_manager_withdraw_request.value);
 
         let withdrew = vault
-            .manager_withdraw(&mut Some(vp.borrow_mut()), vault_equity, now)
+            .manager_withdraw(&mut Some(vp.borrow_mut()), vault_equity, now, 0)
             .unwrap();
         assert_eq!(amount - 1, withdrew); // todo: slight round out of favor
         assert_eq!(vault.user_shares, 1900000000);
@@ -1951,7 +2000,7 @@ mod vault_v1_fcn {
         let mut vault_equity: u64 = 0;
         let amount: u64 = 100 * QUOTE_PRECISION_U64;
         vault
-            .manager_deposit(&mut Some(vp.borrow_mut()), amount, vault_equity, now)
+            .manager_deposit(&mut Some(vp.borrow_mut()), amount, vault_equity, now, 0)
             .unwrap();
         vault_equity += amount;
 
@@ -1969,6 +2018,7 @@ mod vault_v1_fcn {
             now,
             &UserStats::default(),
             &None,
+            0,
         )
         .unwrap(); // new user deposits $2000
         now += 60 * 60;
@@ -2024,12 +2074,13 @@ mod vault_v1_fcn {
                 WithdrawUnit::Token,
                 vault_equity,
                 now,
+                0,
             )
             .unwrap();
         assert_eq!(amount, vp.borrow().last_protocol_withdraw_request.value);
 
         let withdrew = vault
-            .protocol_withdraw(&mut Some(vp.borrow_mut()), vault_equity, now)
+            .protocol_withdraw(&mut Some(vp.borrow_mut()), vault_equity, now, 0)
             .unwrap();
         assert_eq!(amount - 1, withdrew); // todo: slight round out of favor
         assert_eq!(vault.user_shares, 1900000000);
@@ -2066,6 +2117,142 @@ mod vault_v1_fcn {
             vd_amount + protocol_amount_after + manager_amount,
             vault_equity - 1
         );
+    }
+
+    #[test]
+    fn test_profit_share_with_hurdle_rate() {
+        let mut now = 123456789;
+        let mut vault = Vault::default();
+        let vp = RefCell::new(VaultProtocol::default());
+        vault.management_fee = 0;
+        vault.profit_share = 150_000; // 15%
+        vault.hurdle_rate = 100_000; // 10%
+        vault.last_fee_update_ts = now;
+        let mut vault_equity: u64 = 0;
+        let amount: u64 = 100 * QUOTE_PRECISION_U64;
+
+        let vd =
+            &mut VaultDepositor::new(Pubkey::default(), Pubkey::default(), Pubkey::default(), now);
+        vd.deposit(
+            amount,
+            vault_equity,
+            &mut vault,
+            &mut Some(vp.borrow_mut()),
+            now,
+            &UserStats::default(),
+            &None,
+            0,
+        )
+        .unwrap(); // new user deposits $2000
+        now += 60 * 60;
+        assert_eq!(vault.user_shares, amount as u128);
+        assert_eq!(vault.total_shares, amount as u128);
+        vault_equity += amount;
+
+        now += 60 * 60 * 24; // 1 day later
+
+        // no profit share yet
+        vd.apply_profit_share(
+            vault_equity,
+            &mut vault,
+            &mut Some(vp.borrow_mut()),
+            now,
+            &UserStats::default(),
+            &None,
+        )
+        .unwrap();
+        assert_eq!(vd.cumulative_profit_share_amount, 0);
+        assert_eq!(vault.manager_total_profit_share, 0);
+
+        // vault up 5%, no profit share yet, less than hurdle
+        vd.apply_profit_share(
+            vault_equity * 105 / 100,
+            &mut vault,
+            &mut Some(vp.borrow_mut()),
+            now,
+            &UserStats::default(),
+            &None,
+        )
+        .unwrap();
+        assert_eq!(vd.cumulative_profit_share_amount, 0);
+        assert_eq!(vault.manager_total_profit_share, 0);
+
+        // vault up 10%, no profit share yet, less than hurdle
+        vd.apply_profit_share(
+            vault_equity * 110 / 100,
+            &mut vault,
+            &mut Some(vp.borrow_mut()),
+            now,
+            &UserStats::default(),
+            &None,
+        )
+        .unwrap();
+        assert_eq!(vd.cumulative_profit_share_amount, 0);
+        assert_eq!(vault.manager_total_profit_share, 0);
+
+        // vault up 11%, profit share now
+        let vault_equity_profit_share = vault_equity * 111 / 100;
+        assert_eq!(vault_equity_profit_share, 111000000);
+        vd.apply_profit_share(
+            vault_equity_profit_share,
+            &mut vault,
+            &mut Some(vp.borrow_mut()),
+            now,
+            &UserStats::default(),
+            &None,
+        )
+        .unwrap();
+        assert_eq!(vd.cumulative_profit_share_amount, 9350000); // $11 * 0.85 = 9.35
+        assert_eq!(vault.manager_total_profit_share, 1650000); // $11 * 0.15 = 1.65
+        assert_eq!(vault.user_shares, vd.get_vault_shares()); //
+        assert_eq!(vault.user_shares, 98513514); // 109.35 / 111 = 0.98513514
+        assert_eq!(vault.total_shares, amount as u128);
+
+        let user_equity =
+            vault_equity_profit_share * (vault.user_shares as u64) / (vault.total_shares as u64);
+        assert_eq!(user_equity, 109350000);
+
+        // vault up 10% since last profit share, no profit share yet (below hurdle)
+        let vault_equity_final = vault_equity_profit_share * 110 / 100;
+        assert_eq!(vault_equity_final, 122_100_000);
+        vd.apply_profit_share(
+            vault_equity_final,
+            &mut vault,
+            &mut Some(vp.borrow_mut()),
+            now,
+            &UserStats::default(),
+            &None,
+        )
+        .unwrap();
+        assert_eq!(vd.cumulative_profit_share_amount, 9350000); // $11 * 0.85 = 9.35
+        assert_eq!(vault.manager_total_profit_share, 1650000); // $11 * 0.15 = 1.65
+        assert_eq!(vault.user_shares, vd.get_vault_shares()); //
+        assert_eq!(vault.user_shares, 98513514); // 109.35 / 111 = 0.98513514
+        assert_eq!(vault.total_shares, amount as u128);
+
+        // vault up 11% since last profit share, profit share now (above hurdle)
+        let vault_equity_final = vault_equity_profit_share * 111 / 100;
+        assert_eq!(vault_equity_final, 123_210_000);
+        let user_equity = vault_equity_final * 98513514 / vault.total_shares as u64;
+        assert_eq!(user_equity, 121_378_500); // 121,378,500.5994
+
+        vd.apply_profit_share(
+            vault_equity_final,
+            &mut vault,
+            &mut Some(vp.borrow_mut()),
+            now,
+            &UserStats::default(),
+            &None,
+        )
+        .unwrap();
+        assert_eq!(vd.cumulative_profit_share_amount, 19_574_225); // (121.378500 - 109.35) * 0.85 + 9.35 = 19.574225
+        assert_eq!(vault.manager_total_profit_share, 3_454_275); // (121.378500 - 109.35) * 0.15 + 1.65 = 3.454275
+        assert_eq!(vault.user_shares, vd.get_vault_shares()); //
+        assert_eq!(vault.user_shares, 97049124);
+        assert_eq!(vault.total_shares, amount as u128);
+
+        let user_equity = vault_equity_final * vault.user_shares as u64 / vault.total_shares as u64;
+        assert_eq!(user_equity, 119_574_225); // 109.35 + (121.3785 - 109.35) * 0.85 = 119.574225
     }
 }
 
@@ -2154,6 +2341,7 @@ mod request_withdraw_cancel_tests {
                         WithdrawUnit::SharesPercent,
                         vault_equity_initial,
                         now,
+                        0,
                     )
                     .expect("can request withdraw");
             }
@@ -2165,6 +2353,7 @@ mod request_withdraw_cancel_tests {
                         WithdrawUnit::SharesPercent,
                         vault_equity_initial,
                         now,
+                        0,
                     )
                     .expect("can request withdraw");
             }
@@ -2178,6 +2367,7 @@ mod request_withdraw_cancel_tests {
                     now,
                     &UserStats::default(),
                     &None,
+                    0,
                 )
                 .expect("can request withdraw");
             }
@@ -2195,6 +2385,7 @@ mod request_withdraw_cancel_tests {
                             action.amount,
                             vault_equity_initial,
                             now,
+                            0,
                         )
                         .expect("manager can deposit");
                 }
@@ -2210,6 +2401,7 @@ mod request_withdraw_cancel_tests {
                         now,
                         &UserStats::default(),
                         &None,
+                        0,
                     )
                     .expect("vault depositor can deposit");
                 }
@@ -2226,6 +2418,7 @@ mod request_withdraw_cancel_tests {
                         &mut Some(vp.borrow_mut()),
                         vault_equity_final,
                         now + 1000,
+                        0,
                     )
                     .expect("can cancel withdraw request");
             }
@@ -2235,6 +2428,7 @@ mod request_withdraw_cancel_tests {
                         &mut Some(vp.borrow_mut()),
                         vault_equity_final,
                         now + 1000,
+                        0,
                     )
                     .expect("can cancel withdraw request");
             }
@@ -2246,6 +2440,7 @@ mod request_withdraw_cancel_tests {
                     now + 1000,
                     &UserStats::default(),
                     &None,
+                    0,
                 )
                 .expect("can cancel withdraw request");
             }
@@ -3322,6 +3517,7 @@ mod full_vault_withdraw_tests {
                             WithdrawUnit::SharesPercent,
                             vault_equity_initial,
                             now,
+                            0,
                         )
                         .expect("manager can request withdraw");
                 }
@@ -3333,6 +3529,7 @@ mod full_vault_withdraw_tests {
                             WithdrawUnit::SharesPercent,
                             vault_equity_initial,
                             now,
+                            0,
                         )
                         .expect("protocol can request withdraw");
                 }
@@ -3346,6 +3543,7 @@ mod full_vault_withdraw_tests {
                         now,
                         &UserStats::default(),
                         &None,
+                        0,
                     )
                     .expect("vault depositor can request withdraw");
                 }
@@ -3359,12 +3557,12 @@ mod full_vault_withdraw_tests {
             match param.entity_type {
                 EntityType::Manager => {
                     vault
-                        .manager_withdraw(&mut Some(vp.borrow_mut()), vault_equity_final, now)
+                        .manager_withdraw(&mut Some(vp.borrow_mut()), vault_equity_final, now, 0)
                         .expect("manager can withdraw");
                 }
                 EntityType::Protocol => {
                     vault
-                        .protocol_withdraw(&mut Some(vp.borrow_mut()), vault_equity_final, now)
+                        .protocol_withdraw(&mut Some(vp.borrow_mut()), vault_equity_final, now, 0)
                         .expect("protocol can withdraw");
                 }
                 EntityType::VaultDepositor => {
@@ -3375,6 +3573,7 @@ mod full_vault_withdraw_tests {
                         now,
                         &UserStats::default(),
                         &None,
+                        0,
                     )
                     .expect("vault depositor can withdraw");
                 }

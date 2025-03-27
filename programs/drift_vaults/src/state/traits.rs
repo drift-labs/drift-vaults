@@ -9,7 +9,7 @@ use crate::{validate, VaultFee, VaultProtocol, WithdrawUnit};
 use anchor_lang::prelude::*;
 
 use drift::math::casting::Cast;
-use drift::math::constants::PERCENTAGE_PRECISION;
+use drift::math::constants::{PERCENTAGE_PRECISION, PERCENTAGE_PRECISION_I64};
 use drift::math::insurance::{
     if_shares_to_vault_amount as depositor_shares_to_vault_amount,
     vault_amount_to_if_shares as vault_amount_to_depositor_shares,
@@ -84,11 +84,23 @@ pub trait VaultDepositorBase {
         vault: &Vault,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
     ) -> Result<(u128, u128)> {
-        let profit = total_amount.cast::<i64>()?.safe_sub(
-            self.get_net_deposits()
-                .safe_add(self.get_cumulative_profit_share_amount())?,
-        )?;
-        if profit > 0 {
+        let cumulative_profit_share_amount = self
+            .get_net_deposits()
+            .safe_add(self.get_cumulative_profit_share_amount())?;
+
+        let profit = total_amount
+            .cast::<i64>()?
+            .safe_sub(cumulative_profit_share_amount)?;
+
+        let profit_beyond_hurdle = if vault.hurdle_rate > 0 {
+            cumulative_profit_share_amount
+                .safe_mul(vault.hurdle_rate as i64)?
+                .safe_div(PERCENTAGE_PRECISION_I64)?
+        } else {
+            0
+        };
+
+        if profit > profit_beyond_hurdle {
             let profit_u128 = profit.cast::<u128>()?;
 
             let manager_profit_share_amount = profit_u128
@@ -238,6 +250,7 @@ pub trait VaultDepositorBase {
         withdraw_unit: WithdrawUnit,
         vault_equity: u64,
         now: i64,
+        deposit_oracle_price: i64,
     ) -> Result<(u128, Option<RefMut<'a, VaultProtocol>>)> {
         let from_rebase_divisor = self.apply_rebase(vault, vault_protocol, vault_equity)?;
         let to_rebase_divisor = to.apply_rebase(vault, vault_protocol, vault_equity)?;
@@ -334,6 +347,7 @@ pub trait VaultDepositorBase {
                         .cast()?,
                     management_fee: management_fee_payment,
                     management_fee_shares,
+                    deposit_oracle_price,
                 });
 
                 emit!(VaultDepositorRecord {
@@ -355,6 +369,7 @@ pub trait VaultDepositorBase {
                         .cast()?,
                     management_fee: management_fee_payment,
                     management_fee_shares,
+                    deposit_oracle_price,
                 });
             }
             Some(_) => {
@@ -380,6 +395,7 @@ pub trait VaultDepositorBase {
                     management_fee_shares,
                     protocol_shares_before,
                     protocol_shares_after: vault.get_protocol_shares(vault_protocol),
+                    deposit_oracle_price,
                 });
 
                 emit!(VaultDepositorV1Record {
@@ -404,6 +420,7 @@ pub trait VaultDepositorBase {
                     management_fee_shares,
                     protocol_shares_before,
                     protocol_shares_after: vault.get_protocol_shares(vault_protocol),
+                    deposit_oracle_price,
                 });
             }
         }

@@ -12,6 +12,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+## [0.6.0] - 2024-03-20
+
+### Features
+
+* program: implement hurdle rate ([#76](https://github.com/drift-labs/drift-vaults/pull/76))
+* add `deposit_oracle_price` to `VaultDepositorRecord` and `VaultDepositorV1Record` ([#80](https://github.com/drift-labs/drift-vaults/pull/80))
+* add `update_vault_manager` instruction, refactor sdk for multisig support ([#81](https://github.com/drift-labs/drift-vaults/pull/81))
+* program: clamp user deposit amount to room available ([#82](https://github.com/drift-labs/drift-vaults/pull/82))
+
+### Fixes
+
+### Breaking
+
 ## [0.5.0] - 2024-03-03
 
 ### Features

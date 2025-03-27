@@ -2854,7 +2854,8 @@ describe('TestInsuranceFundStake', () => {
 		);
 		const _ifStakeTx0 = await managerClient.initializeInsuranceFundStake(
 			vault,
-			marketIndex
+			marketIndex,
+			{ noLut: true }
 		);
 
 		// test initializing an IF stake account
@@ -2917,7 +2918,8 @@ describe('TestInsuranceFundStake', () => {
 			vault,
 			marketIndex,
 			ifStakeAmount,
-			managerTokenAccount
+			managerTokenAccount,
+			{ noLut: true }
 		);
 
 		const ifStakeAccount1 =
@@ -2935,7 +2937,8 @@ describe('TestInsuranceFundStake', () => {
 		await managerClient.requestRemoveInsuranceFundStake(
 			vault,
 			marketIndex,
-			requestRemoveAmount
+			requestRemoveAmount,
+			{ noLut: true }
 		);
 
 		const ifStakeAccount2 =
@@ -2950,7 +2953,8 @@ describe('TestInsuranceFundStake', () => {
 		// test cancel remove stake request
 		await managerClient.cancelRequestRemoveInsuranceFundStake(
 			vault,
-			marketIndex
+			marketIndex,
+			{ noLut: true }
 		);
 
 		const ifStakeAccount3 =
@@ -2966,7 +2970,8 @@ describe('TestInsuranceFundStake', () => {
 		await managerClient.requestRemoveInsuranceFundStake(
 			vault,
 			marketIndex,
-			requestRemoveAmount
+			requestRemoveAmount,
+			{ noLut: true }
 		);
 
 		// Sleep for 1 second (unstake period)
@@ -2975,7 +2980,8 @@ describe('TestInsuranceFundStake', () => {
 		await managerClient.removeInsuranceFundStake(
 			vault,
 			marketIndex,
-			managerTokenAccount
+			managerTokenAccount,
+			{ noLut: true }
 		);
 
 		const tokenBalanceAfter =
