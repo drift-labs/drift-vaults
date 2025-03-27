@@ -293,6 +293,7 @@ impl VaultDepositor {
             now,
             user_stats,
             fuel_overflow,
+            deposit_oracle_price,
         )?;
 
         let n_shares = vault_amount_to_depositor_shares(amount, vault.total_shares, vault_equity)?;
@@ -391,6 +392,7 @@ impl VaultDepositor {
             now,
             user_stats,
             fuel_overflow,
+            deposit_oracle_price,
         )?;
 
         let (withdraw_value, n_shares) = withdraw_unit.get_withdraw_value_and_shares(
@@ -712,6 +714,7 @@ impl VaultDepositor {
         Ok((withdraw_amount, finishing_liquidation))
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn apply_profit_share(
         &mut self,
         vault_equity: u64,
@@ -720,6 +723,7 @@ impl VaultDepositor {
         now: i64,
         user_stats: &UserStats,
         fuel_overflow: &Option<AccountLoader<FuelOverflow>>,
+        deposit_oracle_price: i64,
     ) -> Result<(u64, u64)> {
         validate!(
             !self.last_withdraw_request.pending(),
@@ -727,7 +731,14 @@ impl VaultDepositor {
             "Cannot apply profit share to depositor with pending withdraw request"
         )?;
         self.update_cumulative_fuel_amount(now, vault, user_stats, fuel_overflow)?;
-        VaultDepositorBase::apply_profit_share(self, vault_equity, vault, vault_protocol)
+        VaultDepositorBase::apply_profit_share(
+            self,
+            vault_equity,
+            vault,
+            vault_protocol,
+            now,
+            deposit_oracle_price,
+        )
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -760,6 +771,7 @@ impl VaultDepositor {
             now,
             user_stats,
             fuel_overflow,
+            deposit_oracle_price,
         )?;
         let profit_share = manager_profit_share.saturating_add(protocol_profit_share);
         let protocol_shares_after = vault.get_protocol_shares(vault_protocol);
