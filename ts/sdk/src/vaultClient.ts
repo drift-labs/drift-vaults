@@ -1523,7 +1523,7 @@ export class VaultClient {
 			true
 		);
 
-		const ixs = [];
+		const ixs: TransactionInstruction[] = [];
 
 		const userAtaExists = await this.driftClient.connection.getAccountInfo(
 			userAta
@@ -1870,7 +1870,7 @@ export class VaultClient {
 		vaultDepositor: PublicKey,
 		amount: BN,
 		withdrawUnit: WithdrawUnit,
-		oracleFeedsToCrank?: { feed: PublicKey; oracleSource: OracleSource }[]
+		oracleFeedsToCrank?: TxParams['oracleFeedsToCrank']
 	): Promise<TransactionInstruction[]> {
 		const vaultDepositorAccount =
 			await this.program.account.vaultDepositor.fetch(vaultDepositor);
@@ -1936,7 +1936,7 @@ export class VaultClient {
 
 	public async getWithdrawIx(
 		vaultDepositor: PublicKey,
-		oracleFeedsToCrank?: { feed: PublicKey; oracleSource: OracleSource }[]
+		oracleFeedsToCrank?: TxParams['oracleFeedsToCrank']
 	): Promise<TransactionInstruction[]> {
 		const vaultDepositorAccount =
 			await this.program.account.vaultDepositor.fetch(vaultDepositor);
@@ -2129,7 +2129,7 @@ export class VaultClient {
 			tokenProgram: TOKEN_PROGRAM_ID,
 		};
 
-		const ixs = [];
+		const ixs: TransactionInstruction[] = [];
 
 		if (createAtaIx) {
 			ixs.push(createAtaIx);
