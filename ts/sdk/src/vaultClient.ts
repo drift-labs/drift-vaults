@@ -1888,7 +1888,7 @@ export class VaultClient {
 		)) as UserStatsAccount;
 		const remainingAccounts = this.getRemainingAccountsForUser(
 			[user.getUserAccount()],
-			[],
+			[vaultAccount.spotMarketIndex],
 			vaultAccount,
 			userStats
 		);
@@ -2185,7 +2185,7 @@ export class VaultClient {
 		)) as UserStatsAccount;
 		const remainingAccounts = this.getRemainingAccountsForUser(
 			[user.getUserAccount()],
-			[],
+			[vaultAccount.spotMarketIndex],
 			vaultAccount,
 			userStats
 		);
