@@ -2049,10 +2049,11 @@ export class VaultClient {
 	}
 
 	public async forceWithdraw(
-		vaultDepositor: PublicKey
+		vaultDepositor: PublicKey,
+		txParams?: TxParams
 	): Promise<TransactionSignature> {
 		const ix = await this.getForceWithdrawIx(vaultDepositor);
-		return await this.createAndSendTxn(ix);
+		return await this.createAndSendTxn(ix, txParams);
 	}
 
 	public async getForceWithdrawIx(
