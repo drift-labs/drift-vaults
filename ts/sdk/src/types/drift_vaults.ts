@@ -1,5 +1,5 @@
 export type DriftVaults = {
-	version: '0.5.0';
+	version: '0.6.0';
 	name: 'drift_vaults';
 	instructions: [
 		{
@@ -2986,7 +2986,7 @@ export type DriftVaults = {
 };
 
 export const IDL: DriftVaults = {
-	version: '0.5.0',
+	version: '0.6.0',
 	name: 'drift_vaults',
 	instructions: [
 		{
