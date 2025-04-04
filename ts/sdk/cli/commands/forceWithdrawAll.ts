@@ -68,10 +68,10 @@ export const forceWithdrawAll = async (program: Command, cmdOpts: OptionValues) 
                 data: Buffer.from("Drift Vaults manager initiated withdrawal", "utf-8"),
                 programId: new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"),
             }),
-        ]
+        ];
         for (const depositorAddress of chunk) {
             try {
-				console.log(`Trying deposit: ${depositorAddress.toBase58()}`)
+				console.log(`Trying deposit: ${depositorAddress.toBase58()}`);
                 ixs.push(...await driftVault.getForceWithdrawIx(depositorAddress));
             } catch (error) {
                 console.error(`Error withdrawing for ${depositorAddress.toBase58()}:`, error);
