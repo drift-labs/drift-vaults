@@ -63,6 +63,11 @@ export class VaultDepositorAccount extends VaultsProgramAccount<
 		const profitShareAmount = profit
 			.mul(vaultProfitShare)
 			.div(PERCENTAGE_PRECISION);
+
+		if (depositorEquity.eq(new BN(0))) {
+			return ZERO;
+		}
+
 		const profitShareProportion = profitShareAmount
 			.mul(PERCENTAGE_PRECISION)
 			.div(depositorEquity);
