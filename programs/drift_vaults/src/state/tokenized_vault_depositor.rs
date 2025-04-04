@@ -173,8 +173,13 @@ impl TokenizedVaultDepositor {
             protocol_fee_payment,
             protocol_fee_shares,
         } = vault.apply_fee(vault_protocol, vault_equity, now)?;
-        let (manager_profit_share, protocol_profit_share) =
-            self.apply_profit_share(vault_equity, vault, vault_protocol)?;
+        let (manager_profit_share, protocol_profit_share) = self.apply_profit_share(
+            vault_equity,
+            vault,
+            vault_protocol,
+            now,
+            deposit_oracle_price,
+        )?;
 
         let vault_shares_before = self.checked_vault_shares(vault)?;
         let total_vault_shares_before = vault.total_shares;
@@ -236,7 +241,7 @@ impl TokenizedVaultDepositor {
                     ts: now,
                     vault: vault.pubkey,
                     depositor_authority: vault.pubkey,
-                    action: VaultDepositorAction::Withdraw,
+                    action: VaultDepositorAction::TokenizeShares,
                     amount: shares_transferred.cast()?,
                     spot_market_index: vault.spot_market_index,
                     vault_equity_before: vault_equity,
@@ -281,8 +286,13 @@ impl TokenizedVaultDepositor {
             protocol_fee_payment,
             protocol_fee_shares,
         } = vault.apply_fee(vault_protocol, vault_equity, now)?;
-        let (manager_profit_share, protocol_profit_share) =
-            self.apply_profit_share(vault_equity, vault, vault_protocol)?;
+        let (manager_profit_share, protocol_profit_share) = self.apply_profit_share(
+            vault_equity,
+            vault,
+            vault_protocol,
+            now,
+            deposit_oracle_price,
+        )?;
 
         let vault_shares_before = self.checked_vault_shares(vault)?;
         let total_vault_shares_before = vault.total_shares;
@@ -334,8 +344,8 @@ impl TokenizedVaultDepositor {
                     ts: now,
                     vault: vault.pubkey,
                     depositor_authority: vault.pubkey,
-                    action: VaultDepositorAction::FeePayment,
-                    amount: 0,
+                    action: VaultDepositorAction::RedeemTokens,
+                    amount: tokens_to_burn,
                     spot_market_index: vault.spot_market_index,
                     vault_equity_before: vault_equity,
                     vault_shares_before,
@@ -579,7 +589,7 @@ mod tests {
 
         let tvd_shares_before = tvd.get_vault_shares();
         let (manager_profit_share, protocol_profit_share) = tvd
-            .apply_profit_share(vault_equity + profit, vault, &mut None)
+            .apply_profit_share(vault_equity + profit, vault, &mut None, now, 0)
             .unwrap();
         let tvd_shares_after = tvd.get_vault_shares();
 
