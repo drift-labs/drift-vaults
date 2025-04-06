@@ -56,7 +56,7 @@ export class VaultDepositorAccount extends VaultsProgramAccount<
 			.sub(accountData.netDeposits)
 			.sub(accountData.cumulativeProfitShareAmount);
 
-		if (profit.lte(new BN(0))) {
+		if (profit.lte(new BN(0)) || depositorEquity.isZero()) {
 			return ZERO;
 		}
 
