@@ -1815,10 +1815,14 @@ export class VaultClient {
 		ixs.push(depositIx);
 		ixs.push(...postIxs);
 
+		const signedMsgUserOrdersAccountExists = await this.driftClient.isSignedMsgUserOrdersAccountInitialized(this.driftClient.wallet.publicKey);
+		const [, initSignedMsgUserOrdersAccountIx] = signedMsgUserOrdersAccountExists ? [, undefined] : await this.driftClient.getInitializeSignedMsgUserOrdersAccountIx(this.driftClient.wallet.publicKey, 8);
+		const optionalIxs = initSignedMsgUserOrdersAccountIx ? [initSignedMsgUserOrdersAccountIx] : undefined;
+
 		if (txParams?.noLut ? txParams.noLut : false) {
 			return await this.createTxnNoLut(ixs, txParams);
 		} else {
-			return await this.createTxn(ixs, txParams);
+			return await this.createTxn(ixs, txParams, optionalIxs);
 		}
 	}
 
@@ -2285,7 +2289,8 @@ export class VaultClient {
 
 	public async createTxn(
 		vaultIxs: TransactionInstruction[],
-		txParams?: TxParams
+		txParams?: TxParams,
+		optionalIxs?: TransactionInstruction[],
 	): Promise<VersionedTransaction> {
 		const ixs = [
 			ComputeBudgetProgram.setComputeUnitLimit({
@@ -2306,12 +2311,13 @@ export class VaultClient {
 			txVersion: 0,
 			fetchAllMarketLookupTableAccounts:
 				this.driftClient.fetchAllLookupTableAccounts.bind(this.driftClient),
+			optionalIxs,
 		})) as VersionedTransaction;
 	}
 
 	public async createTxnNoLut(
 		vaultIxs: TransactionInstruction[],
-		txParams?: TxParams
+		txParams?: TxParams,
 	): Promise<VersionedTransaction> {
 		const ixs = [
 			ComputeBudgetProgram.setComputeUnitLimit({
