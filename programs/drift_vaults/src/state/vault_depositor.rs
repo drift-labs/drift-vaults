@@ -712,6 +712,7 @@ impl VaultDepositor {
         Ok((withdraw_amount, finishing_liquidation))
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn apply_profit_share(
         &mut self,
         vault_equity: u64,
