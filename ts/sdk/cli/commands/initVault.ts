@@ -147,7 +147,7 @@ export const initVault = async (program: Command, cmdOpts: OptionValues) => {
         const initSignedOrdersAccIx = await driftClient.getInitializeSignedMsgUserOrdersAccountIx(
             vaultAddress,
             8
-        )
+        );
         const initIx = await driftVault.getInitializeVaultIx({
             name: vaultNameBytes,
             spotMarketIndex,
@@ -163,7 +163,7 @@ export const initVault = async (program: Command, cmdOpts: OptionValues) => {
         const initTx = await driftVault.createAndSendTxn([
             initSignedOrdersAccIx[1],
             initIx,
-        ])
+        ]);
         console.log(`Initialized vault, tx: https://solscan.io/tx/${initTx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
 
         console.log(`\nNew vault address: ${vaultAddress}\n`);
