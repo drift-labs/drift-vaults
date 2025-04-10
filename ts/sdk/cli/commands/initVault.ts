@@ -144,7 +144,11 @@ export const initVault = async (program: Command, cmdOpts: OptionValues) => {
         console.log(`Base 58 encoded transaction:`);
         console.log(dumpTransactionMessage(cmdOpts.manager ? new PublicKey(cmdOpts.manager) : driftClient.wallet.publicKey, [initIx, updateDelegateIx]));
     } else {
-        const initTx = await driftVault.initializeVault({
+        const initSignedOrdersAccIx = await driftClient.getInitializeSignedMsgUserOrdersAccountIx(
+            vaultAddress,
+            8
+        );
+        const initIx = await driftVault.getInitializeVaultIx({
             name: vaultNameBytes,
             spotMarketIndex,
             redeemPeriod: new BN(redeemPeriodSec),
@@ -156,6 +160,10 @@ export const initVault = async (program: Command, cmdOpts: OptionValues) => {
             minDepositAmount: minDepositAmountBN,
             manager: cmdOpts.manager,
         });
+        const initTx = await driftVault.createAndSendTxn([
+            initSignedOrdersAccIx[1],
+            initIx,
+        ]);
         console.log(`Initialized vault, tx: https://solscan.io/tx/${initTx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
 
         console.log(`\nNew vault address: ${vaultAddress}\n`);
