@@ -1,4 +1,4 @@
-import { ComputeBudgetProgram, PublicKey, SendTransactionError, TransactionMessage, VersionedTransaction } from "@solana/web3.js";
+import { ComputeBudgetProgram, PublicKey, SendTransactionError, TransactionInstruction, TransactionMessage, VersionedTransaction } from "@solana/web3.js";
 import {
     OptionValues,
     Command
@@ -50,20 +50,28 @@ export const forceWithdrawAll = async (program: Command, cmdOpts: OptionValues) 
                 console.log(`  - pending withdrawal: ${vdAccount.lastWithdrawRequest.shares.toString()} ($${convertToNumber(vd.account.lastWithdrawRequest.value, spotPrecision)}), ${(pct * 100.00).toFixed(2)}% of their deposit ${withdrawAvailable ? "<--- WITHDRAWABLE" : ""}`);
                 console.log(`    - requested at: ${new Date(withdrawRequested * 1000).toISOString()}`);
                 console.log(`    - can withdraw in: ${daysUntilWithdraw} days and ${hoursUntilWithdraw} hours`);
+				withdrawables.push(vdAccount.pubkey);
             }
 
-            withdrawables.push(vdAccount.pubkey);
         }
     }
 
     console.log(`Withdrawing ${withdrawables.length} depositors`);
-    const chunkSize = 3;
+    const luts = await driftClient.fetchAllLookupTableAccounts();
+    const chunkSize = 1;
     for (let i = 0; i < withdrawables.length; i += chunkSize) {
         const chunk = withdrawables.slice(i, i + chunkSize);
         console.log(`Processing chunk ${i / chunkSize + 1} of ${Math.ceil(withdrawables.length / chunkSize)}`);
-        const ixs = [];
+        const ixs: TransactionInstruction[] = [
+            new TransactionInstruction({
+                keys: [{ pubkey: wallet.publicKey, isSigner: true, isWritable: true }],
+                data: Buffer.from("Drift Vaults manager initiated withdrawal", "utf-8"),
+                programId: new PublicKey("MemoSq4gqABAXKb96qnH8TysNcWxMyWCqXgDLGmfcHr"),
+            }),
+        ];
         for (const depositorAddress of chunk) {
             try {
+				console.log(`Trying deposit: ${depositorAddress.toBase58()}`);
                 ixs.push(...await driftVault.getForceWithdrawIx(depositorAddress));
             } catch (error) {
                 console.error(`Error withdrawing for ${depositorAddress.toBase58()}:`, error);
@@ -75,21 +83,21 @@ export const forceWithdrawAll = async (program: Command, cmdOpts: OptionValues) 
             recentBlockhash: (await driftClient.connection.getLatestBlockhash('finalized')).blockhash,
             instructions: [
                 ComputeBudgetProgram.setComputeUnitLimit({
-                    units: 600_000,
+                    units: 800_000,
                 }),
                 ComputeBudgetProgram.setComputeUnitPrice({
                     microLamports: 10_000,
                 }),
                 ...ixs
             ],
-        }).compileToV0Message();
+        }).compileToV0Message(luts);
 
         const tx = await wallet.signVersionedTransaction(new VersionedTransaction(message));
 
         console.log(`Sending chunk: ${bs58.encode(tx.signatures[0])}`);
         try {
             const txid = await driftClient.connection.sendTransaction(tx);
-            console.log(`Sent chunk: ${txid}`);
+            console.log(`Sent chunk: https://solscan.io/tx/${txid}`);
         } catch (e) {
             console.error(`Error sending chunk: ${e}`);
             console.log((e as SendTransactionError).logs);
