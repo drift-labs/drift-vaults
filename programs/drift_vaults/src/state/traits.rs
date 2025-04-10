@@ -138,19 +138,12 @@ pub trait VaultDepositorBase {
         vault_equity: u64,
         vault: &mut Vault,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
-        now: i64,
-        deposit_oracle_price: i64,
     ) -> Result<(u64, u64)> {
         let total_amount = depositor_shares_to_vault_amount(
             self.get_vault_shares(),
             vault.total_shares,
             vault_equity,
         )?;
-
-        let vault_shares_before = self.checked_vault_shares(vault)?;
-        let total_vault_shares_before = vault.total_shares;
-        let user_vault_shares_before = vault.user_shares;
-        let protocol_shares_before = vault.get_protocol_shares(vault_protocol);
 
         let (manager_profit_share, protocol_profit_share) =
             self.calculate_profit_share_and_update(total_amount, vault, vault_protocol)?;
@@ -188,56 +181,6 @@ pub trait VaultDepositorBase {
                 .protocol_profit_and_fee_shares
                 .saturating_add(protocol_profit_share_shares);
             msg!("vp shares after: {}", vp.protocol_profit_and_fee_shares);
-        }
-
-        match vault_protocol {
-            None => {
-                emit!(VaultDepositorRecord {
-                    ts: now,
-                    vault: vault.pubkey,
-                    depositor_authority: self.get_authority(),
-                    action: VaultDepositorAction::FeePayment,
-                    amount: 0,
-                    spot_market_index: vault.spot_market_index,
-                    vault_equity_before: vault_equity,
-                    vault_shares_before,
-                    user_vault_shares_before,
-                    total_vault_shares_before,
-                    vault_shares_after: self.get_vault_shares(),
-                    total_vault_shares_after: vault.total_shares,
-                    user_vault_shares_after: vault.user_shares,
-                    profit_share: manager_profit_share,
-                    management_fee: 0,
-                    management_fee_shares: 0,
-                    deposit_oracle_price,
-                });
-            }
-            Some(_) => {
-                emit!(VaultDepositorV1Record {
-                    ts: now,
-                    vault: vault.pubkey,
-                    depositor_authority: self.get_authority(),
-                    action: VaultDepositorAction::FeePayment,
-                    amount: 0,
-                    spot_market_index: vault.spot_market_index,
-                    vault_equity_before: vault_equity,
-                    vault_shares_before,
-                    user_vault_shares_before,
-                    total_vault_shares_before,
-                    vault_shares_after: self.get_vault_shares(),
-                    total_vault_shares_after: vault.total_shares,
-                    user_vault_shares_after: vault.user_shares,
-                    protocol_profit_share,
-                    protocol_fee: 0,
-                    protocol_fee_shares: 0,
-                    manager_profit_share,
-                    management_fee: 0,
-                    management_fee_shares: 0,
-                    protocol_shares_before,
-                    protocol_shares_after: vault.get_protocol_shares(vault_protocol),
-                    deposit_oracle_price,
-                });
-            }
         }
 
         Ok((manager_profit_share, protocol_profit_share))
@@ -325,20 +268,10 @@ pub trait VaultDepositorBase {
             protocol_fee_shares,
         } = vault.apply_fee(vault_protocol, vault_equity, now)?;
 
-        let (from_manager_profit_share, from_protocol_profit_share) = self.apply_profit_share(
-            vault_equity,
-            vault,
-            vault_protocol,
-            now,
-            deposit_oracle_price,
-        )?;
-        let (to_manager_profit_share, to_protocol_profit_share) = to.apply_profit_share(
-            vault_equity,
-            vault,
-            vault_protocol,
-            now,
-            deposit_oracle_price,
-        )?;
+        let (from_manager_profit_share, from_protocol_profit_share) =
+            self.apply_profit_share(vault_equity, vault, vault_protocol)?;
+        let (to_manager_profit_share, to_protocol_profit_share) =
+            to.apply_profit_share(vault_equity, vault, vault_protocol)?;
 
         let (withdraw_value, n_shares) = withdraw_unit.get_withdraw_value_and_shares(
             withdraw_amount,
