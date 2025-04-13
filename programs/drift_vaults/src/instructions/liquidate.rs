@@ -35,6 +35,7 @@ pub fn liquidate<'c: 'info, 'info>(
         Some(vault.spot_market_index),
         vp.is_some(),
         false,
+        false,
     )?;
 
     // 1. Check the vault depositor has waited the redeem period

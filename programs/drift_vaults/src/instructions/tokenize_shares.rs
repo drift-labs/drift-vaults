@@ -52,7 +52,13 @@ pub fn tokenize_shares<'info>(
         perp_market_map,
         spot_market_map,
         mut oracle_map,
-    } = ctx.load_maps(clock.slot, Some(spot_market_index), vp.is_some(), false)?;
+    } = ctx.load_maps(
+        clock.slot,
+        Some(spot_market_index),
+        vp.is_some(),
+        false,
+        false,
+    )?;
 
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
@@ -72,6 +78,7 @@ pub fn tokenize_shares<'info>(
         &mut *tokenized_vault_depositor,
         &mut vault,
         &mut vp,
+        &mut None,
         amount,
         unit,
         vault_equity,
@@ -82,6 +89,7 @@ pub fn tokenize_shares<'info>(
     let tokens_to_mint = tokenized_vault_depositor.tokenize_shares(
         &mut vault,
         &mut vp,
+        &mut None,
         total_supply_before,
         vault_equity,
         shares_transferred,

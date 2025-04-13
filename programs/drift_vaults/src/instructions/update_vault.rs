@@ -31,7 +31,7 @@ pub fn update_vault<'info>(
         validate!(
             management_fee < vault.management_fee,
             ErrorCode::InvalidVaultUpdate,
-            "new management fee must be less than existing management fee"
+            "new management fee must be lower than existing management fee, use manager_update_fees ix to raise fee with a timelock"
         )?;
         vault.management_fee = management_fee;
     }
@@ -40,7 +40,7 @@ pub fn update_vault<'info>(
         validate!(
             profit_share < vault.profit_share,
             ErrorCode::InvalidVaultUpdate,
-            "new profit share must be less than existing profit share"
+            "new profit share must be lower than existing profit share, use manager_update_fees ix to raise share with a timelock"
         )?;
         vault.profit_share = profit_share;
     }
@@ -49,7 +49,7 @@ pub fn update_vault<'info>(
         validate!(
             hurdle_rate > vault.hurdle_rate,
             ErrorCode::InvalidVaultUpdate,
-            "new hurdle rate must be greater than existing hurdle rate"
+            "new hurdle rate must be greater than existing hurdle rate, use manager_update_fees ix to lower hurdle rate with a timelock"
         )?;
         vault.hurdle_rate = hurdle_rate;
     }

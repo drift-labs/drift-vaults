@@ -8,7 +8,9 @@ use drift::state::user::{FuelOverflowStatus, User, UserStats};
 
 use crate::constraints::{is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault};
 use crate::drift_cpi::WithdrawCPI;
-use crate::state::{FuelOverflowProvider, Vault, VaultProtocolProvider};
+use crate::state::{
+    FeeUpdateProvider, FeeUpdateStatus, FuelOverflowProvider, Vault, VaultProtocolProvider,
+};
 use crate::token_cpi::TokenTransferCPI;
 use crate::{declare_vault_seeds, AccountMapProvider};
 
@@ -32,6 +34,9 @@ pub fn manager_withdraw<'c: 'info, 'info>(
     let fuel_overflow = ctx.fuel_overflow(vp.is_some(), has_fuel_overflow);
     user_stats.validate_fuel_overflow(&fuel_overflow)?;
 
+    let has_fee_update = FeeUpdateStatus::is_has_fee_update(vault.fee_update_status);
+    let mut fee_update = ctx.fee_update(vp.is_some(), has_fuel_overflow, has_fee_update);
+
     let AccountMaps {
         perp_market_map,
         spot_market_map,
@@ -41,6 +46,7 @@ pub fn manager_withdraw<'c: 'info, 'info>(
         Some(spot_market_index),
         vp.is_some(),
         has_fuel_overflow,
+        has_fee_update,
     )?;
 
     let vault_equity =
@@ -50,7 +56,7 @@ pub fn manager_withdraw<'c: 'info, 'info>(
     let oracle = oracle_map.get_price_data(&spot_market.oracle_id())?;
 
     let manager_withdraw_amount =
-        vault.manager_withdraw(&mut vp, vault_equity, now, oracle.price)?;
+        vault.manager_withdraw(&mut vp, &mut fee_update, vault_equity, now, oracle.price)?;
 
     drop(spot_market);
     drop(vault);

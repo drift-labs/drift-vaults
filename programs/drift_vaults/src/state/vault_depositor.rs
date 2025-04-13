@@ -26,7 +26,7 @@ use crate::events::VaultDepositorAction;
 use crate::state::events::{VaultDepositorRecord, VaultDepositorV1Record};
 use crate::state::withdraw_request::WithdrawRequest;
 use crate::state::withdraw_unit::WithdrawUnit;
-use crate::state::{Vault, VaultDepositorBase, VaultFee, VaultProtocol};
+use crate::state::{FeeUpdate, Vault, VaultDepositorBase, VaultFee, VaultProtocol};
 use crate::validate;
 use crate::Size;
 
@@ -240,6 +240,7 @@ impl VaultDepositor {
         vault_equity: u64,
         vault: &mut Vault,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
+        fee_update: &mut Option<AccountLoader<FeeUpdate>>,
         now: i64,
         user_stats: &UserStats,
         fuel_overflow: &Option<AccountLoader<FuelOverflow>>,
@@ -285,7 +286,7 @@ impl VaultDepositor {
             management_fee_shares,
             protocol_fee_payment,
             protocol_fee_shares,
-        } = vault.apply_fee(vault_protocol, vault_equity, now)?;
+        } = vault.apply_fee(vault_protocol, fee_update, vault_equity, now)?;
         let (manager_profit_share, protocol_profit_share) = self.apply_profit_share(
             vault_equity,
             vault,
@@ -372,6 +373,7 @@ impl VaultDepositor {
         vault_equity: u64,
         vault: &mut Vault,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
+        fee_update: &mut Option<AccountLoader<FeeUpdate>>,
         now: i64,
         user_stats: &UserStats,
         fuel_overflow: &Option<AccountLoader<FuelOverflow>>,
@@ -383,7 +385,7 @@ impl VaultDepositor {
             management_fee_shares,
             protocol_fee_payment,
             protocol_fee_shares,
-        } = vault.apply_fee(vault_protocol, vault_equity, now)?;
+        } = vault.apply_fee(vault_protocol, fee_update, vault_equity, now)?;
         let (manager_profit_share, protocol_profit_share) = self.apply_profit_share(
             vault_equity,
             vault,
@@ -483,6 +485,7 @@ impl VaultDepositor {
         vault_equity: u64,
         vault: &mut Vault,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
+        fee_update: &mut Option<AccountLoader<FeeUpdate>>,
         now: i64,
         user_stats: &UserStats,
         fuel_overflow: &Option<AccountLoader<FuelOverflow>>,
@@ -500,7 +503,7 @@ impl VaultDepositor {
             management_fee_shares,
             protocol_fee_payment,
             protocol_fee_shares,
-        } = vault.apply_fee(vault_protocol, vault_equity, now)?;
+        } = vault.apply_fee(vault_protocol, fee_update, vault_equity, now)?;
 
         self.update_cumulative_fuel_amount(now, vault, user_stats, fuel_overflow)?;
 
@@ -586,6 +589,7 @@ impl VaultDepositor {
         vault_equity: u64,
         vault: &mut Vault,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
+        fee_update: &mut Option<AccountLoader<FeeUpdate>>,
         now: i64,
         user_stats: &UserStats,
         fuel_overflow: &Option<AccountLoader<FuelOverflow>>,
@@ -621,7 +625,7 @@ impl VaultDepositor {
             management_fee_shares,
             protocol_fee_payment,
             protocol_fee_shares,
-        } = vault.apply_fee(vault_protocol, vault_equity, now)?;
+        } = vault.apply_fee(vault_protocol, fee_update, vault_equity, now)?;
         msg!("after management_fee vault_shares={}", self.vault_shares);
 
         let amount: u64 =
@@ -737,6 +741,7 @@ impl VaultDepositor {
         vault_equity: u64,
         vault: &mut Vault,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
+        fee_update: &mut Option<AccountLoader<FeeUpdate>>,
         now: i64,
         user_stats: &UserStats,
         fuel_overflow: &Option<AccountLoader<FuelOverflow>>,
@@ -747,7 +752,7 @@ impl VaultDepositor {
             management_fee_shares,
             protocol_fee_payment,
             protocol_fee_shares,
-        } = vault.apply_fee(vault_protocol, vault_equity, now)?;
+        } = vault.apply_fee(vault_protocol, fee_update, vault_equity, now)?;
 
         let vault_shares_before = self.checked_vault_shares(vault)?;
         let total_vault_shares_before = vault.total_shares;
@@ -990,6 +995,7 @@ mod vault_v1_tests {
             vault_equity,
             &mut vault,
             &mut Some(vp.borrow_mut()),
+            &mut None,
             now + 20,
             &UserStats::default(),
             &None,
@@ -1005,6 +1011,7 @@ mod vault_v1_tests {
             vault_equity,
             &mut vault,
             &mut Some(vp.borrow_mut()),
+            &mut None,
             now + 20,
             &UserStats::default(),
             &None,
@@ -1017,6 +1024,7 @@ mod vault_v1_tests {
                 vault_equity,
                 &mut vault,
                 &mut Some(vp.borrow_mut()),
+                &mut None,
                 now + 20,
                 &UserStats::default(),
                 &None,
@@ -1043,6 +1051,7 @@ mod vault_v1_tests {
             vault_equity,
             &mut vault,
             &mut Some(vp.borrow_mut()),
+            &mut None,
             now + 20,
             &UserStats::default(),
             &None,
@@ -1065,6 +1074,7 @@ mod vault_v1_tests {
             vault_equity,
             &mut vault,
             &mut Some(vp.borrow_mut()),
+            &mut None,
             now + 20,
             &UserStats::default(),
             &None,
@@ -1083,6 +1093,7 @@ mod vault_v1_tests {
                 vault_equity,
                 &mut vault,
                 &mut Some(vp.borrow_mut()),
+                &mut None,
                 now + 20,
                 &UserStats::default(),
                 &None,
@@ -1149,6 +1160,7 @@ mod vault_v1_tests {
             vault_equity,
             &mut vault,
             &mut Some(vp.borrow_mut()),
+            &mut None,
             now + 20,
             &UserStats::default(),
             &None,
@@ -1170,6 +1182,7 @@ mod vault_v1_tests {
             vault_equity,
             &mut vault,
             &mut Some(vp.borrow_mut()),
+            &mut None,
             now + 20,
             &UserStats::default(),
             &None,
@@ -1187,6 +1200,7 @@ mod vault_v1_tests {
                 vault_equity,
                 &mut vault,
                 &mut Some(vp.borrow_mut()),
+                &mut None,
                 now + 20,
                 &UserStats::default(),
                 &None,
@@ -1238,6 +1252,7 @@ mod vault_v1_tests {
             vault_equity,
             &mut vault,
             &mut Some(vp.borrow_mut()),
+            &mut None,
             now + 20,
             &UserStats::default(),
             &None,
@@ -1260,6 +1275,7 @@ mod vault_v1_tests {
             vault_equity,
             &mut vault,
             &mut Some(vp.borrow_mut()),
+            &mut None,
             now + 20,
             &UserStats::default(),
             &None,
@@ -1279,6 +1295,7 @@ mod vault_v1_tests {
                 vault_equity,
                 &mut vault,
                 &mut Some(vp.borrow_mut()),
+                &mut None,
                 now + 20,
                 &UserStats::default(),
                 &None,
@@ -1362,6 +1379,7 @@ mod vault_v1_tests {
             vault_equity,
             &mut vault,
             &mut Some(vp.borrow_mut()),
+            &mut None,
             now + 20,
             &UserStats::default(),
             &None,
@@ -1383,6 +1401,7 @@ mod vault_v1_tests {
             vault_equity,
             &mut vault,
             &mut Some(vp.borrow_mut()),
+            &mut None,
             now + 20,
             &UserStats::default(),
             &None,
@@ -1402,6 +1421,7 @@ mod vault_v1_tests {
                 vault_equity,
                 &mut vault,
                 &mut Some(vp.borrow_mut()),
+                &mut None,
                 now + 20,
                 &UserStats::default(),
                 &None,
@@ -1485,6 +1505,7 @@ mod vault_v1_tests {
             vault_equity,
             &mut vault,
             &mut Some(vp.borrow_mut()),
+            &mut None,
             now,
             &UserStats::default(),
             &None,
@@ -1504,6 +1525,7 @@ mod vault_v1_tests {
             vault_equity,
             &mut vault,
             &mut Some(vp.borrow_mut()),
+            &mut None,
             now,
             &UserStats::default(),
             &None,
@@ -1530,6 +1552,7 @@ mod vault_v1_tests {
             vault_equity,
             &mut vault,
             &mut Some(vp.borrow_mut()),
+            &mut None,
             now + 20,
             &UserStats::default(),
             &None,
@@ -1547,6 +1570,7 @@ mod vault_v1_tests {
                 vault_equity,
                 &mut vault,
                 &mut Some(vp.borrow_mut()),
+                &mut None,
                 now + 20,
                 &UserStats::default(),
                 &None,
@@ -1590,6 +1614,7 @@ mod vault_v1_tests {
             vault_equity,
             &mut vault,
             &mut Some(vp.borrow_mut()),
+            &mut None,
             now,
             &UserStats::default(),
             &None,
@@ -1623,6 +1648,7 @@ mod vault_v1_tests {
             vault_equity,
             &mut vault,
             &mut Some(vp.borrow_mut()),
+            &mut None,
             now,
             &UserStats::default(),
             &None,
@@ -1637,6 +1663,7 @@ mod vault_v1_tests {
             vault_equity,
             &mut vault,
             &mut Some(vp.borrow_mut()),
+            &mut None,
             now + 20,
             &UserStats::default(),
             &None,
@@ -1657,6 +1684,7 @@ mod vault_v1_tests {
                 vault_equity,
                 &mut vault,
                 &mut Some(vp.borrow_mut()),
+                &mut None,
                 now + 20 + 3600,
                 &UserStats::default(),
                 &None,
@@ -1700,6 +1728,7 @@ mod vault_v1_tests {
             vault_equity,
             &mut vault,
             &mut Some(vp.borrow_mut()),
+            &mut None,
             now,
             &UserStats::default(),
             &None,
@@ -1733,6 +1762,7 @@ mod vault_v1_tests {
             vault_equity,
             &mut vault,
             &mut Some(vp.borrow_mut()),
+            &mut None,
             now,
             &UserStats::default(),
             &None,
@@ -1747,6 +1777,7 @@ mod vault_v1_tests {
             vault_equity,
             &mut vault,
             &mut Some(vp.borrow_mut()),
+            &mut None,
             now + 20,
             &UserStats::default(),
             &None,
@@ -1766,6 +1797,7 @@ mod vault_v1_tests {
                 vault_equity,
                 &mut vault,
                 &mut Some(vp.borrow_mut()),
+                &mut None,
                 now + 20 + 3600,
                 &UserStats::default(),
                 &None,

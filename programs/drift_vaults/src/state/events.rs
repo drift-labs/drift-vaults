@@ -113,3 +113,23 @@ pub struct FuelSeasonRecord {
     pub fuel_maker: u128,
     pub fuel_total: u128,
 }
+
+#[derive(Clone, Copy, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
+pub enum FeeUpdateAction {
+    PendingFeeUpdate,
+    AppliedFeeUpdate,
+}
+
+#[event]
+pub struct FeeUpdateRecord {
+    pub ts: i64,
+    pub action: FeeUpdateAction,
+    pub update_in_effect_ts: i64,
+    pub vault: Pubkey,
+    pub old_management_fee: i64,
+    pub old_profit_share: u32,
+    pub old_hurdle_rate: u32,
+    pub new_management_fee: i64,
+    pub new_profit_share: u32,
+    pub new_hurdle_rate: u32,
+}

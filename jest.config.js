@@ -2,7 +2,8 @@ module.exports = {
 	preset: 'ts-jest',
 	testEnvironment: 'node',
 	testMatch: [
-		//'**/tests/**/*.test.ts'
+		// '**/tests/**/driftVaults.ts'
+		// '**/tests/**/*.test.ts'
 		'**/tests/**/*.ts'
 	],
 	testPathIgnorePatterns: [

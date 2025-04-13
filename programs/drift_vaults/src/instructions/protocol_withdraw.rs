@@ -30,7 +30,13 @@ pub fn protocol_withdraw<'c: 'info, 'info>(
         perp_market_map,
         spot_market_map,
         mut oracle_map,
-    } = ctx.load_maps(clock.slot, Some(spot_market_index), vp.is_some(), false)?;
+    } = ctx.load_maps(
+        clock.slot,
+        Some(spot_market_index),
+        vp.is_some(),
+        false,
+        false,
+    )?;
 
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
@@ -39,7 +45,7 @@ pub fn protocol_withdraw<'c: 'info, 'info>(
     let oracle = oracle_map.get_price_data(&spot_market.oracle_id())?;
 
     let protocol_withdraw_amount =
-        vault.protocol_withdraw(&mut vp, vault_equity, now, oracle.price)?;
+        vault.protocol_withdraw(&mut vp, &mut None, vault_equity, now, oracle.price)?;
 
     drop(spot_market);
     drop(vault);

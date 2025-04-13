@@ -31,7 +31,13 @@ pub fn manager_deposit<'c: 'info, 'info>(
         perp_market_map,
         spot_market_map,
         mut oracle_map,
-    } = ctx.load_maps(clock.slot, Some(spot_market_index), vp.is_some(), false)?;
+    } = ctx.load_maps(
+        clock.slot,
+        Some(spot_market_index),
+        vp.is_some(),
+        false,
+        false,
+    )?;
 
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
@@ -41,6 +47,7 @@ pub fn manager_deposit<'c: 'info, 'info>(
 
     vault.manager_deposit(
         &mut vp,
+        &mut None,
         amount,
         vault_equity,
         clock.unix_timestamp,

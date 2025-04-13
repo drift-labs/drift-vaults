@@ -8,7 +8,9 @@ use drift::state::user::{FuelOverflowStatus, User, UserStats};
 
 use crate::constraints::*;
 use crate::drift_cpi::WithdrawCPI;
-use crate::state::{FuelOverflowProvider, Vault, VaultDepositor};
+use crate::state::{
+    FeeUpdateProvider, FeeUpdateStatus, FuelOverflowProvider, Vault, VaultDepositor,
+};
 use crate::token_cpi::TokenTransferCPI;
 use crate::VaultProtocolProvider;
 use crate::{declare_vault_seeds, AccountMapProvider};
@@ -33,6 +35,9 @@ pub fn force_withdraw<'c: 'info, 'info>(
     let fuel_overflow = ctx.fuel_overflow(vp.is_some(), has_fuel_overflow);
     user_stats.validate_fuel_overflow(&fuel_overflow)?;
 
+    let has_fee_update = FeeUpdateStatus::is_has_fee_update(vault.fee_update_status);
+    let mut fee_update = ctx.fee_update(vp.is_some(), has_fuel_overflow, has_fee_update);
+
     let AccountMaps {
         perp_market_map,
         spot_market_map,
@@ -42,6 +47,7 @@ pub fn force_withdraw<'c: 'info, 'info>(
         Some(spot_market_index),
         vp.is_some(),
         has_fuel_overflow,
+        has_fee_update,
     )?;
 
     let vault_equity =
@@ -54,6 +60,7 @@ pub fn force_withdraw<'c: 'info, 'info>(
         vault_equity,
         &mut vault,
         &mut vp,
+        &mut fee_update,
         clock.unix_timestamp,
         &user_stats,
         &fuel_overflow,

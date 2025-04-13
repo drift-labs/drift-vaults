@@ -57,6 +57,8 @@ pub enum ErrorCode {
     InvalidTokenization,
     #[msg("InvalidFuelDistributionMode")]
     InvalidFuelDistributionMode,
+    #[msg("InvalidFeeUpdateStatus")]
+    InvalidFeeUpdateStatus,
 }
 
 impl From<DriftErrorCode> for ErrorCode {

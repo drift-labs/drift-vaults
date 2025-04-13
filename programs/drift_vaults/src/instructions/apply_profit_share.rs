@@ -43,6 +43,7 @@ pub fn apply_profit_share<'c: 'info, 'info>(
         Some(spot_market_index),
         vp.is_some(),
         has_fuel_overflow,
+        false,
     )?;
 
     let vault_equity =

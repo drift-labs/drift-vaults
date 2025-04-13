@@ -22,7 +22,7 @@ pub fn protocol_cancel_withdraw_request<'c: 'info, 'info>(
         perp_market_map,
         spot_market_map,
         mut oracle_map,
-    } = ctx.load_maps(clock.slot, None, vp.is_some(), false)?;
+    } = ctx.load_maps(clock.slot, None, vp.is_some(), false, false)?;
 
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
@@ -32,6 +32,7 @@ pub fn protocol_cancel_withdraw_request<'c: 'info, 'info>(
 
     vault.protocol_cancel_withdraw_request(
         &mut vp,
+        &mut None,
         vault_equity.cast()?,
         clock.unix_timestamp,
         oracle.price,
