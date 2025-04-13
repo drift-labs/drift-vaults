@@ -35,7 +35,7 @@ impl FeeUpdate {
         if now >= self.incoming_update_ts {
             emit!(FeeUpdateRecord {
                 ts: now,
-                action: FeeUpdateAction::AppliedFeeUpdate,
+                action: FeeUpdateAction::Applied,
                 update_in_effect_ts: self.incoming_update_ts,
                 vault: vault.pubkey,
                 old_management_fee: vault.management_fee,

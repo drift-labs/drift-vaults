@@ -31,7 +31,7 @@ pub fn manager_update_fees<'info>(
 
     emit!(FeeUpdateRecord {
         ts: Clock::get()?.unix_timestamp,
-        action: FeeUpdateAction::PendingFeeUpdate,
+        action: FeeUpdateAction::Pending,
         update_in_effect_ts: params.update_in_effect_ts,
         vault: vault.pubkey,
         old_management_fee,

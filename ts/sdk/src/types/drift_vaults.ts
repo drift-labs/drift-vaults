@@ -2531,9 +2531,27 @@ export type DriftVaults = {
 						};
 					},
 					{
+						name: 'managementFee';
+						type: {
+							option: 'i64';
+						};
+					},
+					{
 						name: 'minDepositAmount';
 						type: {
 							option: 'u64';
+						};
+					},
+					{
+						name: 'profitShare';
+						type: {
+							option: 'u32';
+						};
+					},
+					{
+						name: 'hurdleRate';
+						type: {
+							option: 'u32';
 						};
 					},
 					{
@@ -2605,10 +2623,10 @@ export type DriftVaults = {
 				kind: 'enum';
 				variants: [
 					{
-						name: 'PendingFeeUpdate';
+						name: 'Pending';
 					},
 					{
-						name: 'AppliedFeeUpdate';
+						name: 'Applied';
 					}
 				];
 			};
@@ -5719,9 +5737,27 @@ export const IDL: DriftVaults = {
 						},
 					},
 					{
+						name: 'managementFee',
+						type: {
+							option: 'i64',
+						},
+					},
+					{
 						name: 'minDepositAmount',
 						type: {
 							option: 'u64',
+						},
+					},
+					{
+						name: 'profitShare',
+						type: {
+							option: 'u32',
+						},
+					},
+					{
+						name: 'hurdleRate',
+						type: {
+							option: 'u32',
 						},
 					},
 					{
@@ -5793,10 +5829,10 @@ export const IDL: DriftVaults = {
 				kind: 'enum',
 				variants: [
 					{
-						name: 'PendingFeeUpdate',
+						name: 'Pending',
 					},
 					{
-						name: 'AppliedFeeUpdate',
+						name: 'Applied',
 					},
 				],
 			},

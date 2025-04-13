@@ -2640,9 +2640,27 @@
             }
           },
           {
+            "name": "managementFee",
+            "type": {
+              "option": "i64"
+            }
+          },
+          {
             "name": "minDepositAmount",
             "type": {
               "option": "u64"
+            }
+          },
+          {
+            "name": "profitShare",
+            "type": {
+              "option": "u32"
+            }
+          },
+          {
+            "name": "hurdleRate",
+            "type": {
+              "option": "u32"
             }
           },
           {
@@ -2718,10 +2736,10 @@
         "kind": "enum",
         "variants": [
           {
-            "name": "PendingFeeUpdate"
+            "name": "Pending"
           },
           {
-            "name": "AppliedFeeUpdate"
+            "name": "Applied"
           }
         ]
       }

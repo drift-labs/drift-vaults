@@ -116,8 +116,8 @@ pub struct FuelSeasonRecord {
 
 #[derive(Clone, Copy, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
 pub enum FeeUpdateAction {
-    PendingFeeUpdate,
-    AppliedFeeUpdate,
+    Pending,
+    Applied,
 }
 
 #[event]

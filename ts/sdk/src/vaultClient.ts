@@ -145,6 +145,8 @@ export class VaultClient {
 			(userStats.fuelOverflowStatus & FuelOverflowStatus.Exists) ===
 			FuelOverflowStatus.Exists;
 
+		const hasFeeUpdate = vaultAccount.fee> 0;
+
 		if (hasFuelOverflow) {
 			const fuelOverflow = getFuelOverflowAccountPublicKey(
 				this.driftClient.program.programId,
