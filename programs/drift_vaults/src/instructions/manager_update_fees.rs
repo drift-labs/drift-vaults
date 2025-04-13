@@ -3,6 +3,7 @@ use crate::state::events::{FeeUpdateAction, FeeUpdateRecord};
 use crate::state::FeeUpdate;
 use crate::{error::ErrorCode, validate, Vault};
 use anchor_lang::prelude::*;
+use drift::math::safe_math::SafeMath;
 
 pub fn manager_update_fees<'info>(
     ctx: Context<'_, '_, '_, 'info, ManagerUpdateFees<'info>>,
@@ -11,12 +12,21 @@ pub fn manager_update_fees<'info>(
     let vault = ctx.accounts.vault.load_mut()?;
     let mut fee_update = ctx.accounts.fee_update.load_mut()?;
 
+    let now = Clock::get()?.unix_timestamp;
+
+    validate!(
+        params.timelock_duration > 0,
+        ErrorCode::InvalidVaultUpdate,
+        "Timelock duration must be greater than 0"
+    )?;
+
+    let timelock_end_ts = now.safe_add(params.timelock_duration)?;
+
     validate!(!vault.in_liquidation(), ErrorCode::OngoingLiquidation)?;
 
-    let s_until_update_in_effect = params.update_in_effect_ts - Clock::get()?.unix_timestamp;
     let min_fee_queue_period = vault.redeem_period.max(86_400);
     validate!(
-        s_until_update_in_effect > min_fee_queue_period,
+        params.timelock_duration >= min_fee_queue_period,
         ErrorCode::InvalidVaultUpdate,
         "Fee updates must be queued for at least max(1 day, 1 redeem period)"
     )?;
@@ -32,7 +42,7 @@ pub fn manager_update_fees<'info>(
     emit!(FeeUpdateRecord {
         ts: Clock::get()?.unix_timestamp,
         action: FeeUpdateAction::Pending,
-        update_in_effect_ts: params.update_in_effect_ts,
+        timelock_end_ts,
         vault: vault.pubkey,
         old_management_fee,
         old_profit_share,
@@ -46,7 +56,7 @@ pub fn manager_update_fees<'info>(
 
 #[derive(Debug, Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
 pub struct ManagerUpdateFeesParams {
-    pub update_in_effect_ts: i64,
+    pub timelock_duration: i64,
     pub new_management_fee: Option<i64>,
     pub new_profit_share: Option<u32>,
     pub new_hurdle_rate: Option<u32>,

@@ -36,7 +36,7 @@ impl FeeUpdate {
             emit!(FeeUpdateRecord {
                 ts: now,
                 action: FeeUpdateAction::Applied,
-                update_in_effect_ts: self.incoming_update_ts,
+                timelock_end_ts: self.incoming_update_ts,
                 vault: vault.pubkey,
                 old_management_fee: vault.management_fee,
                 old_profit_share: vault.profit_share,

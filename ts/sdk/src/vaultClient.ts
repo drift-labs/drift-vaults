@@ -29,6 +29,7 @@ import {
 	getVaultAddressSync,
 	getVaultDepositorAddressSync,
 	getVaultProtocolAddressSync,
+	getFeeUpdateAddressSync,
 } from './addresses';
 import {
 	AccountMeta,
@@ -49,6 +50,7 @@ import {
 	TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
 import {
+	FeeUpdateStatus,
 	FuelDistributionMode,
 	Vault,
 	VaultDepositor,
@@ -133,7 +135,10 @@ export class VaultClient {
 		userAccounts: UserAccount[],
 		writableSpotMarketIndexes: number[],
 		vaultAccount: Vault,
-		userStats: UserStatsAccount
+		userStats: UserStatsAccount,
+		skipVaultProtocol = false,
+		skipFuelOverflow = false,
+		skipFeeUpdate = false
 	) {
 		const remainingAccounts = this.driftClient.getRemainingAccounts({
 			userAccounts,
@@ -145,9 +150,23 @@ export class VaultClient {
 			(userStats.fuelOverflowStatus & FuelOverflowStatus.Exists) ===
 			FuelOverflowStatus.Exists;
 
-		const hasFeeUpdate = vaultAccount.fee> 0;
+		const hasFeeUpdate =
+			(vaultAccount.feeUpdateStatus & FeeUpdateStatus.HasFeeUpdate) ===
+			FeeUpdateStatus.HasFeeUpdate;
 
-		if (hasFuelOverflow) {
+		if (hasFeeUpdate && !skipFeeUpdate) {
+			const feeUpdate = getFeeUpdateAddressSync(
+				this.program.programId,
+				vaultAccount.pubkey
+			);
+			remainingAccounts.push({
+				pubkey: feeUpdate,
+				isSigner: false,
+				isWritable: true,
+			});
+		}
+
+		if (hasFuelOverflow && !skipFuelOverflow) {
 			const fuelOverflow = getFuelOverflowAccountPublicKey(
 				this.driftClient.program.programId,
 				vaultAccount.pubkey
@@ -159,7 +178,7 @@ export class VaultClient {
 			});
 		}
 
-		if (hasVaultProtocol) {
+		if (hasVaultProtocol && !skipVaultProtocol) {
 			const vaultProtocol = this.getVaultProtocolAddress(vaultAccount.pubkey);
 			remainingAccounts.push({
 				pubkey: vaultProtocol,
@@ -169,6 +188,18 @@ export class VaultClient {
 		}
 
 		return remainingAccounts;
+	}
+
+	private async checkIfAccountExists(account: PublicKey): Promise<boolean> {
+		try {
+			const accountInfo = await this.driftClient.connection.getAccountInfo(
+				account
+			);
+			return accountInfo != null;
+		} catch (e) {
+			// Doesn't already exist
+			return false;
+		}
 	}
 
 	/**
@@ -911,7 +942,10 @@ export class VaultClient {
 			[user.getUserAccount()],
 			[vaultAccount.spotMarketIndex],
 			vaultAccount,
-			userStats
+			userStats,
+			false,
+			true,
+			true
 		);
 
 		const accounts = {
@@ -993,7 +1027,10 @@ export class VaultClient {
 			[user.getUserAccount()],
 			[vaultAccount.spotMarketIndex],
 			vaultAccount,
-			userStats
+			userStats,
+			false,
+			true,
+			true
 		);
 
 		const accounts = {
@@ -1049,7 +1086,10 @@ export class VaultClient {
 			[user.getUserAccount()],
 			[],
 			vaultAccount,
-			userStats
+			userStats,
+			false,
+			true,
+			true
 		);
 
 		return this.program.instruction.mangerCancelWithdrawRequest({
@@ -1083,7 +1123,10 @@ export class VaultClient {
 			[user.getUserAccount()],
 			[vaultAccount.spotMarketIndex],
 			vaultAccount,
-			userStats
+			userStats,
+			false,
+			false,
+			false
 		);
 
 		const spotMarket = this.driftClient.getSpotMarketAccount(
@@ -1220,7 +1263,10 @@ export class VaultClient {
 			[user.getUserAccount()],
 			[vaultAccount.spotMarketIndex],
 			vaultAccount,
-			userStats
+			userStats,
+			false,
+			false,
+			false
 		);
 
 		const accounts = {
@@ -1276,7 +1322,10 @@ export class VaultClient {
 			[user.getUserAccount()],
 			[vaultAccount.spotMarketIndex],
 			vaultAccount,
-			userStats
+			userStats,
+			false,
+			true,
+			true
 		);
 
 		const accounts = {
@@ -1336,7 +1385,10 @@ export class VaultClient {
 			[user.getUserAccount()],
 			[vaultAccount.spotMarketIndex],
 			vaultAccount,
-			userStats
+			userStats,
+			false,
+			true,
+			true
 		);
 
 		const accounts = {
@@ -1553,7 +1605,10 @@ export class VaultClient {
 			[user.getUserAccount()],
 			[vaultAccount.spotMarketIndex],
 			vaultAccount,
-			userStats
+			userStats,
+			false,
+			true,
+			true
 		);
 
 		ixs.push(
@@ -1639,7 +1694,10 @@ export class VaultClient {
 			[user.getUserAccount()],
 			[vaultAccount.spotMarketIndex],
 			vaultAccount,
-			userStats
+			userStats,
+			false,
+			true,
+			true
 		);
 
 		return await this.program.methods
@@ -1717,7 +1775,10 @@ export class VaultClient {
 			[user.getUserAccount()],
 			[vaultAccount.spotMarketIndex],
 			vaultAccount,
-			userStats
+			userStats,
+			false,
+			false,
+			false
 		);
 
 		const driftStateKey = await this.driftClient.getStatePublicKey();
@@ -1892,7 +1953,10 @@ export class VaultClient {
 			[user.getUserAccount()],
 			[vaultAccount.spotMarketIndex],
 			vaultAccount,
-			userStats
+			userStats,
+			false,
+			false,
+			false
 		);
 
 		const accounts = {
@@ -1958,7 +2022,10 @@ export class VaultClient {
 			[user.getUserAccount()],
 			[vaultAccount.spotMarketIndex],
 			vaultAccount,
-			userStats
+			userStats,
+			false,
+			false,
+			false
 		);
 
 		const driftStateKey = await this.driftClient.getStatePublicKey();
@@ -2079,7 +2146,10 @@ export class VaultClient {
 			[user.getUserAccount()],
 			[vaultAccount.spotMarketIndex],
 			vaultAccount,
-			userStats
+			userStats,
+			false,
+			false,
+			false
 		);
 		if (vaultAccount.vaultProtocol) {
 			const vaultProtocol = this.getVaultProtocolAddress(
@@ -2190,7 +2260,10 @@ export class VaultClient {
 			[user.getUserAccount()],
 			[vaultAccount.spotMarketIndex],
 			vaultAccount,
-			userStats
+			userStats,
+			false,
+			false,
+			false
 		);
 
 		if (this.cliMode) {
@@ -2254,7 +2327,10 @@ export class VaultClient {
 			[user.getUserAccount()],
 			[vaultAccount.spotMarketIndex],
 			vaultAccount,
-			userStats
+			userStats,
+			false,
+			true,
+			true
 		);
 
 		const driftStateKey = await this.driftClient.getStatePublicKey();
@@ -2747,7 +2823,10 @@ export class VaultClient {
 			[user.getUserAccount()],
 			[],
 			vaultAccount,
-			userStats
+			userStats,
+			false,
+			true,
+			true
 		);
 
 		const accounts = {
@@ -2814,7 +2893,10 @@ export class VaultClient {
 			[user.getUserAccount()],
 			[],
 			vaultAccount,
-			userStats
+			userStats,
+			false,
+			true,
+			true
 		);
 
 		if (this.cliMode) {
@@ -2868,7 +2950,10 @@ export class VaultClient {
 			[user.getUserAccount()],
 			[],
 			vaultAccount,
-			userStats
+			userStats,
+			false,
+			true,
+			true
 		);
 
 		const spotMarket = this.driftClient.getSpotMarketAccount(
@@ -3251,5 +3336,69 @@ export class VaultClient {
 				manager: vaultAccount.manager,
 			})
 			.instruction();
+	}
+
+	public async managerInitFeeUpdate(
+		vault: PublicKey,
+		uiTxParams?: TxParams
+	): Promise<TransactionSignature> {
+		const ix = await this.getManagerInitFeeUpdateIx(vault);
+		return await this.createAndSendTxn([ix], uiTxParams);
+	}
+
+	public async getManagerInitFeeUpdateIx(
+		vault: PublicKey
+	): Promise<TransactionInstruction> {
+		const vaultAccount = await this.program.account.vault.fetch(vault);
+		const feeUpdate = getFeeUpdateAddressSync(this.program.programId, vault);
+
+		return this.program.instruction.managerInitFeeUpdate({
+			accounts: {
+				vault,
+				manager: vaultAccount.manager,
+				feeUpdate,
+				systemProgram: SystemProgram.programId,
+			},
+		});
+	}
+
+	public async managerUpdateFees(
+		vault: PublicKey,
+		params: {
+			timelockDuration: BN;
+			newManagementFee: BN | null;
+			newProfitShare: number | null;
+			newHurdleRate: number | null;
+		},
+		uiTxParams?: TxParams
+	): Promise<TransactionSignature> {
+		const feeUpdate = getFeeUpdateAddressSync(this.program.programId, vault);
+		const ixs: TransactionInstruction[] = [];
+		if (!(await this.checkIfAccountExists(feeUpdate))) {
+			ixs.push(await this.getManagerInitFeeUpdateIx(vault));
+		}
+		ixs.push(await this.getManagerUpdateFeesIx(vault, params));
+		return await this.createAndSendTxn(ixs, uiTxParams);
+	}
+
+	public async getManagerUpdateFeesIx(
+		vault: PublicKey,
+		params: {
+			timelockDuration: BN;
+			newManagementFee: BN | null;
+			newProfitShare: number | null;
+			newHurdleRate: number | null;
+		}
+	): Promise<TransactionInstruction> {
+		const vaultAccount = await this.program.account.vault.fetch(vault);
+		const feeUpdate = getFeeUpdateAddressSync(this.program.programId, vault);
+
+		return this.program.instruction.managerUpdateFees(params, {
+			accounts: {
+				vault,
+				manager: vaultAccount.manager,
+				feeUpdate,
+			},
+		});
 	}
 }

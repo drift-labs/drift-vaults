@@ -300,7 +300,7 @@ export class FeeUpdateAction {
 export type FeeUpdateRecord = {
 	ts: BN;
 	action: FeeUpdateAction;
-	updateInEffectTs: BN;
+	timelockEndTs: BN;
 	vault: PublicKey;
 	oldManagementFee: BN;
 	oldProfitShare: number;

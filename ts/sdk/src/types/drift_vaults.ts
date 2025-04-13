@@ -2469,7 +2469,7 @@ export type DriftVaults = {
 				kind: 'struct';
 				fields: [
 					{
-						name: 'updateInEffectTs';
+						name: 'timelockDuration';
 						type: 'i64';
 					},
 					{
@@ -3028,7 +3028,7 @@ export type DriftVaults = {
 					index: false;
 				},
 				{
-					name: 'updateInEffectTs';
+					name: 'timelockEndTs';
 					type: 'i64';
 					index: false;
 				},
@@ -5675,7 +5675,7 @@ export const IDL: DriftVaults = {
 				kind: 'struct',
 				fields: [
 					{
-						name: 'updateInEffectTs',
+						name: 'timelockDuration',
 						type: 'i64',
 					},
 					{
@@ -6234,7 +6234,7 @@ export const IDL: DriftVaults = {
 					index: false,
 				},
 				{
-					name: 'updateInEffectTs',
+					name: 'timelockEndTs',
 					type: 'i64',
 					index: false,
 				},

@@ -124,7 +124,7 @@ pub enum FeeUpdateAction {
 pub struct FeeUpdateRecord {
     pub ts: i64,
     pub action: FeeUpdateAction,
-    pub update_in_effect_ts: i64,
+    pub timelock_end_ts: i64,
     pub vault: Pubkey,
     pub old_management_fee: i64,
     pub old_profit_share: u32,
