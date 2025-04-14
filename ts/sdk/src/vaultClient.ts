@@ -3343,26 +3343,47 @@ export class VaultClient {
 			.instruction();
 	}
 
-	public async managerInitFeeUpdate(
+	public async adminInitFeeUpdate(
 		vault: PublicKey,
 		uiTxParams?: TxParams
 	): Promise<TransactionSignature> {
-		const ix = await this.getManagerInitFeeUpdateIx(vault);
+		const ix = await this.getAdminInitFeeUpdateIx(vault);
 		return await this.createAndSendTxn([ix], uiTxParams);
 	}
 
-	public async getManagerInitFeeUpdateIx(
+	public async getAdminInitFeeUpdateIx(
 		vault: PublicKey
 	): Promise<TransactionInstruction> {
-		const vaultAccount = await this.program.account.vault.fetch(vault);
 		const feeUpdate = getFeeUpdateAddressSync(this.program.programId, vault);
 
-		return this.program.instruction.managerInitFeeUpdate({
+		return this.program.instruction.adminInitFeeUpdate({
 			accounts: {
 				vault,
-				manager: vaultAccount.manager,
+				admin: this.driftClient.wallet.publicKey,
 				feeUpdate,
 				systemProgram: SystemProgram.programId,
+			},
+		});
+	}
+
+	public async adminDeleteFeeUpdate(
+		vault: PublicKey,
+		uiTxParams?: TxParams
+	): Promise<TransactionSignature> {
+		const ix = await this.getAdminDeleteFeeUpdateIx(vault);
+		return await this.createAndSendTxn([ix], uiTxParams);
+	}
+
+	public async getAdminDeleteFeeUpdateIx(
+		vault: PublicKey
+	): Promise<TransactionInstruction> {
+		const feeUpdate = getFeeUpdateAddressSync(this.program.programId, vault);
+
+		return this.program.instruction.adminDeleteFeeUpdate({
+			accounts: {
+				vault,
+				admin: this.driftClient.wallet.publicKey,
+				feeUpdate,
 			},
 		});
 	}
@@ -3380,7 +3401,9 @@ export class VaultClient {
 		const feeUpdate = getFeeUpdateAddressSync(this.program.programId, vault);
 		const ixs: TransactionInstruction[] = [];
 		if (!(await this.checkIfAccountExists(feeUpdate))) {
-			ixs.push(await this.getManagerInitFeeUpdateIx(vault));
+			throw new Error(
+				'Fee update account does not exist, it must be created by an admin first'
+			);
 		}
 		ixs.push(await this.getManagerUpdateFeesIx(vault, params));
 		return await this.createAndSendTxn(ixs, uiTxParams);

@@ -1,7 +1,10 @@
 import * as anchor from '@coral-xyz/anchor';
-import { BN, Program } from '@coral-xyz/anchor';
+import { BN, Program, Wallet } from '@coral-xyz/anchor';
 import { describe, it } from '@jest/globals';
-import { BankrunContextWrapper } from './common/bankrunConnection';
+import {
+	BankrunContextWrapper,
+	TEST_ADMIN_KEYPAIR,
+} from './common/bankrunConnection';
 import { startAnchor } from 'solana-bankrun';
 import {
 	VaultClient,
@@ -35,7 +38,7 @@ import {
 	mockUSDCMintBankrun,
 	printTxLogs,
 } from './common/testHelpers';
-import { Keypair } from '@solana/web3.js';
+import { Keypair, LAMPORTS_PER_SOL } from '@solana/web3.js';
 import { mockOracleNoProgram } from './common/bankrunOracle';
 import { BankrunProvider } from 'anchor-bankrun';
 
@@ -122,9 +125,19 @@ describe('feeUpdate', () => {
 			initialSolPerpPrice
 		);
 
+		const adminWallet = new Wallet(
+			Keypair.fromSecretKey(Buffer.from(TEST_ADMIN_KEYPAIR))
+			// Keypair.generate()
+		);
+
+		await bankrunContextWrapper.fundKeypair(
+			adminWallet.payer,
+			100 * LAMPORTS_PER_SOL
+		);
+
 		adminDriftClient = new TestClient({
 			connection: bankrunContextWrapper.connection.toConnection(),
-			wallet: bankrunContextWrapper.provider.wallet,
+			wallet: adminWallet,
 			programID: new PublicKey(DRIFT_PROGRAM_ID),
 			opts: {
 				commitment: 'confirmed',
@@ -329,7 +342,7 @@ describe('feeUpdate', () => {
 		expect(vdAcct2.vault).toEqual(commonVaultKey);
 	});
 
-	it('manager can init fee update account', async () => {
+	it('only admin can init fee update account', async () => {
 		let vaultAcct = await vaultProgram.account.vault.fetch(commonVaultKey);
 		expect(vaultAcct.feeUpdateStatus).toEqual(FeeUpdateStatus.None);
 
@@ -341,7 +354,16 @@ describe('feeUpdate', () => {
 			await bankrunContextWrapper.connection.getAccountInfo(feeUpdate)
 		).toBeNull();
 
-		await managerClient.managerInitFeeUpdate(commonVaultKey, { noLut: true });
+		// manager cannot init their own FeeUpdate account
+		try {
+			await managerClient.adminInitFeeUpdate(commonVaultKey, { noLut: true });
+			fail('should not get here');
+		} catch (e) {
+			expect(e).toBeDefined();
+		}
+
+		// admin can init the FeeUpdate account
+		await adminClient.adminInitFeeUpdate(commonVaultKey, { noLut: true });
 
 		vaultAcct = await vaultProgram.account.vault.fetch(commonVaultKey);
 		expect(vaultAcct.feeUpdateStatus).toEqual(FeeUpdateStatus.HasFeeUpdate);
@@ -453,6 +475,8 @@ describe('feeUpdate', () => {
 
 		const timelockDuration = ONE_DAY_S;
 
+		await adminClient.adminInitFeeUpdate(commonVaultKey, { noLut: true });
+
 		const tx = await managerClient.managerUpdateFees(
 			commonVaultKey,
 			{
@@ -512,5 +536,15 @@ describe('feeUpdate', () => {
 		);
 		expect(vaultAcct.profitShare).toEqual(TEN_PCT_MANAGEMENT_FEE.toNumber());
 		expect(vaultAcct.hurdleRate).toEqual(TWENTY_PCT_MANAGEMENT_FEE.toNumber());
+	});
+
+	it('admin can delete fee update account', async () => {
+		await adminClient.adminInitFeeUpdate(commonVaultKey, { noLut: true });
+		let vaultAcct = await vaultProgram.account.vault.fetch(commonVaultKey);
+		expect(vaultAcct.feeUpdateStatus).toEqual(FeeUpdateStatus.HasFeeUpdate);
+
+		await adminClient.adminDeleteFeeUpdate(commonVaultKey, { noLut: true });
+		vaultAcct = await vaultProgram.account.vault.fetch(commonVaultKey);
+		expect(vaultAcct.feeUpdateStatus).toEqual(FeeUpdateStatus.None);
 	});
 });

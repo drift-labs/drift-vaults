@@ -63,7 +63,7 @@ bkg() { "$@" >/dev/null & }
 
 if [[ $no_build == false ]]; then
   chmod +x ./build.sh
-  ./build.sh
+  ./build.sh --anchor-test
 fi
 
 # Kill solana validator if running
@@ -74,7 +74,12 @@ fi
 
 # start anchor localnet in background
 # "bkg" suppresses validator output to build/test output aren't hard to find
-bkg anchor localnet
+if [[ $no_build == false ]]; then
+  bkg anchor localnet --skip-build
+else
+  bkg anchor localnet
+fi
+
 # warm up validator (spurious errors may occur if this is not done)
 sleep 5
 

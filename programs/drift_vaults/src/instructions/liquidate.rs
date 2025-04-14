@@ -4,7 +4,7 @@ use drift::instructions::optional_accounts::AccountMaps;
 use drift::program::Drift;
 use drift::state::user::User;
 
-use crate::constants::permissioned_liquidator;
+use crate::constants::admin;
 use crate::constraints::{is_user_for_vault, is_user_stats_for_vault};
 use crate::drift_cpi::{UpdateUserDelegateCPI, UpdateUserReduceOnlyCPI};
 use crate::state::{Vault, VaultDepositor};
@@ -56,13 +56,13 @@ pub fn liquidate<'c: 'info, 'info>(
     // 3. Check that the vault is not already in liquidation
     vault.check_available_for_liquidation(now)?;
 
-    vault.set_liquidation_delegate(permissioned_liquidator::id(), now);
+    vault.set_liquidation_delegate(admin::id(), now);
 
     drop(user);
     drop(vault);
     drop(vp);
 
-    ctx.drift_update_user_delegate(permissioned_liquidator::id())?;
+    ctx.drift_update_user_delegate(admin::id())?;
     ctx.drift_update_user_reduce_only(true)?;
 
     Ok(())

@@ -1082,7 +1082,7 @@
       ]
     },
     {
-      "name": "managerInitFeeUpdate",
+      "name": "adminInitFeeUpdate",
       "accounts": [
         {
           "name": "vault",
@@ -1090,7 +1090,7 @@
           "isSigner": false
         },
         {
-          "name": "manager",
+          "name": "admin",
           "isMut": true,
           "isSigner": true
         },
@@ -1102,6 +1102,27 @@
         {
           "name": "systemProgram",
           "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "adminDeleteFeeUpdate",
+      "accounts": [
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "admin",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "feeUpdate",
+          "isMut": true,
           "isSigner": false
         }
       ],

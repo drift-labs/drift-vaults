@@ -1082,7 +1082,7 @@ export type DriftVaults = {
 			];
 		},
 		{
-			name: 'managerInitFeeUpdate';
+			name: 'adminInitFeeUpdate';
 			accounts: [
 				{
 					name: 'vault';
@@ -1090,7 +1090,7 @@ export type DriftVaults = {
 					isSigner: false;
 				},
 				{
-					name: 'manager';
+					name: 'admin';
 					isMut: true;
 					isSigner: true;
 				},
@@ -1102,6 +1102,27 @@ export type DriftVaults = {
 				{
 					name: 'systemProgram';
 					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [];
+		},
+		{
+			name: 'adminDeleteFeeUpdate';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'admin';
+					isMut: true;
+					isSigner: true;
+				},
+				{
+					name: 'feeUpdate';
+					isMut: true;
 					isSigner: false;
 				}
 			];
@@ -4293,7 +4314,7 @@ export const IDL: DriftVaults = {
 			],
 		},
 		{
-			name: 'managerInitFeeUpdate',
+			name: 'adminInitFeeUpdate',
 			accounts: [
 				{
 					name: 'vault',
@@ -4301,7 +4322,7 @@ export const IDL: DriftVaults = {
 					isSigner: false,
 				},
 				{
-					name: 'manager',
+					name: 'admin',
 					isMut: true,
 					isSigner: true,
 				},
@@ -4313,6 +4334,27 @@ export const IDL: DriftVaults = {
 				{
 					name: 'systemProgram',
 					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [],
+		},
+		{
+			name: 'adminDeleteFeeUpdate',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'admin',
+					isMut: true,
+					isSigner: true,
+				},
+				{
+					name: 'feeUpdate',
+					isMut: true,
 					isSigner: false,
 				},
 			],

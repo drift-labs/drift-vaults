@@ -2,6 +2,11 @@ home() {
     cd "$(git rev-parse --show-toplevel)" || exit 1
 }
 
+anchor_test=false
+if [[ "$1" == "--anchor-test" ]]; then
+    anchor_test=true
+fi
+
 # return root level of the git repo
 home
 
@@ -31,7 +36,13 @@ avm use 0.29.0
 
 cargo build || exit 1
 
-anchor build || exit 1
+if [[ "$anchor_test" == true ]]; then
+    echo "Building with anchor-test"
+    anchor build -- --features anchor-test || exit 1
+else
+    echo "Building without anchor-test"
+    anchor build || exit 1
+fi
 
 cargo fmt || exit 1
 
