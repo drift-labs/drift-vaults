@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features
 
+* program: introduce `FeeUpdate` account to allow raising vault fees behind a time lock ([#87](https://github.com/drift-labs/drift-vaults/pull/87))
+
 ### Fixes
 
 ### Breaking
