@@ -1,5 +1,5 @@
 import * as anchor from '@coral-xyz/anchor';
-import { BN, Program, Wallet } from '@coral-xyz/anchor';
+import { BN, Program } from '@coral-xyz/anchor';
 import { describe, it } from '@jest/globals';
 import { BankrunContextWrapper } from './common/bankrunConnection';
 import { startAnchor } from 'solana-bankrun';
@@ -11,9 +11,6 @@ import {
 	DriftVaults,
 	VAULT_PROGRAM_ID,
 	IDL,
-	VaultDepositor,
-	WithdrawUnit,
-	Vault,
 	FeeUpdateStatus,
 	getFeeUpdateAddressSync,
 } from '../ts/sdk/lib';
@@ -21,7 +18,6 @@ import {
 	BulkAccountLoader,
 	DRIFT_PROGRAM_ID,
 	DriftClient,
-	getUserStatsAccountPublicKey,
 	getVariant,
 	OracleSource,
 	PEG_PRECISION,
@@ -29,34 +25,17 @@ import {
 	PublicKey,
 	QUOTE_PRECISION,
 	TestClient,
-	User,
 	ZERO,
 } from '@drift-labs/sdk';
 import { TestBulkAccountLoader } from './common/testBulkAccountLoader';
 import {
-	assert,
 	bootstrapSignerClientAndUserBankrun,
 	initializeQuoteSpotMarket,
 	initializeSolSpotMarket,
 	mockUSDCMintBankrun,
 	printTxLogs,
 } from './common/testHelpers';
-import {
-	getUserStatsDecoded,
-	overWriteUserStatsFuel,
-	getVaultDepositorDecoded,
-	getVaultDecoded,
-	overWriteVaultDepositor,
-	overWriteVault,
-	createVaultWithFuelOverflow,
-	overWriteUserStats,
-} from './common/bankrunHelpers';
-import {
-	Keypair,
-	TransactionInstruction,
-	TransactionMessage,
-	VersionedTransaction,
-} from '@solana/web3.js';
+import { Keypair } from '@solana/web3.js';
 import { mockOracleNoProgram } from './common/bankrunOracle';
 import { BankrunProvider } from 'anchor-bankrun';
 
@@ -85,7 +64,6 @@ describe('feeUpdate', () => {
 		VAULT_PROGRAM_ID,
 		encodeName(vaultName)
 	);
-	let vaultUserStatsKey: PublicKey;
 	const usdcAmount = new BN(1_000_000_000).mul(QUOTE_PRECISION);
 
 	const managerSigner = Keypair.generate();
@@ -103,14 +81,10 @@ describe('feeUpdate', () => {
 	const user2Signer = Keypair.generate();
 	let user2Client: VaultClient;
 	let user2DriftClient: DriftClient;
-	let user2UserUSDCAccount: PublicKey;
-	let user2VaultDepositor: PublicKey;
 
 	const user3Signer = Keypair.generate();
 	let user3Client: VaultClient;
 	let user3DriftClient: DriftClient;
-	let user3UserUSDCAccount: PublicKey;
-	let user3VaultDepositor: PublicKey;
 
 	beforeEach(async () => {
 		const context = await startAnchor(
@@ -205,11 +179,6 @@ describe('feeUpdate', () => {
 		managerClient = managerBootstrap.vaultClient;
 		managerDriftClient = managerBootstrap.driftClient;
 
-		vaultUserStatsKey = getUserStatsAccountPublicKey(
-			managerDriftClient.program.programId,
-			commonVaultKey
-		);
-
 		const provider = new BankrunProvider(
 			bankrunContextWrapper.context,
 			adminDriftClient.wallet as anchor.Wallet
@@ -270,12 +239,6 @@ describe('feeUpdate', () => {
 		});
 		user2Client = user2Bootstrap.vaultClient;
 		user2DriftClient = user2Bootstrap.driftClient;
-		user2UserUSDCAccount = user2Bootstrap.userUSDCAccount.publicKey;
-		user2VaultDepositor = getVaultDepositorAddressSync(
-			vaultProgram.programId,
-			commonVaultKey,
-			user2Signer.publicKey
-		);
 
 		const user3Bootstrap = await bootstrapSignerClientAndUserBankrun({
 			bankrunContext: bankrunContextWrapper,
@@ -298,12 +261,6 @@ describe('feeUpdate', () => {
 		});
 		user3Client = user3Bootstrap.vaultClient;
 		user3DriftClient = user3Bootstrap.driftClient;
-		user3UserUSDCAccount = user3Bootstrap.userUSDCAccount.publicKey;
-		user3VaultDepositor = getVaultDepositorAddressSync(
-			vaultProgram.programId,
-			commonVaultKey,
-			user3Signer.publicKey
-		);
 
 		// initialize a vault and depositors
 		await managerClient.initializeVault(
@@ -460,7 +417,7 @@ describe('feeUpdate', () => {
 	});
 
 	it('manager must choose timelock duration greater than redeem period and 1 day', async () => {
-		let vaultAcct = await vaultProgram.account.vault.fetch(commonVaultKey);
+		const vaultAcct = await vaultProgram.account.vault.fetch(commonVaultKey);
 		expect(vaultAcct.managementFee.toNumber()).toEqual(
 			TWENTY_PCT_MANAGEMENT_FEE.toNumber()
 		);
