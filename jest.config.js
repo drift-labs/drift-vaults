@@ -5,6 +5,7 @@ module.exports = {
 		// '**/tests/**/driftVaults.ts'
 		// '**/tests/**/*.test.ts'
 		'**/tests/**/*.ts'
+		// '**/tests/**/feeUpdate.test.ts'
 	],
 	testPathIgnorePatterns: [
 		'tests/common/',
