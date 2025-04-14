@@ -28,6 +28,7 @@ import { Command, Option } from 'commander';
 import { viewVaultDepositor } from "./commands/viewVaultDepositor";
 import { managerUpdatePoolId } from "./commands/managerUpdatePoolId";
 import { managerApplyProfitShare } from "./commands/managerApplyProfitShare";
+import { managerUpdateFees } from "./commands/managerUpdateFees";
 
 const program = new Command();
 program
@@ -94,8 +95,9 @@ program
     .option("-r, --redeem-period <number>", "The new redeem period (can only be lowered)")
     .option("-x, --max-tokens <number>", "The max tokens the vault can accept")
     .option("-a, --min-deposit-amount <number", "The minimum token amount allowed to deposit")
-    .option("-m, --management-fee <percent>", "The new management fee (can only be lowered)")
-    .option("-s, --profit-share <percent>", "The new profit share percentage (can only be lowered)")
+    .option("-m, --management-fee <percent>", "The new management fee (can only be lowered, use timelocked manager-update-fees to raise)")
+    .option("-s, --profit-share <percent>", "The new profit share percentage (can only be lowered, use timelocked manager-update-fees to raise)")
+    .option("-h, --hurdle-rate <percent>", "The new hurdle rate percentage (can only be raised, use timelocked manager-update-fees to lower)")
     .option("-p, --permissioned <boolean>", "Set the vault as permissioned (true) or open (false)")
     .addOption(new Option("--dump-transaction-message", "Dump the transaction message to the console").makeOptionMandatory(false))
     .action((opts) => managerUpdateVault(program, opts));
@@ -205,6 +207,17 @@ program
     .addOption(new Option("--csv", "Output to csv"))
 
     .action((opts) => vaultInvariantChecks(program, opts));
+
+program
+    .command("manager-update-fees")
+    .description("Update vault fees for a manager")
+    .addOption(new Option("--vault-address <address>", "Address of the vault to update").makeOptionMandatory(true))
+    .option("-t, --timelock-duration <number>", "The new timelock duration in seconds, must be at least the greater of 1 day, or the current redeem period (default: minimum duration)")
+    .option("-m, --management-fee <percent>", "The new management fee percentage")
+    .option("-s, --profit-share <percent>", "The new profit share percentage")
+    .option("-h, --hurdle-rate <percent>", "The new hurdle rate percentage")
+    .addOption(new Option("--dump-transaction-message", "Dump the transaction message to the console").makeOptionMandatory(false))
+    .action((opts) => managerUpdateFees(program, opts));
 
 program.parseAsync().then(() => {
     process.exit(0);

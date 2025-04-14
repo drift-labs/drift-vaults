@@ -12,7 +12,12 @@ pub fn manager_update_fees<'info>(
     let vault = ctx.accounts.vault.load_mut()?;
     let mut fee_update = ctx.accounts.fee_update.load_mut()?;
 
-    let now = Clock::get()?.unix_timestamp;
+    validate!(!vault.in_liquidation(), ErrorCode::OngoingLiquidation)?;
+    validate!(
+        !fee_update.is_pending(),
+        ErrorCode::InvalidFeeUpdateStatus,
+        "Fee update is already pending"
+    )?;
 
     validate!(
         params.timelock_duration > 0,
@@ -20,9 +25,8 @@ pub fn manager_update_fees<'info>(
         "Timelock duration must be greater than 0"
     )?;
 
+    let now = Clock::get()?.unix_timestamp;
     let timelock_end_ts = now.safe_add(params.timelock_duration)?;
-
-    validate!(!vault.in_liquidation(), ErrorCode::OngoingLiquidation)?;
 
     let min_fee_queue_period = vault.redeem_period.max(86_400);
     validate!(
@@ -35,6 +39,7 @@ pub fn manager_update_fees<'info>(
     let old_profit_share = vault.profit_share;
     let old_hurdle_rate = vault.hurdle_rate;
 
+    fee_update.incoming_update_ts = timelock_end_ts;
     fee_update.incoming_management_fee = params.new_management_fee.unwrap_or(old_management_fee);
     fee_update.incoming_profit_share = params.new_profit_share.unwrap_or(old_profit_share);
     fee_update.incoming_hurdle_rate = params.new_hurdle_rate.unwrap_or(old_hurdle_rate);

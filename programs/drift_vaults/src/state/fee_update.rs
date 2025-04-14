@@ -31,7 +31,15 @@ impl FeeUpdate {
         self.incoming_hurdle_rate = 0;
     }
 
+    pub fn is_pending(&self) -> bool {
+        self.incoming_update_ts > 0
+    }
+
     pub fn try_update_vault_fees(&mut self, now: i64, vault: &mut Vault) -> Result<()> {
+        if !self.is_pending() {
+            return Ok(());
+        }
+
         if now >= self.incoming_update_ts {
             emit!(FeeUpdateRecord {
                 ts: now,

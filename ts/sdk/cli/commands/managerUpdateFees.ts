@@ -4,10 +4,9 @@ import {
     Command
 } from "commander";
 import { dumpTransactionMessage, getCommandContext } from "../utils";
-import { BN, PERCENTAGE_PRECISION, TEN, convertToNumber, decodeName } from "@drift-labs/sdk";
+import { BN, PERCENTAGE_PRECISION, convertToNumber } from "@drift-labs/sdk";
 
-export const managerUpdateVault = async (program: Command, cmdOpts: OptionValues) => {
-
+export const managerUpdateFees = async (program: Command, cmdOpts: OptionValues) => {
     let vaultAddress: PublicKey;
     try {
         vaultAddress = new PublicKey(cmdOpts.vaultAddress as string);
@@ -22,25 +21,17 @@ export const managerUpdateVault = async (program: Command, cmdOpts: OptionValues
     } = await getCommandContext(program, true);
 
     const vault = await driftVault.getVault(vaultAddress);
-    const spotMarket = driftClient.getSpotMarketAccount(vault.spotMarketIndex);
-    if (!spotMarket) {
-        throw new Error("No spot market found");
-    }
-    const spotPrecision = TEN.pow(new BN(spotMarket.decimals));
-    const spotMarketName = decodeName(spotMarket.name);
 
-    let redeemPeriodSec = cmdOpts.redeemPeriod ?? null;
-    let redeemPeriodBN: BN | null = null;
-    if (redeemPeriodSec !== undefined && redeemPeriodSec !== null) {
-        redeemPeriodSec = parseInt(redeemPeriodSec);
-        redeemPeriodBN = new BN(redeemPeriodSec);
-    }
-
-    let maxTokens = cmdOpts.maxTokens;
-    let maxTokensBN: BN | null = null;
-    if (maxTokens !== undefined && maxTokens !== null) {
-        maxTokens = parseInt(maxTokens);
-        maxTokensBN = new BN(maxTokens).mul(spotPrecision);
+    const timelockDuration = cmdOpts.timelockDuration;
+    let timelockDurationBN: BN | null = null;
+    const minTimelockDurationBN = new BN(Math.max(1 * 24 * 60 * 60, vault.redeemPeriod.toNumber()));
+    if (timelockDuration !== undefined && timelockDuration !== null) {
+        timelockDurationBN = new BN(parseInt(timelockDuration));
+        if (timelockDurationBN.lt(minTimelockDurationBN)) {
+            throw new Error(`Timelock duration must be at least ${minTimelockDurationBN.toNumber()} seconds`);
+        }
+    } else {
+        timelockDurationBN = minTimelockDurationBN;
     }
 
     let managementFee = cmdOpts.managementFee;
@@ -64,25 +55,7 @@ export const managerUpdateVault = async (program: Command, cmdOpts: OptionValues
         hurdleRateNumber = hurdleRate * PERCENTAGE_PRECISION.toNumber() / 100.0;
     }
 
-    let minDepositAmount = cmdOpts.minDepositAmount;
-    let minDepositAmountBN: BN | null = null;
-    if (minDepositAmount !== undefined && minDepositAmount !== null) {
-        minDepositAmount = parseInt(minDepositAmount);
-        minDepositAmountBN = new BN(minDepositAmount).mul(spotPrecision);
-    }
-
-    console.log(`Updating params:`);
-    const redeemPeriodBefore = vault.redeemPeriod.toNumber();
-    const redeemPeriodAfter = redeemPeriodBN ? redeemPeriodBN.toNumber() : 'unchanged';
-    console.log(`  RedeemPeriod:           ${redeemPeriodBefore} -> ${redeemPeriodAfter}`);
-
-    const maxTokensBefore = `${convertToNumber(vault.maxTokens, spotPrecision)} ${spotMarketName}`;
-    const maxTokensAfter = maxTokensBN ? `${convertToNumber(maxTokensBN, spotPrecision)} ${spotMarketName}` : 'unchanged';
-    console.log(`  MaxTokens:              ${maxTokensBefore} -> ${maxTokensAfter}`);
-
-    const minDepositAmountBefore = `${convertToNumber(vault.minDepositAmount, spotPrecision)} ${spotMarketName}`;
-    const minDepositAmountAfter = minDepositAmountBN ? `${convertToNumber(minDepositAmountBN, spotPrecision)} ${spotMarketName}` : 'unchanged';
-    console.log(`  MinDepositAmount:       ${minDepositAmountBefore} -> ${minDepositAmountAfter}`);
+    console.log(`Updating fees, effective in ${timelockDurationBN?.toNumber()} seconds`);
 
     const managementFeeBefore = convertToNumber(vault.managementFee, PERCENTAGE_PRECISION) * 100.0;
     const managementFeeAfter = managementFeeBN ? `${convertToNumber(managementFeeBN, PERCENTAGE_PRECISION) * 100.0}%` : 'unchanged';
@@ -96,11 +69,6 @@ export const managerUpdateVault = async (program: Command, cmdOpts: OptionValues
     const hurdleRateAfter = hurdleRateNumber !== null ? `${hurdleRateNumber / PERCENTAGE_PRECISION.toNumber() * 100.0}%` : 'unchanged';
     console.log(`  HurdleRate:             ${hurdleRateBefore}% -> ${hurdleRateAfter}`);
 
-    const permissioned: boolean | null = (cmdOpts.permissioned === null || cmdOpts.permissioned === undefined) ? null : JSON.parse(cmdOpts.permissioned);
-    const permissionedBefore = vault.permissioned;
-    const permissionedAfter = permissioned !== null ? permissioned : 'unchanged';
-    console.log(`  Permissioned:           ${permissionedBefore} -> ${permissionedAfter}`);
-
     const readline = require('readline').createInterface({
         input: process.stdin,
         output: process.stdout
@@ -113,32 +81,28 @@ export const managerUpdateVault = async (program: Command, cmdOpts: OptionValues
         });
     });
     if ((answer as string).toLowerCase() !== 'yes') {
-        console.log('Vault update canceled.');
+        console.log('Fee update canceled.');
         readline.close();
         process.exit(0);
     }
-    console.log('Updating vault...');
+    console.log('Updating fees...');
 
-    // null means unchanged
     const newParams = {
-        redeemPeriod: redeemPeriodBN,
-        maxTokens: maxTokensBN,
-        minDepositAmount: minDepositAmountBN,
-        managementFee: managementFeeBN,
-        profitShare: profitShareNumber,
-        hurdleRate: hurdleRateNumber,
-        permissioned,
+        timelockDuration: timelockDurationBN,
+        newManagementFee: managementFeeBN,
+        newProfitShare: profitShareNumber,
+        newHurdleRate: hurdleRateNumber,
     };
 
     let done = false;
     while (!done) {
         try {
             if (cmdOpts.dumpTransactionMessage) {
-                const tx = await driftVault.getManagerUpdateVaultIx(vaultAddress, newParams);
+                const tx = await driftVault.getManagerUpdateFeesIx(vaultAddress, newParams);
                 console.log(dumpTransactionMessage(driftClient.wallet.publicKey, [tx]));
             } else {
-                const tx = await driftVault.managerUpdateVault(vaultAddress, newParams);
-                console.log(`Updated vault params as vault manager: https://solana.fm/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+                const tx = await driftVault.managerUpdateFees(vaultAddress, newParams);
+                console.log(`Updated vault fees as vault manager: https://solana.fm/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
                 done = true;
             }
             break;
@@ -153,4 +117,4 @@ export const managerUpdateVault = async (program: Command, cmdOpts: OptionValues
             }
         }
     }
-};
+}; 

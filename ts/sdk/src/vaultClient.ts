@@ -50,6 +50,7 @@ import {
 	TOKEN_PROGRAM_ID,
 } from '@solana/spl-token';
 import {
+	FeeUpdate,
 	FeeUpdateStatus,
 	FuelDistributionMode,
 	Vault,
@@ -213,6 +214,10 @@ export class VaultClient {
 
 	public async getVault(vault: PublicKey): Promise<Vault> {
 		return await this.program.account.vault.fetch(vault);
+	}
+
+	public async getFeeUpdate(feeUpdate: PublicKey): Promise<FeeUpdate> {
+		return await this.program.account.feeUpdate.fetch(feeUpdate);
 	}
 
 	public async getVaultAndSlot(
