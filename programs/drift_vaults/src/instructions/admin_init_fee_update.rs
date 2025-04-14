@@ -8,7 +8,7 @@ use crate::{error::ErrorCode, validate};
 pub fn admin_init_fee_update<'info>(
     ctx: Context<'_, '_, '_, 'info, AdminInitFeeUpdate<'info>>,
 ) -> Result<()> {
-    let mut vault = ctx.accounts.vault.load_mut()?;
+    let vault = ctx.accounts.vault.load_mut()?;
     let mut fee_update = ctx.accounts.fee_update.load_init()?;
 
     validate!(!vault.in_liquidation(), ErrorCode::OngoingLiquidation)?;
@@ -19,8 +19,6 @@ pub fn admin_init_fee_update<'info>(
     )?;
 
     fee_update.reset();
-
-    vault.fee_update_status = FeeUpdateStatus::HasFeeUpdate as u8;
 
     Ok(())
 }

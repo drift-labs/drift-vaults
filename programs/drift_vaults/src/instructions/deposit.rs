@@ -41,7 +41,7 @@ pub fn deposit<'c: 'info, 'info>(
     let fuel_overflow = ctx.fuel_overflow(vp.is_some(), has_fuel_overflow);
     user_stats.validate_fuel_overflow(&fuel_overflow)?;
 
-    let has_fee_update = FeeUpdateStatus::is_has_fee_update(vault.fee_update_status);
+    let has_fee_update = FeeUpdateStatus::has_pending_fee_update(vault.fee_update_status);
     let mut fee_update = ctx.fee_update(vp.is_some(), has_fuel_overflow, has_fee_update);
     vault.validate_fee_update(&fee_update)?;
 

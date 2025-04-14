@@ -118,7 +118,7 @@ export enum FuelDistributionMode {
 
 export enum FeeUpdateStatus {
 	None = 0,
-	HasFeeUpdate = 1,
+	PendingFeeUpdate = 1,
 }
 
 export type FeeUpdate = {

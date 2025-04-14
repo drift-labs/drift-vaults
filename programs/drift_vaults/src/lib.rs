@@ -212,6 +212,12 @@ pub mod drift_vaults {
         instructions::manager_update_fees(ctx, params)
     }
 
+    pub fn manager_cancel_fee_update<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, ManagerCancelFeeUpdate<'info>>,
+    ) -> Result<()> {
+        instructions::manager_cancel_fee_update(ctx)
+    }
+
     pub fn apply_profit_share<'c: 'info, 'info>(
         ctx: Context<'_, '_, 'c, 'info, ApplyProfitShare<'info>>,
     ) -> Result<()> {

@@ -1,20 +1,29 @@
 use anchor_lang::prelude::*;
 
 use crate::constraints::is_admin;
+use crate::state::events::{FeeUpdateAction, FeeUpdateRecord};
 use crate::state::{FeeUpdate, FeeUpdateStatus, Vault};
-use crate::{error::ErrorCode, validate};
 
 pub fn admin_delete_fee_update<'info>(
     ctx: Context<'_, '_, '_, 'info, AdminDeleteFeeUpdate<'info>>,
 ) -> Result<()> {
     let mut vault = ctx.accounts.vault.load_mut()?;
 
-    validate!(!vault.in_liquidation(), ErrorCode::OngoingLiquidation)?;
-    validate!(
-        vault.fee_update_status == FeeUpdateStatus::HasFeeUpdate as u8,
-        ErrorCode::InvalidVaultUpdate,
-        "vault does not have a FeeUpdate account"
-    )?;
+    if vault.fee_update_status == FeeUpdateStatus::PendingFeeUpdate as u8 {
+        let now = Clock::get()?.unix_timestamp;
+        emit!(FeeUpdateRecord {
+            ts: now,
+            action: FeeUpdateAction::Cancelled,
+            timelock_end_ts: now,
+            vault: vault.pubkey,
+            old_management_fee: vault.management_fee,
+            old_profit_share: vault.profit_share,
+            old_hurdle_rate: vault.hurdle_rate,
+            new_management_fee: vault.management_fee,
+            new_profit_share: vault.profit_share,
+            new_hurdle_rate: vault.hurdle_rate,
+        });
+    }
 
     vault.fee_update_status = FeeUpdateStatus::None as u8;
 

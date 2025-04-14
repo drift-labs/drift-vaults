@@ -105,8 +105,8 @@ pub struct Vault {
     /// How fuel distribution should be treated [`FuelDistributionMode`]. Default is `UsersOnly`
     pub fuel_distribution_mode: u8,
     /// Whether the vault has a FeeUpdate account [`FeeUpdateStatus`]. Default is `FeeUpdateStatus::None`
-    /// The first time the manager updates a fee, the status is set to `HasFeeUpdate`. And a `FeeUpdate` account
-    /// must be passed in with remaining_accounts.
+    /// After a `FeeUpdate` account is created and the manager has staged a fee update, the status is set to `PendingFeeUpdate`.
+    /// And instructsions that may finalize the fee update must include the `FeeUpdate` account with `remaining_accounts`.
     pub fee_update_status: u8,
     pub padding1: [u8; 1],
     /// The timestamp cumulative_fuel_per_share was last updated
@@ -1215,7 +1215,7 @@ impl Vault {
     }
 
     pub fn validate_fee_update(&self, fee_update: &Option<AccountLoader<FeeUpdate>>) -> Result<()> {
-        let has_fee_update = FeeUpdateStatus::is_has_fee_update(self.fee_update_status);
+        let has_fee_update = FeeUpdateStatus::has_pending_fee_update(self.fee_update_status);
         match fee_update {
             None => {
                 if has_fee_update {
@@ -1356,7 +1356,7 @@ impl FuelDistributionMode {
 
 pub enum FeeUpdateStatus {
     None = 0b00000000,
-    HasFeeUpdate = 0b00000001,
+    PendingFeeUpdate = 0b00000001,
 }
 
 impl TryFrom<u8> for FeeUpdateStatus {
@@ -1365,7 +1365,7 @@ impl TryFrom<u8> for FeeUpdateStatus {
     fn try_from(value: u8) -> std::result::Result<Self, ErrorCode> {
         match value {
             0 => Ok(FeeUpdateStatus::None),
-            1 => Ok(FeeUpdateStatus::HasFeeUpdate),
+            1 => Ok(FeeUpdateStatus::PendingFeeUpdate),
             _ => Err(ErrorCode::InvalidFeeUpdateStatus),
         }
     }
@@ -1376,8 +1376,8 @@ impl FeeUpdateStatus {
         status & FeeUpdateStatus::None as u8 != 0
     }
 
-    pub fn is_has_fee_update(status: u8) -> bool {
-        status & FeeUpdateStatus::HasFeeUpdate as u8 != 0
+    pub fn has_pending_fee_update(status: u8) -> bool {
+        status & FeeUpdateStatus::PendingFeeUpdate as u8 != 0
     }
 }
 

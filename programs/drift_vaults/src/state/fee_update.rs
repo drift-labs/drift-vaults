@@ -1,5 +1,5 @@
 use crate::events::{FeeUpdateAction, FeeUpdateRecord};
-use crate::state::Vault;
+use crate::state::{FeeUpdateStatus, Vault};
 use crate::Size;
 use anchor_lang::prelude::*;
 use drift_macros::assert_no_slop;
@@ -57,6 +57,8 @@ impl FeeUpdate {
             vault.management_fee = self.incoming_management_fee;
             vault.profit_share = self.incoming_profit_share;
             vault.hurdle_rate = self.incoming_hurdle_rate;
+
+            vault.fee_update_status = FeeUpdateStatus::None as u8;
 
             self.reset();
         }

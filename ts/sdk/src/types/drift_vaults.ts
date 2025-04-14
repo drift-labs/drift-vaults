@@ -1157,6 +1157,27 @@ export type DriftVaults = {
 			];
 		},
 		{
+			name: 'managerCancelFeeUpdate';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'feeUpdate';
+					isMut: true;
+					isSigner: false;
+				}
+			];
+			args: [];
+		},
+		{
 			name: 'applyProfitShare';
 			accounts: [
 				{
@@ -2303,8 +2324,8 @@ export type DriftVaults = {
 						name: 'feeUpdateStatus';
 						docs: [
 							'Whether the vault has a FeeUpdate account [`FeeUpdateStatus`]. Default is `FeeUpdateStatus::None`',
-							'The first time the manager updates a fee, the status is set to `HasFeeUpdate`. And a `FeeUpdate` account',
-							'must be passed in with remaining_accounts.'
+							'After a `FeeUpdate` account is created and the manager has staged a fee update, the status is set to `PendingFeeUpdate`.',
+							'And instructsions that may finalize the fee update must include the `FeeUpdate` account with `remaining_accounts`.'
 						];
 						type: 'u8';
 					},
@@ -2648,6 +2669,9 @@ export type DriftVaults = {
 					},
 					{
 						name: 'Applied';
+					},
+					{
+						name: 'Cancelled';
 					}
 				];
 			};
@@ -2675,7 +2699,7 @@ export type DriftVaults = {
 						name: 'None';
 					},
 					{
-						name: 'HasFeeUpdate';
+						name: 'PendingFeeUpdate';
 					}
 				];
 			};
@@ -4389,6 +4413,27 @@ export const IDL: DriftVaults = {
 			],
 		},
 		{
+			name: 'managerCancelFeeUpdate',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'feeUpdate',
+					isMut: true,
+					isSigner: false,
+				},
+			],
+			args: [],
+		},
+		{
 			name: 'applyProfitShare',
 			accounts: [
 				{
@@ -5535,8 +5580,8 @@ export const IDL: DriftVaults = {
 						name: 'feeUpdateStatus',
 						docs: [
 							'Whether the vault has a FeeUpdate account [`FeeUpdateStatus`]. Default is `FeeUpdateStatus::None`',
-							'The first time the manager updates a fee, the status is set to `HasFeeUpdate`. And a `FeeUpdate` account',
-							'must be passed in with remaining_accounts.',
+							'After a `FeeUpdate` account is created and the manager has staged a fee update, the status is set to `PendingFeeUpdate`.',
+							'And instructsions that may finalize the fee update must include the `FeeUpdate` account with `remaining_accounts`.',
 						],
 						type: 'u8',
 					},
@@ -5881,6 +5926,9 @@ export const IDL: DriftVaults = {
 					{
 						name: 'Applied',
 					},
+					{
+						name: 'Cancelled',
+					},
 				],
 			},
 		},
@@ -5907,7 +5955,7 @@ export const IDL: DriftVaults = {
 						name: 'None',
 					},
 					{
-						name: 'HasFeeUpdate',
+						name: 'PendingFeeUpdate',
 					},
 				],
 			},

@@ -118,6 +118,7 @@ pub struct FuelSeasonRecord {
 pub enum FeeUpdateAction {
     Pending,
     Applied,
+    Cancelled,
 }
 
 #[event]

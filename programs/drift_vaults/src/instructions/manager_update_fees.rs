@@ -1,6 +1,6 @@
 use crate::constraints::is_manager_for_vault;
 use crate::state::events::{FeeUpdateAction, FeeUpdateRecord};
-use crate::state::FeeUpdate;
+use crate::state::{FeeUpdate, FeeUpdateStatus};
 use crate::{error::ErrorCode, validate, Vault};
 use anchor_lang::prelude::*;
 use drift::math::safe_math::SafeMath;
@@ -9,12 +9,13 @@ pub fn manager_update_fees<'info>(
     ctx: Context<'_, '_, '_, 'info, ManagerUpdateFees<'info>>,
     params: ManagerUpdateFeesParams,
 ) -> Result<()> {
-    let vault = ctx.accounts.vault.load_mut()?;
+    let mut vault = ctx.accounts.vault.load_mut()?;
     let mut fee_update = ctx.accounts.fee_update.load_mut()?;
 
     validate!(!vault.in_liquidation(), ErrorCode::OngoingLiquidation)?;
     validate!(
-        !fee_update.is_pending(),
+        !FeeUpdateStatus::has_pending_fee_update(vault.fee_update_status)
+            && !fee_update.is_pending(),
         ErrorCode::InvalidFeeUpdateStatus,
         "Fee update is already pending"
     )?;
@@ -44,6 +45,8 @@ pub fn manager_update_fees<'info>(
     fee_update.incoming_profit_share = params.new_profit_share.unwrap_or(old_profit_share);
     fee_update.incoming_hurdle_rate = params.new_hurdle_rate.unwrap_or(old_hurdle_rate);
 
+    vault.fee_update_status = FeeUpdateStatus::PendingFeeUpdate as u8;
+
     emit!(FeeUpdateRecord {
         ts: Clock::get()?.unix_timestamp,
         action: FeeUpdateAction::Pending,
@@ -56,6 +59,7 @@ pub fn manager_update_fees<'info>(
         new_profit_share: fee_update.incoming_profit_share,
         new_hurdle_rate: fee_update.incoming_hurdle_rate,
     });
+
     Ok(())
 }
 

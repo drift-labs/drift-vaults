@@ -152,8 +152,8 @@ export class VaultClient {
 			FuelOverflowStatus.Exists;
 
 		const hasFeeUpdate =
-			(vaultAccount.feeUpdateStatus & FeeUpdateStatus.HasFeeUpdate) ===
-			FeeUpdateStatus.HasFeeUpdate;
+			(vaultAccount.feeUpdateStatus & FeeUpdateStatus.PendingFeeUpdate) ===
+			FeeUpdateStatus.PendingFeeUpdate;
 
 		if (hasFeeUpdate && !skipFeeUpdate) {
 			const feeUpdate = getFeeUpdateAddressSync(
@@ -3422,6 +3422,29 @@ export class VaultClient {
 		const feeUpdate = getFeeUpdateAddressSync(this.program.programId, vault);
 
 		return this.program.instruction.managerUpdateFees(params, {
+			accounts: {
+				vault,
+				manager: vaultAccount.manager,
+				feeUpdate,
+			},
+		});
+	}
+
+	public async managerCancelFeeUpdate(
+		vault: PublicKey,
+		uiTxParams?: TxParams
+	): Promise<TransactionSignature> {
+		const ix = await this.getManagerCancelFeeUpdateIx(vault);
+		return await this.createAndSendTxn([ix], uiTxParams);
+	}
+
+	public async getManagerCancelFeeUpdateIx(
+		vault: PublicKey
+	): Promise<TransactionInstruction> {
+		const vaultAccount = await this.program.account.vault.fetch(vault);
+		const feeUpdate = getFeeUpdateAddressSync(this.program.programId, vault);
+
+		return this.program.instruction.managerCancelFeeUpdate({
 			accounts: {
 				vault,
 				manager: vaultAccount.manager,
