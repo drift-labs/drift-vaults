@@ -57,6 +57,8 @@ pub enum ErrorCode {
     InvalidTokenization,
     #[msg("InvalidFuelDistributionMode")]
     InvalidFuelDistributionMode,
+    #[msg("FeeUpdateMissing")]
+    FeeUpdateMissing,
     #[msg("InvalidFeeUpdateStatus")]
     InvalidFeeUpdateStatus,
 }

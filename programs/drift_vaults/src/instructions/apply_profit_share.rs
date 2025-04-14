@@ -36,6 +36,7 @@ pub fn apply_profit_share<'c: 'info, 'info>(
 
     let has_fee_update = FeeUpdateStatus::is_has_fee_update(vault.fee_update_status);
     let mut fee_update = ctx.fee_update(vp.is_some(), has_fuel_overflow, has_fee_update);
+    vault.validate_fee_update(&fee_update)?;
 
     let AccountMaps {
         perp_market_map,

@@ -3198,6 +3198,11 @@ export type DriftVaults = {
 		},
 		{
 			code: 6025;
+			name: 'FeeUpdateMissing';
+			msg: 'FeeUpdateMissing';
+		},
+		{
+			code: 6026;
 			name: 'InvalidFeeUpdateStatus';
 			msg: 'InvalidFeeUpdateStatus';
 		}
@@ -6404,6 +6409,11 @@ export const IDL: DriftVaults = {
 		},
 		{
 			code: 6025,
+			name: 'FeeUpdateMissing',
+			msg: 'FeeUpdateMissing',
+		},
+		{
+			code: 6026,
 			name: 'InvalidFeeUpdateStatus',
 			msg: 'InvalidFeeUpdateStatus',
 		},

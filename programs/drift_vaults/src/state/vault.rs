@@ -1214,6 +1214,49 @@ impl Vault {
         }
     }
 
+    pub fn validate_fee_update(&self, fee_update: &Option<AccountLoader<FeeUpdate>>) -> Result<()> {
+        let has_fee_update = FeeUpdateStatus::is_has_fee_update(self.fee_update_status);
+        match fee_update {
+            None => {
+                if has_fee_update {
+                    // Vault has FeeUpdate but no rem acct provided.
+                    let ec = ErrorCode::FeeUpdateMissing;
+                    msg!("Error {} thrown at {}:{}", ec, file!(), line!());
+                    msg!("FeeUpdate missing in remaining accounts");
+                    Err(anchor_lang::error::Error::from(ec))
+                } else {
+                    Ok(())
+                }
+            }
+            Some(fee_update) => {
+                if has_fee_update {
+                    // Vault has FeeUpdate and rem accts provided one.
+                    // check if PDA matches rem acct given.
+                    let (expected, _) = Pubkey::find_program_address(
+                        &[b"fee_update", self.pubkey.as_ref()],
+                        &crate::id(),
+                    );
+                    let actual = fee_update.to_account_info().key();
+                    if actual != expected {
+                        Err(
+                            anchor_lang::error::Error::from(error::ErrorCode::ConstraintSeeds)
+                                .with_account_name("fee_update")
+                                .with_pubkeys((actual, expected)),
+                        )
+                    } else {
+                        Ok(())
+                    }
+                } else {
+                    // Vault has no FeeUpdate but rem acct provided one.
+                    let ec = ErrorCode::FeeUpdateMissing;
+                    msg!("Error {} thrown at {}:{}", ec, file!(), line!());
+                    msg!("FeeUpdate missing in remaining accounts");
+                    Err(anchor_lang::error::Error::from(ec))
+                }
+            }
+        }
+    }
+
     fn emit_vault_depositor_record(
         &self,
         params: VaultDepositorRecordParams,
