@@ -782,6 +782,11 @@
         {
           "name": "authority",
           "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "admin",
+          "isMut": true,
           "isSigner": true
         },
         {

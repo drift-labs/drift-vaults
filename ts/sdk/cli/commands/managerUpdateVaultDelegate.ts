@@ -36,7 +36,7 @@ export const managerUpdateVaultDelegate = async (program: Command, cmdOpts: Opti
         console.log(dumpTransactionMessage(driftClient.wallet.publicKey, [tx]));
     } else {
         const tx = await driftVault.updateDelegate(vaultAddress, delegate);
-        console.log(`Updated vault delegate to ${delegate.toBase58()}: https://solscan.io/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+        console.log(`Updated vault delegate to ${delegate.toBase58()}: https://solana.fm/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet-solana" : ""}`);
     }
 
 };

@@ -29,6 +29,8 @@ import { viewVaultDepositor } from "./commands/viewVaultDepositor";
 import { managerUpdatePoolId } from "./commands/managerUpdatePoolId";
 import { managerApplyProfitShare } from "./commands/managerApplyProfitShare";
 import { managerUpdateFees } from "./commands/managerUpdateFees";
+import { adminInitFeeUpdate } from "./commands/adminInitFeeUpdate";
+import { adminDeleteFeeUpdate } from "./commands/adminDeleteFeeUpdate";
 
 const program = new Command();
 program
@@ -218,6 +220,20 @@ program
     .option("-h, --hurdle-rate <percent>", "The new hurdle rate percentage")
     .addOption(new Option("--dump-transaction-message", "Dump the transaction message to the console").makeOptionMandatory(false))
     .action((opts) => managerUpdateFees(program, opts));
+
+program
+    .command("admin-init-fee-update")
+    .description("Admin initialize a fee update for a vault")
+    .addOption(new Option("--vault-address <address>", "Address of the vault to initialize fee update for").makeOptionMandatory(true))
+    .addOption(new Option("--dump-transaction-message", "Dump the transaction message to the console").makeOptionMandatory(false))
+    .action((opts) => adminInitFeeUpdate(program, opts));
+
+program
+    .command("admin-delete-fee-update")
+    .description("Admin delete a fee update for a vault")
+    .addOption(new Option("--vault-address <address>", "Address of the vault to delete fee update for").makeOptionMandatory(true))
+    .addOption(new Option("--dump-transaction-message", "Dump the transaction message to the console").makeOptionMandatory(false))
+    .action((opts) => adminDeleteFeeUpdate(program, opts));
 
 program.parseAsync().then(() => {
     process.exit(0);

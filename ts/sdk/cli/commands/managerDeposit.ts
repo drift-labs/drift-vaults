@@ -34,6 +34,6 @@ export const managerDeposit = async (program: Command, cmdOpts: OptionValues) =>
         console.log(dumpTransactionMessage(driftClient.wallet.publicKey, txs));
     } else {
         const tx = await driftVault.managerDeposit(vaultAddress, depositBN);
-        console.log(`Deposited ${cmdOpts.amount} to vault as manager: https://solscan.io/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+        console.log(`Deposited ${cmdOpts.amount} to vault as manager: https://solana.fm/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet-solana" : ""}`);
     }
 };

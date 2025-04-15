@@ -4,9 +4,9 @@ import {
     Command
 } from "commander";
 import { dumpTransactionMessage, getCommandContext } from "../utils";
+import { VAULT_ADMIN_KEY } from "../../src";
 
-export const managerUpdateVaultManager = async (program: Command, cmdOpts: OptionValues) => {
-
+export const adminInitFeeUpdate = async (program: Command, cmdOpts: OptionValues) => {
     let vaultAddress: PublicKey;
     try {
         vaultAddress = new PublicKey(cmdOpts.vaultAddress as string);
@@ -15,24 +15,20 @@ export const managerUpdateVaultManager = async (program: Command, cmdOpts: Optio
         process.exit(1);
     }
 
-    let manager: PublicKey;
-    try {
-        manager = new PublicKey(cmdOpts.newManager as string);
-    } catch (err) {
-        console.error("Invalid manager address");
-        process.exit(1);
-    }
-
     const {
         driftVault,
         driftClient,
     } = await getCommandContext(program, true);
 
+    if (!driftClient.wallet.publicKey.equals(VAULT_ADMIN_KEY)) {
+        console.error("Only vault admin can initialize fee update");
+        process.exit(1);
+    }
+
     const vault = await driftVault.getVault(vaultAddress);
 
-    console.log(`Updating vault manager:`);
-    console.log(`  Current manager: ${vault.manager.toString()}`);
-    console.log(`  New manager:     ${manager.toString()}`);
+    console.log(`Initializing fee update for vault:`);
+    console.log(`  Vault: ${vault.pubkey.toBase58()}`);
 
     const readline = require('readline').createInterface({
         input: process.stdin,
@@ -46,20 +42,20 @@ export const managerUpdateVaultManager = async (program: Command, cmdOpts: Optio
         });
     });
     if ((answer as string).toLowerCase() !== 'yes') {
-        console.log('Vault manager update canceled.');
+        console.log('Fee update initialization canceled.');
         process.exit(0);
     }
-    console.log('Updating vault manager...');
+    console.log('Initializing fee update...');
 
     let done = false;
     while (!done) {
         try {
             if (cmdOpts.dumpTransactionMessage) {
-                const tx = await driftVault.getManagerUpdateVaultManagerIx(vaultAddress, manager);
+                const tx = await driftVault.getAdminInitFeeUpdateIx(vaultAddress);
                 console.log(dumpTransactionMessage(driftClient.wallet.publicKey, [tx]));
             } else {
-                const tx = await driftVault.managerUpdateVaultManager(vaultAddress, manager);
-                console.log(`Updated vault manager: https://solana.fm/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet-solana" : ""}`);
+                const tx = await driftVault.adminInitFeeUpdate(vaultAddress);
+                console.log(`Initialized fee update as admin: https://solana.fm/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet-solana" : ""}`);
                 done = true;
             }
             break;
@@ -74,4 +70,4 @@ export const managerUpdateVaultManager = async (program: Command, cmdOpts: Optio
             }
         }
     }
-};
+}; 

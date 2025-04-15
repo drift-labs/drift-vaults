@@ -37,8 +37,11 @@ export const applyProfitShare = async (program: Command, cmdOpts: OptionValues) 
     const thresholdBN = numberToSafeBN(thresholdNumber, spotMarketPrecision);
     let pendingProfitShareToRealize = ZERO;
     const vdWithPendingProfitShare = vdWithNoWithdrawRequests.filter((vd: ProgramAccount<VaultDepositor>) => {
+        if (vault.managementFee.gt(ZERO)) {
+            return true;
+        }
         const pendingProfitShares = calculateApplyProfitShare(vd.account, vaultEquitySpot, vault);
-        const doRealize = pendingProfitShares.profitShareAmount.gt(thresholdBN);
+        const doRealize = pendingProfitShares.profitShareAmount.gte(thresholdBN);
         if (doRealize) {
             pendingProfitShareToRealize = pendingProfitShareToRealize.add(pendingProfitShares.profitShareAmount);
             return true;
@@ -83,7 +86,7 @@ export const applyProfitShare = async (program: Command, cmdOpts: OptionValues) 
 
             try {
                 const txid = await driftClient.connection.sendTransaction(tx);
-                console.log(`Sent chunk: ${txid}`);
+                console.log(`Sent chunk: https://solana.fm/tx/${txid}${driftClient.env === "devnet" ? "?cluster=devnet-solana" : ""}`);
             } catch (e) {
                 console.error(`Error sending chunk: ${e}`);
                 console.log((e as SendTransactionError).logs);

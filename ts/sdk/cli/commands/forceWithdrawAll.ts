@@ -97,7 +97,7 @@ export const forceWithdrawAll = async (program: Command, cmdOpts: OptionValues) 
         console.log(`Sending chunk: ${bs58.encode(tx.signatures[0])}`);
         try {
             const txid = await driftClient.connection.sendTransaction(tx);
-            console.log(`Sent chunk: https://solscan.io/tx/${txid}`);
+            console.log(`Sent chunk: https://solana.fm/tx/${txid}`);
         } catch (e) {
             console.error(`Error sending chunk: ${e}`);
             console.log((e as SendTransactionError).logs);

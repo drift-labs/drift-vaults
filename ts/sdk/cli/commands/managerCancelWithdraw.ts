@@ -25,6 +25,6 @@ export const managerCancelWithdraw = async (program: Command, cmdOpts: OptionVal
         console.log(dumpTransactionMessage(driftClient.wallet.publicKey, [tx]));
     } else {
         const tx = await driftVault.managerCancelWithdrawRequest(vaultAddress);
-        console.log(`Canceled withdraw as vault manager: https://solscan.io/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+        console.log(`Canceled withdraw as vault manager: https://solana.fm/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet-solana" : ""}`);
     }
 };

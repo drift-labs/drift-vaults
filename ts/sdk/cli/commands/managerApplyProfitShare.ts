@@ -27,6 +27,6 @@ export const managerApplyProfitShare = async (program: Command, cmdOpts: OptionV
         console.log(dumpTransactionMessage(driftClient.wallet.publicKey, [tx]));
     } else {
         const tx = await driftVault.applyProfitShare(vaultAddress, vaultDepositorAddress);
-        console.log(`Applied profit share: https://solscan.io/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+        console.log(`Applied profit share: https://solana.fm/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet-solana" : ""}`);
     }
 };

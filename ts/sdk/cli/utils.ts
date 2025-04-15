@@ -1,5 +1,5 @@
 import { BASE_PRECISION, BN, DriftClient, DriftEnv, OraclePriceData, PRICE_PRECISION, QUOTE_PRECISION, SpotMarketAccount, TEN, User, Wallet, WhileValidTxSender, convertToNumber, getSignedTokenAmount, getTokenAmount, loadKeypair } from "@drift-labs/sdk";
-import { VAULT_PROGRAM_ID, Vault, VaultClient, VaultDepositor, decodeName } from "../src";
+import { FeeUpdate, VAULT_PROGRAM_ID, Vault, VaultClient, VaultDepositor, decodeName } from "../src";
 import { Command } from "commander";
 import { Connection, Keypair, PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
 import { AnchorProvider, Wallet as AnchorWallet } from "@coral-xyz/anchor";
@@ -10,7 +10,7 @@ import fs from 'fs';
 import { bs58 } from "@coral-xyz/anchor/dist/cjs/utils/bytes";
 
 
-export async function printVault(slot: number, driftClient: DriftClient, vault: Vault, vaultEquity: BN, spotMarket: SpotMarketAccount, spotOracle: OraclePriceData) {
+export async function printVault(slot: number, driftClient: DriftClient, vault: Vault, vaultEquity: BN, spotMarket: SpotMarketAccount, spotOracle: OraclePriceData, feeUpdateAccount: FeeUpdate | null = null) {
 
     const oraclePriceNum = convertToNumber(spotOracle.price, PRICE_PRECISION);
     const spotPrecision = TEN.pow(new BN(spotMarket.decimals));
@@ -51,7 +51,16 @@ export async function printVault(slot: number, driftClient: DriftClient, vault: 
     console.log(`  shares: ${vault.lastManagerWithdrawRequest.shares.toString()}`);
     console.log(`  values: ${convertToNumber(vault.lastManagerWithdrawRequest.value, spotPrecision)} ${spotSymbol} (${vault.lastManagerWithdrawRequest.value.toString()})`);
     console.log(`  ts:     ${vault.lastManagerWithdrawRequest.ts.toString()}`);
-
+    console.log(`FeeUpdate Account:`);
+    if (feeUpdateAccount) {
+        const timeUntilUpdate = feeUpdateAccount.incomingUpdateTs.sub(new BN(Date.now() / 1000));
+        console.log(`  incomingUpdateTs: ${feeUpdateAccount.incomingUpdateTs.toString()} (in ${timeUntilUpdate.toString()} seconds)`);
+        console.log(`  incomingManagementFee: ${vault.managementFee.toString()} -> ${feeUpdateAccount.incomingManagementFee.toString()}`);
+        console.log(`  incomingProfitShare:   ${vault.profitShare} -> ${feeUpdateAccount.incomingProfitShare}`);
+        console.log(`  incomingHurdleRate:    ${vault.hurdleRate} -> ${feeUpdateAccount.incomingHurdleRate}`);
+    } else {
+        console.log(`  None`);
+    }
     console.log(`minDepositAmount:  ${vault.minDepositAmount.toString()}`);
     console.log(`profitShare:       ${vault.profitShare}`);
     console.log(`hurdleRate:        ${vault.hurdleRate}`);
