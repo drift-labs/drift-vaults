@@ -20,6 +20,13 @@ pub fn is_authority_for_vault_depositor(
     Ok(vault_depositor.load()?.authority.eq(signer.key))
 }
 
+pub fn is_authority_key_for_vault_depositor(
+    vault_depositor: &AccountLoader<VaultDepositor>,
+    authority_key: &Pubkey,
+) -> Result<bool> {
+    Ok(vault_depositor.load()?.authority.eq(authority_key))
+}
+
 pub fn is_manager_for_vault(vault: &AccountLoader<Vault>, signer: &Signer) -> Result<bool> {
     Ok(vault.load()?.manager.eq(signer.key))
 }

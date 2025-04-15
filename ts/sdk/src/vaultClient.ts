@@ -66,6 +66,7 @@ import { UserMapConfig } from '@drift-labs/sdk';
 import { calculateRealizedVaultDepositorEquity } from './math';
 import { Metaplex } from '@metaplex-foundation/js';
 import { getOrCreateATAInstruction } from './utils';
+import { VAULT_ADMIN_KEY } from './constants';
 
 type OracleFeedConfig = {
 	feed: PublicKey;
@@ -2314,6 +2315,9 @@ export class VaultClient {
 	public async getLiquidateIx(
 		vaultDepositor: PublicKey
 	): Promise<TransactionInstruction> {
+		if (!this.driftClient.wallet.publicKey.equals(VAULT_ADMIN_KEY)) {
+			throw new Error('Only vault admin can liquidate');
+		}
 		const vaultDepositorAccount =
 			await this.program.account.vaultDepositor.fetch(vaultDepositor);
 		const vault = vaultDepositorAccount.vault;
@@ -2348,6 +2352,7 @@ export class VaultClient {
 			driftUser: vaultAccount.user,
 			driftState: driftStateKey,
 			driftProgram: this.driftClient.program.programId,
+			authority: vaultDepositorAccount.authority,
 		};
 
 		if (this.cliMode) {
@@ -2359,7 +2364,6 @@ export class VaultClient {
 		} else {
 			return this.program.instruction.liquidate({
 				accounts: {
-					authority: this.driftClient.wallet.publicKey,
 					...accounts,
 				},
 				remainingAccounts,
