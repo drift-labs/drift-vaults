@@ -5,7 +5,7 @@ use drift::program::Drift;
 use drift::state::user::User;
 
 use crate::constants::admin;
-use crate::constraints::{is_user_for_vault, is_user_stats_for_vault};
+use crate::constraints::{is_admin, is_user_for_vault, is_user_stats_for_vault};
 use crate::drift_cpi::{UpdateUserDelegateCPI, UpdateUserReduceOnlyCPI};
 use crate::state::{Vault, VaultDepositor};
 use crate::{declare_vault_seeds, implement_update_user_delegate_cpi};
@@ -78,7 +78,12 @@ pub struct Liquidate<'info> {
         bump,
     )]
     pub vault_depositor: AccountLoader<'info, VaultDepositor>,
-    pub authority: Signer<'info>,
+    pub authority: AccountInfo<'info>,
+    #[account(
+        mut,
+        constraint = is_admin(&admin)?,
+    )]
+    pub admin: Signer<'info>,
     #[account(
         mut,
         constraint = is_user_stats_for_vault(&vault, &drift_user_stats.key())?
