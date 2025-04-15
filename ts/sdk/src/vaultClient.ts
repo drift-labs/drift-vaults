@@ -2365,6 +2365,7 @@ export class VaultClient {
 			return this.program.instruction.liquidate({
 				accounts: {
 					...accounts,
+					admin: this.driftClient.wallet.publicKey,
 				},
 				remainingAccounts,
 			});
