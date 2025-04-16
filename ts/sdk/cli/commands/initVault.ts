@@ -5,6 +5,7 @@ import {
     TEN,
     convertToNumber,
     decodeName,
+    getSignedMsgUserAccountPublicKey,
 } from "@drift-labs/sdk";
 import {
     OptionValues,
@@ -122,8 +123,8 @@ export const initVault = async (program: Command, cmdOpts: OptionValues) => {
 
     const vaultAddress = getVaultAddressSync(VAULT_PROGRAM_ID, vaultNameBytes);
 
-    if (cmdOpts.dumpTransactionMessage) {
-        const initIx = await driftVault.getInitializeVaultIx({
+    const ixs = [
+        await driftVault.getInitializeVaultIx({
             name: vaultNameBytes,
             spotMarketIndex,
             redeemPeriod: new BN(redeemPeriodSec),
@@ -134,42 +135,41 @@ export const initVault = async (program: Command, cmdOpts: OptionValues) => {
             permissioned,
             minDepositAmount: minDepositAmountBN,
             manager: cmdOpts.manager,
-        });
-        const updateDelegateIx = await driftVault.getUpdateDelegateIx(vaultAddress, delegate);
+        }),
+        await driftVault.getUpdateDelegateIx(vaultAddress, delegate)
+    ];
 
-        console.log(`New vault address will be: ${vaultAddress.toBase58()}`);
-        console.log(`Setting trading delegate to: ${delegate.toBase58()}`);
+    const signedOrdersAccountAddress = getSignedMsgUserAccountPublicKey(
+        driftClient.program.programId,
+        vaultAddress,
+    );
 
-        console.log('');
-        console.log(`Base 58 encoded transaction:`);
-        console.log(dumpTransactionMessage(cmdOpts.manager ? new PublicKey(cmdOpts.manager) : driftClient.wallet.publicKey, [initIx, updateDelegateIx]));
-    } else {
-        const initSignedOrdersAccIx = await driftClient.getInitializeSignedMsgUserOrdersAccountIx(
-            vaultAddress,
-            8
+    let swiftUsersAccountExists = false;
+    try {
+        const acc = await driftClient.connection.getAccountInfo(signedOrdersAccountAddress);
+        swiftUsersAccountExists = acc !== null;
+    } catch (_err) {
+        // Error getting account info is non-critical, default to false
+    }
+
+    if (!swiftUsersAccountExists) {
+        ixs.push(
+            await driftClient.getInitializeSignedMsgUserOrdersAccountIx(
+                vaultAddress,
+                8
+            )[1]
         );
-        const initIx = await driftVault.getInitializeVaultIx({
-            name: vaultNameBytes,
-            spotMarketIndex,
-            redeemPeriod: new BN(redeemPeriodSec),
-            maxTokens: maxTokensBN,
-            managementFee: managementFeeBN,
-            profitShare: profitShareBN.toNumber(),
-            hurdleRate: 0,
-            permissioned,
-            minDepositAmount: minDepositAmountBN,
-            manager: cmdOpts.manager,
-        });
-        const initTx = await driftVault.createAndSendTxn([
-            initSignedOrdersAccIx[1],
-            initIx,
-        ]);
+    }
+
+    console.log(`New vault address will be: ${vaultAddress.toBase58()}`);
+    console.log(`Setting trading delegate to: ${delegate.toBase58()}`);
+    console.log('');
+
+    if (cmdOpts.dumpTransactionMessage) {
+        console.log(`Base 58 encoded transaction:`);
+        console.log(dumpTransactionMessage(cmdOpts.manager ? new PublicKey(cmdOpts.manager) : driftClient.wallet.publicKey, ixs));
+    } else {
+        const initTx = await driftVault.createAndSendTxn(ixs);
         console.log(`Initialized vault, tx: https://solana.fm/tx/${initTx}${driftClient.env === "devnet" ? "?cluster=devnet-solana" : ""}`);
-
-        console.log(`\nNew vault address: ${vaultAddress}\n`);
-
-        console.log(`Updating the drift account delegate to: ${delegate}...`);
-        const updateDelegateTx = await driftVault.updateDelegate(vaultAddress, delegate);
-        console.log(`update delegate tx: https://solana.fm/tx/${updateDelegateTx}${driftClient.env === "devnet" ? "?cluster=devnet-solana" : ""}`);
     }
 };
