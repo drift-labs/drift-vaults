@@ -164,12 +164,12 @@ export const initVault = async (program: Command, cmdOpts: OptionValues) => {
             initSignedOrdersAccIx[1],
             initIx,
         ]);
-        console.log(`Initialized vault, tx: https://solscan.io/tx/${initTx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+        console.log(`Initialized vault, tx: https://solana.fm/tx/${initTx}${driftClient.env === "devnet" ? "?cluster=devnet-solana" : ""}`);
 
         console.log(`\nNew vault address: ${vaultAddress}\n`);
 
         console.log(`Updating the drift account delegate to: ${delegate}...`);
         const updateDelegateTx = await driftVault.updateDelegate(vaultAddress, delegate);
-        console.log(`update delegate tx: https://solscan.io/tx/${updateDelegateTx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+        console.log(`update delegate tx: https://solana.fm/tx/${updateDelegateTx}${driftClient.env === "devnet" ? "?cluster=devnet-solana" : ""}`);
     }
 };

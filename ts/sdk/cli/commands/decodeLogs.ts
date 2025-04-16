@@ -30,10 +30,13 @@ export const decodeLogs = async (program: Command, cmdOpts: OptionValues) => {
         maxSupportedTransactionVersion: 0,
     });
 
+    let i = 0;
     // @ts-ignore
     for (const event of driftVault.program._events._eventParser.parseLogs(
         tx!.meta!.logMessages
     )) {
+        console.log(`--------------- Event: ${i} ${event.name} -----------------`);
+        i++;
 
         /* eslint-disable no-case-declarations */
         switch (event.name) {
@@ -63,12 +66,10 @@ export const decodeLogs = async (program: Command, cmdOpts: OptionValues) => {
                 console.log(` depositOraclePrice:  ${data.depositOraclePrice?.toNumber()}`);
                 break;
             default:
-                console.log(event);
         }
 
         console.log("----------Raw Event-------------");
         console.log(event);
-        console.log("--------------------------------");
     }
 
 };

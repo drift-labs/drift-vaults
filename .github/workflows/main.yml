@@ -124,11 +124,6 @@ jobs:
       - name: install typescript
         run: npm install typescript -g
 
-      - name: install mocha
-        run: |
-          npm install ts-mocha -g
-          npm install --global mocha
-
       - name: build sdk
         run: |
           yarn
@@ -136,7 +131,7 @@ jobs:
         working-directory: ts/sdk
 
       - name: run anchor tests
-        run: anchor test
+        run: anchor test -- --features anchor-test
   verified-build:
     name: Build Verifiable Artifact
     runs-on: ubicloud

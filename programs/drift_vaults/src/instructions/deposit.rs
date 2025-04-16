@@ -10,7 +10,10 @@ use crate::constraints::{
 };
 use crate::drift_cpi::DepositCPI;
 use crate::error::ErrorCode;
-use crate::state::{FuelOverflowProvider, Vault, VaultDepositor, VaultProtocolProvider};
+use crate::state::{
+    FeeUpdateProvider, FeeUpdateStatus, FuelOverflowProvider, Vault, VaultDepositor,
+    VaultProtocolProvider,
+};
 use crate::token_cpi::TokenTransferCPI;
 use crate::{declare_vault_seeds, implement_deposit, validate, AccountMapProvider};
 
@@ -38,6 +41,10 @@ pub fn deposit<'c: 'info, 'info>(
     let fuel_overflow = ctx.fuel_overflow(vp.is_some(), has_fuel_overflow);
     user_stats.validate_fuel_overflow(&fuel_overflow)?;
 
+    let has_fee_update = FeeUpdateStatus::has_pending_fee_update(vault.fee_update_status);
+    let mut fee_update = ctx.fee_update(vp.is_some(), has_fuel_overflow, has_fee_update);
+    vault.validate_fee_update(&fee_update)?;
+
     let AccountMaps {
         perp_market_map,
         spot_market_map,
@@ -47,6 +54,7 @@ pub fn deposit<'c: 'info, 'info>(
         Some(spot_market_index),
         vp.is_some(),
         has_fuel_overflow,
+        has_fee_update,
     )?;
 
     let vault_equity =
@@ -72,6 +80,7 @@ pub fn deposit<'c: 'info, 'info>(
         vault_equity,
         &mut vault,
         &mut vp,
+        &mut fee_update,
         clock.unix_timestamp,
         &user_stats,
         &fuel_overflow,

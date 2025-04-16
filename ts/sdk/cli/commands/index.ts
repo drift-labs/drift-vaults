@@ -19,4 +19,6 @@ export * from './listDepositorsForVault';
 export * from './managerUpdateMarginTradingEnabled';
 export * from './decodeLogs';
 export * from './vaultInvariantChecks';
+export * from './adminInitFeeUpdate';
+export * from './adminDeleteFeeUpdate';
 

@@ -40,5 +40,5 @@ export const requestWithdraw = async (program: Command, cmdOpts: OptionValues) =
     const withdrawAmountBN = new BN(cmdOpts.amount);
 
     const tx = await driftVault.requestWithdraw(vaultDepositorAddress, withdrawAmountBN, WithdrawUnit.SHARES);
-    console.log(`Requested to withdraw ${cmdOpts.amount} shares from the vault: https://solscan.io/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+    console.log(`Requested to withdraw ${cmdOpts.amount} shares from the vault: https://solana.fm/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet-solana" : ""}`);
 };

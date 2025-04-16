@@ -23,7 +23,7 @@ use crate::error::{ErrorCode, VaultResult};
 use crate::events::{VaultDepositorAction, VaultDepositorV1Record};
 use crate::state::events::VaultDepositorRecord;
 use crate::state::withdraw_request::WithdrawRequest;
-use crate::state::{VaultFee, VaultProtocol};
+use crate::state::{FeeUpdate, VaultFee, VaultProtocol};
 use crate::{validate, Size, WithdrawUnit};
 
 #[assert_no_slop]
@@ -104,7 +104,11 @@ pub struct Vault {
     pub vault_protocol: bool,
     /// How fuel distribution should be treated [`FuelDistributionMode`]. Default is `UsersOnly`
     pub fuel_distribution_mode: u8,
-    pub padding1: [u8; 2],
+    /// Whether the vault has a FeeUpdate account [`FeeUpdateStatus`]. Default is `FeeUpdateStatus::None`
+    /// After a `FeeUpdate` account is created and the manager has staged a fee update, the status is set to `PendingFeeUpdate`.
+    /// And instructsions that may finalize the fee update must include the `FeeUpdate` account with `remaining_accounts`.
+    pub fee_update_status: u8,
+    pub padding1: [u8; 1],
     /// The timestamp cumulative_fuel_per_share was last updated
     pub last_cumulative_fuel_per_share_ts: u32,
     /// The cumulative fuel per share (scaled up by 1e6 to avoid losing precision)
@@ -194,9 +198,14 @@ impl Vault {
     pub fn apply_fee(
         &mut self,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
+        fee_update: &mut Option<AccountLoader<FeeUpdate>>,
         vault_equity: u64,
         now: i64,
     ) -> Result<VaultFee> {
+        if let Some(ref mut fee_update) = fee_update {
+            fee_update.load_mut()?.try_update_vault_fees(now, self)?;
+        }
+
         let depositor_equity =
             depositor_shares_to_vault_amount(self.user_shares, self.total_shares, vault_equity)?
                 .cast::<i128>()?;
@@ -502,6 +511,7 @@ impl Vault {
     pub fn manager_deposit(
         &mut self,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
+        fee_update: &mut Option<AccountLoader<FeeUpdate>>,
         amount: u64,
         vault_equity: u64,
         now: i64,
@@ -513,7 +523,7 @@ impl Vault {
             management_fee_shares,
             protocol_fee_payment,
             protocol_fee_shares,
-        } = self.apply_fee(vault_protocol, vault_equity, now)?;
+        } = self.apply_fee(vault_protocol, fee_update, vault_equity, now)?;
 
         let user_vault_shares_before = self.user_shares;
         let total_vault_shares_before = self.total_shares;
@@ -579,9 +589,11 @@ impl Vault {
         Ok(())
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn manager_request_withdraw(
         &mut self,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
+        fee_update: &mut Option<AccountLoader<FeeUpdate>>,
         withdraw_amount: u64,
         withdraw_unit: WithdrawUnit,
         vault_equity: u64,
@@ -594,7 +606,7 @@ impl Vault {
             management_fee_shares,
             protocol_fee_payment,
             protocol_fee_shares,
-        } = self.apply_fee(vault_protocol, vault_equity, now)?;
+        } = self.apply_fee(vault_protocol, fee_update, vault_equity, now)?;
 
         let vault_shares_before: u128 = self.get_manager_shares(vault_protocol)?;
         let protocol_shares_before = self.get_protocol_shares(vault_protocol);
@@ -667,6 +679,7 @@ impl Vault {
     pub fn manager_cancel_withdraw_request(
         &mut self,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
+        fee_update: &mut Option<AccountLoader<FeeUpdate>>,
         vault_equity: u64,
         now: i64,
         deposit_oracle_price: i64,
@@ -683,7 +696,7 @@ impl Vault {
             management_fee_shares,
             protocol_fee_payment,
             protocol_fee_shares,
-        } = self.apply_fee(vault_protocol, vault_equity, now)?;
+        } = self.apply_fee(vault_protocol, fee_update, vault_equity, now)?;
 
         let vault_shares_lost = self
             .last_manager_withdraw_request
@@ -736,6 +749,7 @@ impl Vault {
     pub fn manager_withdraw(
         &mut self,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
+        fee_update: &mut Option<AccountLoader<FeeUpdate>>,
         vault_equity: u64,
         now: i64,
         deposit_oracle_price: i64,
@@ -750,7 +764,7 @@ impl Vault {
             management_fee_shares,
             protocol_fee_payment,
             protocol_fee_shares,
-        } = self.apply_fee(vault_protocol, vault_equity, now)?;
+        } = self.apply_fee(vault_protocol, fee_update, vault_equity, now)?;
 
         let vault_shares_before: u128 = self.get_manager_shares(vault_protocol)?;
         let total_vault_shares_before = self.total_shares;
@@ -852,9 +866,11 @@ impl Vault {
         self.liquidation_start_ts = 0;
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn protocol_request_withdraw(
         &mut self,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
+        fee_update: &mut Option<AccountLoader<FeeUpdate>>,
         withdraw_amount: u64,
         withdraw_unit: WithdrawUnit,
         vault_equity: u64,
@@ -875,7 +891,7 @@ impl Vault {
             management_fee_shares,
             protocol_fee_payment,
             protocol_fee_shares,
-        } = self.apply_fee(vault_protocol, vault_equity, now)?;
+        } = self.apply_fee(vault_protocol, fee_update, vault_equity, now)?;
 
         let vault_shares_before: u128 = self.get_manager_shares(vault_protocol)?;
         let protocol_shares_before = self.get_protocol_shares(vault_protocol);
@@ -953,6 +969,7 @@ impl Vault {
     pub fn protocol_cancel_withdraw_request(
         &mut self,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
+        fee_update: &mut Option<AccountLoader<FeeUpdate>>,
         vault_equity: u64,
         now: i64,
         deposit_oracle_price: i64,
@@ -977,7 +994,7 @@ impl Vault {
             management_fee_shares,
             protocol_fee_payment,
             protocol_fee_shares,
-        } = self.apply_fee(vault_protocol, vault_equity, now)?;
+        } = self.apply_fee(vault_protocol, fee_update, vault_equity, now)?;
 
         let vault_shares_lost = match vault_protocol {
             None => 0,
@@ -1043,6 +1060,7 @@ impl Vault {
     pub fn protocol_withdraw(
         &mut self,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
+        fee_update: &mut Option<AccountLoader<FeeUpdate>>,
         vault_equity: u64,
         now: i64,
         deposit_oracle_price: i64,
@@ -1067,7 +1085,7 @@ impl Vault {
             management_fee_shares,
             protocol_fee_payment,
             protocol_fee_shares,
-        } = self.apply_fee(vault_protocol, vault_equity, now)?;
+        } = self.apply_fee(vault_protocol, fee_update, vault_equity, now)?;
 
         let vault_shares_before: u128 = self.get_manager_shares(vault_protocol)?;
         let total_vault_shares_before = self.total_shares;
@@ -1196,6 +1214,49 @@ impl Vault {
         }
     }
 
+    pub fn validate_fee_update(&self, fee_update: &Option<AccountLoader<FeeUpdate>>) -> Result<()> {
+        let has_fee_update = FeeUpdateStatus::has_pending_fee_update(self.fee_update_status);
+        match fee_update {
+            None => {
+                if has_fee_update {
+                    // Vault has FeeUpdate but no rem acct provided.
+                    let ec = ErrorCode::FeeUpdateMissing;
+                    msg!("Error {} thrown at {}:{}", ec, file!(), line!());
+                    msg!("FeeUpdate missing in remaining accounts");
+                    Err(anchor_lang::error::Error::from(ec))
+                } else {
+                    Ok(())
+                }
+            }
+            Some(fee_update) => {
+                if has_fee_update {
+                    // Vault has FeeUpdate and rem accts provided one.
+                    // check if PDA matches rem acct given.
+                    let (expected, _) = Pubkey::find_program_address(
+                        &[b"fee_update", self.pubkey.as_ref()],
+                        &crate::id(),
+                    );
+                    let actual = fee_update.to_account_info().key();
+                    if actual != expected {
+                        Err(
+                            anchor_lang::error::Error::from(error::ErrorCode::ConstraintSeeds)
+                                .with_account_name("fee_update")
+                                .with_pubkeys((actual, expected)),
+                        )
+                    } else {
+                        Ok(())
+                    }
+                } else {
+                    // Vault has no FeeUpdate but rem acct provided one.
+                    let ec = ErrorCode::FeeUpdateMissing;
+                    msg!("Error {} thrown at {}:{}", ec, file!(), line!());
+                    msg!("FeeUpdate missing in remaining accounts");
+                    Err(anchor_lang::error::Error::from(ec))
+                }
+            }
+        }
+    }
+
     fn emit_vault_depositor_record(
         &self,
         params: VaultDepositorRecordParams,
@@ -1290,6 +1351,33 @@ impl FuelDistributionMode {
 
     pub fn is_users_and_manager(mode: u8) -> bool {
         mode & FuelDistributionMode::UsersAndManager as u8 != 0
+    }
+}
+
+pub enum FeeUpdateStatus {
+    None = 0b00000000,
+    PendingFeeUpdate = 0b00000001,
+}
+
+impl TryFrom<u8> for FeeUpdateStatus {
+    type Error = ErrorCode;
+
+    fn try_from(value: u8) -> std::result::Result<Self, ErrorCode> {
+        match value {
+            0 => Ok(FeeUpdateStatus::None),
+            1 => Ok(FeeUpdateStatus::PendingFeeUpdate),
+            _ => Err(ErrorCode::InvalidFeeUpdateStatus),
+        }
+    }
+}
+
+impl FeeUpdateStatus {
+    pub fn is_none(status: u8) -> bool {
+        status & FeeUpdateStatus::None as u8 != 0
+    }
+
+    pub fn has_pending_fee_update(status: u8) -> bool {
+        status & FeeUpdateStatus::PendingFeeUpdate as u8 != 0
     }
 }
 

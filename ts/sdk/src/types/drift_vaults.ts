@@ -782,6 +782,11 @@ export type DriftVaults = {
 				{
 					name: 'authority';
 					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'admin';
+					isMut: true;
 					isSigner: true;
 				},
 				{
@@ -1080,6 +1085,102 @@ export type DriftVaults = {
 					type: 'u8';
 				}
 			];
+		},
+		{
+			name: 'adminInitFeeUpdate';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'admin';
+					isMut: true;
+					isSigner: true;
+				},
+				{
+					name: 'feeUpdate';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'systemProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [];
+		},
+		{
+			name: 'adminDeleteFeeUpdate';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'admin';
+					isMut: true;
+					isSigner: true;
+				},
+				{
+					name: 'feeUpdate';
+					isMut: true;
+					isSigner: false;
+				}
+			];
+			args: [];
+		},
+		{
+			name: 'managerUpdateFees';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'feeUpdate';
+					isMut: true;
+					isSigner: false;
+				}
+			];
+			args: [
+				{
+					name: 'params';
+					type: {
+						defined: 'ManagerUpdateFeesParams';
+					};
+				}
+			];
+		},
+		{
+			name: 'managerCancelFeeUpdate';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'feeUpdate';
+					isMut: true;
+					isSigner: false;
+				}
+			];
+			args: [];
 		},
 		{
 			name: 'applyProfitShare';
@@ -1700,6 +1801,42 @@ export type DriftVaults = {
 	];
 	accounts: [
 		{
+			name: 'feeUpdate';
+			type: {
+				kind: 'struct';
+				fields: [
+					{
+						name: 'incomingUpdateTs';
+						type: 'i64';
+					},
+					{
+						name: 'incomingManagementFee';
+						type: 'i64';
+					},
+					{
+						name: 'incomingProfitShare';
+						type: 'u32';
+					},
+					{
+						name: 'incomingHurdleRate';
+						type: 'u32';
+					},
+					{
+						name: 'padding';
+						type: {
+							array: ['u128', 10];
+						};
+					},
+					{
+						name: 'padding2';
+						type: {
+							array: ['u8', 8];
+						};
+					}
+				];
+			};
+		},
+		{
 			name: 'tokenizedVaultDepositor';
 			type: {
 				kind: 'struct';
@@ -2189,9 +2326,18 @@ export type DriftVaults = {
 						type: 'u8';
 					},
 					{
+						name: 'feeUpdateStatus';
+						docs: [
+							'Whether the vault has a FeeUpdate account [`FeeUpdateStatus`]. Default is `FeeUpdateStatus::None`',
+							'After a `FeeUpdate` account is created and the manager has staged a fee update, the status is set to `PendingFeeUpdate`.',
+							'And instructsions that may finalize the fee update must include the `FeeUpdate` account with `remaining_accounts`.'
+						];
+						type: 'u8';
+					},
+					{
 						name: 'padding1';
 						type: {
-							array: ['u8', 2];
+							array: ['u8', 1];
 						};
 					},
 					{
@@ -2365,6 +2511,36 @@ export type DriftVaults = {
 			};
 		},
 		{
+			name: 'ManagerUpdateFeesParams';
+			type: {
+				kind: 'struct';
+				fields: [
+					{
+						name: 'timelockDuration';
+						type: 'i64';
+					},
+					{
+						name: 'newManagementFee';
+						type: {
+							option: 'i64';
+						};
+					},
+					{
+						name: 'newProfitShare';
+						type: {
+							option: 'u32';
+						};
+					},
+					{
+						name: 'newHurdleRate';
+						type: {
+							option: 'u32';
+						};
+					}
+				];
+			};
+		},
+		{
 			name: 'UpdateVaultProtocolParams';
 			type: {
 				kind: 'struct';
@@ -2489,6 +2665,23 @@ export type DriftVaults = {
 			};
 		},
 		{
+			name: 'FeeUpdateAction';
+			type: {
+				kind: 'enum';
+				variants: [
+					{
+						name: 'Pending';
+					},
+					{
+						name: 'Applied';
+					},
+					{
+						name: 'Cancelled';
+					}
+				];
+			};
+		},
+		{
 			name: 'FuelDistributionMode';
 			type: {
 				kind: 'enum';
@@ -2498,6 +2691,20 @@ export type DriftVaults = {
 					},
 					{
 						name: 'UsersAndManager';
+					}
+				];
+			};
+		},
+		{
+			name: 'FeeUpdateStatus';
+			type: {
+				kind: 'enum';
+				variants: [
+					{
+						name: 'None';
+					},
+					{
+						name: 'PendingFeeUpdate';
 					}
 				];
 			};
@@ -2854,6 +3061,63 @@ export type DriftVaults = {
 					index: false;
 				}
 			];
+		},
+		{
+			name: 'FeeUpdateRecord';
+			fields: [
+				{
+					name: 'ts';
+					type: 'i64';
+					index: false;
+				},
+				{
+					name: 'action';
+					type: {
+						defined: 'FeeUpdateAction';
+					};
+					index: false;
+				},
+				{
+					name: 'timelockEndTs';
+					type: 'i64';
+					index: false;
+				},
+				{
+					name: 'vault';
+					type: 'publicKey';
+					index: false;
+				},
+				{
+					name: 'oldManagementFee';
+					type: 'i64';
+					index: false;
+				},
+				{
+					name: 'oldProfitShare';
+					type: 'u32';
+					index: false;
+				},
+				{
+					name: 'oldHurdleRate';
+					type: 'u32';
+					index: false;
+				},
+				{
+					name: 'newManagementFee';
+					type: 'i64';
+					index: false;
+				},
+				{
+					name: 'newProfitShare';
+					type: 'u32';
+					index: false;
+				},
+				{
+					name: 'newHurdleRate';
+					type: 'u32';
+					index: false;
+				}
+			];
 		}
 	];
 	errors: [
@@ -2981,6 +3245,16 @@ export type DriftVaults = {
 			code: 6024;
 			name: 'InvalidFuelDistributionMode';
 			msg: 'InvalidFuelDistributionMode';
+		},
+		{
+			code: 6025;
+			name: 'FeeUpdateMissing';
+			msg: 'FeeUpdateMissing';
+		},
+		{
+			code: 6026;
+			name: 'InvalidFeeUpdateStatus';
+			msg: 'InvalidFeeUpdateStatus';
 		}
 	];
 };
@@ -3769,6 +4043,11 @@ export const IDL: DriftVaults = {
 				{
 					name: 'authority',
 					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'admin',
+					isMut: true,
 					isSigner: true,
 				},
 				{
@@ -4067,6 +4346,102 @@ export const IDL: DriftVaults = {
 					type: 'u8',
 				},
 			],
+		},
+		{
+			name: 'adminInitFeeUpdate',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'admin',
+					isMut: true,
+					isSigner: true,
+				},
+				{
+					name: 'feeUpdate',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'systemProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [],
+		},
+		{
+			name: 'adminDeleteFeeUpdate',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'admin',
+					isMut: true,
+					isSigner: true,
+				},
+				{
+					name: 'feeUpdate',
+					isMut: true,
+					isSigner: false,
+				},
+			],
+			args: [],
+		},
+		{
+			name: 'managerUpdateFees',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'feeUpdate',
+					isMut: true,
+					isSigner: false,
+				},
+			],
+			args: [
+				{
+					name: 'params',
+					type: {
+						defined: 'ManagerUpdateFeesParams',
+					},
+				},
+			],
+		},
+		{
+			name: 'managerCancelFeeUpdate',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'feeUpdate',
+					isMut: true,
+					isSigner: false,
+				},
+			],
+			args: [],
 		},
 		{
 			name: 'applyProfitShare',
@@ -4687,6 +5062,42 @@ export const IDL: DriftVaults = {
 	],
 	accounts: [
 		{
+			name: 'feeUpdate',
+			type: {
+				kind: 'struct',
+				fields: [
+					{
+						name: 'incomingUpdateTs',
+						type: 'i64',
+					},
+					{
+						name: 'incomingManagementFee',
+						type: 'i64',
+					},
+					{
+						name: 'incomingProfitShare',
+						type: 'u32',
+					},
+					{
+						name: 'incomingHurdleRate',
+						type: 'u32',
+					},
+					{
+						name: 'padding',
+						type: {
+							array: ['u128', 10],
+						},
+					},
+					{
+						name: 'padding2',
+						type: {
+							array: ['u8', 8],
+						},
+					},
+				],
+			},
+		},
+		{
 			name: 'tokenizedVaultDepositor',
 			type: {
 				kind: 'struct',
@@ -5176,9 +5587,18 @@ export const IDL: DriftVaults = {
 						type: 'u8',
 					},
 					{
+						name: 'feeUpdateStatus',
+						docs: [
+							'Whether the vault has a FeeUpdate account [`FeeUpdateStatus`]. Default is `FeeUpdateStatus::None`',
+							'After a `FeeUpdate` account is created and the manager has staged a fee update, the status is set to `PendingFeeUpdate`.',
+							'And instructsions that may finalize the fee update must include the `FeeUpdate` account with `remaining_accounts`.',
+						],
+						type: 'u8',
+					},
+					{
 						name: 'padding1',
 						type: {
-							array: ['u8', 2],
+							array: ['u8', 1],
 						},
 					},
 					{
@@ -5352,6 +5772,36 @@ export const IDL: DriftVaults = {
 			},
 		},
 		{
+			name: 'ManagerUpdateFeesParams',
+			type: {
+				kind: 'struct',
+				fields: [
+					{
+						name: 'timelockDuration',
+						type: 'i64',
+					},
+					{
+						name: 'newManagementFee',
+						type: {
+							option: 'i64',
+						},
+					},
+					{
+						name: 'newProfitShare',
+						type: {
+							option: 'u32',
+						},
+					},
+					{
+						name: 'newHurdleRate',
+						type: {
+							option: 'u32',
+						},
+					},
+				],
+			},
+		},
+		{
 			name: 'UpdateVaultProtocolParams',
 			type: {
 				kind: 'struct',
@@ -5476,6 +5926,23 @@ export const IDL: DriftVaults = {
 			},
 		},
 		{
+			name: 'FeeUpdateAction',
+			type: {
+				kind: 'enum',
+				variants: [
+					{
+						name: 'Pending',
+					},
+					{
+						name: 'Applied',
+					},
+					{
+						name: 'Cancelled',
+					},
+				],
+			},
+		},
+		{
 			name: 'FuelDistributionMode',
 			type: {
 				kind: 'enum',
@@ -5485,6 +5952,20 @@ export const IDL: DriftVaults = {
 					},
 					{
 						name: 'UsersAndManager',
+					},
+				],
+			},
+		},
+		{
+			name: 'FeeUpdateStatus',
+			type: {
+				kind: 'enum',
+				variants: [
+					{
+						name: 'None',
+					},
+					{
+						name: 'PendingFeeUpdate',
 					},
 				],
 			},
@@ -5842,6 +6323,63 @@ export const IDL: DriftVaults = {
 				},
 			],
 		},
+		{
+			name: 'FeeUpdateRecord',
+			fields: [
+				{
+					name: 'ts',
+					type: 'i64',
+					index: false,
+				},
+				{
+					name: 'action',
+					type: {
+						defined: 'FeeUpdateAction',
+					},
+					index: false,
+				},
+				{
+					name: 'timelockEndTs',
+					type: 'i64',
+					index: false,
+				},
+				{
+					name: 'vault',
+					type: 'publicKey',
+					index: false,
+				},
+				{
+					name: 'oldManagementFee',
+					type: 'i64',
+					index: false,
+				},
+				{
+					name: 'oldProfitShare',
+					type: 'u32',
+					index: false,
+				},
+				{
+					name: 'oldHurdleRate',
+					type: 'u32',
+					index: false,
+				},
+				{
+					name: 'newManagementFee',
+					type: 'i64',
+					index: false,
+				},
+				{
+					name: 'newProfitShare',
+					type: 'u32',
+					index: false,
+				},
+				{
+					name: 'newHurdleRate',
+					type: 'u32',
+					index: false,
+				},
+			],
+		},
 	],
 	errors: [
 		{
@@ -5968,6 +6506,16 @@ export const IDL: DriftVaults = {
 			code: 6024,
 			name: 'InvalidFuelDistributionMode',
 			msg: 'InvalidFuelDistributionMode',
+		},
+		{
+			code: 6025,
+			name: 'FeeUpdateMissing',
+			msg: 'FeeUpdateMissing',
+		},
+		{
+			code: 6026,
+			name: 'InvalidFeeUpdateStatus',
+			msg: 'InvalidFeeUpdateStatus',
 		},
 	],
 };

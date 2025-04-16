@@ -32,7 +32,7 @@ export const managerRequestWithdraw = async (program: Command, cmdOpts: OptionVa
             console.log(dumpTransactionMessage(driftClient.wallet.publicKey, [tx]));
         } else {
             const tx = await driftVault.managerRequestWithdraw(vaultAddress, new BN(cmdOpts.shares), WithdrawUnit.SHARES);
-            console.log(`Requested to withraw ${cmdOpts.shares} shares as vault manager: https://solscan.io/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+            console.log(`Requested to withraw ${cmdOpts.shares} shares as vault manager: https://solana.fm/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet-solana" : ""}`);
         }
     } else if (cmdOpts.amount && !cmdOpts.shares) {
         const vault = await driftVault.getVault(vaultAddress);
@@ -50,7 +50,7 @@ export const managerRequestWithdraw = async (program: Command, cmdOpts: OptionVa
             console.log(dumpTransactionMessage(driftClient.wallet.publicKey, [tx]));
         } else {
             const tx = await driftVault.managerRequestWithdraw(vaultAddress, amountBN, WithdrawUnit.TOKEN);
-            console.log(`Requested to withdraw ${amount} ${decodeName(spotMarket.name)} as vault manager: https://solscan.io/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+            console.log(`Requested to withdraw ${amount} ${decodeName(spotMarket.name)} as vault manager: https://solana.fm/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet-solana" : ""}`);
         }
 
 

@@ -193,6 +193,31 @@ pub mod drift_vaults {
         instructions::manager_update_fuel_distribution_mode(ctx, fuel_distribution_mode)
     }
 
+    pub fn admin_init_fee_update<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, AdminInitFeeUpdate<'info>>,
+    ) -> Result<()> {
+        instructions::admin_init_fee_update(ctx)
+    }
+
+    pub fn admin_delete_fee_update<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, AdminDeleteFeeUpdate<'info>>,
+    ) -> Result<()> {
+        instructions::admin_delete_fee_update(ctx)
+    }
+
+    pub fn manager_update_fees<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, ManagerUpdateFees<'info>>,
+        params: ManagerUpdateFeesParams,
+    ) -> Result<()> {
+        instructions::manager_update_fees(ctx, params)
+    }
+
+    pub fn manager_cancel_fee_update<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, ManagerCancelFeeUpdate<'info>>,
+    ) -> Result<()> {
+        instructions::manager_cancel_fee_update(ctx)
+    }
+
     pub fn apply_profit_share<'c: 'info, 'info>(
         ctx: Context<'_, '_, 'c, 'info, ApplyProfitShare<'info>>,
     ) -> Result<()> {

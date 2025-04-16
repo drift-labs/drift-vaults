@@ -36,5 +36,5 @@ export const withdraw = async (program: Command, cmdOpts: OptionValues) => {
     }
 
     const tx = await driftVault.withdraw(vaultDepositorAddress);
-    console.log(`Withdrew from vault: https://solscan.io/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+    console.log(`Withdrew from vault: https://solana.fm/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet-solana" : ""}`);
 };

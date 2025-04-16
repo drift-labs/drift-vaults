@@ -43,7 +43,13 @@ pub fn redeem_tokens<'info>(
         perp_market_map,
         spot_market_map,
         mut oracle_map,
-    } = ctx.load_maps(clock.slot, Some(spot_market_index), vp.is_some(), false)?;
+    } = ctx.load_maps(
+        clock.slot,
+        Some(spot_market_index),
+        vp.is_some(),
+        false,
+        false,
+    )?;
 
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
@@ -60,6 +66,7 @@ pub fn redeem_tokens<'info>(
     let (shares_to_transfer, mut vp) = tokenized_vault_depositor.redeem_tokens(
         &mut vault,
         &mut vp,
+        &mut None,
         total_supply_before,
         vault_equity,
         tokens_to_burn,
@@ -70,6 +77,7 @@ pub fn redeem_tokens<'info>(
         &mut *vault_depositor,
         &mut vault,
         &mut vp,
+        &mut None,
         shares_to_transfer,
         WithdrawUnit::Shares,
         vault_equity,

@@ -10,7 +10,10 @@ use crate::constraints::{
     is_authority_for_vault_depositor, is_user_for_vault, is_user_stats_for_vault,
 };
 use crate::drift_cpi::{UpdateUserDelegateCPI, UpdateUserReduceOnlyCPI, WithdrawCPI};
-use crate::state::{FuelOverflowProvider, Vault, VaultDepositor, VaultProtocolProvider};
+use crate::state::{
+    FeeUpdateProvider, FeeUpdateStatus, FuelOverflowProvider, Vault, VaultDepositor,
+    VaultProtocolProvider,
+};
 use crate::token_cpi::TokenTransferCPI;
 use crate::{
     declare_vault_seeds, implement_update_user_delegate_cpi, implement_update_user_reduce_only_cpi,
@@ -35,6 +38,10 @@ pub fn withdraw<'c: 'info, 'info>(ctx: Context<'_, '_, 'c, 'info, Withdraw<'info
     let fuel_overflow = ctx.fuel_overflow(vp.is_some(), has_fuel_overflow);
     user_stats.validate_fuel_overflow(&fuel_overflow)?;
 
+    let has_fee_update = FeeUpdateStatus::has_pending_fee_update(vault.fee_update_status);
+    let mut fee_update = ctx.fee_update(vp.is_some(), has_fuel_overflow, has_fee_update);
+    vault.validate_fee_update(&fee_update)?;
+
     let AccountMaps {
         perp_market_map,
         spot_market_map,
@@ -44,6 +51,7 @@ pub fn withdraw<'c: 'info, 'info>(ctx: Context<'_, '_, 'c, 'info, Withdraw<'info
         Some(spot_market_index),
         vp.is_some(),
         has_fuel_overflow,
+        has_fee_update,
     )?;
 
     let vault_equity =
@@ -56,6 +64,7 @@ pub fn withdraw<'c: 'info, 'info>(ctx: Context<'_, '_, 'c, 'info, Withdraw<'info
         vault_equity,
         &mut vault,
         &mut vp,
+        &mut fee_update,
         clock.unix_timestamp,
         &user_stats,
         &fuel_overflow,

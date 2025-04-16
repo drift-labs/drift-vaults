@@ -103,6 +103,7 @@ export type Vault = {
 	lastManagerWithdrawRequest: WithdrawRequest;
 	vaultProtocol: boolean;
 	fuelDistributionMode: FuelDistributionMode;
+	feeUpdateStatus: FeeUpdateStatus;
 	padding1: number[];
 	lastCumulativeFuelPerShareTs: number;
 	cumulativeFuelPerShare: BN;
@@ -114,6 +115,20 @@ export enum FuelDistributionMode {
 	UsersOnly = 0,
 	UsersAndManager = 1,
 }
+
+export enum FeeUpdateStatus {
+	None = 0,
+	PendingFeeUpdate = 1,
+}
+
+export type FeeUpdate = {
+	incomingUpdateTs: BN;
+	incomingManagementFee: BN;
+	incomingProfitShare: number;
+	incomingHurdleRate: number;
+	padding: BN[];
+	padding2: number[];
+};
 
 export type VaultDepositor = {
 	vault: PublicKey;
@@ -276,3 +291,21 @@ export type WrappedEvent<Type extends EventType> = VaultsEventMap[Type] & {
 	eventType: Type;
 };
 export type WrappedEvents = WrappedEvent<EventType>[];
+
+export class FeeUpdateAction {
+	static readonly PENDING = { pending: {} };
+	static readonly APPLIED = { applied: {} };
+}
+
+export type FeeUpdateRecord = {
+	ts: BN;
+	action: FeeUpdateAction;
+	timelockEndTs: BN;
+	vault: PublicKey;
+	oldManagementFee: BN;
+	oldProfitShare: number;
+	oldHurdleRate: number;
+	newManagementFee: BN;
+	newProfitShare: number;
+	newHurdleRate: number;
+};

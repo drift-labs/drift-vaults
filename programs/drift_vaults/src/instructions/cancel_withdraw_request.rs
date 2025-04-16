@@ -8,7 +8,7 @@ use crate::constraints::{
 };
 use crate::state::FuelOverflowProvider;
 use crate::AccountMapProvider;
-use crate::{Vault, VaultDepositor, VaultProtocolProvider};
+use crate::{FeeUpdateProvider, FeeUpdateStatus, Vault, VaultDepositor, VaultProtocolProvider};
 
 pub fn cancel_withdraw_request<'c: 'info, 'info>(
     ctx: Context<'_, '_, 'c, 'info, CancelWithdrawRequest<'info>>,
@@ -29,11 +29,21 @@ pub fn cancel_withdraw_request<'c: 'info, 'info>(
     let fuel_overflow = ctx.fuel_overflow(vp.is_some(), has_fuel_overflow);
     user_stats.validate_fuel_overflow(&fuel_overflow)?;
 
+    let has_fee_update = FeeUpdateStatus::has_pending_fee_update(vault.fee_update_status);
+    let mut fee_update = ctx.fee_update(vp.is_some(), has_fuel_overflow, has_fee_update);
+    vault.validate_fee_update(&fee_update)?;
+
     let AccountMaps {
         perp_market_map,
         spot_market_map,
         mut oracle_map,
-    } = ctx.load_maps(clock.slot, None, vp.is_some(), has_fuel_overflow)?;
+    } = ctx.load_maps(
+        clock.slot,
+        None,
+        vp.is_some(),
+        has_fuel_overflow,
+        has_fee_update,
+    )?;
 
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
@@ -45,6 +55,7 @@ pub fn cancel_withdraw_request<'c: 'info, 'info>(
         vault_equity.cast()?,
         &mut vault,
         &mut vp,
+        &mut fee_update,
         clock.unix_timestamp,
         &user_stats,
         &fuel_overflow,

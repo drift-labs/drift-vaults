@@ -11,6 +11,7 @@ name = "drift_vaults"
 [features]
 no-entrypoint = []
 cpi = ["no-entrypoint"]
+anchor-test = []
 default = []
 
 [dependencies]

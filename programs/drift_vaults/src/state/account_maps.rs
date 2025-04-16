@@ -5,6 +5,7 @@ use drift::state::spot_market_map::get_writable_spot_market_set;
 use drift::state::user::FuelOverflow;
 use std::collections::BTreeSet;
 
+use crate::state::FeeUpdate;
 use crate::state::VaultProtocol;
 use anchor_lang::prelude::*;
 
@@ -15,6 +16,7 @@ pub trait AccountMapProvider<'a> {
         writable_spot_market: Option<u16>,
         has_vault_protocol: bool,
         has_fuel_overflow: bool,
+        has_fee_update: bool,
     ) -> DriftResult<AccountMaps<'a>>;
 }
 
@@ -27,11 +29,14 @@ impl<'a: 'info, 'info, T: anchor_lang::Bumps> AccountMapProvider<'a>
         writable_spot_market_index: Option<u16>,
         has_vault_protocol: bool,
         has_fuel_overflow: bool,
+        has_fee_update: bool,
     ) -> DriftResult<AccountMaps<'a>> {
         // if [`VaultProtocol`] exists it will be the last index in the remaining_accounts, so we need to skip it.
         let mut end_index = self.remaining_accounts.len() - (has_vault_protocol as usize);
         // if there is a [`FuelOverflow`], we need to skip one more account
         end_index -= has_fuel_overflow as usize;
+        // if there is a [`FeeUpdate`], we need to skip one more account
+        end_index -= has_fee_update as usize;
 
         let remaining_accounts_iter = &mut self.remaining_accounts[..end_index].iter().peekable();
         load_maps(
@@ -93,6 +98,50 @@ impl<'a: 'info, 'info, T: anchor_lang::Bumps> FuelOverflowProvider<'a>
             let acct = self.remaining_accounts.get(acct_idx)?;
 
             AccountLoader::<'a, FuelOverflow>::try_from(acct).ok()
+        }
+    }
+}
+
+pub trait FeeUpdateProvider<'a> {
+    fn fee_update(
+        &self,
+        has_vp: bool,
+        has_fuel_overflow: bool,
+        has_fee_update: bool,
+    ) -> Option<AccountLoader<'a, FeeUpdate>>;
+}
+
+/// Provides [`FeeUpdate`] from remaining_accounts, respects whether the vault has a VaultProtocol and FuelOverflow.
+impl<'a: 'info, 'info, T: anchor_lang::Bumps> FeeUpdateProvider<'a>
+    for Context<'_, '_, 'a, 'info, T>
+{
+    fn fee_update(
+        &self,
+        has_vp: bool,
+        has_fuel_overflow: bool,
+        has_fee_update: bool,
+    ) -> Option<AccountLoader<'a, FeeUpdate>> {
+        if !has_fee_update {
+            None
+        } else {
+            let acct_idx = if has_vp {
+                if has_fuel_overflow {
+                    // if there is a [`VaultProtocol`] and [`FuelOverflow`], the [`FeeUpdate`] is the third to last account
+                    self.remaining_accounts.len() - 3
+                } else {
+                    // if there is only a [`VaultProtocol`], the [`FeeUpdate`] is the second to last account
+                    self.remaining_accounts.len() - 2
+                }
+            } else if has_fuel_overflow {
+                // if there is only a [`FuelOverflow`], the [`FeeUpdate`] is the second to last account
+                self.remaining_accounts.len() - 2
+            } else {
+                // otherwise [`FeeUpdate`] is the last account
+                self.remaining_accounts.len() - 1
+            };
+            let acct = self.remaining_accounts.get(acct_idx)?;
+
+            AccountLoader::<'a, FeeUpdate>::try_from(acct).ok()
         }
     }
 }

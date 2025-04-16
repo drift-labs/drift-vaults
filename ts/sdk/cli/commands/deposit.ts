@@ -57,7 +57,7 @@ export const deposit = async (program: Command, cmdOpts: OptionValues) => {
                 authority: depositAuthority,
                 vault: vaultAddress
             });
-        console.log(`Deposited ${cmdOpts.amount} to vault: https://solscan.io/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+        console.log(`Deposited ${cmdOpts.amount} to vault: https://solana.fm/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet-solana" : ""}`);
     } else {
         // VaultDepositor exists
         const vaultAddress = vaultDepositorAccount.vault;
@@ -71,6 +71,6 @@ export const deposit = async (program: Command, cmdOpts: OptionValues) => {
 
         console.log(`depositing (existing VaultDepositor account): ${depositBN.toString()}`);
         const tx = await driftVault.deposit(vaultDepositorAddress, depositBN);
-        console.log(`Deposited ${cmdOpts.amount} to vault: https://solscan.io/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet" : ""}`);
+        console.log(`Deposited ${cmdOpts.amount} to vault: https://solana.fm/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet-solana" : ""}`);
     }
 };

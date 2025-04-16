@@ -4,6 +4,7 @@ import {
     Command
 } from "commander";
 import { getCommandContext, printVault } from "../utils";
+import { FeeUpdate, getFeeUpdateAddressSync } from "../../src";
 
 export const viewVault = async (program: Command, cmdOpts: OptionValues) => {
 
@@ -34,6 +35,16 @@ export const viewVault = async (program: Command, cmdOpts: OptionValues) => {
     const vaultEquity = await driftVault.calculateVaultEquity({
         vault,
     });
-    await printVault(vaultAndSlot.slot, driftClient, vault, vaultEquity, spotMarket, spotOracle);
+
+    let feeUpdateAccount: FeeUpdate | null = null;
+
+    try {
+        const feeUpdatePubkey = getFeeUpdateAddressSync(driftVault.program.programId, address);
+        feeUpdateAccount = await driftVault.getFeeUpdate(feeUpdatePubkey);
+    } catch (err) {
+        feeUpdateAccount = null;
+    }
+
+    await printVault(vaultAndSlot.slot, driftClient, vault, vaultEquity, spotMarket, spotOracle, feeUpdateAccount);
 };
 

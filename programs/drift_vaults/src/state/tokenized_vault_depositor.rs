@@ -3,7 +3,7 @@ use std::cell::RefMut;
 use crate::error::ErrorCode;
 use crate::events::{VaultDepositorAction, VaultDepositorRecord, VaultDepositorV1Record};
 use crate::state::vault::Vault;
-use crate::{validate, VaultFee, VaultProtocol};
+use crate::{validate, FeeUpdate, VaultFee, VaultProtocol};
 use crate::{Size, VaultDepositorBase};
 use static_assertions::const_assert_eq;
 
@@ -156,6 +156,7 @@ impl TokenizedVaultDepositor {
         self: &mut TokenizedVaultDepositor,
         vault: &mut Vault,
         vault_protocol: &mut Option<RefMut<VaultProtocol>>,
+        fee_update: &mut Option<AccountLoader<FeeUpdate>>,
         mint_supply: u64,
         vault_equity: u64,
         shares_transferred: u128,
@@ -172,7 +173,7 @@ impl TokenizedVaultDepositor {
             management_fee_shares,
             protocol_fee_payment,
             protocol_fee_shares,
-        } = vault.apply_fee(vault_protocol, vault_equity, now)?;
+        } = vault.apply_fee(vault_protocol, fee_update, vault_equity, now)?;
         let (manager_profit_share, protocol_profit_share) =
             self.apply_profit_share(vault_equity, vault, vault_protocol)?;
 
@@ -267,6 +268,7 @@ impl TokenizedVaultDepositor {
         self: &mut TokenizedVaultDepositor,
         vault: &mut Vault,
         vault_protocol: &mut Option<RefMut<'a, VaultProtocol>>,
+        fee_update: &mut Option<AccountLoader<FeeUpdate>>,
         mint_supply: u64,
         vault_equity: u64,
         tokens_to_burn: u64,
@@ -280,7 +282,7 @@ impl TokenizedVaultDepositor {
             management_fee_shares,
             protocol_fee_payment,
             protocol_fee_shares,
-        } = vault.apply_fee(vault_protocol, vault_equity, now)?;
+        } = vault.apply_fee(vault_protocol, fee_update, vault_equity, now)?;
         let (manager_profit_share, protocol_profit_share) =
             self.apply_profit_share(vault_equity, vault, vault_protocol)?;
 
@@ -391,6 +393,7 @@ mod tests {
             .tokenize_shares(
                 vault,
                 &mut None,
+                &mut None,
                 total_supply,
                 vault_equity,
                 shares_transferred,
@@ -413,6 +416,7 @@ mod tests {
         let tokens_issued_2 = tvd
             .tokenize_shares(
                 vault,
+                &mut None,
                 &mut None,
                 total_supply,
                 vault_equity,
@@ -458,6 +462,7 @@ mod tests {
             .redeem_tokens(
                 vault,
                 &mut None,
+                &mut None,
                 total_supply as u64,
                 vault_equity,
                 tokens_to_burn as u64,
@@ -492,6 +497,7 @@ mod tests {
             .tokenize_shares(
                 vault,
                 &mut None,
+                &mut None,
                 total_supply,
                 vault_equity,
                 shares_transferred,
@@ -516,6 +522,7 @@ mod tests {
         // will trigger rebase
         let tokens_issued_2 = tvd.tokenize_shares(
             vault,
+            &mut None,
             &mut None,
             total_supply,
             vault_equity,
@@ -561,6 +568,7 @@ mod tests {
         let tokens_issued_1 = tvd
             .tokenize_shares(
                 vault,
+                &mut None,
                 &mut None,
                 total_supply,
                 vault_equity,

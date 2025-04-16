@@ -5,7 +5,7 @@ use crate::events::{
     ShareTransferRecord, VaultDepositorAction, VaultDepositorRecord, VaultDepositorV1Record,
 };
 use crate::state::vault::Vault;
-use crate::{validate, VaultFee, VaultProtocol, WithdrawUnit};
+use crate::{validate, FeeUpdate, VaultFee, VaultProtocol, WithdrawUnit};
 use anchor_lang::prelude::*;
 
 use drift::math::casting::Cast;
@@ -246,6 +246,7 @@ pub trait VaultDepositorBase {
         to: &mut dyn VaultDepositorBase,
         vault: &mut Vault,
         vault_protocol: &mut Option<RefMut<'a, VaultProtocol>>,
+        fee_update: &mut Option<AccountLoader<FeeUpdate>>,
         withdraw_amount: u64,
         withdraw_unit: WithdrawUnit,
         vault_equity: u64,
@@ -266,7 +267,7 @@ pub trait VaultDepositorBase {
             management_fee_shares,
             protocol_fee_payment,
             protocol_fee_shares,
-        } = vault.apply_fee(vault_protocol, vault_equity, now)?;
+        } = vault.apply_fee(vault_protocol, fee_update, vault_equity, now)?;
 
         let (from_manager_profit_share, from_protocol_profit_share) =
             self.apply_profit_share(vault_equity, vault, vault_protocol)?;

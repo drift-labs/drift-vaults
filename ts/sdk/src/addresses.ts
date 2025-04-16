@@ -99,3 +99,16 @@ export function getTokenizedVaultMintAddressSync(
 		programId
 	)[0];
 }
+
+export function getFeeUpdateAddressSync(
+	programId: PublicKey,
+	vault: PublicKey
+): PublicKey {
+	return PublicKey.findProgramAddressSync(
+		[
+			Buffer.from(anchor.utils.bytes.utf8.encode('fee_update')),
+			vault.toBuffer(),
+		],
+		programId
+	)[0];
+}
