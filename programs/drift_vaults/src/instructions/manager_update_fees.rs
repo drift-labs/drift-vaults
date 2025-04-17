@@ -1,3 +1,4 @@
+use crate::constants::ONE_WEEK;
 use crate::constraints::is_manager_for_vault;
 use crate::state::events::{FeeUpdateAction, FeeUpdateRecord};
 use crate::state::{FeeUpdate, FeeUpdateStatus};
@@ -29,11 +30,11 @@ pub fn manager_update_fees<'info>(
     let now = Clock::get()?.unix_timestamp;
     let timelock_end_ts = now.safe_add(params.timelock_duration)?;
 
-    let min_fee_queue_period = vault.redeem_period.max(86_400);
+    let min_fee_queue_period = vault.redeem_period.safe_mul(2)?.max(ONE_WEEK);
     validate!(
         params.timelock_duration >= min_fee_queue_period,
         ErrorCode::InvalidVaultUpdate,
-        "Fee updates must be queued for at least max(1 day, 1 redeem period)"
+        "Fee updates must be queued for at least max(1 week, 2 redeem periods)"
     )?;
 
     let old_management_fee = vault.management_fee;
