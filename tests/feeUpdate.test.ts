@@ -53,6 +53,7 @@ const TEN_PCT_FEE = new BN(PERCENTAGE_PRECISION.divn(10));
 const TWENTY_PCT_FEE = new BN(PERCENTAGE_PRECISION.divn(5));
 const FIFTY_PCT_MANAGEMENT_FEE = new BN(PERCENTAGE_PRECISION.divn(2));
 const ONE_DAY_S = new BN(86400);
+const ONE_WEEK_S = new BN(86400 * 7);
 
 describe('feeUpdate', () => {
 	let vaultProgram: Program<DriftVaults>;
@@ -436,7 +437,7 @@ describe('feeUpdate', () => {
 		expect(vaultAcct.hurdleRate).toEqual(TEN_PCT_FEE.toNumber());
 	});
 
-	it('manager must choose timelock duration greater than redeem period and 1 day', async () => {
+	it('manager must choose timelock duration greater than 2x redeem period and 1 week', async () => {
 		const vaultAcct = await vaultProgram.account.vault.fetch(commonVaultKey);
 		expect(vaultAcct.managementFee.toNumber()).toEqual(
 			TWENTY_PCT_FEE.toNumber()
@@ -444,7 +445,7 @@ describe('feeUpdate', () => {
 		expect(vaultAcct.profitShare).toEqual(TWENTY_PCT_FEE.toNumber());
 		expect(vaultAcct.hurdleRate).toEqual(TEN_PCT_FEE.toNumber());
 
-		const timelockDuration = ONE_DAY_S.divn(2);
+		const timelockDuration = ONE_WEEK_S.divn(2);
 
 		try {
 			await managerClient.managerUpdateFees(
@@ -471,7 +472,7 @@ describe('feeUpdate', () => {
 		expect(vaultAcct.profitShare).toEqual(TWENTY_PCT_FEE.toNumber());
 		expect(vaultAcct.hurdleRate).toEqual(TEN_PCT_FEE.toNumber());
 
-		const timelockDuration = ONE_DAY_S;
+		const timelockDuration = ONE_WEEK_S;
 
 		await adminClient.adminInitFeeUpdate(commonVaultKey, { noLut: true });
 
@@ -538,7 +539,7 @@ describe('feeUpdate', () => {
 
 	it('manager can cancel fee updates', async () => {
 		let vaultAcct = await vaultProgram.account.vault.fetch(commonVaultKey);
-		const timelockDuration = ONE_DAY_S;
+		const timelockDuration = ONE_WEEK_S;
 
 		await adminClient.adminInitFeeUpdate(commonVaultKey, { noLut: true });
 
