@@ -7,11 +7,14 @@ use crate::constraints::{
     is_delegate_for_vault, is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault,
     is_vault_for_vault_depositor,
 };
+use crate::error::ErrorCode;
 use crate::state::{
     FeeUpdateProvider, FeeUpdateStatus, FuelOverflowProvider, Vault, VaultProtocolProvider,
 };
-use crate::AccountMapProvider;
 use crate::VaultDepositor;
+use crate::{validate, AccountMapProvider};
+
+use super::constraints::is_admin;
 
 pub fn apply_profit_share<'c: 'info, 'info>(
     ctx: Context<'_, '_, 'c, 'info, ApplyProfitShare<'info>>,
@@ -37,6 +40,14 @@ pub fn apply_profit_share<'c: 'info, 'info>(
     let has_fee_update = FeeUpdateStatus::has_pending_fee_update(vault.fee_update_status);
     let mut fee_update = ctx.fee_update(vp.is_some(), has_fuel_overflow, has_fee_update);
     vault.validate_fee_update(&fee_update)?;
+
+    if is_admin(&ctx.accounts.manager)? {
+        validate!(
+            has_fee_update,
+            ErrorCode::InvalidFeeUpdateStatus,
+            "Admin can only force apply fees if a fee update is pending"
+        )?;
+    }
 
     let AccountMaps {
         perp_market_map,
@@ -74,7 +85,7 @@ pub fn apply_profit_share<'c: 'info, 'info>(
 pub struct ApplyProfitShare<'info> {
     #[account(
         mut,
-        constraint = is_manager_for_vault(&vault, &manager)? || is_delegate_for_vault(&vault, &manager)?
+        constraint = is_manager_for_vault(&vault, &manager)? || is_delegate_for_vault(&vault, &manager)? || is_admin(&manager)?
     )]
     pub vault: AccountLoader<'info, Vault>,
     #[account(

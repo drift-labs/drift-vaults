@@ -154,10 +154,10 @@ export const initVault = async (program: Command, cmdOpts: OptionValues) => {
 
     if (!swiftUsersAccountExists) {
         ixs.push(
-            await driftClient.getInitializeSignedMsgUserOrdersAccountIx(
+            (await driftClient.getInitializeSignedMsgUserOrdersAccountIx(
                 vaultAddress,
                 8
-            )[1]
+            ))[1]
         );
     }
 
