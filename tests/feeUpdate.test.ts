@@ -79,8 +79,6 @@ describe('feeUpdate', () => {
 	const user1Signer = Keypair.generate();
 	let user1Client: VaultClient;
 	let user1DriftClient: DriftClient;
-	let user1UserUSDCAccount: PublicKey;
-	let user1VaultDepositor: PublicKey;
 
 	const user2Signer = Keypair.generate();
 	let user2Client: VaultClient;
@@ -225,12 +223,6 @@ describe('feeUpdate', () => {
 		});
 		user1Client = user1Bootstrap.vaultClient;
 		user1DriftClient = user1Bootstrap.driftClient;
-		user1UserUSDCAccount = user1Bootstrap.userUSDCAccount.publicKey;
-		user1VaultDepositor = getVaultDepositorAddressSync(
-			vaultProgram.programId,
-			commonVaultKey,
-			user1Signer.publicKey
-		);
 
 		const user2Bootstrap = await bootstrapSignerClientAndUserBankrun({
 			bankrunContext: bankrunContextWrapper,
@@ -512,13 +504,7 @@ describe('feeUpdate', () => {
 
 		// user deposits after 1 day, new fee should come into effect
 		await bankrunContextWrapper.moveTimeForward(ONE_WEEK_S.toNumber());
-		// const tx1 = await user1Client.deposit(
-		// 	user1VaultDepositor,
-		// 	usdcAmount,
-		// 	undefined,
-		// 	{ noLut: true },
-		// 	user1UserUSDCAccount
-		// );
+
 		// trigger the fee upduate
 		const tx1 = await managerClient.managerUpdateFees(
 			commonVaultKey,
