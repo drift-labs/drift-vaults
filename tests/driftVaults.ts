@@ -34,6 +34,7 @@ import {
 	isVariant,
 	WRAPPED_SOL_MINT,
 	convertToNumber,
+	OrderParamsBitFlag,
 } from '@drift-labs/sdk';
 import {
 	bootstrapSignerClientAndUser,
@@ -869,7 +870,7 @@ describe('TestProtocolVaults', () => {
 				price: new BN(initialSolPerpPrice).mul(PRICE_PRECISION),
 				userOrderId: 1,
 				postOnly: PostOnlyParams.MUST_POST_ONLY,
-				immediateOrCancel: true,
+				bitFlags: OrderParamsBitFlag.ImmediateOrCancel,
 			});
 			const orderParams = getOrderParams(makerOrderParams, {
 				marketType: MarketType.PERP,
@@ -1017,7 +1018,7 @@ describe('TestProtocolVaults', () => {
 				price: new BN(finalSolPerpPrice).mul(PRICE_PRECISION),
 				userOrderId: 1,
 				postOnly: PostOnlyParams.MUST_POST_ONLY,
-				immediateOrCancel: true,
+				bitFlags: OrderParamsBitFlag.ImmediateOrCancel,
 			});
 			const orderParams = getOrderParams(makerOrderParams, {
 				marketType: MarketType.PERP,
@@ -2093,8 +2094,8 @@ describe('TestTokenizedDriftVaults', () => {
 						.div(mmOffer.price),
 					price: mmOffer.price,
 					direction: PositionDirection.LONG,
-					immediateOrCancel: true,
 					auctionDuration: 0,
+					bitFlags: OrderParamsBitFlag.ImmediateOrCancel,
 				},
 				undefined,
 				{
