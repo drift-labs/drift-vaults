@@ -186,11 +186,9 @@ export function calculateVaultDepositorUnsettledFuel(
 	const fuelPerShareDelta = cumulativeFuelPerShare.sub(
 		vaultDepositor.cumulativeFuelPerShareAmount
 	);
-	const newFuel = fuelPerShareDelta
+	return fuelPerShareDelta
 		.mul(vaultDepositor.vaultShares)
 		.div(FUEL_SHARE_PRECISION);
-
-	return vaultDepositor.fuelAmount.add(newFuel);
 }
 
 export function calculateVaultDepositorFuel(
