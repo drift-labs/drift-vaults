@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use drift::state::user::{FuelOverflowStatus, UserStats};
 
 use crate::constraints::{
-    is_delegate_for_vault, is_manager_for_vault, is_user_stats_for_vault,
+    is_admin, is_delegate_for_vault, is_manager_for_vault, is_user_stats_for_vault,
     is_vault_for_vault_depositor,
 };
 use crate::state::{FuelOverflowProvider, Vault, VaultProtocolProvider};
@@ -44,7 +44,7 @@ pub fn update_cumulative_fuel_amount<'c: 'info, 'info>(
 pub struct UpdateCumulativeFuelAmount<'info> {
     #[account(
         mut,
-        constraint = is_manager_for_vault(&vault, &signer)? || is_delegate_for_vault(&vault, &signer)? || is_authority_for_vault_depositor(&vault_depositor, &signer)?
+        constraint = is_manager_for_vault(&vault, &signer)? || is_delegate_for_vault(&vault, &signer)? || is_authority_for_vault_depositor(&vault_depositor, &signer)? || is_admin(&signer)?
     )]
     pub vault: AccountLoader<'info, Vault>,
     #[account(

@@ -61,6 +61,7 @@ import {
 	getUserStatsAccountPublicKey,
 	DRIFT_PROGRAM_ID,
 	UserMapConfig,
+	OrderParamsBitFlag,
 } from '@drift-labs/sdk';
 import {
 	DriftVaults,
@@ -1562,8 +1563,8 @@ export async function doWashTrading({
 					baseAssetAmount: bidAmount,
 					price: mmOffer.price,
 					direction: PositionDirection.LONG,
-					immediateOrCancel: true,
 					auctionDuration: 0,
+					bitFlags: OrderParamsBitFlag.ImmediateOrCancel,
 				},
 				undefined,
 				{
@@ -1585,9 +1586,9 @@ export async function doWashTrading({
 						baseAssetAmount: bidAmount,
 						price: mmBid.price,
 						direction: PositionDirection.SHORT,
-						immediateOrCancel: true,
 						auctionDuration: 0,
 						reduceOnly: true,
+						bitFlags: OrderParamsBitFlag.ImmediateOrCancel,
 					},
 					undefined,
 					{

@@ -53,6 +53,7 @@ const TEN_PCT_FEE = new BN(PERCENTAGE_PRECISION.divn(10));
 const TWENTY_PCT_FEE = new BN(PERCENTAGE_PRECISION.divn(5));
 const FIFTY_PCT_MANAGEMENT_FEE = new BN(PERCENTAGE_PRECISION.divn(2));
 const ONE_DAY_S = new BN(86400);
+const ONE_WEEK_S = ONE_DAY_S.muln(7);
 
 describe('feeUpdate', () => {
 	let vaultProgram: Program<DriftVaults>;
@@ -78,8 +79,6 @@ describe('feeUpdate', () => {
 	const user1Signer = Keypair.generate();
 	let user1Client: VaultClient;
 	let user1DriftClient: DriftClient;
-	let user1UserUSDCAccount: PublicKey;
-	let user1VaultDepositor: PublicKey;
 
 	const user2Signer = Keypair.generate();
 	let user2Client: VaultClient;
@@ -224,12 +223,6 @@ describe('feeUpdate', () => {
 		});
 		user1Client = user1Bootstrap.vaultClient;
 		user1DriftClient = user1Bootstrap.driftClient;
-		user1UserUSDCAccount = user1Bootstrap.userUSDCAccount.publicKey;
-		user1VaultDepositor = getVaultDepositorAddressSync(
-			vaultProgram.programId,
-			commonVaultKey,
-			user1Signer.publicKey
-		);
 
 		const user2Bootstrap = await bootstrapSignerClientAndUserBankrun({
 			bankrunContext: bankrunContextWrapper,
@@ -436,7 +429,7 @@ describe('feeUpdate', () => {
 		expect(vaultAcct.hurdleRate).toEqual(TEN_PCT_FEE.toNumber());
 	});
 
-	it('manager must choose timelock duration greater than redeem period and 1 day', async () => {
+	it('manager must choose timelock duration greater than 2x redeem period and 1 week', async () => {
 		const vaultAcct = await vaultProgram.account.vault.fetch(commonVaultKey);
 		expect(vaultAcct.managementFee.toNumber()).toEqual(
 			TWENTY_PCT_FEE.toNumber()
@@ -444,7 +437,7 @@ describe('feeUpdate', () => {
 		expect(vaultAcct.profitShare).toEqual(TWENTY_PCT_FEE.toNumber());
 		expect(vaultAcct.hurdleRate).toEqual(TEN_PCT_FEE.toNumber());
 
-		const timelockDuration = ONE_DAY_S.divn(2);
+		const timelockDuration = ONE_WEEK_S.divn(2);
 
 		try {
 			await managerClient.managerUpdateFees(
@@ -471,7 +464,7 @@ describe('feeUpdate', () => {
 		expect(vaultAcct.profitShare).toEqual(TWENTY_PCT_FEE.toNumber());
 		expect(vaultAcct.hurdleRate).toEqual(TEN_PCT_FEE.toNumber());
 
-		const timelockDuration = ONE_DAY_S;
+		const timelockDuration = ONE_WEEK_S;
 
 		await adminClient.adminInitFeeUpdate(commonVaultKey, { noLut: true });
 
@@ -510,13 +503,18 @@ describe('feeUpdate', () => {
 		expect(vaultAcct.feeUpdateStatus).toEqual(FeeUpdateStatus.PendingFeeUpdate);
 
 		// user deposits after 1 day, new fee should come into effect
-		await bankrunContextWrapper.moveTimeForward(ONE_DAY_S.toNumber());
-		const tx1 = await user1Client.deposit(
-			user1VaultDepositor,
-			usdcAmount,
-			undefined,
-			{ noLut: true },
-			user1UserUSDCAccount
+		await bankrunContextWrapper.moveTimeForward(ONE_WEEK_S.toNumber());
+
+		// trigger the fee upduate
+		const tx1 = await managerClient.managerUpdateFees(
+			commonVaultKey,
+			{
+				timelockDuration: new BN(0),
+				newManagementFee: null,
+				newProfitShare: null,
+				newHurdleRate: null,
+			},
+			{ noLut: true }
 		);
 		const events1 = await printTxLogs(
 			bankrunContextWrapper.connection.toConnection(),
@@ -538,7 +536,7 @@ describe('feeUpdate', () => {
 
 	it('manager can cancel fee updates', async () => {
 		let vaultAcct = await vaultProgram.account.vault.fetch(commonVaultKey);
-		const timelockDuration = ONE_DAY_S;
+		const timelockDuration = ONE_WEEK_S;
 
 		await adminClient.adminInitFeeUpdate(commonVaultKey, { noLut: true });
 
