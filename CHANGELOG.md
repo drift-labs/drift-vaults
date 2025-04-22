@@ -8,13 +8,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features
 
+### Fixes
+
+### Breaking
+
+## [0.7.0] - 2025-04-21
+
+### Features
+
 * program: introduce `FeeUpdate` account to allow raising vault fees behind a time lock ([#87](https://github.com/drift-labs/drift-vaults/pull/87))
 
 ### Fixes
 
 ### Breaking
 
-## [0.6.0] - 2024-03-20
+## [0.6.0] - 2025-03-20
 
 ### Features
 
@@ -27,7 +35,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
-## [0.5.0] - 2024-03-03
+## [0.5.0] - 2025-03-03
 
 ### Features
 
@@ -39,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
-## [0.4.0] - 2024-02-11
+## [0.4.0] - 2025-02-11
 
 ### Features
 
@@ -49,7 +57,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
-## [0.3.0] - 2024-01-25
+## [0.3.0] - 2025-01-25
 
 * audit fixes
 
