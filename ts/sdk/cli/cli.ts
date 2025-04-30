@@ -31,6 +31,7 @@ import { managerApplyProfitShare } from "./commands/managerApplyProfitShare";
 import { managerUpdateFees } from "./commands/managerUpdateFees";
 import { adminInitFeeUpdate } from "./commands/adminInitFeeUpdate";
 import { adminDeleteFeeUpdate } from "./commands/adminDeleteFeeUpdate";
+import { managerUpdateFuelDistributionMode } from "./commands/managerUpdateFuelDistributionMode";
 
 const program = new Command();
 program
@@ -234,6 +235,14 @@ program
     .addOption(new Option("--vault-address <address>", "Address of the vault to delete fee update for").makeOptionMandatory(true))
     .addOption(new Option("--dump-transaction-message", "Dump the transaction message to the console").makeOptionMandatory(false))
     .action((opts) => adminDeleteFeeUpdate(program, opts));
+
+program
+    .command("manager-update-fuel-distribution-mode")
+    .description("Update the fuel distribution mode for a vault")
+    .addOption(new Option("--vault-address <address>", "Address of the vault to update").makeOptionMandatory(true))
+    .addOption(new Option("--fuel-distribution-mode <mode>", "New fuel distribution mode (users-only, users-and-manager)").makeOptionMandatory(true))
+    .addOption(new Option("--dump-transaction-message", "Dump the transaction message to the console").makeOptionMandatory(false))
+    .action((opts) => managerUpdateFuelDistributionMode(program, opts));
 
 program.parseAsync().then(() => {
     process.exit(0);
