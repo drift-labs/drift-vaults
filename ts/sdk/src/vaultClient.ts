@@ -1972,7 +1972,7 @@ export class VaultClient {
 			driftUserStats: userStatsKey,
 		};
 
-		const oracleFeedsToCrankIxs = await this.getOracleFeedsToCrank(
+		const oracleFeedsToCrankIxs = await this.getOracleFeedsToCrankIxs(
 			oracleFeedsToCrank
 		);
 
@@ -2102,7 +2102,7 @@ export class VaultClient {
 			tokenProgram: TOKEN_PROGRAM_ID,
 		};
 
-		const oracleFeedsToCrankIxs = await this.getOracleFeedsToCrank(
+		const oracleFeedsToCrankIxs = await this.getOracleFeedsToCrankIxs(
 			oracleFeedsToCrank
 		);
 
@@ -2281,7 +2281,7 @@ export class VaultClient {
 					.instruction(),
 			];
 		} else {
-			const oracleFeedsToCrankIxs = await this.getOracleFeedsToCrank(
+			const oracleFeedsToCrankIxs = await this.getOracleFeedsToCrankIxs(
 				oracleFeedsToCrank
 			);
 
@@ -3138,7 +3138,7 @@ export class VaultClient {
 		}
 	}
 
-	private async getOracleFeedsToCrank(
+	public async getOracleFeedsToCrankIxs(
 		oracleFeedsToCrank: TxParams['oracleFeedsToCrank']
 	) {
 		if (!oracleFeedsToCrank?.feedsToCrank) {
