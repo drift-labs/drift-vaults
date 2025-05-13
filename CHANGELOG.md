@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features
 
+* update drift to v2.120.0
+
+### Fixes
+
+### Breaking
+
+## [0.8.0] - 2025-05-12
+
+### Features
+
 ### Fixes
 
 ### Breaking
