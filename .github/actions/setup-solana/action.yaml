@@ -14,8 +14,8 @@ runs:
     - name: Download Solana
       run: |
         echo Downloading Solana v${{ env.SOLANA_VERSION }}... 🧬
-        export SOLANA_RELEASE=${{ env.SOLANA_VERSION }}
-        export SOLANA_INSTALL_INIT_ARGS=${{ env.SOLANA_VERSION }}
+        export SOLANA_RELEASE=v${{ env.SOLANA_VERSION }}
+        export SOLANA_INSTALL_INIT_ARGS=v${{ env.SOLANA_VERSION }}
         ${{ github.workspace }}/.github/actions/setup-solana/scripts/solana-install-init.sh
         echo "$HOME/.local/share/solana/install/active_release/bin" >> $GITHUB_PATH
         export PATH="$HOME/.local/share/solana/install/active_release/bin:$PATH"

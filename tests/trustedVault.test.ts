@@ -19,7 +19,6 @@ import {
 	BulkAccountLoader,
 	DRIFT_PROGRAM_ID,
 	DriftClient,
-	getUserStatsAccountPublicKey,
 	getVariant,
 	OracleSource,
 	PEG_PRECISION,
