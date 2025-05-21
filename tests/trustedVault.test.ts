@@ -59,7 +59,6 @@ describe('TestTrustedVault', () => {
 		VAULT_PROGRAM_ID,
 		encodeName(vaultName)
 	);
-	let vaultUserStatsKey: PublicKey;
 	const usdcAmount = new BN(1_000_000_000).mul(QUOTE_PRECISION);
 
 	const managerSigner = Keypair.generate();
@@ -177,11 +176,6 @@ describe('TestTrustedVault', () => {
 		managerClient = managerBootstrap.vaultClient;
 		managerDriftClient = managerBootstrap.driftClient;
 		managerUserUSDCAccount = managerBootstrap.userUSDCAccount.publicKey;
-
-		vaultUserStatsKey = getUserStatsAccountPublicKey(
-			managerDriftClient.program.programId,
-			commonVaultKey
-		);
 
 		const provider = new BankrunProvider(
 			bankrunContextWrapper.context,
