@@ -8,11 +8,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features
 
-* update drift to v2.120.0
-
 ### Fixes
 
 ### Breaking
+
+* program: add `update_manager` checks to prevent obvious errors ([#91](https://github.com/drift-labs/drift-vaults/pull/91))
 
 ## [0.8.0] - 2025-05-12
 
@@ -21,6 +21,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixes
 
 ### Breaking
+
+* update drift to v2.120.0
 
 ## [0.7.0] - 2025-04-21
 
