@@ -115,7 +115,13 @@ pub struct Vault {
     pub cumulative_fuel_per_share: u128,
     /// The total fuel accumulated
     pub cumulative_fuel: u128,
-    pub padding: [u64; 3],
+    pub vault_class: VaultClass,
+    pub padding2: [u8; 7],
+    /// The total value (in deposit asset) of borrows the manager has outstanding.
+    /// Purely for informational purposes for assets that have left the vault that the manager
+    /// is expected to return.
+    pub manager_borrowed_value: u64,
+    pub padding: [u64; 1],
 }
 
 impl Vault {
@@ -1379,6 +1385,13 @@ impl FeeUpdateStatus {
     pub fn has_pending_fee_update(status: u8) -> bool {
         status & FeeUpdateStatus::PendingFeeUpdate as u8 != 0
     }
+}
+
+#[derive(Clone, Copy, BorshSerialize, BorshDeserialize, PartialEq, Debug, Eq, Default)]
+pub enum VaultClass {
+    #[default]
+    Normal,
+    Trusted,
 }
 
 struct VaultDepositorRecordParams {

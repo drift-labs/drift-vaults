@@ -543,7 +543,7 @@ export async function printTxLogs(
 		commitment: 'confirmed',
 		maxSupportedTransactionVersion: 0,
 	});
-	console.log('tx logs', tx?.meta?.logMessages);
+	// console.log('tx logs', tx?.meta?.logMessages);
 	const events = [];
 	for (const e of parseLogs(program!, tx!.meta!.logMessages!, program!.programId!.toBase58()!)) {
 		// @ts-ignore

@@ -108,8 +108,15 @@ export type Vault = {
 	lastCumulativeFuelPerShareTs: number;
 	cumulativeFuelPerShare: BN;
 	cumulativeFuel: BN;
+	vaultClass: VaultClass;
+	padding2: number[];
 	padding: BN[];
 };
+
+export class VaultClass {
+	static readonly NORMAL = { normal: {} };
+	static readonly TRUSTED = { trusted: {} };
+}
 
 export enum FuelDistributionMode {
 	UsersOnly = 0,

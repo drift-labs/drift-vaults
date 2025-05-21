@@ -14,6 +14,10 @@ pub trait WithdrawCPI {
     fn drift_withdraw(&self, amount: u64) -> Result<()>;
 }
 
+pub trait WithdrawCPI2 {
+    fn drift_withdraw(&self, market_index: u16, amount: u64) -> Result<()>;
+}
+
 pub trait UpdateUserDelegateCPI {
     fn drift_update_user_delegate(&self, delegate: Pubkey) -> Result<()>;
 }

@@ -159,6 +159,14 @@ pub mod drift_vaults {
         instructions::reset_vault_fuel_season(ctx)
     }
 
+    pub fn manager_borrow<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, ManagerBorrow<'info>>,
+        borrow_spot_market_index: u16,
+        borrow_amount: u64,
+    ) -> Result<()> {
+        instructions::manager_borrow(ctx, borrow_spot_market_index, borrow_amount)
+    }
+
     pub fn manager_deposit<'c: 'info, 'info>(
         ctx: Context<'_, '_, 'c, 'info, ManagerDeposit<'info>>,
         amount: u64,
@@ -203,6 +211,13 @@ pub mod drift_vaults {
         ctx: Context<'_, '_, 'c, 'info, AdminDeleteFeeUpdate<'info>>,
     ) -> Result<()> {
         instructions::admin_delete_fee_update(ctx)
+    }
+
+    pub fn admin_update_vault_class<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, AdminUpdateVaultClass<'info>>,
+        new_vault_class: VaultClass,
+    ) -> Result<()> {
+        instructions::admin_update_vault_class(ctx, new_vault_class)
     }
 
     pub fn manager_update_fees<'c: 'info, 'info>(

@@ -61,6 +61,8 @@ pub enum ErrorCode {
     FeeUpdateMissing,
     #[msg("InvalidFeeUpdateStatus")]
     InvalidFeeUpdateStatus,
+    #[msg("InvalidVaultClass")]
+    InvalidVaultClass,
 }
 
 impl From<DriftErrorCode> for ErrorCode {

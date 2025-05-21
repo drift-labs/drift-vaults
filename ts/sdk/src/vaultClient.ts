@@ -54,6 +54,7 @@ import {
 	FeeUpdateStatus,
 	FuelDistributionMode,
 	Vault,
+	VaultClass,
 	VaultDepositor,
 	VaultParams,
 	VaultProtocol,
@@ -1170,6 +1171,135 @@ export class VaultClient {
 			},
 			remainingAccounts,
 		});
+	}
+
+	public async managerBorrow(
+		vault: PublicKey,
+		borrowSpotMarketIndex: number,
+		borrowAmount: BN,
+		managerTokenAccount?: PublicKey,
+		txParams?: TxParams
+	): Promise<TransactionSignature> {
+		const ixs = await this.getManagerBorrowIx(
+			vault,
+			borrowSpotMarketIndex,
+			borrowAmount,
+			managerTokenAccount
+		);
+		return await this.createAndSendTxn(ixs, txParams);
+	}
+
+	public async getManagerBorrowIx(
+		vault: PublicKey,
+		borrowSpotMarketIndex: number,
+		borrowAmount: BN,
+		managerTokenAccount?: PublicKey
+	): Promise<TransactionInstruction[]> {
+		const vaultAccount = await this.program.account.vault.fetch(vault);
+
+		const spotMarket = this.driftClient.getSpotMarketAccount(
+			borrowSpotMarketIndex
+		);
+		if (!spotMarket) {
+			throw new Error(
+				`Spot market ${borrowSpotMarketIndex} not found on driftClient`
+			);
+		}
+
+		if (!managerTokenAccount) {
+			managerTokenAccount = getAssociatedTokenAddressSync(
+				spotMarket.mint,
+				this.driftClient.wallet.publicKey,
+				true
+			);
+		}
+
+		const user = await this.getSubscribedVaultUser(vaultAccount.user);
+		const userStatsKey = getUserStatsAccountPublicKey(
+			this.driftClient.program.programId,
+			vault
+		);
+		const userStats = (await this.driftClient.program.account.userStats.fetch(
+			userStatsKey
+		)) as UserStatsAccount;
+		const remainingAccounts = this.getRemainingAccountsForUser(
+			[user.getUserAccount()],
+			[borrowSpotMarketIndex, vaultAccount.spotMarketIndex],
+			vaultAccount,
+			userStats,
+			false,
+			false,
+			false
+		);
+
+		const preIxs = [];
+		const postIxs = [];
+
+		const managerTokenAccountExists =
+			await this.driftClient.connection.getAccountInfo(managerTokenAccount);
+		if (managerTokenAccountExists === null) {
+			preIxs.push(
+				createAssociatedTokenAccountInstruction(
+					vaultAccount.manager,
+					managerTokenAccount,
+					vaultAccount.manager,
+					spotMarket.mint
+				)
+			);
+		}
+		console.log('managerTokenAccountExists', managerTokenAccountExists);
+
+		const vaultBorrowTokenAccount = getAssociatedTokenAddressSync(
+			spotMarket.mint,
+			vault,
+			true
+		);
+		const vaultBorrowTokenAccountExists =
+			await this.driftClient.connection.getAccountInfo(vaultBorrowTokenAccount);
+		console.log('vaultBorrowTokenAccountExists', vaultBorrowTokenAccountExists);
+		if (vaultBorrowTokenAccountExists === null) {
+			preIxs.push(
+				createAssociatedTokenAccountInstruction(
+					this.driftClient.wallet.publicKey,
+					vaultBorrowTokenAccount,
+					vault,
+					spotMarket.mint
+				)
+			);
+		}
+
+		if (spotMarket.mint.equals(WRAPPED_SOL_MINT)) {
+			postIxs.push(
+				createCloseAccountInstruction(
+					managerTokenAccount,
+					vaultAccount.manager,
+					vaultAccount.manager,
+					[]
+				)
+			);
+		}
+
+		return [
+			...preIxs,
+			await this.program.methods
+				.managerBorrow(borrowSpotMarketIndex, borrowAmount)
+				.accounts({
+					vault,
+					vaultTokenAccount: vaultBorrowTokenAccount,
+					manager: vaultAccount.manager,
+					driftUserStats: userStatsKey,
+					driftUser: vaultAccount.user,
+					driftState: await this.driftClient.getStatePublicKey(),
+					driftSpotMarketVault: spotMarket.vault,
+					driftSigner: this.driftClient.getStateAccount().signer,
+					userTokenAccount: managerTokenAccount,
+					driftProgram: this.driftClient.program.programId,
+					tokenProgram: TOKEN_PROGRAM_ID,
+				})
+				.remainingAccounts(remainingAccounts)
+				.instruction(),
+			...postIxs,
+		];
 	}
 
 	public async managerUpdateVault(
@@ -2381,7 +2511,10 @@ export class VaultClient {
 				units: txParams?.cuLimit ?? 400_000,
 			}),
 			ComputeBudgetProgram.setComputeUnitPrice({
-				microLamports: txParams?.cuPriceMicroLamports ?? 50_000,
+				microLamports:
+					txParams?.cuPriceMicroLamports === undefined
+						? 50_000
+						: txParams.cuPriceMicroLamports,
 			}),
 			...vaultIxs,
 		];
@@ -2407,7 +2540,10 @@ export class VaultClient {
 				units: txParams?.cuLimit ?? 400_000,
 			}),
 			ComputeBudgetProgram.setComputeUnitPrice({
-				microLamports: txParams?.cuPriceMicroLamports ?? 50_000,
+				microLamports:
+					txParams?.cuPriceMicroLamports === undefined
+						? 50_000
+						: txParams.cuPriceMicroLamports,
 			}),
 			...vaultIxs,
 		];
@@ -3391,6 +3527,28 @@ export class VaultClient {
 				feeUpdate,
 			},
 		});
+	}
+
+	public async adminUpdateVaultClass(
+		vault: PublicKey,
+		newVaultClass: VaultClass,
+		uiTxParams?: TxParams
+	): Promise<TransactionSignature> {
+		const ix = await this.getAdminUpdateVaultClassIx(vault, newVaultClass);
+		return await this.createAndSendTxn([ix], uiTxParams);
+	}
+
+	public async getAdminUpdateVaultClassIx(
+		vault: PublicKey,
+		newVaultClass: VaultClass
+	): Promise<TransactionInstruction> {
+		return this.program.methods
+			.adminUpdateVaultClass(newVaultClass as any)
+			.accounts({
+				vault,
+				admin: this.driftClient.wallet.publicKey,
+			})
+			.instruction();
 	}
 
 	public async managerUpdateFees(
