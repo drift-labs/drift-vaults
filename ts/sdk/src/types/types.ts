@@ -110,6 +110,7 @@ export type Vault = {
 	cumulativeFuel: BN;
 	vaultClass: VaultClass;
 	padding2: number[];
+	managerBorrowedValue: BN;
 	padding: BN[];
 };
 
@@ -315,4 +316,31 @@ export type FeeUpdateRecord = {
 	newManagementFee: BN;
 	newProfitShare: number;
 	newHurdleRate: number;
+};
+
+export type ManagerBorrowRecord = {
+	ts: BN;
+	vault: PublicKey;
+	manager: PublicKey;
+	borrowAmount: BN;
+	borrowValue: BN;
+	borrowSpotMarketIndex: number;
+	borrowOraclePrice: BN;
+	spotMarketIndex: number;
+	spotOraclePrice: BN;
+	vaultEquity: BN;
+};
+
+export type ManagerRepayRecord = {
+	ts: BN;
+	vault: PublicKey;
+	manager: PublicKey;
+	repayAmount: BN;
+	repayValue: BN;
+	repaySpotMarketIndex: number;
+	repayOraclePrice: BN;
+	spotMarketIndex: number;
+	spotOraclePrice: BN;
+	vaultEquityBefore: BN;
+	vaultEquityAfter: BN;
 };

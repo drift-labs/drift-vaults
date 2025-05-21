@@ -951,6 +951,80 @@ export type DriftVaults = {
 			];
 		},
 		{
+			name: 'managerRepay';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'vaultTokenAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUser';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftState';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftSpotMarketVault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftSigner';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'userTokenAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftProgram';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'tokenProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [
+				{
+					name: 'repaySpotMarketIndex';
+					type: 'u16';
+				},
+				{
+					name: 'repayAmount';
+					type: 'u64';
+				},
+				{
+					name: 'repayValue';
+					type: 'u64';
+				}
+			];
+		},
+		{
 			name: 'managerDeposit';
 			accounts: [
 				{
@@ -3306,6 +3380,66 @@ export type DriftVaults = {
 					index: false;
 				}
 			];
+		},
+		{
+			name: 'ManagerRepayRecord';
+			fields: [
+				{
+					name: 'ts';
+					type: 'i64';
+					index: false;
+				},
+				{
+					name: 'vault';
+					type: 'publicKey';
+					index: false;
+				},
+				{
+					name: 'manager';
+					type: 'publicKey';
+					index: false;
+				},
+				{
+					name: 'repayAmount';
+					type: 'u64';
+					index: false;
+				},
+				{
+					name: 'repayValue';
+					type: 'u64';
+					index: false;
+				},
+				{
+					name: 'repaySpotMarketIndex';
+					type: 'u16';
+					index: false;
+				},
+				{
+					name: 'repayOraclePrice';
+					type: 'i64';
+					index: false;
+				},
+				{
+					name: 'spotMarketIndex';
+					type: 'u16';
+					index: false;
+				},
+				{
+					name: 'spotOraclePrice';
+					type: 'i64';
+					index: false;
+				},
+				{
+					name: 'vaultEquityBefore';
+					type: 'u64';
+					index: false;
+				},
+				{
+					name: 'vaultEquityAfter';
+					type: 'u64';
+					index: false;
+				}
+			];
 		}
 	];
 	errors: [
@@ -4400,6 +4534,80 @@ export const IDL: DriftVaults = {
 				},
 				{
 					name: 'borrowAmount',
+					type: 'u64',
+				},
+			],
+		},
+		{
+			name: 'managerRepay',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'vaultTokenAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUser',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftState',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftSpotMarketVault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftSigner',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'userTokenAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftProgram',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'tokenProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [
+				{
+					name: 'repaySpotMarketIndex',
+					type: 'u16',
+				},
+				{
+					name: 'repayAmount',
+					type: 'u64',
+				},
+				{
+					name: 'repayValue',
 					type: 'u64',
 				},
 			],
@@ -6756,6 +6964,66 @@ export const IDL: DriftVaults = {
 				},
 				{
 					name: 'vaultEquity',
+					type: 'u64',
+					index: false,
+				},
+			],
+		},
+		{
+			name: 'ManagerRepayRecord',
+			fields: [
+				{
+					name: 'ts',
+					type: 'i64',
+					index: false,
+				},
+				{
+					name: 'vault',
+					type: 'publicKey',
+					index: false,
+				},
+				{
+					name: 'manager',
+					type: 'publicKey',
+					index: false,
+				},
+				{
+					name: 'repayAmount',
+					type: 'u64',
+					index: false,
+				},
+				{
+					name: 'repayValue',
+					type: 'u64',
+					index: false,
+				},
+				{
+					name: 'repaySpotMarketIndex',
+					type: 'u16',
+					index: false,
+				},
+				{
+					name: 'repayOraclePrice',
+					type: 'i64',
+					index: false,
+				},
+				{
+					name: 'spotMarketIndex',
+					type: 'u16',
+					index: false,
+				},
+				{
+					name: 'spotOraclePrice',
+					type: 'i64',
+					index: false,
+				},
+				{
+					name: 'vaultEquityBefore',
+					type: 'u64',
+					index: false,
+				},
+				{
+					name: 'vaultEquityAfter',
 					type: 'u64',
 					index: false,
 				},

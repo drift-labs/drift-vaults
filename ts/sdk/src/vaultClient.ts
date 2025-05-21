@@ -383,12 +383,18 @@ export class VaultClient {
 		address?: PublicKey;
 		vault?: Vault;
 		factorUnrealizedPNL?: boolean;
+		includeManagerBorrowedValue?: boolean;
 	}): Promise<BN> {
 		try {
 			// defaults to true if undefined
 			let factorUnrealizedPNL = true;
 			if (params.factorUnrealizedPNL !== undefined) {
 				factorUnrealizedPNL = params.factorUnrealizedPNL;
+			}
+
+			let includeManagerBorrowedValue = true;
+			if (params.includeManagerBorrowedValue !== undefined) {
+				includeManagerBorrowedValue = params.includeManagerBorrowedValue;
 			}
 
 			let vaultAccount: Vault;
@@ -403,14 +409,18 @@ export class VaultClient {
 
 			const user = await this.getSubscribedVaultUser(vaultAccount.user);
 
-			const netSpotValue = user.getNetSpotMarketValue();
+			let netSpotValue = user.getNetSpotMarketValue();
 
 			if (factorUnrealizedPNL) {
 				const unrealizedPnl = user.getUnrealizedPNL(true, undefined, undefined);
-				return netSpotValue.add(unrealizedPnl);
-			} else {
-				return netSpotValue;
+				netSpotValue = netSpotValue.add(unrealizedPnl);
 			}
+
+			if (includeManagerBorrowedValue) {
+				netSpotValue = netSpotValue.add(vaultAccount.managerBorrowedValue);
+			}
+
+			return netSpotValue;
 		} catch (err) {
 			console.error('VaultClient ~ err:', err);
 			return ZERO;
@@ -1247,7 +1257,6 @@ export class VaultClient {
 				)
 			);
 		}
-		console.log('managerTokenAccountExists', managerTokenAccountExists);
 
 		const vaultBorrowTokenAccount = getAssociatedTokenAddressSync(
 			spotMarket.mint,
@@ -1256,7 +1265,6 @@ export class VaultClient {
 		);
 		const vaultBorrowTokenAccountExists =
 			await this.driftClient.connection.getAccountInfo(vaultBorrowTokenAccount);
-		console.log('vaultBorrowTokenAccountExists', vaultBorrowTokenAccountExists);
 		if (vaultBorrowTokenAccountExists === null) {
 			preIxs.push(
 				createAssociatedTokenAccountInstruction(
@@ -1286,6 +1294,144 @@ export class VaultClient {
 				.accounts({
 					vault,
 					vaultTokenAccount: vaultBorrowTokenAccount,
+					manager: vaultAccount.manager,
+					driftUserStats: userStatsKey,
+					driftUser: vaultAccount.user,
+					driftState: await this.driftClient.getStatePublicKey(),
+					driftSpotMarketVault: spotMarket.vault,
+					driftSigner: this.driftClient.getStateAccount().signer,
+					userTokenAccount: managerTokenAccount,
+					driftProgram: this.driftClient.program.programId,
+					tokenProgram: TOKEN_PROGRAM_ID,
+				})
+				.remainingAccounts(remainingAccounts)
+				.instruction(),
+			...postIxs,
+		];
+	}
+
+	public async managerRepay(
+		vault: PublicKey,
+		repaySpotMarketIndex: number,
+		repayAmount: BN,
+		repayValue: BN,
+		managerTokenAccount?: PublicKey,
+		uiTxParams?: TxParams
+	): Promise<TransactionSignature> {
+		const ixs = await this.getManagerRepayIxs(
+			vault,
+			repaySpotMarketIndex,
+			repayAmount,
+			repayValue,
+			managerTokenAccount
+		);
+		return this.createAndSendTxn(ixs, uiTxParams);
+	}
+
+	/**
+	 * Get the instructions for the manager repay transaction
+	 * @param vault - The vault to repay
+	 * @param repaySpotMarketIndex - The spot market index to repay
+	 * @param repayAmount - The amount to repay
+	 * @param repayValue - The value of the repay
+	 * @param managerTokenAccount - The manager token account to use, if depositing SOL, leave undefined to automatically wrap the SOL
+	 * @returns The instructions for the manager repay transaction
+	 */
+	public async getManagerRepayIxs(
+		vault: PublicKey,
+		repaySpotMarketIndex: number,
+		repayAmount: BN,
+		repayValue: BN,
+		managerTokenAccount?: PublicKey
+	): Promise<TransactionInstruction[]> {
+		const vaultAccount = await this.program.account.vault.fetch(vault);
+		const spotMarket =
+			this.driftClient.getSpotMarketAccount(repaySpotMarketIndex);
+		if (!spotMarket) {
+			throw new Error(
+				`Spot market ${repaySpotMarketIndex} not found on driftClient`
+			);
+		}
+		const isSolMarket = spotMarket.mint.equals(WRAPPED_SOL_MINT);
+
+		const preIxs: TransactionInstruction[] = [];
+		const postIxs: TransactionInstruction[] = [];
+		let createdWsolAccount = false;
+
+		if (!managerTokenAccount) {
+			if (isSolMarket) {
+				// create wSOL
+				const { ixs, pubkey } =
+					await this.driftClient.getWrappedSolAccountCreationIxs(
+						repayAmount,
+						true
+					);
+				preIxs.push(...ixs);
+				managerTokenAccount = pubkey;
+				createdWsolAccount = true;
+			} else {
+				managerTokenAccount = getAssociatedTokenAddressSync(
+					spotMarket.mint,
+					vaultAccount.manager,
+					true
+				);
+			}
+		}
+
+		const vaultRepayTokenAccount = getAssociatedTokenAddressSync(
+			spotMarket.mint,
+			vault,
+			true
+		);
+		const vaultRepayTokenAccountExists =
+			await this.driftClient.connection.getAccountInfo(vaultRepayTokenAccount);
+		if (vaultRepayTokenAccountExists === null) {
+			preIxs.push(
+				createAssociatedTokenAccountInstruction(
+					this.driftClient.wallet.publicKey,
+					vaultRepayTokenAccount,
+					vault,
+					spotMarket.mint
+				)
+			);
+		}
+
+		if (createdWsolAccount) {
+			postIxs.push(
+				createCloseAccountInstruction(
+					managerTokenAccount,
+					vaultAccount.manager,
+					vaultAccount.manager,
+					[]
+				)
+			);
+		}
+
+		const userStatsKey = getUserStatsAccountPublicKey(
+			this.driftClient.program.programId,
+			vault
+		);
+		const user = await this.getSubscribedVaultUser(vaultAccount.user);
+		const userStats = (await this.driftClient.program.account.userStats.fetch(
+			userStatsKey
+		)) as UserStatsAccount;
+		const remainingAccounts = this.getRemainingAccountsForUser(
+			[user.getUserAccount()],
+			[repaySpotMarketIndex, vaultAccount.spotMarketIndex],
+			vaultAccount,
+			userStats,
+			false,
+			false,
+			false
+		);
+
+		return [
+			...preIxs,
+			await this.program.methods
+				.managerRepay(repaySpotMarketIndex, repayAmount, repayValue)
+				.accounts({
+					vault,
+					vaultTokenAccount: vaultRepayTokenAccount,
 					manager: vaultAccount.manager,
 					driftUserStats: userStatsKey,
 					driftUser: vaultAccount.user,

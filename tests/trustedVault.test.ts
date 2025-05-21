@@ -65,6 +65,7 @@ describe('TestTrustedVault', () => {
 	const managerSigner = Keypair.generate();
 	let managerClient: VaultClient;
 	let managerDriftClient: DriftClient;
+	let managerUserUSDCAccount: PublicKey;
 
 	let adminClient: VaultClient;
 
@@ -175,6 +176,7 @@ describe('TestTrustedVault', () => {
 		});
 		managerClient = managerBootstrap.vaultClient;
 		managerDriftClient = managerBootstrap.driftClient;
+		managerUserUSDCAccount = managerBootstrap.userUSDCAccount.publicKey;
 
 		vaultUserStatsKey = getUserStatsAccountPublicKey(
 			managerDriftClient.program.programId,
@@ -292,18 +294,12 @@ describe('TestTrustedVault', () => {
 			user1Signer,
 			100 * LAMPORTS_PER_SOL
 		);
-		const dep = await user1DriftClient.deposit(
+		await user1DriftClient.deposit(
 			new BN(100 * LAMPORTS_PER_SOL),
 			1,
 			user1Signer.publicKey,
 			undefined,
 			undefined
-		);
-		await printTxLogs(
-			bankrunContextWrapper.connection.toConnection(),
-			dep,
-			false,
-			user1DriftClient.program
 		);
 
 		// user1 deposits usdcAmount into vault
@@ -315,10 +311,10 @@ describe('TestTrustedVault', () => {
 			user1UserUSDCAccount
 		);
 
-		const vaultEquity = await adminClient.calculateVaultEquity({
+		const vaultEquityBefore = await adminClient.calculateVaultEquity({
 			address: commonVaultKey,
 		});
-		expect(vaultEquity.toString()).toEqual(usdcAmount.toString());
+		expect(vaultEquityBefore.toString()).toEqual(usdcAmount.toString());
 
 		await adminDriftClient.fetchAccounts();
 		const spotMarket1 = adminDriftClient.getSpotMarketAccount(1);
@@ -331,6 +327,7 @@ describe('TestTrustedVault', () => {
 				managerSigner.publicKey
 			);
 
+		// manager performs borrow of 50 SOL
 		const b = await managerClient.managerBorrow(
 			commonVaultKey,
 			1,
@@ -358,18 +355,66 @@ describe('TestTrustedVault', () => {
 				managerSigner.publicKey
 			);
 
-		await adminDriftClient.fetchAccounts();
+		// check spot market recognizes borrows
 		const spotMarket11 = adminDriftClient.getSpotMarketAccount(1);
 		expect(spotMarket11!.borrowBalance.toNumber()).toBeCloseTo(
 			50 * LAMPORTS_PER_SOL,
 			-1
 		);
+
+		// check manager borrowed SOL
 		expect(
 			(Number(managerSOLBalance1) - Number(managerSOLBalance0)) /
 				LAMPORTS_PER_SOL
 		).toBeCloseTo(50, 2);
 
+		// check vault equity unchanged
+		await adminClient.driftClient.fetchAccounts();
+		const vaultEquityAfterBorrow = await adminClient.calculateVaultEquity({
+			address: commonVaultKey,
+		});
+		// we repaid 10% less value, so expect vault equity to go down 10%
+		expect(vaultEquityAfterBorrow.toNumber()).toEqual(
+			vaultEquityBefore.toNumber()
+		);
+
+		// check vault records manager's borrow in deposit asset value
 		vaultAcct = await vaultProgram.account.vault.fetch(commonVaultKey);
 		expect(vaultAcct.managerBorrowedValue.toNumber()).toEqual(5000 * 1e6);
+
+		// manager repays in USDC
+		const repayTx = await managerClient.managerRepay(
+			commonVaultKey,
+			0,
+			new BN(4500 * 1e6), // repay 50 SOL * 100 - 10% = 4500 USDC
+			new BN(5000 * 1e6), // zero out the borrow
+			managerUserUSDCAccount,
+			{ noLut: true, cuPriceMicroLamports: 0 }
+		);
+		const repayEvents = await printTxLogs(
+			bankrunContextWrapper.connection.toConnection(),
+			repayTx,
+			false,
+			// @ts-ignore
+			adminClient.program
+		);
+		expect(repayEvents.length).toEqual(1);
+		expect(repayEvents[0].data.repayAmount.toNumber()).toEqual(4500 * 1e6);
+		expect(repayEvents[0].data.repayValue.toNumber()).toEqual(5000 * 1e6);
+		expect(repayEvents[0].data.repaySpotMarketIndex).toEqual(0);
+		expect(repayEvents[0].data.spotMarketIndex).toEqual(0);
+
+		vaultAcct = await vaultProgram.account.vault.fetch(commonVaultKey);
+		expect(vaultAcct.managerBorrowedValue.toNumber()).toEqual(0);
+
+		await adminClient.driftClient.fetchAccounts();
+		const vaultEquityAfterRepay = await adminClient.calculateVaultEquity({
+			address: commonVaultKey,
+		});
+		// we repaid 10% less value
+		// expect final vault equity to go down by 10% of the borrowed value
+		expect(vaultEquityAfterRepay.toNumber()).toEqual(
+			vaultEquityBefore.toNumber() - 5000 * 1e6 * 0.1
+		);
 	});
 });

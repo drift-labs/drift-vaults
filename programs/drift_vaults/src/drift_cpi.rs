@@ -10,6 +10,10 @@ pub trait DepositCPI {
     fn drift_deposit(&self, amount: u64) -> Result<()>;
 }
 
+pub trait DepositCPI2 {
+    fn drift_deposit(&self, market_index: u16, amount: u64) -> Result<()>;
+}
+
 pub trait WithdrawCPI {
     fn drift_withdraw(&self, amount: u64) -> Result<()>;
 }

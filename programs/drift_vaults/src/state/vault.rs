@@ -511,6 +511,7 @@ impl Vault {
         Ok(vault_equity
             .safe_mul(spot_market_precision)?
             .safe_div(oracle_price)?
+            .safe_add(self.manager_borrowed_value as i128)?
             .cast::<u64>()?)
     }
 

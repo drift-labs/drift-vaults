@@ -167,6 +167,15 @@ pub mod drift_vaults {
         instructions::manager_borrow(ctx, borrow_spot_market_index, borrow_amount)
     }
 
+    pub fn manager_repay<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, ManagerRepay<'info>>,
+        repay_spot_market_index: u16,
+        repay_amount: u64,
+        repay_value: u64,
+    ) -> Result<()> {
+        instructions::manager_repay(ctx, repay_spot_market_index, repay_amount, repay_value)
+    }
+
     pub fn manager_deposit<'c: 'info, 'info>(
         ctx: Context<'_, '_, 'c, 'info, ManagerDeposit<'info>>,
         amount: u64,
