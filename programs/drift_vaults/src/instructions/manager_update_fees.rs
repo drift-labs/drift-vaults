@@ -20,7 +20,7 @@ pub fn manager_update_fees<'info>(
         validate!(
             has_pending_fee_update,
             ErrorCode::InvalidFeeUpdateStatus,
-            "Admin can only force updatge fees if a fee update is pending"
+            "Admin can only force update fees if a fee update is pending"
         )?;
     }
 

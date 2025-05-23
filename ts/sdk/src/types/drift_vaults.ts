@@ -881,6 +881,150 @@ export type DriftVaults = {
 			args: [];
 		},
 		{
+			name: 'managerBorrow';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'vaultTokenAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUser';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftState';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftSpotMarketVault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftSigner';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'userTokenAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftProgram';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'tokenProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [
+				{
+					name: 'borrowSpotMarketIndex';
+					type: 'u16';
+				},
+				{
+					name: 'borrowAmount';
+					type: 'u64';
+				}
+			];
+		},
+		{
+			name: 'managerRepay';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'vaultTokenAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUser';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftState';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'driftSpotMarketVault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftSigner';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'userTokenAccount';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftProgram';
+					isMut: false;
+					isSigner: false;
+				},
+				{
+					name: 'tokenProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [
+				{
+					name: 'repaySpotMarketIndex';
+					type: 'u16';
+				},
+				{
+					name: 'repayAmount';
+					type: 'u64';
+				},
+				{
+					name: 'repayValue';
+					type: 'u64';
+				}
+			];
+		},
+		{
 			name: 'managerDeposit';
 			accounts: [
 				{
@@ -1132,6 +1276,34 @@ export type DriftVaults = {
 				}
 			];
 			args: [];
+		},
+		{
+			name: 'adminUpdateVaultClass';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'admin';
+					isMut: true;
+					isSigner: true;
+				},
+				{
+					name: 'systemProgram';
+					isMut: false;
+					isSigner: false;
+				}
+			];
+			args: [
+				{
+					name: 'newVaultClass';
+					type: {
+						defined: 'VaultClass';
+					};
+				}
+			];
 		},
 		{
 			name: 'managerUpdateFees';
@@ -2335,9 +2507,9 @@ export type DriftVaults = {
 						type: 'u8';
 					},
 					{
-						name: 'padding1';
+						name: 'vaultClass';
 						type: {
-							array: ['u8', 1];
+							defined: 'VaultClass';
 						};
 					},
 					{
@@ -2358,9 +2530,24 @@ export type DriftVaults = {
 						type: 'u128';
 					},
 					{
+						name: 'managerBorrowedValue';
+						docs: [
+							'The total value (in deposit asset) of borrows the manager has outstanding.',
+							'Purely for informational purposes for assets that have left the vault that the manager',
+							'is expected to return.'
+						];
+						type: 'u64';
+					},
+					{
+						name: 'padding1';
+						type: {
+							array: ['u64', 1];
+						};
+					},
+					{
 						name: 'padding';
 						type: {
-							array: ['u64', 3];
+							array: ['u64', 1];
 						};
 					}
 				];
@@ -2705,6 +2892,20 @@ export type DriftVaults = {
 					},
 					{
 						name: 'PendingFeeUpdate';
+					}
+				];
+			};
+		},
+		{
+			name: 'VaultClass';
+			type: {
+				kind: 'enum';
+				variants: [
+					{
+						name: 'Normal';
+					},
+					{
+						name: 'Trusted';
 					}
 				];
 			};
@@ -3118,6 +3319,121 @@ export type DriftVaults = {
 					index: false;
 				}
 			];
+		},
+		{
+			name: 'ManagerBorrowRecord';
+			fields: [
+				{
+					name: 'ts';
+					type: 'i64';
+					index: false;
+				},
+				{
+					name: 'vault';
+					type: 'publicKey';
+					index: false;
+				},
+				{
+					name: 'manager';
+					type: 'publicKey';
+					index: false;
+				},
+				{
+					name: 'borrowAmount';
+					type: 'u64';
+					index: false;
+				},
+				{
+					name: 'borrowValue';
+					type: 'u64';
+					index: false;
+				},
+				{
+					name: 'borrowSpotMarketIndex';
+					type: 'u16';
+					index: false;
+				},
+				{
+					name: 'borrowOraclePrice';
+					type: 'i64';
+					index: false;
+				},
+				{
+					name: 'spotMarketIndex';
+					type: 'u16';
+					index: false;
+				},
+				{
+					name: 'spotOraclePrice';
+					type: 'i64';
+					index: false;
+				},
+				{
+					name: 'vaultEquity';
+					type: 'u64';
+					index: false;
+				}
+			];
+		},
+		{
+			name: 'ManagerRepayRecord';
+			fields: [
+				{
+					name: 'ts';
+					type: 'i64';
+					index: false;
+				},
+				{
+					name: 'vault';
+					type: 'publicKey';
+					index: false;
+				},
+				{
+					name: 'manager';
+					type: 'publicKey';
+					index: false;
+				},
+				{
+					name: 'repayAmount';
+					type: 'u64';
+					index: false;
+				},
+				{
+					name: 'repayValue';
+					type: 'u64';
+					index: false;
+				},
+				{
+					name: 'repaySpotMarketIndex';
+					type: 'u16';
+					index: false;
+				},
+				{
+					name: 'repayOraclePrice';
+					type: 'i64';
+					index: false;
+				},
+				{
+					name: 'spotMarketIndex';
+					type: 'u16';
+					index: false;
+				},
+				{
+					name: 'spotOraclePrice';
+					type: 'i64';
+					index: false;
+				},
+				{
+					name: 'vaultEquityBefore';
+					type: 'u64';
+					index: false;
+				},
+				{
+					name: 'vaultEquityAfter';
+					type: 'u64';
+					index: false;
+				}
+			];
 		}
 	];
 	errors: [
@@ -3255,6 +3571,11 @@ export type DriftVaults = {
 			code: 6026;
 			name: 'InvalidFeeUpdateStatus';
 			msg: 'InvalidFeeUpdateStatus';
+		},
+		{
+			code: 6027;
+			name: 'InvalidVaultClass';
+			msg: 'InvalidVaultClass';
 		}
 	];
 };
@@ -4142,6 +4463,150 @@ export const IDL: DriftVaults = {
 			args: [],
 		},
 		{
+			name: 'managerBorrow',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'vaultTokenAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUser',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftState',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftSpotMarketVault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftSigner',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'userTokenAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftProgram',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'tokenProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [
+				{
+					name: 'borrowSpotMarketIndex',
+					type: 'u16',
+				},
+				{
+					name: 'borrowAmount',
+					type: 'u64',
+				},
+			],
+		},
+		{
+			name: 'managerRepay',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'vaultTokenAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUser',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftState',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'driftSpotMarketVault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftSigner',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'userTokenAccount',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftProgram',
+					isMut: false,
+					isSigner: false,
+				},
+				{
+					name: 'tokenProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [
+				{
+					name: 'repaySpotMarketIndex',
+					type: 'u16',
+				},
+				{
+					name: 'repayAmount',
+					type: 'u64',
+				},
+				{
+					name: 'repayValue',
+					type: 'u64',
+				},
+			],
+		},
+		{
 			name: 'managerDeposit',
 			accounts: [
 				{
@@ -4393,6 +4858,34 @@ export const IDL: DriftVaults = {
 				},
 			],
 			args: [],
+		},
+		{
+			name: 'adminUpdateVaultClass',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'admin',
+					isMut: true,
+					isSigner: true,
+				},
+				{
+					name: 'systemProgram',
+					isMut: false,
+					isSigner: false,
+				},
+			],
+			args: [
+				{
+					name: 'newVaultClass',
+					type: {
+						defined: 'VaultClass',
+					},
+				},
+			],
 		},
 		{
 			name: 'managerUpdateFees',
@@ -5596,9 +6089,9 @@ export const IDL: DriftVaults = {
 						type: 'u8',
 					},
 					{
-						name: 'padding1',
+						name: 'vaultClass',
 						type: {
-							array: ['u8', 1],
+							defined: 'VaultClass',
 						},
 					},
 					{
@@ -5619,9 +6112,24 @@ export const IDL: DriftVaults = {
 						type: 'u128',
 					},
 					{
+						name: 'managerBorrowedValue',
+						docs: [
+							'The total value (in deposit asset) of borrows the manager has outstanding.',
+							'Purely for informational purposes for assets that have left the vault that the manager',
+							'is expected to return.',
+						],
+						type: 'u64',
+					},
+					{
+						name: 'padding1',
+						type: {
+							array: ['u64', 1],
+						},
+					},
+					{
 						name: 'padding',
 						type: {
-							array: ['u64', 3],
+							array: ['u64', 1],
 						},
 					},
 				],
@@ -5966,6 +6474,20 @@ export const IDL: DriftVaults = {
 					},
 					{
 						name: 'PendingFeeUpdate',
+					},
+				],
+			},
+		},
+		{
+			name: 'VaultClass',
+			type: {
+				kind: 'enum',
+				variants: [
+					{
+						name: 'Normal',
+					},
+					{
+						name: 'Trusted',
 					},
 				],
 			},
@@ -6380,6 +6902,121 @@ export const IDL: DriftVaults = {
 				},
 			],
 		},
+		{
+			name: 'ManagerBorrowRecord',
+			fields: [
+				{
+					name: 'ts',
+					type: 'i64',
+					index: false,
+				},
+				{
+					name: 'vault',
+					type: 'publicKey',
+					index: false,
+				},
+				{
+					name: 'manager',
+					type: 'publicKey',
+					index: false,
+				},
+				{
+					name: 'borrowAmount',
+					type: 'u64',
+					index: false,
+				},
+				{
+					name: 'borrowValue',
+					type: 'u64',
+					index: false,
+				},
+				{
+					name: 'borrowSpotMarketIndex',
+					type: 'u16',
+					index: false,
+				},
+				{
+					name: 'borrowOraclePrice',
+					type: 'i64',
+					index: false,
+				},
+				{
+					name: 'spotMarketIndex',
+					type: 'u16',
+					index: false,
+				},
+				{
+					name: 'spotOraclePrice',
+					type: 'i64',
+					index: false,
+				},
+				{
+					name: 'vaultEquity',
+					type: 'u64',
+					index: false,
+				},
+			],
+		},
+		{
+			name: 'ManagerRepayRecord',
+			fields: [
+				{
+					name: 'ts',
+					type: 'i64',
+					index: false,
+				},
+				{
+					name: 'vault',
+					type: 'publicKey',
+					index: false,
+				},
+				{
+					name: 'manager',
+					type: 'publicKey',
+					index: false,
+				},
+				{
+					name: 'repayAmount',
+					type: 'u64',
+					index: false,
+				},
+				{
+					name: 'repayValue',
+					type: 'u64',
+					index: false,
+				},
+				{
+					name: 'repaySpotMarketIndex',
+					type: 'u16',
+					index: false,
+				},
+				{
+					name: 'repayOraclePrice',
+					type: 'i64',
+					index: false,
+				},
+				{
+					name: 'spotMarketIndex',
+					type: 'u16',
+					index: false,
+				},
+				{
+					name: 'spotOraclePrice',
+					type: 'i64',
+					index: false,
+				},
+				{
+					name: 'vaultEquityBefore',
+					type: 'u64',
+					index: false,
+				},
+				{
+					name: 'vaultEquityAfter',
+					type: 'u64',
+					index: false,
+				},
+			],
+		},
 	],
 	errors: [
 		{
@@ -6516,6 +7153,11 @@ export const IDL: DriftVaults = {
 			code: 6026,
 			name: 'InvalidFeeUpdateStatus',
 			msg: 'InvalidFeeUpdateStatus',
+		},
+		{
+			code: 6027,
+			name: 'InvalidVaultClass',
+			msg: 'InvalidVaultClass',
 		},
 	],
 };
