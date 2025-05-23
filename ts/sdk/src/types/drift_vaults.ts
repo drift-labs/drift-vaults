@@ -2507,9 +2507,9 @@ export type DriftVaults = {
 						type: 'u8';
 					},
 					{
-						name: 'padding1';
+						name: 'vaultClass';
 						type: {
-							array: ['u8', 1];
+							defined: 'VaultClass';
 						};
 					},
 					{
@@ -2530,18 +2530,6 @@ export type DriftVaults = {
 						type: 'u128';
 					},
 					{
-						name: 'vaultClass';
-						type: {
-							defined: 'VaultClass';
-						};
-					},
-					{
-						name: 'padding2';
-						type: {
-							array: ['u8', 7];
-						};
-					},
-					{
 						name: 'managerBorrowedValue';
 						docs: [
 							'The total value (in deposit asset) of borrows the manager has outstanding.',
@@ -2549,6 +2537,12 @@ export type DriftVaults = {
 							'is expected to return.'
 						];
 						type: 'u64';
+					},
+					{
+						name: 'padding1';
+						type: {
+							array: ['u64', 1];
+						};
 					},
 					{
 						name: 'padding';
@@ -6095,9 +6089,9 @@ export const IDL: DriftVaults = {
 						type: 'u8',
 					},
 					{
-						name: 'padding1',
+						name: 'vaultClass',
 						type: {
-							array: ['u8', 1],
+							defined: 'VaultClass',
 						},
 					},
 					{
@@ -6118,18 +6112,6 @@ export const IDL: DriftVaults = {
 						type: 'u128',
 					},
 					{
-						name: 'vaultClass',
-						type: {
-							defined: 'VaultClass',
-						},
-					},
-					{
-						name: 'padding2',
-						type: {
-							array: ['u8', 7],
-						},
-					},
-					{
 						name: 'managerBorrowedValue',
 						docs: [
 							'The total value (in deposit asset) of borrows the manager has outstanding.',
@@ -6137,6 +6119,12 @@ export const IDL: DriftVaults = {
 							'is expected to return.',
 						],
 						type: 'u64',
+					},
+					{
+						name: 'padding1',
+						type: {
+							array: ['u64', 1],
+						},
 					},
 					{
 						name: 'padding',

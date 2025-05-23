@@ -108,19 +108,18 @@ pub struct Vault {
     /// After a `FeeUpdate` account is created and the manager has staged a fee update, the status is set to `PendingFeeUpdate`.
     /// And instructsions that may finalize the fee update must include the `FeeUpdate` account with `remaining_accounts`.
     pub fee_update_status: u8,
-    pub padding1: [u8; 1],
+    pub vault_class: VaultClass,
     /// The timestamp cumulative_fuel_per_share was last updated
     pub last_cumulative_fuel_per_share_ts: u32,
     /// The cumulative fuel per share (scaled up by 1e6 to avoid losing precision)
     pub cumulative_fuel_per_share: u128,
     /// The total fuel accumulated
     pub cumulative_fuel: u128,
-    pub vault_class: VaultClass,
-    pub padding2: [u8; 7],
     /// The total value (in deposit asset) of borrows the manager has outstanding.
     /// Purely for informational purposes for assets that have left the vault that the manager
     /// is expected to return.
     pub manager_borrowed_value: u64,
+    pub padding1: [u64; 1],
     pub padding: [u64; 1],
 }
 

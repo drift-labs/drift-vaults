@@ -104,13 +104,12 @@ export type Vault = {
 	vaultProtocol: boolean;
 	fuelDistributionMode: FuelDistributionMode;
 	feeUpdateStatus: FeeUpdateStatus;
-	padding1: number[];
+	vaultClass: VaultClass;
 	lastCumulativeFuelPerShareTs: number;
 	cumulativeFuelPerShare: BN;
 	cumulativeFuel: BN;
-	vaultClass: VaultClass;
-	padding2: number[];
 	managerBorrowedValue: BN;
+	padding1: BN[];
 	padding: BN[];
 };
 
