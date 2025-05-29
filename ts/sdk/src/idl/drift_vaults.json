@@ -1020,7 +1020,9 @@
         },
         {
           "name": "repayValue",
-          "type": "u64"
+          "type": {
+            "option": "u64"
+          }
         }
       ]
     },
@@ -1299,9 +1301,7 @@
       "args": [
         {
           "name": "newVaultClass",
-          "type": {
-            "defined": "VaultClass"
-          }
+          "type": "u8"
         }
       ]
     },
@@ -2601,9 +2601,10 @@
           },
           {
             "name": "vaultClass",
-            "type": {
-              "defined": "VaultClass"
-            }
+            "docs": [
+              "The class of the vault [`VaultClass`]. Default is `VaultClass::Normal`"
+            ],
+            "type": "u8"
           },
           {
             "name": "lastCumulativeFuelPerShareTs",
@@ -3472,12 +3473,12 @@
           "index": false
         },
         {
-          "name": "spotMarketIndex",
+          "name": "depositSpotMarketIndex",
           "type": "u16",
           "index": false
         },
         {
-          "name": "spotOraclePrice",
+          "name": "depositOraclePrice",
           "type": "i64",
           "index": false
         },
@@ -3527,12 +3528,12 @@
           "index": false
         },
         {
-          "name": "spotMarketIndex",
+          "name": "depositSpotMarketIndex",
           "type": "u16",
           "index": false
         },
         {
-          "name": "spotOraclePrice",
+          "name": "depositOraclePrice",
           "type": "i64",
           "index": false
         },

@@ -1,7 +1,5 @@
-use crate::constraints::{
-    is_manager_for_vault, is_trusted_vault_class, is_user_for_vault, is_user_stats_for_vault,
-};
-use crate::drift_cpi::DepositCPI2;
+use crate::constraints::{is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault};
+use crate::drift_cpi::ManagerRepayCPI;
 use crate::state::events::ManagerRepayRecord;
 use crate::state::{
     FeeUpdateProvider, FeeUpdateStatus, FuelOverflowProvider, VaultProtocolProvider,
@@ -22,16 +20,16 @@ pub fn manager_repay<'c: 'info, 'info>(
     ctx: Context<'_, '_, 'c, 'info, ManagerRepay<'info>>,
     repay_spot_market_index: u16,
     repay_amount: u64,
-    repay_value: u64,
+    repay_value: Option<u64>,
 ) -> Result<()> {
+    let mut vault = ctx.accounts.vault.load_mut()?;
     validate!(
-        is_trusted_vault_class(&ctx.accounts.vault)?,
+        vault.is_trusted_vault_class(),
         ErrorCode::InvalidVaultClass,
         "Only trusted vaults can be borrowed from"
     )?;
 
     let clock = &Clock::get()?;
-    let mut vault = ctx.accounts.vault.load_mut()?;
     let now = clock.unix_timestamp;
 
     // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
@@ -86,7 +84,13 @@ pub fn manager_repay<'c: 'info, 'info>(
     let vault_equity_before =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
-    vault.manager_borrowed_value = vault.manager_borrowed_value.safe_sub(repay_value)?;
+    let value_repayed = if let Some(repay_value) = repay_value {
+        repay_value
+    } else {
+        vault.manager_borrowed_value
+    };
+
+    vault.manager_borrowed_value = vault.manager_borrowed_value.safe_sub(value_repayed)?;
 
     drop(repay_spot_market);
     drop(deposit_spot_market);
@@ -109,11 +113,11 @@ pub fn manager_repay<'c: 'info, 'info>(
         vault: vault.pubkey,
         manager: vault.manager,
         repay_amount,
-        repay_value,
+        repay_value: value_repayed,
         repay_spot_market_index,
         repay_oracle_price: repay_oracle.price,
-        spot_market_index: deposit_spot_market_index,
-        spot_oracle_price: deposit_oracle.price,
+        deposit_spot_market_index: deposit_spot_market_index,
+        deposit_oracle_price: deposit_oracle.price,
         vault_equity_before,
         vault_equity_after,
     });
@@ -162,7 +166,7 @@ pub struct ManagerRepay<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-impl<'info> DepositCPI2 for Context<'_, '_, '_, 'info, ManagerRepay<'info>> {
+impl<'info> ManagerRepayCPI for Context<'_, '_, '_, 'info, ManagerRepay<'info>> {
     fn drift_deposit(&self, market_index: u16, amount: u64) -> Result<()> {
         declare_vault_seeds!(self.accounts.vault, seeds);
 

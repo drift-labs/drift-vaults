@@ -51,8 +51,8 @@ import {
 } from '@solana/spl-token';
 import {
 	FeeUpdate,
-	FeeUpdateStatus,
 	FuelDistributionMode,
+	hasPendingFeeUpdate,
 	Vault,
 	VaultClass,
 	VaultDepositor,
@@ -153,9 +153,7 @@ export class VaultClient {
 			(userStats.fuelOverflowStatus & FuelOverflowStatus.Exists) ===
 			FuelOverflowStatus.Exists;
 
-		const hasFeeUpdate =
-			(vaultAccount.feeUpdateStatus & FeeUpdateStatus.PendingFeeUpdate) ===
-			FeeUpdateStatus.PendingFeeUpdate;
+		const hasFeeUpdate = hasPendingFeeUpdate(vaultAccount.feeUpdateStatus);
 
 		if (hasFeeUpdate && !skipFeeUpdate) {
 			const feeUpdate = getFeeUpdateAddressSync(
@@ -1314,7 +1312,7 @@ export class VaultClient {
 		vault: PublicKey,
 		repaySpotMarketIndex: number,
 		repayAmount: BN,
-		repayValue: BN,
+		repayValue: BN | null,
 		managerTokenAccount?: PublicKey,
 		uiTxParams?: TxParams
 	): Promise<TransactionSignature> {
@@ -1341,7 +1339,7 @@ export class VaultClient {
 		vault: PublicKey,
 		repaySpotMarketIndex: number,
 		repayAmount: BN,
-		repayValue: BN,
+		repayValue: BN | null,
 		managerTokenAccount?: PublicKey
 	): Promise<TransactionInstruction[]> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);

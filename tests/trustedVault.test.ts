@@ -14,12 +14,13 @@ import {
 	DriftVaults,
 	VAULT_PROGRAM_ID,
 	IDL,
+	isNormalVaultClass,
+	isTrustedVaultClass,
 } from '../ts/sdk/lib';
 import {
 	BulkAccountLoader,
 	DRIFT_PROGRAM_ID,
 	DriftClient,
-	getVariant,
 	OracleSource,
 	PEG_PRECISION,
 	PublicKey,
@@ -251,7 +252,7 @@ describe('TestTrustedVault', () => {
 		const vaultAcct = await vaultProgram.account.vault.fetch(commonVaultKey);
 		expect(vaultAcct.manager).toEqual(managerSigner.publicKey);
 
-		expect(getVariant(vaultAcct.vaultClass)).toEqual('normal');
+		expect(isNormalVaultClass(vaultAcct.vaultClass)).toEqual(true);
 
 		const vaultDepositor = getVaultDepositorAddressSync(
 			vaultProgram.programId,
@@ -267,7 +268,7 @@ describe('TestTrustedVault', () => {
 	it('admin can update vault class and borrow and repay', async () => {
 		let vaultAcct = await vaultProgram.account.vault.fetch(commonVaultKey);
 		expect(vaultAcct.manager).toEqual(managerSigner.publicKey);
-		expect(getVariant(vaultAcct.vaultClass)).toEqual('normal');
+		expect(isNormalVaultClass(vaultAcct.vaultClass)).toEqual(true);
 
 		await adminClient.updateMarginTradingEnabled(commonVaultKey, true, {
 			noLut: true,
@@ -280,7 +281,7 @@ describe('TestTrustedVault', () => {
 		);
 
 		vaultAcct = await vaultProgram.account.vault.fetch(commonVaultKey);
-		expect(getVariant(vaultAcct.vaultClass)).toEqual('trusted');
+		expect(isTrustedVaultClass(vaultAcct.vaultClass)).toEqual(true);
 
 		// user1 deposit sol into drift (for vault to borrow)
 		await bankrunContextWrapper.fundKeypair(
@@ -341,7 +342,7 @@ describe('TestTrustedVault', () => {
 		);
 		expect((e[0].data.borrowValue as BN).toNumber()).toEqual(5000 * 1e6);
 		expect(e[0].data.borrowSpotMarketIndex).toEqual(1);
-		expect(e[0].data.spotMarketIndex).toEqual(0);
+		expect(e[0].data.depositSpotMarketIndex).toEqual(0);
 
 		const managerSOLBalance1 =
 			await bankrunContextWrapper.connection.getBalance(
@@ -395,7 +396,7 @@ describe('TestTrustedVault', () => {
 		expect(repayEvents[0].data.repayAmount.toNumber()).toEqual(4500 * 1e6);
 		expect(repayEvents[0].data.repayValue.toNumber()).toEqual(5000 * 1e6);
 		expect(repayEvents[0].data.repaySpotMarketIndex).toEqual(0);
-		expect(repayEvents[0].data.spotMarketIndex).toEqual(0);
+		expect(repayEvents[0].data.depositSpotMarketIndex).toEqual(0);
 
 		vaultAcct = await vaultProgram.account.vault.fetch(commonVaultKey);
 		expect(vaultAcct.managerBorrowedValue.toNumber()).toEqual(0);

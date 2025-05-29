@@ -171,7 +171,7 @@ pub mod drift_vaults {
         ctx: Context<'_, '_, 'c, 'info, ManagerRepay<'info>>,
         repay_spot_market_index: u16,
         repay_amount: u64,
-        repay_value: u64,
+        repay_value: Option<u64>,
     ) -> Result<()> {
         instructions::manager_repay(ctx, repay_spot_market_index, repay_amount, repay_value)
     }
@@ -224,7 +224,7 @@ pub mod drift_vaults {
 
     pub fn admin_update_vault_class<'c: 'info, 'info>(
         ctx: Context<'_, '_, 'c, 'info, AdminUpdateVaultClass<'info>>,
-        new_vault_class: VaultClass,
+        new_vault_class: u8,
     ) -> Result<()> {
         instructions::admin_update_vault_class(ctx, new_vault_class)
     }

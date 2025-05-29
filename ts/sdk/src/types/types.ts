@@ -113,9 +113,17 @@ export type Vault = {
 	padding: BN[];
 };
 
-export class VaultClass {
-	static readonly NORMAL = { normal: {} };
-	static readonly TRUSTED = { trusted: {} };
+export enum VaultClass {
+	NORMAL = 0,
+	TRUSTED = 1,
+}
+
+export function isNormalVaultClass(vaultClass: number | VaultClass): boolean {
+	return (vaultClass & VaultClass.NORMAL) === VaultClass.NORMAL;
+}
+
+export function isTrustedVaultClass(vaultClass: number | VaultClass): boolean {
+	return (vaultClass & VaultClass.TRUSTED) === VaultClass.TRUSTED;
 }
 
 export enum FuelDistributionMode {
@@ -126,6 +134,13 @@ export enum FuelDistributionMode {
 export enum FeeUpdateStatus {
 	None = 0,
 	PendingFeeUpdate = 1,
+}
+
+export function hasPendingFeeUpdate(status: number | FeeUpdateStatus): boolean {
+	return (
+		(status & FeeUpdateStatus.PendingFeeUpdate) ===
+		FeeUpdateStatus.PendingFeeUpdate
+	);
 }
 
 export type FeeUpdate = {
@@ -325,8 +340,8 @@ export type ManagerBorrowRecord = {
 	borrowValue: BN;
 	borrowSpotMarketIndex: number;
 	borrowOraclePrice: BN;
-	spotMarketIndex: number;
-	spotOraclePrice: BN;
+	depositSpotMarketIndex: number;
+	depositOraclePrice: BN;
 	vaultEquity: BN;
 };
 
@@ -338,8 +353,8 @@ export type ManagerRepayRecord = {
 	repayValue: BN;
 	repaySpotMarketIndex: number;
 	repayOraclePrice: BN;
-	spotMarketIndex: number;
-	spotOraclePrice: BN;
+	depositSpotMarketIndex: number;
+	depositOraclePrice: BN;
 	vaultEquityBefore: BN;
 	vaultEquityAfter: BN;
 };

@@ -3,7 +3,7 @@ use anchor_spl::associated_token::get_associated_token_address;
 use drift::state::insurance_fund_stake::InsuranceFundStake;
 
 use crate::constants::admin;
-use crate::state::{VaultClass, VaultProtocol};
+use crate::state::VaultProtocol;
 use crate::{TokenizedVaultDepositor, Vault, VaultDepositor};
 
 pub fn is_vault_for_vault_depositor(
@@ -119,8 +119,4 @@ pub fn is_if_stake_for_vault(
     vault: &AccountLoader<Vault>,
 ) -> Result<bool> {
     Ok(if_stake.load()?.authority.eq(&vault.key()))
-}
-
-pub fn is_trusted_vault_class(vault: &AccountLoader<Vault>) -> Result<bool> {
-    Ok(vault.load()?.vault_class == VaultClass::Trusted)
 }

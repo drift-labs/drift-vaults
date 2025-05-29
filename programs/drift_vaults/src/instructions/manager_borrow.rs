@@ -1,7 +1,5 @@
-use crate::constraints::{
-    is_manager_for_vault, is_trusted_vault_class, is_user_for_vault, is_user_stats_for_vault,
-};
-use crate::drift_cpi::WithdrawCPI2;
+use crate::constraints::{is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault};
+use crate::drift_cpi::ManagerBorrowCPI;
 use crate::math::token_a_to_token_b;
 use crate::state::events::ManagerBorrowRecord;
 use crate::state::{
@@ -24,14 +22,14 @@ pub fn manager_borrow<'c: 'info, 'info>(
     borrow_spot_market_index: u16,
     borrow_amount: u64,
 ) -> Result<()> {
+    let mut vault = ctx.accounts.vault.load_mut()?;
     validate!(
-        is_trusted_vault_class(&ctx.accounts.vault)?,
+        vault.is_trusted_vault_class(),
         ErrorCode::InvalidVaultClass,
         "Only trusted vaults can be borrowed from"
     )?;
 
     let clock = &Clock::get()?;
-    let mut vault = ctx.accounts.vault.load_mut()?;
     let now = clock.unix_timestamp;
 
     // backwards compatible: if last rem acct does not deserialize into [`VaultProtocol`] then it's a legacy vault.
@@ -101,8 +99,8 @@ pub fn manager_borrow<'c: 'info, 'info>(
         borrow_value,
         borrow_spot_market_index: borrow_spot_market.market_index,
         borrow_oracle_price: borrow_oracle.price,
-        spot_market_index: deposit_spot_market.market_index,
-        spot_oracle_price: deposit_oracle.price,
+        deposit_spot_market_index: deposit_spot_market.market_index,
+        deposit_oracle_price: deposit_oracle.price,
         vault_equity,
     });
 
@@ -127,7 +125,10 @@ pub struct ManagerBorrow<'info> {
         constraint = is_manager_for_vault(&vault, &manager)?,
     )]
     pub vault: AccountLoader<'info, Vault>,
-    #[account(mut)]
+    #[account(
+        mut,
+        token::authority = vault.key(),
+    )]
     pub vault_token_account: Box<Account<'info, TokenAccount>>,
     pub manager: Signer<'info>,
     #[account(
@@ -161,7 +162,7 @@ pub struct ManagerBorrow<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-impl<'info> WithdrawCPI2 for Context<'_, '_, '_, 'info, ManagerBorrow<'info>> {
+impl<'info> ManagerBorrowCPI for Context<'_, '_, '_, 'info, ManagerBorrow<'info>> {
     fn drift_withdraw(&self, market_index: u16, amount: u64) -> Result<()> {
         declare_vault_seeds!(self.accounts.vault, seeds);
 

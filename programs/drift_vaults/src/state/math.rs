@@ -8,18 +8,13 @@ pub fn token_a_to_token_b(
     token_b_price: i64,
     token_b_decimals: u32,
 ) -> Result<u64> {
-    let quote_amount: u128 = (token_a_amount as u128).safe_mul(token_a_price as u128)?;
-    let mut token_b_amount: u128 = quote_amount.safe_div(token_b_price as u128)?;
+    let result = (token_a_amount as u128)
+        .safe_mul(10u128.pow(token_b_decimals))?
+        .safe_mul(token_a_price as u128)?
+        .safe_div(token_b_price as u128)?
+        .safe_div(10u128.pow(token_a_decimals))?;
 
-    if token_a_decimals < token_b_decimals {
-        let decimal_diff = token_b_decimals - token_a_decimals;
-        token_b_amount = token_b_amount.safe_mul(10u128.pow(decimal_diff as u32))?;
-    } else if token_a_decimals > token_b_decimals {
-        let decimal_diff = token_a_decimals - token_b_decimals;
-        token_b_amount = token_b_amount.safe_div(10u128.pow(decimal_diff as u32))?;
-    }
-
-    Ok(token_b_amount as u64)
+    Ok(result as u64)
 }
 
 #[cfg(test)]

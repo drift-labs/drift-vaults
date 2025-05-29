@@ -1020,7 +1020,9 @@ export type DriftVaults = {
 				},
 				{
 					name: 'repayValue';
-					type: 'u64';
+					type: {
+						option: 'u64';
+					};
 				}
 			];
 		},
@@ -1299,9 +1301,7 @@ export type DriftVaults = {
 			args: [
 				{
 					name: 'newVaultClass';
-					type: {
-						defined: 'VaultClass';
-					};
+					type: 'u8';
 				}
 			];
 		},
@@ -2508,9 +2508,10 @@ export type DriftVaults = {
 					},
 					{
 						name: 'vaultClass';
-						type: {
-							defined: 'VaultClass';
-						};
+						docs: [
+							'The class of the vault [`VaultClass`]. Default is `VaultClass::Normal`'
+						];
+						type: 'u8';
 					},
 					{
 						name: 'lastCumulativeFuelPerShareTs';
@@ -3359,12 +3360,12 @@ export type DriftVaults = {
 					index: false;
 				},
 				{
-					name: 'spotMarketIndex';
+					name: 'depositSpotMarketIndex';
 					type: 'u16';
 					index: false;
 				},
 				{
-					name: 'spotOraclePrice';
+					name: 'depositOraclePrice';
 					type: 'i64';
 					index: false;
 				},
@@ -3414,12 +3415,12 @@ export type DriftVaults = {
 					index: false;
 				},
 				{
-					name: 'spotMarketIndex';
+					name: 'depositSpotMarketIndex';
 					type: 'u16';
 					index: false;
 				},
 				{
-					name: 'spotOraclePrice';
+					name: 'depositOraclePrice';
 					type: 'i64';
 					index: false;
 				},
@@ -4602,7 +4603,9 @@ export const IDL: DriftVaults = {
 				},
 				{
 					name: 'repayValue',
-					type: 'u64',
+					type: {
+						option: 'u64',
+					},
 				},
 			],
 		},
@@ -4881,9 +4884,7 @@ export const IDL: DriftVaults = {
 			args: [
 				{
 					name: 'newVaultClass',
-					type: {
-						defined: 'VaultClass',
-					},
+					type: 'u8',
 				},
 			],
 		},
@@ -6090,9 +6091,10 @@ export const IDL: DriftVaults = {
 					},
 					{
 						name: 'vaultClass',
-						type: {
-							defined: 'VaultClass',
-						},
+						docs: [
+							'The class of the vault [`VaultClass`]. Default is `VaultClass::Normal`',
+						],
+						type: 'u8',
 					},
 					{
 						name: 'lastCumulativeFuelPerShareTs',
@@ -6941,12 +6943,12 @@ export const IDL: DriftVaults = {
 					index: false,
 				},
 				{
-					name: 'spotMarketIndex',
+					name: 'depositSpotMarketIndex',
 					type: 'u16',
 					index: false,
 				},
 				{
-					name: 'spotOraclePrice',
+					name: 'depositOraclePrice',
 					type: 'i64',
 					index: false,
 				},
@@ -6996,12 +6998,12 @@ export const IDL: DriftVaults = {
 					index: false,
 				},
 				{
-					name: 'spotMarketIndex',
+					name: 'depositSpotMarketIndex',
 					type: 'u16',
 					index: false,
 				},
 				{
-					name: 'spotOraclePrice',
+					name: 'depositOraclePrice',
 					type: 'i64',
 					index: false,
 				},

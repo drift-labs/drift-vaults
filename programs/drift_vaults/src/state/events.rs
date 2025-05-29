@@ -144,8 +144,8 @@ pub struct ManagerBorrowRecord {
     pub borrow_value: u64,
     pub borrow_spot_market_index: u16,
     pub borrow_oracle_price: i64,
-    pub spot_market_index: u16,
-    pub spot_oracle_price: i64,
+    pub deposit_spot_market_index: u16,
+    pub deposit_oracle_price: i64,
     pub vault_equity: u64,
 }
 
@@ -158,8 +158,8 @@ pub struct ManagerRepayRecord {
     pub repay_value: u64,
     pub repay_spot_market_index: u16,
     pub repay_oracle_price: i64,
-    pub spot_market_index: u16,
-    pub spot_oracle_price: i64,
+    pub deposit_spot_market_index: u16,
+    pub deposit_oracle_price: i64,
     pub vault_equity_before: u64,
     pub vault_equity_after: u64,
 }
