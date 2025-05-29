@@ -109,7 +109,6 @@ export type Vault = {
 	cumulativeFuelPerShare: BN;
 	cumulativeFuel: BN;
 	managerBorrowedValue: BN;
-	padding1: BN[];
 	padding: BN[];
 };
 

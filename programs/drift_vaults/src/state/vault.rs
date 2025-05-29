@@ -120,8 +120,7 @@ pub struct Vault {
     /// Purely for informational purposes for assets that have left the vault that the manager
     /// is expected to return.
     pub manager_borrowed_value: u64,
-    pub padding1: [u64; 1],
-    pub padding: [u64; 1],
+    pub padding: [u64; 2],
 }
 
 impl Vault {
