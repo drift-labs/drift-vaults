@@ -543,7 +543,7 @@ export async function printTxLogs(
 		commitment: 'confirmed',
 		maxSupportedTransactionVersion: 0,
 	});
-	console.log('tx logs', tx?.meta?.logMessages);
+	// console.log('tx logs', tx?.meta?.logMessages);
 	const events = [];
 	for (const e of parseLogs(program!, tx!.meta!.logMessages!, program!.programId!.toBase58()!)) {
 		// @ts-ignore
@@ -1078,6 +1078,9 @@ export async function initializeSolSpotMarket(
 	const marketIndex = admin.getStateAccount().numberOfSpotMarkets;
 
 	try {
+		const acc = await admin.connection.getAccountInfo(solOracle);
+		console.log(acc);
+		console.log("ORACLE", solOracle.toBase58())
 		await admin.initializeSpotMarket(
 			solMint,
 			optimalUtilization,
