@@ -3192,23 +3192,49 @@ export class VaultClient {
 	}
 
 	public async updateCumulativeFuelAmount(
-		vaultDepositor: PublicKey,
+		params: {
+			vaultDepositorPubkey?: PublicKey;
+			vaultDepositorAccount?: VaultDepositor;
+			vaultPubkey?: PublicKey;
+			vaultAccount?: Vault;
+		},
 		txParams?: TxParams
 	): Promise<TransactionSignature> {
 		return await this.createAndSendTxn(
-			[await this.getUpdateCumulativeFuelAmountIx(vaultDepositor)],
+			[await this.getUpdateCumulativeFuelAmountIx(params)],
 			txParams
 		);
 	}
 
-	public async getUpdateCumulativeFuelAmountIx(
-		vaultDepositor: PublicKey
-	): Promise<TransactionInstruction> {
-		const vaultDepositorAccount =
-			await this.program.account.vaultDepositor.fetch(vaultDepositor);
-		const vaultAccount = await this.program.account.vault.fetch(
-			vaultDepositorAccount.vault
-		);
+	public async getUpdateCumulativeFuelAmountIx({
+		vaultDepositorPubkey,
+		vaultDepositorAccount,
+		vaultPubkey,
+		vaultAccount,
+	}: {
+		vaultDepositorPubkey?: PublicKey;
+		vaultDepositorAccount?: VaultDepositor;
+		vaultPubkey?: PublicKey;
+		vaultAccount?: Vault;
+	}): Promise<TransactionInstruction> {
+		if (!vaultDepositorPubkey && !vaultDepositorAccount) {
+			throw new Error(
+				'Must supply vaultDepositorPubkey or vaultDepositorAccount'
+			);
+		}
+		if (!vaultPubkey && !vaultAccount) {
+			throw new Error('Must supply vaultPubkey or vaultAccount');
+		}
+
+		if (!vaultDepositorAccount) {
+			vaultDepositorAccount = await this.program.account.vaultDepositor.fetch(
+				vaultDepositorPubkey!
+			);
+		}
+		if (!vaultAccount) {
+			vaultAccount = await this.program.account.vault.fetch(vaultPubkey!);
+		}
+
 		const user = await this.getSubscribedVaultUser(vaultAccount.user);
 		const userStatsKey = getUserStatsAccountPublicKey(
 			this.driftClient.program.programId,
@@ -3228,7 +3254,7 @@ export class VaultClient {
 			.updateCumulativeFuelAmount()
 			.accounts({
 				vault: vaultDepositorAccount.vault,
-				vaultDepositor,
+				vaultDepositor: vaultDepositorAccount.pubkey,
 				driftUserStats: userStatsKey,
 			})
 			.remainingAccounts(remainingAccounts)
