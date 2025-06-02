@@ -3197,6 +3197,7 @@ export class VaultClient {
 			vaultDepositorAccount?: VaultDepositor;
 			vaultPubkey?: PublicKey;
 			vaultAccount?: Vault;
+			vaultUserStats?: UserStatsAccount;
 		},
 		txParams?: TxParams
 	): Promise<TransactionSignature> {
@@ -3211,11 +3212,13 @@ export class VaultClient {
 		vaultDepositorAccount,
 		vaultPubkey,
 		vaultAccount,
+		vaultUserStats,
 	}: {
 		vaultDepositorPubkey?: PublicKey;
 		vaultDepositorAccount?: VaultDepositor;
 		vaultPubkey?: PublicKey;
 		vaultAccount?: Vault;
+		vaultUserStats?: UserStatsAccount;
 	}): Promise<TransactionInstruction> {
 		if (!vaultDepositorPubkey && !vaultDepositorAccount) {
 			throw new Error(
@@ -3240,9 +3243,13 @@ export class VaultClient {
 			this.driftClient.program.programId,
 			vaultDepositorAccount.vault
 		);
-		const userStats = (await this.driftClient.program.account.userStats.fetch(
-			userStatsKey
-		)) as UserStatsAccount;
+		let userStats = vaultUserStats;
+		if (!userStats) {
+			userStats = (await this.driftClient.program.account.userStats.fetch(
+				userStatsKey
+			)) as UserStatsAccount;
+		}
+
 		const remainingAccounts = this.getRemainingAccountsForUser(
 			[user.getUserAccount()],
 			[],
