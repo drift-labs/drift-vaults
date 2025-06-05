@@ -1,7 +1,7 @@
 use crate::constraints::{is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault};
 use crate::drift_cpi::ManagerBorrowCPI;
 use crate::math::token_a_to_token_b;
-use crate::state::events::ManagerBorrowRecord;
+use crate::state::events::{ManagerBorrowRecord, ManagerUpdateBorrowRecord};
 use crate::state::{
     FeeUpdateProvider, FeeUpdateStatus, FuelOverflowProvider, VaultProtocolProvider,
 };
@@ -27,6 +27,12 @@ pub fn manager_borrow<'c: 'info, 'info>(
         vault.is_trusted_vault_class(),
         ErrorCode::InvalidVaultClass,
         "Only trusted vaults can be borrowed from"
+    )?;
+
+    validate!(
+        borrow_amount > 0,
+        ErrorCode::InvalidBorrowAmount,
+        "Borrow amount must be greater than 0"
     )?;
 
     let clock = &Clock::get()?;
@@ -89,7 +95,11 @@ pub fn manager_borrow<'c: 'info, 'info>(
         deposit_oracle.price,
         deposit_spot_market.decimals,
     )?;
+    let previous_borrow_value = vault.manager_borrowed_value;
     vault.manager_borrowed_value = vault.manager_borrowed_value.safe_add(borrow_value)?;
+
+    let vault_equity_after =
+        vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
     emit!(ManagerBorrowRecord {
         ts: now,
@@ -102,6 +112,16 @@ pub fn manager_borrow<'c: 'info, 'info>(
         deposit_spot_market_index: deposit_spot_market.market_index,
         deposit_oracle_price: deposit_oracle.price,
         vault_equity,
+    });
+
+    emit!(ManagerUpdateBorrowRecord {
+        ts: now,
+        vault: vault.pubkey,
+        manager: vault.manager,
+        previous_borrow_value,
+        new_borrow_value: vault.manager_borrowed_value,
+        vault_equity_before: vault_equity,
+        vault_equity_after,
     });
 
     drop(borrow_spot_market);

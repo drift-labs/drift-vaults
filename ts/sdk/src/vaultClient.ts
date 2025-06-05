@@ -1446,6 +1446,50 @@ export class VaultClient {
 		];
 	}
 
+	public async managerUpdateBorrow(
+		vault: PublicKey,
+		newBorrowValue: BN,
+		txParams?: TxParams
+	): Promise<TransactionSignature> {
+		const ix = await this.getManagerUpdateBorrowIx(vault, newBorrowValue);
+		return await this.createAndSendTxn([ix], txParams);
+	}
+
+	public async getManagerUpdateBorrowIx(
+		vault: PublicKey,
+		newBorrowValue: BN
+	): Promise<TransactionInstruction> {
+		const vaultAccount = await this.program.account.vault.fetch(vault);
+
+		const user = await this.getSubscribedVaultUser(vaultAccount.user);
+		const userStatsKey = getUserStatsAccountPublicKey(
+			this.driftClient.program.programId,
+			vault
+		);
+		const userStats = (await this.driftClient.program.account.userStats.fetch(
+			userStatsKey
+		)) as UserStatsAccount;
+		const remainingAccounts = this.getRemainingAccountsForUser(
+			[user.getUserAccount()],
+			[],
+			vaultAccount,
+			userStats,
+			false,
+			false,
+			false
+		);
+
+		return this.program.instruction.managerUpdateBorrow(newBorrowValue, {
+			accounts: {
+				vault,
+				manager: vaultAccount.manager,
+				driftUserStats: userStatsKey,
+				driftUser: vaultAccount.user,
+			},
+			remainingAccounts,
+		});
+	}
+
 	public async managerUpdateVault(
 		vault: PublicKey,
 		params: {

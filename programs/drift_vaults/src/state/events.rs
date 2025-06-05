@@ -163,3 +163,14 @@ pub struct ManagerRepayRecord {
     pub vault_equity_before: u64,
     pub vault_equity_after: u64,
 }
+
+#[event]
+pub struct ManagerUpdateBorrowRecord {
+    pub ts: i64,
+    pub vault: Pubkey,
+    pub manager: Pubkey,
+    pub previous_borrow_value: u64,
+    pub new_borrow_value: u64,
+    pub vault_equity_before: u64,
+    pub vault_equity_after: u64,
+}

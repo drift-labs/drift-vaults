@@ -63,6 +63,10 @@ pub enum ErrorCode {
     InvalidFeeUpdateStatus,
     #[msg("InvalidVaultClass")]
     InvalidVaultClass,
+    #[msg("InvalidBorrowAmount")]
+    InvalidBorrowAmount,
+    #[msg("InvalidRepayAmount")]
+    InvalidRepayAmount,
 }
 
 impl From<DriftErrorCode> for ErrorCode {

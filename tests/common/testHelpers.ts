@@ -1078,9 +1078,6 @@ export async function initializeSolSpotMarket(
 	const marketIndex = admin.getStateAccount().numberOfSpotMarkets;
 
 	try {
-		const acc = await admin.connection.getAccountInfo(solOracle);
-		console.log(acc);
-		console.log("ORACLE", solOracle.toBase58())
 		await admin.initializeSpotMarket(
 			solMint,
 			optimalUtilization,

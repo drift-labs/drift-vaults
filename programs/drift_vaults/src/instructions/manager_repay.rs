@@ -1,6 +1,6 @@
 use crate::constraints::{is_manager_for_vault, is_user_for_vault, is_user_stats_for_vault};
 use crate::drift_cpi::ManagerRepayCPI;
-use crate::state::events::ManagerRepayRecord;
+use crate::state::events::{ManagerRepayRecord, ManagerUpdateBorrowRecord};
 use crate::state::{
     FeeUpdateProvider, FeeUpdateStatus, FuelOverflowProvider, VaultProtocolProvider,
 };
@@ -27,6 +27,12 @@ pub fn manager_repay<'c: 'info, 'info>(
         vault.is_trusted_vault_class(),
         ErrorCode::InvalidVaultClass,
         "Only trusted vaults can be borrowed from"
+    )?;
+
+    validate!(
+        repay_amount > 0,
+        ErrorCode::InvalidRepayAmount,
+        "repay_amount must be greater than 0, use manager_update_borrow to update manager_borrowed_value without repayment"
     )?;
 
     let clock = &Clock::get()?;
@@ -90,6 +96,7 @@ pub fn manager_repay<'c: 'info, 'info>(
         vault.manager_borrowed_value
     };
 
+    let previous_borrow_value = vault.manager_borrowed_value;
     vault.manager_borrowed_value = vault.manager_borrowed_value.safe_sub(value_repayed)?;
 
     drop(repay_spot_market);
@@ -118,6 +125,16 @@ pub fn manager_repay<'c: 'info, 'info>(
         repay_oracle_price: repay_oracle.price,
         deposit_spot_market_index: deposit_spot_market_index,
         deposit_oracle_price: deposit_oracle.price,
+        vault_equity_before,
+        vault_equity_after,
+    });
+
+    emit!(ManagerUpdateBorrowRecord {
+        ts: now,
+        vault: vault.pubkey,
+        manager: vault.manager,
+        previous_borrow_value,
+        new_borrow_value: vault.manager_borrowed_value,
         vault_equity_before,
         vault_equity_after,
     });

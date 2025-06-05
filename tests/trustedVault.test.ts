@@ -336,7 +336,7 @@ describe('TestTrustedVault', () => {
 			// @ts-ignore
 			adminClient.program
 		);
-		expect(e.length).toEqual(1);
+		expect(e.length).toEqual(2);
 		expect((e[0].data.borrowAmount as BN).toNumber()).toEqual(
 			50 * LAMPORTS_PER_SOL
 		);
@@ -409,6 +409,137 @@ describe('TestTrustedVault', () => {
 		// expect final vault equity to go down by 10% of the borrowed value
 		expect(vaultEquityAfterRepay.toNumber()).toEqual(
 			vaultEquityBefore.toNumber() - 5000 * 1e6 * 0.1
+		);
+	});
+
+	it('admin can update vault class and update borrow', async () => {
+		let vaultAcct = await vaultProgram.account.vault.fetch(commonVaultKey);
+		expect(vaultAcct.manager).toEqual(managerSigner.publicKey);
+		expect(isNormalVaultClass(vaultAcct.vaultClass)).toEqual(true);
+
+		await adminClient.updateMarginTradingEnabled(commonVaultKey, true, {
+			noLut: true,
+		});
+
+		await adminClient.adminUpdateVaultClass(
+			commonVaultKey,
+			VaultClass.TRUSTED,
+			{ noLut: true }
+		);
+
+		vaultAcct = await vaultProgram.account.vault.fetch(commonVaultKey);
+		expect(isTrustedVaultClass(vaultAcct.vaultClass)).toEqual(true);
+
+		// user1 deposit sol into drift (for vault to borrow)
+		await bankrunContextWrapper.fundKeypair(
+			user1Signer,
+			100 * LAMPORTS_PER_SOL
+		);
+		await user1DriftClient.deposit(
+			new BN(100 * LAMPORTS_PER_SOL),
+			1,
+			user1Signer.publicKey,
+			undefined,
+			undefined
+		);
+
+		// user1 deposits usdcAmount into vault
+		await user1Client.deposit(
+			user1VaultDepositor,
+			usdcAmount,
+			undefined,
+			{ noLut: true },
+			user1UserUSDCAccount
+		);
+
+		const vaultEquityBefore = await adminClient.calculateVaultEquity({
+			address: commonVaultKey,
+		});
+		expect(vaultEquityBefore.toString()).toEqual(usdcAmount.toString());
+
+		await adminDriftClient.fetchAccounts();
+		const spotMarket1 = adminDriftClient.getSpotMarketAccount(1);
+		expect(spotMarket1!.depositBalance.toNumber()).toEqual(
+			100 * LAMPORTS_PER_SOL
+		);
+
+		const managerSOLBalance0 =
+			await bankrunContextWrapper.connection.getBalance(
+				managerSigner.publicKey
+			);
+
+		// manager performs borrow of 50 SOL
+		const b = await managerClient.managerBorrow(
+			commonVaultKey,
+			1,
+			new BN(50 * LAMPORTS_PER_SOL),
+			undefined,
+			{ noLut: true, cuPriceMicroLamports: 0 }
+		);
+		const e = await printTxLogs(
+			bankrunContextWrapper.connection.toConnection(),
+			b,
+			false,
+			// @ts-ignore
+			adminClient.program
+		);
+		expect(e.length).toEqual(2);
+		expect((e[0].data.borrowAmount as BN).toNumber()).toEqual(
+			50 * LAMPORTS_PER_SOL
+		);
+		expect((e[0].data.borrowValue as BN).toNumber()).toEqual(5000 * 1e6);
+		expect(e[0].data.borrowSpotMarketIndex).toEqual(1);
+		expect(e[0].data.depositSpotMarketIndex).toEqual(0);
+
+		const managerSOLBalance1 =
+			await bankrunContextWrapper.connection.getBalance(
+				managerSigner.publicKey
+			);
+
+		// check spot market recognizes borrows
+		const spotMarket11 = adminDriftClient.getSpotMarketAccount(1);
+		expect(spotMarket11!.borrowBalance.toNumber()).toBeCloseTo(
+			50 * LAMPORTS_PER_SOL,
+			-1
+		);
+
+		// check manager borrowed SOL
+		expect(
+			(Number(managerSOLBalance1) - Number(managerSOLBalance0)) /
+				LAMPORTS_PER_SOL
+		).toBeCloseTo(50, 2);
+
+		// check vault equity unchanged
+		await adminClient.driftClient.fetchAccounts();
+		const vaultEquityAfterBorrow = await adminClient.calculateVaultEquity({
+			address: commonVaultKey,
+		});
+		// we repaid 10% less value, so expect vault equity to go down 10%
+		expect(vaultEquityAfterBorrow.toNumber()).toEqual(
+			vaultEquityBefore.toNumber()
+		);
+
+		// check vault records manager's borrow in deposit asset value
+		vaultAcct = await vaultProgram.account.vault.fetch(commonVaultKey);
+		expect(vaultAcct.managerBorrowedValue.toNumber()).toEqual(5000 * 1e6);
+
+		// manager repays in USDC
+		await managerClient.managerUpdateBorrow(commonVaultKey, new BN(0), {
+			noLut: true,
+			cuPriceMicroLamports: 0,
+		});
+
+		vaultAcct = await vaultProgram.account.vault.fetch(commonVaultKey);
+		expect(vaultAcct.managerBorrowedValue.toNumber()).toEqual(0);
+
+		await adminClient.driftClient.fetchAccounts();
+		const vaultEquityAfterRepay = await adminClient.calculateVaultEquity({
+			address: commonVaultKey,
+		});
+		// we repaid 10% less value
+		// expect final vault equity to go down by 10% of the borrowed value
+		expect(vaultEquityAfterRepay.toNumber()).toEqual(
+			vaultEquityBefore.toNumber() - 5000 * 1e6
 		);
 	});
 });

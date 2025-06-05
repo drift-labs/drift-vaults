@@ -1027,6 +1027,37 @@ export type DriftVaults = {
 			];
 		},
 		{
+			name: 'managerUpdateBorrow';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'manager';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'driftUserStats';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUser';
+					isMut: true;
+					isSigner: false;
+				}
+			];
+			args: [
+				{
+					name: 'newBorrowValue';
+					type: 'u64';
+				}
+			];
+		},
+		{
 			name: 'managerDeposit';
 			accounts: [
 				{
@@ -3429,6 +3460,46 @@ export type DriftVaults = {
 					index: false;
 				}
 			];
+		},
+		{
+			name: 'ManagerUpdateBorrowRecord';
+			fields: [
+				{
+					name: 'ts';
+					type: 'i64';
+					index: false;
+				},
+				{
+					name: 'vault';
+					type: 'publicKey';
+					index: false;
+				},
+				{
+					name: 'manager';
+					type: 'publicKey';
+					index: false;
+				},
+				{
+					name: 'previousBorrowValue';
+					type: 'u64';
+					index: false;
+				},
+				{
+					name: 'newBorrowValue';
+					type: 'u64';
+					index: false;
+				},
+				{
+					name: 'vaultEquityBefore';
+					type: 'u64';
+					index: false;
+				},
+				{
+					name: 'vaultEquityAfter';
+					type: 'u64';
+					index: false;
+				}
+			];
 		}
 	];
 	errors: [
@@ -3571,6 +3642,16 @@ export type DriftVaults = {
 			code: 6027;
 			name: 'InvalidVaultClass';
 			msg: 'InvalidVaultClass';
+		},
+		{
+			code: 6028;
+			name: 'InvalidBorrowAmount';
+			msg: 'InvalidBorrowAmount';
+		},
+		{
+			code: 6029;
+			name: 'InvalidRepayAmount';
+			msg: 'InvalidRepayAmount';
 		}
 	];
 };
@@ -4600,6 +4681,37 @@ export const IDL: DriftVaults = {
 					type: {
 						option: 'u64',
 					},
+				},
+			],
+		},
+		{
+			name: 'managerUpdateBorrow',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'manager',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'driftUserStats',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUser',
+					isMut: true,
+					isSigner: false,
+				},
+			],
+			args: [
+				{
+					name: 'newBorrowValue',
+					type: 'u64',
 				},
 			],
 		},
@@ -7007,6 +7119,46 @@ export const IDL: DriftVaults = {
 				},
 			],
 		},
+		{
+			name: 'ManagerUpdateBorrowRecord',
+			fields: [
+				{
+					name: 'ts',
+					type: 'i64',
+					index: false,
+				},
+				{
+					name: 'vault',
+					type: 'publicKey',
+					index: false,
+				},
+				{
+					name: 'manager',
+					type: 'publicKey',
+					index: false,
+				},
+				{
+					name: 'previousBorrowValue',
+					type: 'u64',
+					index: false,
+				},
+				{
+					name: 'newBorrowValue',
+					type: 'u64',
+					index: false,
+				},
+				{
+					name: 'vaultEquityBefore',
+					type: 'u64',
+					index: false,
+				},
+				{
+					name: 'vaultEquityAfter',
+					type: 'u64',
+					index: false,
+				},
+			],
+		},
 	],
 	errors: [
 		{
@@ -7148,6 +7300,16 @@ export const IDL: DriftVaults = {
 			code: 6027,
 			name: 'InvalidVaultClass',
 			msg: 'InvalidVaultClass',
+		},
+		{
+			code: 6028,
+			name: 'InvalidBorrowAmount',
+			msg: 'InvalidBorrowAmount',
+		},
+		{
+			code: 6029,
+			name: 'InvalidRepayAmount',
+			msg: 'InvalidRepayAmount',
 		},
 	],
 };
