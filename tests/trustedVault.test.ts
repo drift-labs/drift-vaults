@@ -392,7 +392,7 @@ describe('TestTrustedVault', () => {
 			// @ts-ignore
 			adminClient.program
 		);
-		expect(repayEvents.length).toEqual(1);
+		expect(repayEvents.length).toEqual(2);
 		expect(repayEvents[0].data.repayAmount.toNumber()).toEqual(4500 * 1e6);
 		expect(repayEvents[0].data.repayValue.toNumber()).toEqual(5000 * 1e6);
 		expect(repayEvents[0].data.repaySpotMarketIndex).toEqual(0);

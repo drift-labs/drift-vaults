@@ -131,6 +131,8 @@ jobs:
         working-directory: ts/sdk
 
       - name: run anchor tests
+        env:
+          RUST_LOG: solana_runtime::message_processor::stable_log=info
         run: anchor test -- --features anchor-test
   verified-build:
     name: Build Verifiable Artifact
