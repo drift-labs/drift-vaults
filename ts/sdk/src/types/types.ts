@@ -104,12 +104,26 @@ export type Vault = {
 	vaultProtocol: boolean;
 	fuelDistributionMode: FuelDistributionMode;
 	feeUpdateStatus: FeeUpdateStatus;
-	padding1: number[];
+	vaultClass: VaultClass;
 	lastCumulativeFuelPerShareTs: number;
 	cumulativeFuelPerShare: BN;
 	cumulativeFuel: BN;
+	managerBorrowedValue: BN;
 	padding: BN[];
 };
+
+export enum VaultClass {
+	NORMAL = 0,
+	TRUSTED = 1,
+}
+
+export function isNormalVaultClass(vaultClass: number | VaultClass): boolean {
+	return (vaultClass & VaultClass.NORMAL) === VaultClass.NORMAL;
+}
+
+export function isTrustedVaultClass(vaultClass: number | VaultClass): boolean {
+	return (vaultClass & VaultClass.TRUSTED) === VaultClass.TRUSTED;
+}
 
 export enum FuelDistributionMode {
 	UsersOnly = 0,
@@ -119,6 +133,13 @@ export enum FuelDistributionMode {
 export enum FeeUpdateStatus {
 	None = 0,
 	PendingFeeUpdate = 1,
+}
+
+export function hasPendingFeeUpdate(status: number | FeeUpdateStatus): boolean {
+	return (
+		(status & FeeUpdateStatus.PendingFeeUpdate) ===
+		FeeUpdateStatus.PendingFeeUpdate
+	);
 }
 
 export type FeeUpdate = {
@@ -308,4 +329,31 @@ export type FeeUpdateRecord = {
 	newManagementFee: BN;
 	newProfitShare: number;
 	newHurdleRate: number;
+};
+
+export type ManagerBorrowRecord = {
+	ts: BN;
+	vault: PublicKey;
+	manager: PublicKey;
+	borrowAmount: BN;
+	borrowValue: BN;
+	borrowSpotMarketIndex: number;
+	borrowOraclePrice: BN;
+	depositSpotMarketIndex: number;
+	depositOraclePrice: BN;
+	vaultEquity: BN;
+};
+
+export type ManagerRepayRecord = {
+	ts: BN;
+	vault: PublicKey;
+	manager: PublicKey;
+	repayAmount: BN;
+	repayValue: BN;
+	repaySpotMarketIndex: number;
+	repayOraclePrice: BN;
+	depositSpotMarketIndex: number;
+	depositOraclePrice: BN;
+	vaultEquityBefore: BN;
+	vaultEquityAfter: BN;
 };

@@ -134,3 +134,43 @@ pub struct FeeUpdateRecord {
     pub new_profit_share: u32,
     pub new_hurdle_rate: u32,
 }
+
+#[event]
+pub struct ManagerBorrowRecord {
+    pub ts: i64,
+    pub vault: Pubkey,
+    pub manager: Pubkey,
+    pub borrow_amount: u64,
+    pub borrow_value: u64,
+    pub borrow_spot_market_index: u16,
+    pub borrow_oracle_price: i64,
+    pub deposit_spot_market_index: u16,
+    pub deposit_oracle_price: i64,
+    pub vault_equity: u64,
+}
+
+#[event]
+pub struct ManagerRepayRecord {
+    pub ts: i64,
+    pub vault: Pubkey,
+    pub manager: Pubkey,
+    pub repay_amount: u64,
+    pub repay_value: u64,
+    pub repay_spot_market_index: u16,
+    pub repay_oracle_price: i64,
+    pub deposit_spot_market_index: u16,
+    pub deposit_oracle_price: i64,
+    pub vault_equity_before: u64,
+    pub vault_equity_after: u64,
+}
+
+#[event]
+pub struct ManagerUpdateBorrowRecord {
+    pub ts: i64,
+    pub vault: Pubkey,
+    pub manager: Pubkey,
+    pub previous_borrow_value: u64,
+    pub new_borrow_value: u64,
+    pub vault_equity_before: u64,
+    pub vault_equity_after: u64,
+}

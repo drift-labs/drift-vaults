@@ -206,6 +206,7 @@ describe('driftVaults', () => {
 		);
 		const program = new Program(IDL, VAULT_PROGRAM_ID, provider);
 		adminClient = new VaultClient({
+			// @ts-ignore
 			driftClient: adminDriftClient,
 			// @ts-ignore
 			program,
@@ -402,9 +403,15 @@ describe('driftVaults', () => {
 		expect(currFuel.data.fuelTaker).toBe(200_000);
 
 		// user1 updates fuel
-		await managerClient.updateCumulativeFuelAmount(user1VaultDepositor, {
-			noLut: true,
-		});
+		await managerClient.updateCumulativeFuelAmount(
+			{
+				vaultDepositorPubkey: user1VaultDepositor,
+				vaultPubkey: commonVaultKey,
+			},
+			{
+				noLut: true,
+			}
+		);
 
 		let user1VaultDepositorAccount =
 			// @ts-ignore
@@ -439,12 +446,24 @@ describe('driftVaults', () => {
 		expect(currFuel.data.fuelTaker).toBe(300_000);
 
 		// all users update fuel
-		await managerClient.updateCumulativeFuelAmount(user1VaultDepositor, {
-			noLut: true,
-		});
-		await managerClient.updateCumulativeFuelAmount(user2VaultDepositor, {
-			noLut: true,
-		});
+		await managerClient.updateCumulativeFuelAmount(
+			{
+				vaultDepositorPubkey: user1VaultDepositor,
+				vaultPubkey: commonVaultKey,
+			},
+			{
+				noLut: true,
+			}
+		);
+		await managerClient.updateCumulativeFuelAmount(
+			{
+				vaultDepositorPubkey: user2VaultDepositor,
+				vaultPubkey: commonVaultKey,
+			},
+			{
+				noLut: true,
+			}
+		);
 
 		user1VaultDepositorAccount =
 			// @ts-ignore
@@ -553,9 +572,15 @@ describe('driftVaults', () => {
 		);
 
 		await bankrunContextWrapper.moveTimeForward(1000);
-		await user1Client.updateCumulativeFuelAmount(user1VaultDepositor, {
-			noLut: true,
-		});
+		await user1Client.updateCumulativeFuelAmount(
+			{
+				vaultDepositorPubkey: user1VaultDepositor,
+				vaultPubkey: commonVaultKey,
+			},
+			{
+				noLut: true,
+			}
+		);
 
 		// user1 earns 100k fuel (they're 100% of vault)
 		vdUser1 = await user1Client.program.account.vaultDepositor.fetch(
@@ -600,12 +625,24 @@ describe('driftVaults', () => {
 			userStatsBefore
 		);
 
-		await user1Client.updateCumulativeFuelAmount(user1VaultDepositor, {
-			noLut: true,
-		});
-		await user2Client.updateCumulativeFuelAmount(user2VaultDepositor, {
-			noLut: true,
-		});
+		await user1Client.updateCumulativeFuelAmount(
+			{
+				vaultDepositorPubkey: user1VaultDepositor,
+				vaultPubkey: commonVaultKey,
+			},
+			{
+				noLut: true,
+			}
+		);
+		await user2Client.updateCumulativeFuelAmount(
+			{
+				vaultDepositorPubkey: user2VaultDepositor,
+				vaultPubkey: commonVaultKey,
+			},
+			{
+				noLut: true,
+			}
+		);
 
 		// both users earn 50k fuel (since they each own 50% of vault)
 		vdUser1 = await user1Client.program.account.vaultDepositor.fetch(
@@ -642,9 +679,15 @@ describe('driftVaults', () => {
 		await user1Client.withdraw(user1VaultDepositor, { noLut: true });
 
 		// user2 cranks their fuel
-		await user2Client.updateCumulativeFuelAmount(user2VaultDepositor, {
-			noLut: true,
-		});
+		await user2Client.updateCumulativeFuelAmount(
+			{
+				vaultDepositorPubkey: user2VaultDepositor,
+				vaultPubkey: commonVaultKey,
+			},
+			{
+				noLut: true,
+			}
+		);
 
 		vdUser1 = await user1Client.program.account.vaultDepositor.fetch(
 			user1VaultDepositor
@@ -755,9 +798,15 @@ describe('driftVaults', () => {
 		expect(vault.data.userShares.toNumber()).toBe(2000000000000000);
 
 		// deploy happens, crank fuel, expect both users to have 50% fuel
-		await managerClient.updateCumulativeFuelAmount(user1VaultDepositor, {
-			noLut: true,
-		});
+		await managerClient.updateCumulativeFuelAmount(
+			{
+				vaultDepositorPubkey: user1VaultDepositor,
+				vaultPubkey: commonVaultKey,
+			},
+			{
+				noLut: true,
+			}
+		);
 
 		vault = await getVaultDecoded(
 			managerClient,
@@ -784,9 +833,15 @@ describe('driftVaults', () => {
 		);
 		expect(user1Vd.data.vaultShares.toNumber()).toBe(1000000000000000);
 
-		await managerClient.updateCumulativeFuelAmount(user2VaultDepositor, {
-			noLut: true,
-		});
+		await managerClient.updateCumulativeFuelAmount(
+			{
+				vaultDepositorPubkey: user2VaultDepositor,
+				vaultPubkey: commonVaultKey,
+			},
+			{
+				noLut: true,
+			}
+		);
 		user2Vd = await getVaultDepositorDecoded(
 			user2Client,
 			bankrunContextWrapper,
@@ -828,15 +883,33 @@ describe('driftVaults', () => {
 		);
 		expect(currFuel.data.fuelTaker).toBe(200_000);
 
-		await managerClient.updateCumulativeFuelAmount(user1VaultDepositor, {
-			noLut: true,
-		});
-		await managerClient.updateCumulativeFuelAmount(user2VaultDepositor, {
-			noLut: true,
-		});
-		await managerClient.updateCumulativeFuelAmount(user3VaultDepositor, {
-			noLut: true,
-		});
+		await managerClient.updateCumulativeFuelAmount(
+			{
+				vaultDepositorPubkey: user1VaultDepositor,
+				vaultPubkey: commonVaultKey,
+			},
+			{
+				noLut: true,
+			}
+		);
+		await managerClient.updateCumulativeFuelAmount(
+			{
+				vaultDepositorPubkey: user2VaultDepositor,
+				vaultPubkey: commonVaultKey,
+			},
+			{
+				noLut: true,
+			}
+		);
+		await managerClient.updateCumulativeFuelAmount(
+			{
+				vaultDepositorPubkey: user3VaultDepositor,
+				vaultPubkey: commonVaultKey,
+			},
+			{
+				noLut: true,
+			}
+		);
 
 		// expect all users to share 33% of newly accumulated fuel
 		user1Vd = await getVaultDepositorDecoded(
@@ -929,15 +1002,33 @@ describe('driftVaults', () => {
 			vaultUserStatsKey,
 			new BN(100_000)
 		);
-		await managerClient.updateCumulativeFuelAmount(user1VaultDepositor, {
-			noLut: true,
-		});
-		await managerClient.updateCumulativeFuelAmount(user2VaultDepositor, {
-			noLut: true,
-		});
-		await managerClient.updateCumulativeFuelAmount(user3VaultDepositor, {
-			noLut: true,
-		});
+		await managerClient.updateCumulativeFuelAmount(
+			{
+				vaultDepositorPubkey: user1VaultDepositor,
+				vaultPubkey: commonVaultKey,
+			},
+			{
+				noLut: true,
+			}
+		);
+		await managerClient.updateCumulativeFuelAmount(
+			{
+				vaultDepositorPubkey: user2VaultDepositor,
+				vaultPubkey: commonVaultKey,
+			},
+			{
+				noLut: true,
+			}
+		);
+		await managerClient.updateCumulativeFuelAmount(
+			{
+				vaultDepositorPubkey: user3VaultDepositor,
+				vaultPubkey: commonVaultKey,
+			},
+			{
+				noLut: true,
+			}
+		);
 
 		user1Vd = await getVaultDepositorDecoded(
 			user1Client,
@@ -1012,9 +1103,15 @@ describe('driftVaults', () => {
 		);
 		expect(currFuel.data.fuelTaker).toBe(0); // overflowed
 
-		await managerClient.updateCumulativeFuelAmount(user1VaultDepositor, {
-			noLut: true,
-		});
+		await managerClient.updateCumulativeFuelAmount(
+			{
+				vaultDepositorPubkey: user1VaultDepositor,
+				vaultPubkey: commonVaultKey,
+			},
+			{
+				noLut: true,
+			}
+		);
 		let user1Vd = await getVaultDepositorDecoded(
 			user1Client,
 			bankrunContextWrapper,
@@ -1026,9 +1123,15 @@ describe('driftVaults', () => {
 			2_050_000_000_000
 		);
 
-		await managerClient.updateCumulativeFuelAmount(user2VaultDepositor, {
-			noLut: true,
-		});
+		await managerClient.updateCumulativeFuelAmount(
+			{
+				vaultDepositorPubkey: user2VaultDepositor,
+				vaultPubkey: commonVaultKey,
+			},
+			{
+				noLut: true,
+			}
+		);
 		let user2Vd = await getVaultDepositorDecoded(
 			user2Client,
 			bankrunContextWrapper,

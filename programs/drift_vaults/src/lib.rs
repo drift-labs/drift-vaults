@@ -159,6 +159,30 @@ pub mod drift_vaults {
         instructions::reset_vault_fuel_season(ctx)
     }
 
+    pub fn manager_borrow<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, ManagerBorrow<'info>>,
+        borrow_spot_market_index: u16,
+        borrow_amount: u64,
+    ) -> Result<()> {
+        instructions::manager_borrow(ctx, borrow_spot_market_index, borrow_amount)
+    }
+
+    pub fn manager_repay<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, ManagerRepay<'info>>,
+        repay_spot_market_index: u16,
+        repay_amount: u64,
+        repay_value: Option<u64>,
+    ) -> Result<()> {
+        instructions::manager_repay(ctx, repay_spot_market_index, repay_amount, repay_value)
+    }
+
+    pub fn manager_update_borrow<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, ManagerUpdateBorrow<'info>>,
+        new_borrow_value: u64,
+    ) -> Result<()> {
+        instructions::manager_update_borrow(ctx, new_borrow_value)
+    }
+
     pub fn manager_deposit<'c: 'info, 'info>(
         ctx: Context<'_, '_, 'c, 'info, ManagerDeposit<'info>>,
         amount: u64,
@@ -203,6 +227,13 @@ pub mod drift_vaults {
         ctx: Context<'_, '_, 'c, 'info, AdminDeleteFeeUpdate<'info>>,
     ) -> Result<()> {
         instructions::admin_delete_fee_update(ctx)
+    }
+
+    pub fn admin_update_vault_class<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, AdminUpdateVaultClass<'info>>,
+        new_vault_class: u8,
+    ) -> Result<()> {
+        instructions::admin_update_vault_class(ctx, new_vault_class)
     }
 
     pub fn manager_update_fees<'c: 'info, 'info>(

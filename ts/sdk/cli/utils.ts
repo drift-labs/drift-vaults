@@ -18,6 +18,7 @@ export async function printVault(slot: number, driftClient: DriftClient, vault: 
 
     console.log(`slot: ${slot}`);
     console.log(`vault: ${decodeName(vault.name)}`);
+    console.log(`vaultClass:     ${vault.vaultClass}`);
     console.log(`pubkey:         ${vault.pubkey.toBase58()}`);
     console.log(`manager:         ${vault.manager.toBase58()}`);
     console.log(`tokenAccount:    ${vault.tokenAccount.toBase58()}`);
@@ -41,7 +42,7 @@ export async function printVault(slot: number, driftClient: DriftClient, vault: 
     console.log(`initTs:                  ${vault.initTs.toString()}`);
     console.log(`netDeposits:             ${convertToNumber(vault.netDeposits, spotPrecision)} ${spotSymbol} (${vault.netDeposits.toString()})`);
     console.log(`totalDeposits:           ${convertToNumber(vault.totalDeposits, spotPrecision)} ${spotSymbol} (${vault.totalDeposits.toString()})`);
-    console.log(`totalWithdraws:           ${convertToNumber(vault.totalWithdraws, spotPrecision)} ${spotSymbol} (${vault.totalWithdraws.toString()})`);
+    console.log(`totalWithdraws:          ${convertToNumber(vault.totalWithdraws, spotPrecision)} ${spotSymbol} (${vault.totalWithdraws.toString()})`);
     console.log(`managerNetDeposits:      ${convertToNumber(vault.managerNetDeposits, spotPrecision)} ${spotSymbol} (${vault.managerNetDeposits.toString()})`);
     console.log(`managerTotalDeposits:    ${convertToNumber(vault.managerTotalDeposits, spotPrecision)} ${spotSymbol} (${vault.managerTotalDeposits.toString()})`);
     console.log(`managerTotalWithdraws:   ${convertToNumber(vault.managerTotalWithdraws, spotPrecision)} ${spotSymbol} (${vault.managerTotalWithdraws.toString()})`);
