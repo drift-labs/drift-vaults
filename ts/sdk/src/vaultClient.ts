@@ -720,24 +720,31 @@ export class VaultClient {
 		delegate: PublicKey,
 		uiTxParams?: TxParams
 	): Promise<TransactionSignature> {
-		const updateDelegateIx = await this.getUpdateDelegateIx(vault, delegate);
+		const vaultAccount = await this.program.account.vault.fetch(vault);
+		const updateDelegateIx = await this.getUpdateDelegateIx(
+			vault,
+			delegate,
+			vaultAccount.user,
+			vaultAccount.manager
+		);
 		return await this.createAndSendTxn([updateDelegateIx], uiTxParams);
 	}
 
 	public async getUpdateDelegateIx(
 		vault: PublicKey,
-		delegate: PublicKey
+		delegate: PublicKey,
+		vaultDriftUser: PublicKey,
+		vaultManager: PublicKey
 	): Promise<TransactionInstruction> {
-		const vaultAccount = await this.program.account.vault.fetch(vault);
 		const accounts = {
 			vault: vault,
-			driftUser: vaultAccount.user,
+			driftUser: vaultDriftUser,
 			driftProgram: this.driftClient.program.programId,
 		};
 
 		return await this.program.methods
 			.updateDelegate(delegate)
-			.accounts({ ...accounts, manager: vaultAccount.manager })
+			.accounts({ ...accounts, manager: vaultManager })
 			.instruction();
 	}
 

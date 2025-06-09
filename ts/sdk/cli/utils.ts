@@ -1,5 +1,5 @@
 import { BASE_PRECISION, BN, DriftClient, DriftEnv, OraclePriceData, PRICE_PRECISION, QUOTE_PRECISION, SpotMarketAccount, TEN, User, Wallet, WhileValidTxSender, convertToNumber, getSignedTokenAmount, getTokenAmount, loadKeypair } from "@drift-labs/sdk";
-import { FeeUpdate, VAULT_PROGRAM_ID, Vault, VaultClient, VaultDepositor, decodeName } from "../src";
+import { FeeUpdate, VAULT_PROGRAM_ID, Vault, VaultClass, VaultClient, VaultDepositor, decodeName } from "../src";
 import { Command } from "commander";
 import { Connection, Keypair, PublicKey, Transaction, TransactionInstruction } from "@solana/web3.js";
 import { AnchorProvider, Wallet as AnchorWallet } from "@coral-xyz/anchor";
@@ -19,6 +19,9 @@ export async function printVault(slot: number, driftClient: DriftClient, vault: 
     console.log(`slot: ${slot}`);
     console.log(`vault: ${decodeName(vault.name)}`);
     console.log(`vaultClass:     ${vault.vaultClass}`);
+    if (vault.vaultClass === VaultClass.TRUSTED) {
+        console.log(`  managerBorrowedValue: ${convertToNumber(vault.managerBorrowedValue, spotPrecision)} ${spotSymbol}`);
+    }
     console.log(`pubkey:         ${vault.pubkey.toBase58()}`);
     console.log(`manager:         ${vault.manager.toBase58()}`);
     console.log(`tokenAccount:    ${vault.tokenAccount.toBase58()}`);

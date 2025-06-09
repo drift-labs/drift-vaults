@@ -6,6 +6,7 @@ import {
     convertToNumber,
     decodeName,
     getSignedMsgUserAccountPublicKey,
+    getUserAccountPublicKey,
 } from "@drift-labs/sdk";
 import {
     OptionValues,
@@ -122,6 +123,7 @@ export const initVault = async (program: Command, cmdOpts: OptionValues) => {
     }
 
     const vaultAddress = getVaultAddressSync(VAULT_PROGRAM_ID, vaultNameBytes);
+    const vaultDriftUser = await getUserAccountPublicKey(driftClient.program.programId, vaultAddress, 0);
 
     const ixs = [
         await driftVault.getInitializeVaultIx({
@@ -136,7 +138,7 @@ export const initVault = async (program: Command, cmdOpts: OptionValues) => {
             minDepositAmount: minDepositAmountBN,
             manager: cmdOpts.manager,
         }),
-        await driftVault.getUpdateDelegateIx(vaultAddress, delegate)
+        await driftVault.getUpdateDelegateIx(vaultAddress, delegate, vaultDriftUser, cmdOpts.manager)
     ];
 
     const signedOrdersAccountAddress = getSignedMsgUserAccountPublicKey(

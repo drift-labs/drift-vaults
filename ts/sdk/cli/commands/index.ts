@@ -21,4 +21,8 @@ export * from './decodeLogs';
 export * from './vaultInvariantChecks';
 export * from './adminInitFeeUpdate';
 export * from './adminDeleteFeeUpdate';
+export * from './managerBorrow';
+export * from './managerRepay';
+export * from './managerUpdateBorrow';
+export * from './adminUpdateVaultClass';
 
