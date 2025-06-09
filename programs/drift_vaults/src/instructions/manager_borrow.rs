@@ -117,15 +117,6 @@ pub fn manager_borrow<'c: 'info, 'info>(
     let vault_equity_after =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
-    validate!(
-        vault_equity_after > vault_equity.safe_sub(10)?
-            && vault_equity_after < vault_equity.safe_add(10)?,
-        ErrorCode::InvalidEquityValue,
-        "vault_equity_after must be equal to vault_equity {} -> {}",
-        vault_equity,
-        vault_equity_after,
-    )?;
-
     emit!(ManagerBorrowRecord {
         ts: now,
         vault: vault.pubkey,
