@@ -10,13 +10,7 @@
         "update-idl": "cp target/idl/drift_vaults.json ts/sdk/src/idl/drift_vaults.json",
         "update-pyth": "cp tests/fixtures/pyth.json target/idl/pyth.json",
         "update-drift": "cp tests/fixtures/drift.json target/idl/drift.json",
-        "anchor-tests": "yarn update-types && yarn update-idl && yarn update-drift && yarn update-pyth && yarn update-drift && yarn update-pyth && yarn run jest --runInBand --forceExit",
-        "anchor-tests:vaults": "yarn anchor-tests -g TestDriftVaults",
-        "anchor-tests:protocol": "yarn anchor-tests -g TestProtocolVaults",
-        "anchor-tests:tokenize": "yarn anchor-tests -g TestTokenizedDriftVaults",
-        "anchor-tests:if-stake": "yarn anchor-tests -g TestInsuranceFundStake",
-        "anchor-tests:sol-denom-vault": "yarn anchor-tests -g TestSOLDenomindatedVault",
-        "anchor-tests:withdraw": "yarn anchor-tests -g TestWithdrawFromVaults"
+        "anchor-tests": "yarn update-types && yarn update-idl && yarn update-drift && yarn update-pyth && yarn update-drift && yarn update-pyth && yarn run jest --runInBand --forceExit"
     },
     "devDependencies": {
         "@coral-xyz/anchor": "0.29.0",

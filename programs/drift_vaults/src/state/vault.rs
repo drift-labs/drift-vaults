@@ -108,14 +108,19 @@ pub struct Vault {
     /// After a `FeeUpdate` account is created and the manager has staged a fee update, the status is set to `PendingFeeUpdate`.
     /// And instructsions that may finalize the fee update must include the `FeeUpdate` account with `remaining_accounts`.
     pub fee_update_status: u8,
-    pub padding1: [u8; 1],
+    /// The class of the vault [`VaultClass`]. Default is `VaultClass::Normal`
+    pub vault_class: u8,
     /// The timestamp cumulative_fuel_per_share was last updated
     pub last_cumulative_fuel_per_share_ts: u32,
     /// The cumulative fuel per share (scaled up by 1e6 to avoid losing precision)
     pub cumulative_fuel_per_share: u128,
     /// The total fuel accumulated
     pub cumulative_fuel: u128,
-    pub padding: [u64; 3],
+    /// The total value (in deposit asset) of borrows the manager has outstanding.
+    /// Purely for informational purposes for assets that have left the vault that the manager
+    /// is expected to return.
+    pub manager_borrowed_value: u64,
+    pub padding: [u64; 2],
 }
 
 impl Vault {
@@ -186,6 +191,14 @@ impl Vault {
         self.last_cumulative_fuel_per_share_ts = now as u32;
 
         Ok(self.cumulative_fuel_per_share)
+    }
+
+    pub fn is_normal_vault_class(&self) -> bool {
+        self.vault_class == VaultClass::Normal as u8
+    }
+
+    pub fn is_trusted_vault_class(&self) -> bool {
+        self.vault_class == VaultClass::Trusted as u8
     }
 }
 
@@ -505,6 +518,7 @@ impl Vault {
         Ok(vault_equity
             .safe_mul(spot_market_precision)?
             .safe_div(oracle_price)?
+            .safe_add(self.manager_borrowed_value as i128)?
             .cast::<u64>()?)
     }
 
@@ -1378,6 +1392,23 @@ impl FeeUpdateStatus {
 
     pub fn has_pending_fee_update(status: u8) -> bool {
         status & FeeUpdateStatus::PendingFeeUpdate as u8 != 0
+    }
+}
+
+pub enum VaultClass {
+    Normal = 0b00000000,
+    Trusted = 0b00000001,
+}
+
+impl TryFrom<u8> for VaultClass {
+    type Error = ErrorCode;
+
+    fn try_from(value: u8) -> std::result::Result<Self, ErrorCode> {
+        match value {
+            0 => Ok(VaultClass::Normal),
+            1 => Ok(VaultClass::Trusted),
+            _ => Err(ErrorCode::InvalidVaultClass),
+        }
     }
 }
 

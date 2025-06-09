@@ -32,7 +32,8 @@ export const managerUpdateVaultDelegate = async (program: Command, cmdOpts: Opti
     }
 
     if (cmdOpts.dumpTransactionMessage) {
-        const tx = await driftVault.getUpdateDelegateIx(vaultAddress, delegate);
+        const vaultAccount = await driftVault.program.account.vault.fetch(vaultAddress);
+        const tx = await driftVault.getUpdateDelegateIx(vaultAddress, delegate, vaultAccount.user, vaultAccount.manager);
         console.log(dumpTransactionMessage(driftClient.wallet.publicKey, [tx]));
     } else {
         const tx = await driftVault.updateDelegate(vaultAddress, delegate);

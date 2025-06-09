@@ -22,6 +22,10 @@ import {
     managerUpdateMarginTradingEnabled,
     decodeLogs,
     vaultInvariantChecks,
+    managerBorrow,
+    managerRepay,
+    managerUpdateBorrow,
+    adminUpdateVaultClass,
 } from "./commands";
 
 import { Command, Option } from 'commander';
@@ -80,7 +84,7 @@ program
     .command("manager-deposit")
     .description("Make a deposit to your vault")
     .addOption(new Option("--vault-address <address>", "Address of the vault to deposit to").makeOptionMandatory(true))
-    .addOption(new Option("--amount <amount>", "Amount to deposit (human format, 5 for 5 USDC)").makeOptionMandatory(true))
+    .addOption(new Option("--amount <amount>", "Amount to deposit (in deposit precision, 5 for 5 USDC)").makeOptionMandatory(true))
     .addOption(new Option("--dump-transaction-message", "Dump the transaction message to the console").makeOptionMandatory(false))
     .action((opts) => managerDeposit(program, opts));
 program
@@ -88,7 +92,7 @@ program
     .description("Make a withdraw request from your vault")
     .addOption(new Option("--vault-address <address>", "Address of the vault to withdraw from").makeOptionMandatory(true))
     .addOption(new Option("--shares <shares>", "Amount of shares to withdraw (raw precision, as expected by contract)").makeOptionMandatory(false))
-    .addOption(new Option("--amount <amount>", "Amount of spot asset to withdraw (human format, 5 for 5 USDC)").makeOptionMandatory(false))
+    .addOption(new Option("--amount <amount>", "Amount of spot asset to withdraw (in deposit precision, 5 for 5 USDC)").makeOptionMandatory(false))
     .addOption(new Option("--dump-transaction-message", "Dump the transaction message to the console").makeOptionMandatory(false))
     .action((opts) => managerRequestWithdraw(program, opts));
 program
@@ -169,7 +173,7 @@ program
     .addOption(new Option("--vault-depositor-address <vaultDepositorAddress>", "VaultDepositor address").makeOptionMandatory(false))
     .addOption(new Option("--vault-address <address>", "Address of the vault to deposit into").makeOptionMandatory(false))
     .addOption(new Option("--deposit-authority <vaultDepositorAuthority>", "VaultDepositor authority address").makeOptionMandatory(false))
-    .addOption(new Option("--amount <amount>", "Amount to deposit (human format, 5 for 5 USDC)").makeOptionMandatory(true))
+    .addOption(new Option("--amount <amount>", "Amount to deposit (in deposit precision, 5 for 5 USDC)").makeOptionMandatory(true))
     .action((opts) => deposit(program, opts));
 program
     .command("request-withdraw")
@@ -243,6 +247,43 @@ program
     .addOption(new Option("--fuel-distribution-mode <mode>", "New fuel distribution mode (users-only, users-and-manager)").makeOptionMandatory(true))
     .addOption(new Option("--dump-transaction-message", "Dump the transaction message to the console").makeOptionMandatory(false))
     .action((opts) => managerUpdateFuelDistributionMode(program, opts));
+
+program
+    .command("manager-borrow")
+    .description("Manager borrow from a spot market")
+    .addOption(new Option("--vault-address <address>", "Address of the vault").makeOptionMandatory(true))
+    .addOption(new Option("--borrow-spot-market-index <index>", "Spot market index to borrow from").makeOptionMandatory(true))
+    .addOption(new Option("--borrow-amount <amount>", "Amount to borrow (in borrow precision, 5 for 5 USDC)").makeOptionMandatory(true))
+    .addOption(new Option("--manager-token-account <address>", "Manager token account address (optional, ATA will be used if not provided)").makeOptionMandatory(false))
+    .addOption(new Option("--dump-transaction-message", "Dump the transaction message to the console").makeOptionMandatory(false))
+    .action((opts) => managerBorrow(program, opts));
+
+program
+    .command("manager-repay")
+    .description("Manager repay to a spot market")
+    .addOption(new Option("--vault-address <address>", "Address of the vault").makeOptionMandatory(true))
+    .addOption(new Option("--repay-spot-market-index <index>", "Spot market index to repay to").makeOptionMandatory(true))
+    .addOption(new Option("--repay-amount <amount>", "Amount to repay (in repay market precision, 5 for 5 USDC)").makeOptionMandatory(true))
+    .addOption(new Option("--repay-value <value>", "Value (in deposit precision, 5 for 5 USDC) of the repay (optional, if not provided will assume repaying the full outstanding amount)").makeOptionMandatory(false))
+    .addOption(new Option("--manager-token-account <address>", "Manager token account address to receive repay tokens from (optional, ATA will be used if not provided)").makeOptionMandatory(false))
+    .addOption(new Option("--dump-transaction-message", "Dump the transaction message to the console").makeOptionMandatory(false))
+    .action((opts) => managerRepay(program, opts));
+
+program
+    .command("manager-update-borrow")
+    .description("Update the manager borrow value for a vault")
+    .addOption(new Option("--vault-address <address>", "Address of the vault").makeOptionMandatory(true))
+    .addOption(new Option("--new-borrow-value <value>", "New borrow value (in deposit precision, 5 for 5 USDC)").makeOptionMandatory(true))
+    .addOption(new Option("--dump-transaction-message", "Dump the transaction message to the console").makeOptionMandatory(false))
+    .action((opts) => managerUpdateBorrow(program, opts));
+
+program
+    .command("admin-update-vault-class")
+    .description("Admin update the vault class")
+    .addOption(new Option("--vault-address <address>", "Address of the vault").makeOptionMandatory(true))
+    .addOption(new Option("--vault-class <class>", "New vault class (trusted)").makeOptionMandatory(true))
+    .addOption(new Option("--dump-transaction-message", "Dump the transaction message to the console").makeOptionMandatory(false))
+    .action((opts) => adminUpdateVaultClass(program, opts));
 
 program.parseAsync().then(() => {
     process.exit(0);
