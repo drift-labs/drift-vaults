@@ -950,8 +950,8 @@ describe('TestProtocolVaults', () => {
 				new BN(finalSolPerpPrice * PRICE_PRECISION.toNumber())
 			);
 		} catch (e) {
-			console.log('failed to move amm price:', e);
-			assert(false);
+			console.error('failed to move amm price:', e);
+			fail('failed to move amm price');
 		}
 
 		const solPerpMarket = adminClient.getPerpMarketAccount(0);
@@ -961,17 +961,17 @@ describe('TestProtocolVaults', () => {
 			await setFeedPrice(
 				anchor.workspace.Pyth,
 				finalSolPerpPrice,
-				solPerpMarket.amm.oracle
+				solPerpMarket!.amm.oracle
 			);
 		} catch (e) {
-			console.log('failed to set feed price:', e);
-			assert(false);
+			console.error('failed to set feed price:', e);
+			fail('failed to set feed price');
 		}
 
 		const postOD = adminClient.getOracleDataForPerpMarket(0);
 		const priceAfter = postOD.price.toNumber() / PRICE_PRECISION.toNumber();
-		console.log('price after:', priceAfter);
-		assert(Math.abs(priceAfter - finalSolPerpPrice) < 0.00001);
+		const diff = Math.abs(priceAfter - finalSolPerpPrice);
+		expect(diff).toBeLessThan(0.00001);
 	});
 
 	// vault exits long for a profit
