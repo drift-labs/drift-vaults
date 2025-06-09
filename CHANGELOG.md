@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Features
 
+* add Trusted vault class ([#92](https://github.com/drift-labs/drift-vaults/pull/92))
+
 ### Fixes
 
 ### Breaking
