@@ -98,8 +98,33 @@ pub fn manager_borrow<'c: 'info, 'info>(
     let previous_borrow_value = vault.manager_borrowed_value;
     vault.manager_borrowed_value = vault.manager_borrowed_value.safe_add(borrow_value)?;
 
+    drop(borrow_spot_market);
+    drop(deposit_spot_market);
+    drop(vault);
+    drop(user);
+    drop(user_stats);
+    drop(vp);
+
+    ctx.drift_withdraw(borrow_spot_market_index, borrow_amount)?;
+
+    ctx.token_transfer(borrow_amount)?;
+
+    let vault = ctx.accounts.vault.load_mut()?;
+    let user = ctx.accounts.drift_user.load()?;
+    let borrow_spot_market = spot_market_map.get_ref(&borrow_spot_market_index)?;
+    let deposit_spot_market = spot_market_map.get_ref(&vault.spot_market_index)?;
+
     let vault_equity_after =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
+
+    validate!(
+        vault_equity_after > vault_equity.safe_sub(10)?
+            && vault_equity_after < vault_equity.safe_add(10)?,
+        ErrorCode::InvalidEquityValue,
+        "vault_equity_after must be equal to vault_equity {} -> {}",
+        vault_equity,
+        vault_equity_after,
+    )?;
 
     emit!(ManagerBorrowRecord {
         ts: now,
@@ -123,17 +148,6 @@ pub fn manager_borrow<'c: 'info, 'info>(
         vault_equity_before: vault_equity,
         vault_equity_after,
     });
-
-    drop(borrow_spot_market);
-    drop(deposit_spot_market);
-    drop(vault);
-    drop(user);
-    drop(user_stats);
-    drop(vp);
-
-    ctx.drift_withdraw(borrow_spot_market_index, borrow_amount)?;
-
-    ctx.token_transfer(borrow_amount)?;
 
     Ok(())
 }
