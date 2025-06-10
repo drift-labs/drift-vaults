@@ -78,12 +78,8 @@ pub fn manager_borrow<'c: 'info, 'info>(
         "drift_spot_market_vault needs to match borrow_spot_market_index"
     )?;
 
-    let borrow_oracle = oracle_map
-        .get_price_data(&borrow_spot_market.oracle_id())?
-        .clone();
-    let deposit_oracle = oracle_map
-        .get_price_data(&deposit_spot_market.oracle_id())?
-        .clone();
+    let borrow_oracle = *oracle_map.get_price_data(&borrow_spot_market.oracle_id())?;
+    let deposit_oracle = *oracle_map.get_price_data(&deposit_spot_market.oracle_id())?;
 
     let vault_equity =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
