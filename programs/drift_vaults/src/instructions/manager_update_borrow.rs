@@ -73,7 +73,7 @@ pub fn manager_update_borrow<'c: 'info, 'info>(
         vault: vault.pubkey,
         manager: vault.manager,
         previous_borrow_value,
-        new_borrow_value: new_borrow_value,
+        new_borrow_value,
         vault_equity_before,
         vault_equity_after,
     });

@@ -80,12 +80,8 @@ pub fn manager_repay<'c: 'info, 'info>(
         "drift_spot_market_vault needs to match repay_spot_market_index"
     )?;
 
-    let repay_oracle = oracle_map
-        .get_price_data(&repay_spot_market.oracle_id())?
-        .clone();
-    let deposit_oracle = oracle_map
-        .get_price_data(&deposit_spot_market.oracle_id())?
-        .clone();
+    let repay_oracle = *oracle_map.get_price_data(&repay_spot_market.oracle_id())?;
+    let deposit_oracle = *oracle_map.get_price_data(&deposit_spot_market.oracle_id())?;
 
     let vault_equity_before =
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
@@ -123,7 +119,7 @@ pub fn manager_repay<'c: 'info, 'info>(
         repay_value: value_repayed,
         repay_spot_market_index,
         repay_oracle_price: repay_oracle.price,
-        deposit_spot_market_index: deposit_spot_market_index,
+        deposit_spot_market_index,
         deposit_oracle_price: deposit_oracle.price,
         vault_equity_before,
         vault_equity_after,
