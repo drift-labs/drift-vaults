@@ -1,5 +1,6 @@
 import {
 	BN,
+	BigNum,
 	DriftClient,
 	getInsuranceFundStakeAccountPublicKey,
 	getUserAccountPublicKey,
@@ -18,6 +19,7 @@ import {
 	FuelOverflowStatus,
 	getFuelOverflowAccountPublicKey,
 	FUEL_RESET_LOG_ACCOUNT,
+	QUOTE_PRECISION_EXP,
 } from '@drift-labs/sdk';
 import { BorshAccountsCoder, Program, ProgramAccount } from '@coral-xyz/anchor';
 import { DriftVaults } from './types/drift_vaults';
@@ -67,7 +69,7 @@ import { UserMapConfig } from '@drift-labs/sdk';
 import { calculateRealizedVaultDepositorEquity } from './math';
 import { Metaplex } from '@metaplex-foundation/js';
 import { getOrCreateATAInstruction } from './utils';
-import { VAULT_ADMIN_KEY } from './constants';
+import { VAULT_ADMIN_KEY, VAULT_SHARES_PRECISION_EXP } from './constants';
 
 type OracleFeedConfig = {
 	feed: PublicKey;
@@ -3842,5 +3844,50 @@ export class VaultClient {
 				feeUpdate,
 			},
 		});
+	}
+
+	/**
+	 * Calculate the vault share price (base value per share)
+	 * @param params vault address or vault account, and precision exponent
+	 * @returns BigNum representing the base value per share
+	 */
+	public async calcVaultSharePrice(params: {
+		address?: PublicKey;
+		vault?: Vault;
+	}): Promise<BigNum> {
+		let spotPrecisionExp = QUOTE_PRECISION_EXP;
+
+		try {
+			let vaultAccount: Vault;
+			if (params.address !== undefined) {
+				vaultAccount = await this.program.account.vault.fetch(params.address);
+			} else if (params.vault !== undefined) {
+				vaultAccount = params.vault;
+			} else {
+				throw new Error('Must supply address or vault');
+			}
+
+			const spotMarket = this.driftClient.getSpotMarketAccount(
+				vaultAccount.spotMarketIndex
+			);
+			spotPrecisionExp = new BN(spotMarket!.decimals);
+
+			const totalAccountValue = await this.calculateVaultEquityInDepositAsset({
+				vault: vaultAccount,
+				factorUnrealizedPNL: true,
+			});
+
+			const vaultTotalShares = vaultAccount.totalShares.toString();
+			const totalAccountValueStr = totalAccountValue.toString();
+
+			return vaultTotalShares === '0'
+				? BigNum.from(0, spotPrecisionExp)
+				: new BigNum(totalAccountValueStr, spotPrecisionExp)
+						.shift(VAULT_SHARES_PRECISION_EXP)
+						.div(new BigNum(vaultTotalShares, VAULT_SHARES_PRECISION_EXP));
+		} catch (err) {
+			console.error('VaultClient calcVaultSharePrice error:', err);
+			return BigNum.from(0, spotPrecisionExp);
+		}
 	}
 }
