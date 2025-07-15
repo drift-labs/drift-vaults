@@ -2,7 +2,7 @@
 # yarn lockfile v1
 
 
-"@babel/runtime@^7.10.5", "@babel/runtime@^7.12.5", "@babel/runtime@^7.17.2", "@babel/runtime@^7.24.6", "@babel/runtime@^7.25.0":
+"@babel/runtime@^7.10.5", "@babel/runtime@^7.12.5", "@babel/runtime@^7.17.2", "@babel/runtime@^7.25.0":
   version "7.25.7"
   resolved "https://registry.yarnpkg.com/@babel/runtime/-/runtime-7.25.7.tgz#7ffb53c37a8f247c8c4d335e89cdf16a2e0d0fb6"
   integrity sha512-FjoyLe754PMiYsFaN5C94ttGiOmBNYTf6pLr4xXHAT5uctHb092PBszndLDR5XA/jghQvn4n7JMHl7dmTgbm9w==
@@ -1007,7 +1007,7 @@
   dependencies:
     "@noble/hashes" "1.4.0"
 
-"@noble/curves@^1.0.0", "@noble/curves@^1.4.0", "@noble/curves@^1.4.2":
+"@noble/curves@^1.0.0", "@noble/curves@^1.4.2":
   version "1.6.0"
   resolved "https://registry.yarnpkg.com/@noble/curves/-/curves-1.6.0.tgz#be5296ebcd5a1730fccea4786d420f87abfeb40b"
   integrity sha512-TlaHRXDehJuRNR9TfZDNQ45mMEd5dwUwmicsafcIX4SsNiqnCHKjE/1alYPd/lDRVhxdhUAlv8uEhMCI5zjIJQ==
@@ -1484,27 +1484,6 @@
   dependencies:
     "@wallet-standard/base" "^1.0.1"
     "@wallet-standard/features" "^1.0.3"
-
-"@solana/web3.js@1.92.3":
-  version "1.92.3"
-  resolved "https://registry.yarnpkg.com/@solana/web3.js/-/web3.js-1.92.3.tgz#8880b446c0ec30fc552e1d501bd8db2780a1f70c"
-  integrity sha512-NVBWvb9zdJIAx6X+caXaIICCEQfQaQ8ygykCjJW4u2z/sIKcvPj3ZIIllnx0MWMc3IxGq15ozGYDOQIMbwUcHw==
-  dependencies:
-    "@babel/runtime" "^7.24.6"
-    "@noble/curves" "^1.4.0"
-    "@noble/hashes" "^1.4.0"
-    "@solana/buffer-layout" "^4.0.1"
-    agentkeepalive "^4.5.0"
-    bigint-buffer "^1.1.5"
-    bn.js "^5.2.1"
-    borsh "^0.7.0"
-    bs58 "^4.0.1"
-    buffer "6.0.3"
-    fast-stable-stringify "^1.0.0"
-    jayson "^4.1.0"
-    node-fetch "^2.7.0"
-    rpc-websockets "^8.0.1"
-    superstruct "^1.0.4"
 
 "@solana/web3.js@1.98.0", "@solana/web3.js@^1.98.0":
   version "1.98.0"
@@ -3378,18 +3357,6 @@ rpc-websockets@^7.5.1:
     bufferutil "^4.0.1"
     utf-8-validate "^5.0.2"
 
-rpc-websockets@^8.0.1:
-  version "8.0.2"
-  resolved "https://registry.yarnpkg.com/rpc-websockets/-/rpc-websockets-8.0.2.tgz#c91cb680d6806101bdf7862897bcc43732e20da6"
-  integrity sha512-QZ8lneJTtIZTf9JBcdUn/im2qDynWRYPKtmF6P9DqtdzqSLebcllYWVQr5aQacAp7LBYPReOW9Ses98dNfO7cA==
-  dependencies:
-    eventemitter3 "^4.0.7"
-    uuid "^8.3.2"
-    ws "^8.5.0"
-  optionalDependencies:
-    bufferutil "^4.0.1"
-    utf-8-validate "^5.0.2"
-
 rpc-websockets@^9.0.2:
   version "9.0.4"
   resolved "https://registry.yarnpkg.com/rpc-websockets/-/rpc-websockets-9.0.4.tgz#9d8ee82533b5d1e13d9ded729e3e38d0d8fa083f"
@@ -3615,7 +3582,7 @@ superstruct@^0.15.4:
   resolved "https://registry.yarnpkg.com/superstruct/-/superstruct-0.15.5.tgz#0f0a8d3ce31313f0d84c6096cd4fa1bfdedc9dab"
   integrity sha512-4AOeU+P5UuE/4nOUkmcQdW5y7i9ndt1cQd/3iUe+LTz3RxESf/W/5lg4B74HbDMMv8PHnPnGCQFH45kBcrQYoQ==
 
-superstruct@^1.0.3, superstruct@^1.0.4:
+superstruct@^1.0.3:
   version "1.0.4"
   resolved "https://registry.yarnpkg.com/superstruct/-/superstruct-1.0.4.tgz#0adb99a7578bd2f1c526220da6571b2d485d91ca"
   integrity sha512-7JpaAoX2NGyoFlI9NBh66BQXGONc+uE+MRS5i2iOBKuS4e+ccgMDjATgZldkah+33DakBxDHiss9kvUcGAO8UQ==

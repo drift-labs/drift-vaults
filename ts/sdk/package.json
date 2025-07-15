@@ -10,10 +10,9 @@
 		"@coral-xyz/anchor": "0.29.0",
 		"@drift-labs/sdk": "2.128.0-beta.3",
 		"@metaplex-foundation/js": "0.20.1",
-		"@solana/web3.js": "1.92.3",
+		"@solana/web3.js": "1.98.0",
 		"commander": "11.1.0",
 		"dotenv": "16.4.5",
-		"rpc-websockets": "7.5.1",
 		"strict-event-emitter-types": "2.0.0",
 		"ts-node": "10.9.2",
 		"typescript": "5.6.3"
