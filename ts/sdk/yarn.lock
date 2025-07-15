@@ -78,10 +78,10 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
-"@drift-labs/sdk@2.128.0-beta.2":
-  version "2.128.0-beta.2"
-  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.128.0-beta.2.tgz#3a6a408e4c626406b9d33f1ff9540500429611f9"
-  integrity sha512-ngB1AYEgZXCQL70FJu3XuLi2iTcY6QrosunlaVCIWHnw1NCUvM6odsNa4Ql/G0143xsV4zctX9bvcBzlr9THFw==
+"@drift-labs/sdk@2.128.0-beta.3":
+  version "2.128.0-beta.3"
+  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.128.0-beta.3.tgz#30937913a9ae5fcfd265a36a23ce2509a708dc31"
+  integrity sha512-JtNNFjMLNAQjgi1YICFuRvlHqcWUhVai4xMqQzCxVUgazXUl0airL3BNXaN6PvC7oI94dFX40k4fQnm+IjmvQQ==
   dependencies:
     "@coral-xyz/anchor" "0.29.0"
     "@coral-xyz/anchor-30" "npm:@coral-xyz/anchor@0.30.1"
@@ -93,7 +93,7 @@
     "@pythnetwork/price-service-sdk" "1.7.1"
     "@pythnetwork/pyth-solana-receiver" "0.7.0"
     "@solana/spl-token" "0.4.13"
-    "@solana/web3.js" "1.92.3"
+    "@solana/web3.js" "1.98.0"
     "@switchboard-xyz/common" "3.0.14"
     "@switchboard-xyz/on-demand" "2.4.1"
     "@triton-one/yellowstone-grpc" "1.3.0"
@@ -1506,6 +1506,27 @@
     rpc-websockets "^8.0.1"
     superstruct "^1.0.4"
 
+"@solana/web3.js@1.98.0", "@solana/web3.js@^1.98.0":
+  version "1.98.0"
+  resolved "https://registry.yarnpkg.com/@solana/web3.js/-/web3.js-1.98.0.tgz#21ecfe8198c10831df6f0cfde7f68370d0405917"
+  integrity sha512-nz3Q5OeyGFpFCR+erX2f6JPt3sKhzhYcSycBCSPkWjzSVDh/Rr1FqTVMRe58FKO16/ivTUcuJjeS5MyBvpkbzA==
+  dependencies:
+    "@babel/runtime" "^7.25.0"
+    "@noble/curves" "^1.4.2"
+    "@noble/hashes" "^1.4.0"
+    "@solana/buffer-layout" "^4.0.1"
+    agentkeepalive "^4.5.0"
+    bigint-buffer "^1.1.5"
+    bn.js "^5.2.1"
+    borsh "^0.7.0"
+    bs58 "^4.0.1"
+    buffer "6.0.3"
+    fast-stable-stringify "^1.0.0"
+    jayson "^4.1.1"
+    node-fetch "^2.7.0"
+    rpc-websockets "^9.0.2"
+    superstruct "^2.0.2"
+
 "@solana/web3.js@^1.17.0", "@solana/web3.js@^1.21.0", "@solana/web3.js@^1.30.2", "@solana/web3.js@^1.32.0", "@solana/web3.js@^1.36.0", "@solana/web3.js@^1.56.2", "@solana/web3.js@^1.68.0", "@solana/web3.js@^1.77.3", "@solana/web3.js@^1.90.0":
   version "1.95.3"
   resolved "https://registry.yarnpkg.com/@solana/web3.js/-/web3.js-1.95.3.tgz#70b5f4d76823f56b5af6403da51125fffeb65ff3"
@@ -1531,27 +1552,6 @@
   version "1.95.4"
   resolved "https://registry.yarnpkg.com/@solana/web3.js/-/web3.js-1.95.4.tgz#771603f60d75cf7556ad867e1fd2efae32f9ad09"
   integrity sha512-sdewnNEA42ZSMxqkzdwEWi6fDgzwtJHaQa5ndUGEJYtoOnM6X5cvPmjoTUp7/k7bRrVAxfBgDnvQQHD6yhlLYw==
-  dependencies:
-    "@babel/runtime" "^7.25.0"
-    "@noble/curves" "^1.4.2"
-    "@noble/hashes" "^1.4.0"
-    "@solana/buffer-layout" "^4.0.1"
-    agentkeepalive "^4.5.0"
-    bigint-buffer "^1.1.5"
-    bn.js "^5.2.1"
-    borsh "^0.7.0"
-    bs58 "^4.0.1"
-    buffer "6.0.3"
-    fast-stable-stringify "^1.0.0"
-    jayson "^4.1.1"
-    node-fetch "^2.7.0"
-    rpc-websockets "^9.0.2"
-    superstruct "^2.0.2"
-
-"@solana/web3.js@^1.98.0":
-  version "1.98.0"
-  resolved "https://registry.yarnpkg.com/@solana/web3.js/-/web3.js-1.98.0.tgz#21ecfe8198c10831df6f0cfde7f68370d0405917"
-  integrity sha512-nz3Q5OeyGFpFCR+erX2f6JPt3sKhzhYcSycBCSPkWjzSVDh/Rr1FqTVMRe58FKO16/ivTUcuJjeS5MyBvpkbzA==
   dependencies:
     "@babel/runtime" "^7.25.0"
     "@noble/curves" "^1.4.2"
