@@ -1,6 +1,6 @@
 {
 	"name": "@drift-labs/vaults-sdk",
-	"version": "0.9.51",
+	"version": "0.9.52",
 	"main": "lib/index.js",
 	"types": "lib/index.d.ts",
 	"directories": {
@@ -37,6 +37,6 @@
 	"resolutions": {
 		"@types/bn.js": "5.1.3",
 		"rpc-websockets": "10.0.0",
-		"@solana/web3.js": "1.98.0"	
+		"@solana/web3.js": "1.98.0"
 	}
 }
