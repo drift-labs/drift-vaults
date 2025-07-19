@@ -82,6 +82,7 @@ export type TxParams = {
 	cuLimit?: number;
 	cuPriceMicroLamports?: number;
 	simulateTransaction?: boolean;
+	simulationAuthority?: PublicKey; // Override authority for simulation
 	lookupTables?: AddressLookupTableAccount[];
 	oracleFeedsToCrank?: {
 		feedsToCrank: OracleFeedConfig[];
@@ -2257,7 +2258,8 @@ export class VaultClient {
 			vaultDepositor,
 			amount,
 			withdrawUnit,
-			txParams?.oracleFeedsToCrank
+			txParams?.oracleFeedsToCrank,
+			txParams?.simulationAuthority
 		);
 		return await this.createAndSendTxn(ixs, txParams);
 	}
@@ -2266,7 +2268,8 @@ export class VaultClient {
 		vaultDepositor: PublicKey,
 		amount: BN,
 		withdrawUnit: WithdrawUnit,
-		oracleFeedsToCrank?: TxParams['oracleFeedsToCrank']
+		oracleFeedsToCrank?: TxParams['oracleFeedsToCrank'],
+		simulationAuthority?: PublicKey
 	): Promise<TransactionInstruction[]> {
 		const vaultDepositorAccount =
 			await this.program.account.vaultDepositor.fetch(vaultDepositor);
@@ -2309,7 +2312,7 @@ export class VaultClient {
 			withdrawUnit,
 			{
 				accounts: {
-					authority: this.driftClient.wallet.publicKey,
+					authority: simulationAuthority || this.driftClient.wallet.publicKey,
 					...accounts,
 				},
 				remainingAccounts,
@@ -2325,7 +2328,8 @@ export class VaultClient {
 	): Promise<TransactionSignature> {
 		const ixs = await this.getWithdrawIx(
 			vaultDepositor,
-			txParams?.oracleFeedsToCrank
+			txParams?.oracleFeedsToCrank,
+			txParams?.simulationAuthority
 		);
 		return await this.createAndSendTxn(ixs, {
 			cuLimit: 850_000, // overestimating to be safe
@@ -2335,7 +2339,8 @@ export class VaultClient {
 
 	public async getWithdrawIx(
 		vaultDepositor: PublicKey,
-		oracleFeedsToCrank?: TxParams['oracleFeedsToCrank']
+		oracleFeedsToCrank?: TxParams['oracleFeedsToCrank'],
+		simulationAuthority?: PublicKey
 	): Promise<TransactionInstruction[]> {
 		const vaultDepositorAccount =
 			await this.program.account.vaultDepositor.fetch(vaultDepositor);
@@ -2439,7 +2444,7 @@ export class VaultClient {
 			await this.program.methods
 				.withdraw()
 				.accounts({
-					authority: this.driftClient.wallet.publicKey,
+					authority: simulationAuthority || this.driftClient.wallet.publicKey,
 					...accounts,
 				})
 				.remainingAccounts(remainingAccounts)
@@ -2770,12 +2775,264 @@ export class VaultClient {
 						commitment: this.driftClient.connection.commitment,
 					}
 				);
-				console.log(`Simulated transaction:\n${JSON.stringify(resp, null, 2)}`);
+
+				console.log('\n=== Transaction Simulation Result ===');
+				console.log(`Success: ${resp.value.err === null}`);
+
+				if (resp.value.err) {
+					console.log(`\nError: ${JSON.stringify(resp.value.err, null, 2)}`);
+				}
+
+				if (resp.value.logs && resp.value.logs.length > 0) {
+					console.log('\nTransaction Logs:');
+					resp.value.logs.forEach((log, index) => {
+						console.log(`  [${index}] ${log}`);
+					});
+
+					// Try to decode any anchor errors
+					const anchorErrorLog = resp.value.logs.find(
+						(log) => log.includes('AnchorError') || log.includes('Error Code:')
+					);
+					if (anchorErrorLog) {
+						console.log('\n⚠️  Anchor Error Detected:');
+						const errorCodeMatch = anchorErrorLog.match(/Error Number: (\d+)/);
+						const errorMsgMatch = anchorErrorLog.match(
+							/Error Message: (.+?)(?:\.|$)/
+						);
+						if (errorCodeMatch) {
+							console.log(`  Error Code: ${errorCodeMatch[1]}`);
+
+							// Try to decode known error codes
+							const errorCode = parseInt(errorCodeMatch[1]);
+							switch (errorCode) {
+								case 2006:
+									console.log(`  Error Type: ConstraintSeeds`);
+									console.log(
+										`  Description: A seeds constraint was violated - the account PDA doesn't match expected seeds`
+									);
+									break;
+								case 2001:
+									console.log(`  Error Type: ConstraintMut`);
+									console.log(`  Description: A mut constraint was violated`);
+									break;
+								case 2002:
+									console.log(`  Error Type: ConstraintHasOne`);
+									console.log(
+										`  Description: A has one constraint was violated`
+									);
+									break;
+								case 2003:
+									console.log(`  Error Type: ConstraintSigner`);
+									console.log(
+										`  Description: A signer constraint was violated`
+									);
+									break;
+								case 2005:
+									console.log(`  Error Type: ConstraintRaw`);
+									console.log(`  Description: A raw constraint was violated`);
+									break;
+								case 2007:
+									console.log(`  Error Type: ConstraintAddress`);
+									console.log(
+										`  Description: An address constraint was violated`
+									);
+									break;
+								case 3000:
+									console.log(`  Error Type: AccountDiscriminatorAlreadySet`);
+									console.log(
+										`  Description: The account discriminator was already set on this account`
+									);
+									break;
+								case 3001:
+									console.log(`  Error Type: AccountDiscriminatorNotFound`);
+									console.log(
+										`  Description: No 8 byte discriminator was found on the account`
+									);
+									break;
+								case 3002:
+									console.log(`  Error Type: AccountDiscriminatorMismatch`);
+									console.log(
+										`  Description: 8 byte discriminator did not match what was expected`
+									);
+									break;
+								case 3004:
+									console.log(`  Error Type: AccountNotInitialized`);
+									console.log(
+										`  Description: The program expected this account to be already initialized`
+									);
+									break;
+								case 3012:
+									console.log(`  Error Type: AccountNotEnoughKeys`);
+									console.log(
+										`  Description: Not enough account keys given to the instruction`
+									);
+									break;
+								default:
+									if (errorCode >= 6000) {
+										console.log(`  Error Type: Custom Program Error`);
+										console.log(
+											`  Description: This is a custom error defined by the program`
+										);
+									}
+							}
+						}
+						if (errorMsgMatch) {
+							console.log(`  Error Message: ${errorMsgMatch[1]}`);
+						}
+
+						// Check for seed mismatch details
+						const leftMatch = resp.value.logs.find((log) =>
+							log.includes('Left:')
+						);
+						const rightMatch = resp.value.logs.find((log) =>
+							log.includes('Right:')
+						);
+						if (leftMatch && rightMatch) {
+							const leftIndex = resp.value.logs.indexOf(leftMatch);
+							const rightIndex = resp.value.logs.indexOf(rightMatch);
+							if (leftIndex >= 0 && rightIndex >= 0) {
+								console.log('\n  PDA Mismatch Details:');
+								console.log(
+									`    Expected: ${
+										resp.value.logs[leftIndex + 1]?.trim() || 'N/A'
+									}`
+								);
+								console.log(
+									`    Actual:   ${
+										resp.value.logs[rightIndex + 1]?.trim() || 'N/A'
+									}`
+								);
+							}
+						}
+					}
+
+					// Parse program events using the event parser
+					try {
+						// @ts-ignore
+						const events = this.program._events._eventParser.parseLogs(
+							resp.value.logs
+						);
+						if (events && events.length > 0) {
+							console.log('\nProgram Events:');
+							events.forEach((event: any, index: number) => {
+								console.log(
+									`\n--------------- Event ${index}: ${event.name} -----------------`
+								);
+
+								switch (event.name) {
+									case 'VaultDepositorRecord':
+										const data = event.data;
+										try {
+											const spotMarket = this.driftClient.getSpotMarketAccount(
+												data.spotMarketIndex
+											);
+											if (spotMarket) {
+												const spotPrecision = TEN.pow(
+													new BN(spotMarket.decimals)
+												);
+												const date = new Date(data.ts.toNumber() * 1000);
+
+												console.log(
+													` ts: ${date.toISOString()} (${data.ts.toNumber()})`
+												);
+												console.log(
+													` vault:              ${data.vault.toBase58()}`
+												);
+												console.log(
+													` depositorAuthority: ${data.depositorAuthority.toBase58()}`
+												);
+												console.log(
+													` action: ${
+														data.action
+															? Object.keys(data.action)[0]
+															: 'unknown'
+													}`
+												);
+												console.log(
+													` amount: ${data.amount
+														.div(spotPrecision)
+														.toString()}`
+												);
+												console.log(
+													` vaultSharesBefore: ${data.vaultSharesBefore.toString()}`
+												);
+												console.log(
+													` vaultSharesAfter:  ${data.vaultSharesAfter.toString()} (${data.vaultSharesAfter
+														.sub(data.vaultSharesBefore)
+														.toString()})`
+												);
+												console.log(
+													` vaultEquityBefore: ${data.vaultEquityBefore
+														.div(spotPrecision)
+														.toString()}`
+												);
+												console.log(
+													` userVaultSharesBefore: ${data.userVaultSharesBefore.toString()}`
+												);
+												console.log(
+													` userVaultSharesAfter:  ${data.userVaultSharesAfter.toString()} (${data.userVaultSharesAfter
+														.sub(data.userVaultSharesBefore)
+														.toString()})`
+												);
+												console.log(
+													` totalVaultSharesBefore: ${data.totalVaultSharesBefore.toString()}`
+												);
+												console.log(
+													` totalVaultSharesAfter:  ${data.totalVaultSharesAfter.toString()} (${data.totalVaultSharesAfter
+														.sub(data.totalVaultSharesBefore)
+														.toString()})`
+												);
+												console.log(
+													` profitShare:    ${data.profitShare.toString()}`
+												);
+												console.log(
+													` managementFee:  ${data.managementFee.toString()}`
+												);
+												console.log(
+													` managementFeeShares:  ${data.managementFeeShares.toString()}`
+												);
+											}
+										} catch (e) {
+											console.log(' Error decoding event data:', e);
+											console.log(' Raw event data:', event.data);
+										}
+										break;
+									default:
+										console.log(
+											' Event data:',
+											JSON.stringify(event.data, null, 2)
+										);
+								}
+							});
+						}
+					} catch (e) {
+						// Ignore event parsing errors
+					}
+				}
+
+				console.log(
+					`\nCompute Units Consumed: ${resp.value.unitsConsumed || 'N/A'}`
+				);
+
+				if (resp.value.returnData) {
+					console.log(
+						`\nReturn Data: ${JSON.stringify(resp.value.returnData, null, 2)}`
+					);
+				}
+
+				console.log('\n=== End Simulation ===\n');
+
+				if (resp.value.err) {
+					throw new Error(
+						`Transaction simulation failed: ${JSON.stringify(resp.value.err)}`
+					);
+				}
 			} catch (e) {
 				const err = e as Error;
 				console.error(
 					`Error simulating transaction: ${err.message}\n:${err.stack ?? ''}`
 				);
+				throw e;
 			}
 		} else {
 			const resp = await this.driftClient.sendTransaction(

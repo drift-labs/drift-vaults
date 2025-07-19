@@ -182,6 +182,7 @@ program
     .addOption(new Option("--vault-address <address>", "Address of the vault to deposit into").makeOptionMandatory(false))
     .addOption(new Option("--authority <vaultDepositorAuthority>", "VaultDepositor authority address").makeOptionMandatory(false))
     .addOption(new Option("--amount <amount>", "Amount of shares to withdraw (raw format, as expected in the program)").makeOptionMandatory(true))
+    .option("--simulate", "Simulate the transaction instead of sending it")
     .action((opts) => requestWithdraw(program, opts));
 program
     .command("withdraw")
@@ -189,6 +190,7 @@ program
     .addOption(new Option("--vault-depositor-address <vaultDepositorAddress>", "VaultDepositor address").makeOptionMandatory(false))
     .addOption(new Option("--vault-address <address>", "Address of the vault to deposit into").makeOptionMandatory(false))
     .addOption(new Option("--authority <vaultDepositorAuthority>", "VaultDepositor authority address").makeOptionMandatory(false))
+    .option("--simulate", "Simulate the transaction instead of sending it")
     .action((opts) => withdraw(program, opts));
 program
     .command("force-withdraw")
