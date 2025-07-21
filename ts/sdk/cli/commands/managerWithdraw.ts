@@ -22,7 +22,7 @@ export const managerWithdraw = async (program: Command, cmdOpts: OptionValues) =
 
     if (cmdOpts.dumpTransactionMessage) {
         const tx = await driftVault.getManagerWithdrawIx(vaultAddress);
-        console.log(dumpTransactionMessage(driftClient.wallet.publicKey, [tx]));
+        console.log(dumpTransactionMessage(driftClient.wallet.publicKey, tx));
     } else {
         const tx = await driftVault.managerWithdraw(vaultAddress);
         console.log(`Withrew as vault manager: https://solana.fm/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet-solana" : ""}`);
