@@ -1126,13 +1126,13 @@ export class VaultClient {
 		vault: PublicKey,
 		uiTxParams?: TxParams
 	): Promise<TransactionSignature> {
-		const ix = await this.getManagerWithdrawIx(vault);
-		return this.createAndSendTxn([ix], uiTxParams);
+		const ixs = await this.getManagerWithdrawIx(vault);
+		return this.createAndSendTxn(ixs, uiTxParams);
 	}
 
 	public async getManagerWithdrawIx(
 		vault: PublicKey
-	): Promise<TransactionInstruction> {
+	): Promise<TransactionInstruction[]> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
 
 		const user = await this.getSubscribedVaultUser(vaultAccount.user);
@@ -1162,7 +1162,48 @@ export class VaultClient {
 			);
 		}
 
-		return this.program.instruction.managerWithdraw({
+		const isSolMarket = spotMarket.mint.equals(WRAPPED_SOL_MINT);
+		let userAta = getAssociatedTokenAddressSync(
+			spotMarket.mint,
+			vaultAccount.manager,
+			true
+		);
+
+		const preIxs: TransactionInstruction[] = [];
+		const postIxs: TransactionInstruction[] = [];
+
+		if (isSolMarket) {
+			const { ixs, pubkey } =
+				await this.driftClient.getWrappedSolAccountCreationIxs(ZERO, false);
+
+			userAta = pubkey;
+			preIxs.push(...ixs);
+			postIxs.push(createSyncNativeInstruction(userAta));
+			postIxs.push(
+				createCloseAccountInstruction(
+					userAta,
+					vaultAccount.manager,
+					vaultAccount.manager,
+					[]
+				)
+			);
+		} else {
+			const userAtaExists = await this.driftClient.connection.getAccountInfo(
+				userAta
+			);
+			if (userAtaExists === null) {
+				preIxs.push(
+					createAssociatedTokenAccountInstruction(
+						vaultAccount.manager,
+						userAta,
+						vaultAccount.manager,
+						spotMarket.mint
+					)
+				);
+			}
+		}
+
+		const withdrawIx = await this.program.instruction.managerWithdraw({
 			accounts: {
 				vault,
 				manager: vaultAccount.manager,
@@ -1178,16 +1219,14 @@ export class VaultClient {
 				),
 				driftState: await this.driftClient.getStatePublicKey(),
 				driftSpotMarketVault: spotMarket.vault,
-				userTokenAccount: getAssociatedTokenAddressSync(
-					spotMarket.mint,
-					vaultAccount.manager,
-					true
-				),
+				userTokenAccount: userAta,
 				driftSigner: this.driftClient.getStateAccount().signer,
 				tokenProgram: TOKEN_PROGRAM_ID,
 			},
 			remainingAccounts,
 		});
+
+		return [...preIxs, withdrawIx, ...postIxs];
 	}
 
 	public async managerBorrow(
