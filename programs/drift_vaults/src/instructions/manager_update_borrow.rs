@@ -55,7 +55,7 @@ pub fn manager_update_borrow<'c: 'info, 'info>(
         vault.calculate_equity(&user, &perp_market_map, &spot_market_map, &mut oracle_map)?;
 
     let previous_borrow_value = vault.manager_borrowed_value;
-    vault.manager_borrowed_value = new_borrow_value;
+    vault.ed_value = new_borrow_value;
 
     drop(vault);
     drop(user);
