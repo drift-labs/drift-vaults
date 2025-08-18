@@ -76,10 +76,10 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
-"@drift-labs/sdk@2.135.0-beta.0":
-  version "2.135.0-beta.0"
-  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.135.0-beta.0.tgz#67f52c563f0f1f842c7e09e8ac5a6774e2e220ad"
-  integrity sha512-psuuYwACnutGElxlA1thzPEQNvnmPEVgbcf9EnN8ybmJGACnNqRMsAqWmuGeDUKAFpxGKywjsl3aiy4SimMIDg==
+"@drift-labs/sdk@2.135.0-beta.1":
+  version "2.135.0-beta.1"
+  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.135.0-beta.1.tgz#691ab0535be8f258edf45b88d86285ae68ed423c"
+  integrity sha512-GTvCkzPVW5H9Kh/X2TgkcubnE+FkdBeIJfN6ccpkYrKZJN1lNDMD8W1d2bE4xeC0Dx4qo8w0XhlnCXcO2XOD9Q==
   dependencies:
     "@coral-xyz/anchor" "0.29.0"
     "@coral-xyz/anchor-30" "npm:@coral-xyz/anchor@0.30.1"
@@ -106,6 +106,7 @@
     tweetnacl-util "0.15.1"
     uuid "8.3.2"
     yargs "17.7.2"
+    zod "4.0.17"
     zstddec "0.1.0"
 
 "@ellipsis-labs/phoenix-sdk@1.4.5":
@@ -4310,6 +4311,11 @@ zod@4.0.0-beta.20250505T195954:
   integrity sha512-iB8WvxkobVIXMARvQu20fKvbS7mUTiYRpcD8OQV1xjRhxO0EEpYIRJBk6yfBzHAHEdOSDh3SxDITr5Eajr2vtg==
   dependencies:
     "@zod/core" "0.11.6"
+
+zod@4.0.17:
+  version "4.0.17"
+  resolved "https://registry.yarnpkg.com/zod/-/zod-4.0.17.tgz#95931170715f73f7426c385c237b7477750d6c8d"
+  integrity sha512-1PHjlYRevNxxdy2JZ8JcNAw7rX8V9P1AKkP+x/xZfxB0K5FYfuV+Ug6P/6NVSR2jHQ+FzDDoDHS04nYUsOIyLQ==
 
 zstddec@0.1.0:
   version "0.1.0"
