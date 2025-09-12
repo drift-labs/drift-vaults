@@ -67,7 +67,7 @@ import {
 import { bs58 } from '@coral-xyz/anchor/dist/cjs/utils/bytes';
 import { UserMapConfig } from '@drift-labs/sdk';
 import { calculateRealizedVaultDepositorEquity } from './math';
-import { Metaplex } from '@metaplex-foundation/js';
+import { MPL_TOKEN_METADATA_PROGRAM_ID } from '@metaplex-foundation/mpl-token-metadata';
 import { getOrCreateATAInstruction } from './utils';
 import { VAULT_ADMIN_KEY, VAULT_SHARES_PRECISION_EXP } from './constants';
 
@@ -93,7 +93,6 @@ export type TxParams = {
 
 export class VaultClient {
 	driftClient: DriftClient;
-	metaplex?: Metaplex;
 	program: Program<DriftVaults>;
 	cliMode: boolean;
 
@@ -112,13 +111,12 @@ export class VaultClient {
 	}: {
 		driftClient: DriftClient;
 		program: Program<DriftVaults>;
-		metaplex?: Metaplex;
+		metaplex?: any;
 		// @deprecated, no longer used
 		cliMode?: boolean;
 		userMapConfig?: UserMapConfig;
 	}) {
 		this.driftClient = driftClient;
-		this.metaplex = metaplex;
 		this.program = program;
 		this.cliMode = !!cliMode;
 
@@ -134,6 +132,18 @@ export class VaultClient {
 		} else {
 			this.vaultUsers = new UserMap(userMapConfig);
 		}
+	}
+
+	private deriveMetadataPda(mint: PublicKey): PublicKey {
+		const [pda] = PublicKey.findProgramAddressSync(
+			[
+				Buffer.from('metadata'),
+				new PublicKey(MPL_TOKEN_METADATA_PROGRAM_ID).toBuffer(),
+				mint.toBuffer(),
+			],
+			new PublicKey(MPL_TOKEN_METADATA_PROGRAM_ID)
+		);
+		return pda;
 	}
 
 	private getRemainingAccountsForUser(
@@ -1851,12 +1861,6 @@ export class VaultClient {
 		},
 		uiTxParams?: TxParams
 	): Promise<TransactionSignature> {
-		if (!this.metaplex) {
-			throw new Error(
-				'Metaplex instance is required when constructing VaultClient to initialize a tokenized vault depositor'
-			);
-		}
-
 		let spotMarketDecimals = 6;
 		let sharesBase = 0;
 		if (params.decimals === undefined || params.sharesBase === undefined) {
@@ -1889,10 +1893,8 @@ export class VaultClient {
 				sharesBase
 			),
 			mintAccount: mintAddress,
-			metadataAccount: this.metaplex.nfts().pdas().metadata({
-				mint: mintAddress,
-			}),
-			tokenMetadataProgram: this.metaplex.programs().getTokenMetadata().address,
+			metadataAccount: this.deriveMetadataPda(mintAddress),
+			tokenMetadataProgram: MPL_TOKEN_METADATA_PROGRAM_ID,
 			payer: vaultAccount.manager,
 		};
 

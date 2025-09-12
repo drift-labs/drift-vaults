@@ -74,7 +74,12 @@ import {
 	WithdrawUnit,
 } from '../ts/sdk';
 
-import { Metaplex } from '@metaplex-foundation/js';
+import {
+	fetchMetadata,
+	MPL_TOKEN_METADATA_PROGRAM_ID,
+} from '@metaplex-foundation/mpl-token-metadata';
+import { PublicKey as UmiPublicKey } from '@metaplex-foundation/umi';
+import { createUmi } from '@metaplex-foundation/umi-bundle-defaults';
 
 // ammInvariant == k == x * y
 const mantissaSqrtScale = new BN(100_000);
@@ -91,11 +96,11 @@ const opts: ConfirmOptions = {
 const provider = anchor.AnchorProvider.local(undefined, opts);
 anchor.setProvider(provider);
 const connection = provider.connection;
+const umi = createUmi(connection);
 
 const program = anchor.workspace.DriftVaults as Program<DriftVaults>;
 const usdcMint = Keypair.generate();
 let solPerpOracle: PublicKey;
-const metaplex = Metaplex.make(connection);
 
 let adminClient: AdminClient;
 let adminInitialized = false;
@@ -353,7 +358,7 @@ describe('driftVaults', () => {
 				driftUser: vaultAccount.user,
 				driftUserStats: vaultAccount.userStats,
 				driftState: await adminClient.getStatePublicKey(),
-				driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
+				driftSpotMarketVault: adminClient.getSpotMarketAccount(0)!.vault,
 				driftProgram: adminClient.program.programId,
 			})
 			.remainingAccounts(remainingAccounts)
@@ -424,7 +429,7 @@ describe('driftVaults', () => {
 					driftUser: vaultAccount.user,
 					driftUserStats: vaultAccount.userStats,
 					driftState: await adminClient.getStatePublicKey(),
-					driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
+					driftSpotMarketVault: adminClient.getSpotMarketAccount(0)!.vault,
 					driftSigner: adminClient.getStateAccount().signer,
 					driftProgram: adminClient.program.programId,
 				})
@@ -712,7 +717,7 @@ describe('TestProtocolVaults', () => {
 		);
 		// asserts "exit" was called on VaultProtocol to define the discriminator
 		const vpAcctInfo = await connection.getAccountInfo(vp);
-		assert(vpAcctInfo.data.includes(Buffer.from(VAULT_PROTOCOL_DISCRIM)));
+		assert(vpAcctInfo!.data.includes(Buffer.from(VAULT_PROTOCOL_DISCRIM)));
 
 		// asserts Vault and VaultProtocol fields were set properly
 		const vpAcct = await program.account.vaultProtocol.fetch(vp);
@@ -790,7 +795,7 @@ describe('TestProtocolVaults', () => {
 				driftUser: vaultAccount.user,
 				driftState: await adminClient.getStatePublicKey(),
 				userTokenAccount: vdUserUSDCAccount,
-				driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
+				driftSpotMarketVault: adminClient.getSpotMarketAccount(0)!.vault,
 				driftProgram: adminClient.program.programId,
 			})
 			.remainingAccounts(remainingAccounts)
@@ -858,7 +863,7 @@ describe('TestProtocolVaults', () => {
 			console.log('filler failed to short:', e);
 		}
 		await fillerUser.fetchAccounts();
-		const order = fillerUser.getOrderByUserOrderId(1);
+		const order = fillerUser.getOrderByUserOrderId(1)!;
 		assert(!order.postOnly);
 
 		try {
@@ -923,13 +928,13 @@ describe('TestProtocolVaults', () => {
 
 		// check positions from vault and filler are accurate
 		await fillerUser.fetchAccounts();
-		const fillerPosition = fillerUser.getPerpPosition(0);
+		const fillerPosition = fillerUser.getPerpPosition(0)!;
 		assert(
 			fillerPosition.baseAssetAmount.eq(baseAssetAmount.neg()),
 			'filler position is not baseAssetAmount'
 		);
 		await delegateActiveUser.fetchAccounts();
-		const vaultPosition = delegateActiveUser.getPerpPosition(0);
+		const vaultPosition = delegateActiveUser.getPerpPosition(0)!;
 		assert(
 			vaultPosition.baseAssetAmount.eq(baseAssetAmount),
 			'vault position is not baseAssetAmount'
@@ -1006,7 +1011,7 @@ describe('TestProtocolVaults', () => {
 			console.log('filler failed to long:', e);
 		}
 		await fillerUser.fetchAccounts();
-		const order = fillerUser.getOrderByUserOrderId(1);
+		const order = fillerUser.getOrderByUserOrderId(1)!;
 		assert(!order.postOnly);
 
 		try {
@@ -1071,10 +1076,10 @@ describe('TestProtocolVaults', () => {
 
 		// check positions from vault and filler are accurate
 		await fillerUser.fetchAccounts();
-		const fillerPosition = fillerUser.getPerpPosition(0);
+		const fillerPosition = fillerUser.getPerpPosition(0)!;
 		assert(fillerPosition.baseAssetAmount.eq(ZERO));
 		await delegateActiveUser.fetchAccounts();
-		const vaultPosition = delegateActiveUser.getPerpPosition(0);
+		const vaultPosition = delegateActiveUser.getPerpPosition(0)!;
 		assert(vaultPosition.baseAssetAmount.eq(ZERO));
 	});
 
@@ -1082,7 +1087,7 @@ describe('TestProtocolVaults', () => {
 		const vaultUser = delegateClient.driftClient.getUser(0, protocolVault);
 		const uA = vaultUser.getUserAccount();
 		assert(uA.idle === false);
-		const solPerpPos = vaultUser.getPerpPosition(0);
+		const solPerpPos = vaultUser.getPerpPosition(0)!;
 		const solPerpQuote =
 			solPerpPos.quoteAssetAmount.toNumber() / QUOTE_PRECISION.toNumber();
 		console.log('sol perp quote:', solPerpQuote);
@@ -1107,7 +1112,7 @@ describe('TestProtocolVaults', () => {
 				solPrice.price.toNumber() / PRICE_PRECISION.toNumber()
 		);
 
-		const solPerpMarket = delegateClient.driftClient.getPerpMarketAccount(0);
+		const solPerpMarket = delegateClient.driftClient.getPerpMarketAccount(0)!;
 		const pnl =
 			calculatePositionPNL(
 				solPerpMarket,
@@ -1256,7 +1261,7 @@ describe('TestProtocolVaults', () => {
 					driftUser: vaultAccount.user,
 					driftUserStats: vaultAccount.userStats,
 					driftState: await adminClient.getStatePublicKey(),
-					driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
+					driftSpotMarketVault: adminClient.getSpotMarketAccount(0)!.vault,
 					driftSigner: adminClient.getStateAccount().signer,
 					driftProgram: adminClient.program.programId,
 				})
@@ -1366,7 +1371,7 @@ describe('TestProtocolVaults', () => {
 					driftUser: vaultAccount.user,
 					driftUserStats: vaultAccount.userStats,
 					driftState: await adminClient.getStatePublicKey(),
-					driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
+					driftSpotMarketVault: adminClient.getSpotMarketAccount(0)!.vault,
 					driftSigner: adminClient.getStateAccount().signer,
 					driftProgram: adminClient.program.programId,
 				})
@@ -1457,7 +1462,7 @@ describe('TestTokenizedDriftVaults', () => {
 				opts,
 				activeSubAccountId: 0,
 			},
-			metaplex,
+			// no metaplex
 		});
 		managerSigner = bootstrapManager.signer;
 		managerClient = bootstrapManager.vaultClient;
@@ -1476,7 +1481,7 @@ describe('TestTokenizedDriftVaults', () => {
 				opts,
 				activeSubAccountId: 0,
 			},
-			metaplex,
+			// no metaplex
 		});
 		vd0Signer = vd0Bootstrap.signer;
 		vd0Client = vd0Bootstrap.vaultClient;
@@ -1495,7 +1500,7 @@ describe('TestTokenizedDriftVaults', () => {
 				opts,
 				activeSubAccountId: 0,
 			},
-			metaplex,
+			// no metaplex
 		});
 		vd1Signer = vd1Bootstrap.signer;
 		vd1Client = vd1Bootstrap.vaultClient;
@@ -1582,20 +1587,31 @@ describe('TestTokenizedDriftVaults', () => {
 			commonVaultKey,
 			0
 		);
-		const metadataAccount = metaplex.nfts().pdas().metadata({
-			mint: tokenMint,
-		});
+		const [metadataAccount] = PublicKey.findProgramAddressSync(
+			[
+				Buffer.from('metadata'),
+				new PublicKey(MPL_TOKEN_METADATA_PROGRAM_ID).toBuffer(),
+				tokenMint.toBuffer(),
+			],
+			new PublicKey(MPL_TOKEN_METADATA_PROGRAM_ID)
+		);
 
 		const mintAccount = await getMint(connection, tokenMint);
-		assert(mintAccount.mintAuthority.equals(commonVaultKey));
+		assert(mintAccount.mintAuthority!.equals(commonVaultKey));
 		assert(mintAccount.decimals === 6);
 		assert(mintAccount.isInitialized === true);
 
 		assert((await connection.getAccountInfo(metadataAccount)) !== null);
-		const metadata = await metaplex
-			.nfts()
-			.findByMint({ mintAddress: tokenMint });
-		assert(metadata.mint.address.equals(tokenMint));
+
+		const metadata = await fetchMetadata(
+			umi,
+			metadataAccount.toString() as UmiPublicKey
+		);
+		console.log('==== metadata');
+		console.log(metadata);
+		console.log('==== metadata');
+
+		assert(metadata.mint.toString() === tokenMint.toString());
 		assert(metadata.name === 'Tokenized Vault');
 		assert(metadata.symbol === 'TV');
 		assert(metadata.uri === '');
@@ -1646,7 +1662,7 @@ describe('TestTokenizedDriftVaults', () => {
 				opts,
 				activeSubAccountId: 0,
 			},
-			metaplex,
+			// no metaplex
 		});
 
 		const {
@@ -1883,8 +1899,8 @@ describe('TestTokenizedDriftVaults', () => {
 		await setFeedPrice(anchor.workspace.Pyth, solStartPrice, solPerpOracle);
 
 		const usdcDepositAmount = new BN(10000 * 10 ** 6);
-		const usdcSpotMarket = managerDriftClient.getSpotMarketAccount(0);
-		const solSpotMarket = managerDriftClient.getSpotMarketAccount(1);
+		const usdcSpotMarket = managerDriftClient.getSpotMarketAccount(0)!;
+		const solSpotMarket = managerDriftClient.getSpotMarketAccount(1)!;
 
 		const bulkAccountLoader = new BulkAccountLoader(connection, 'confirmed', 1);
 		const [driftClient, usdcAccount, kp] = await createUserWithUSDCAccount(
@@ -1932,7 +1948,7 @@ describe('TestTokenizedDriftVaults', () => {
 			driftClient: adminClient,
 			// @ts-ignore
 			program: program,
-			metaplex: metaplex,
+			// no metaplex
 			cliMode: true,
 		});
 		const depositorVaultClient = new VaultClient({
@@ -1948,7 +1964,7 @@ describe('TestTokenizedDriftVaults', () => {
 					commitment: 'confirmed',
 				})
 			),
-			metaplex: metaplex,
+			// no metaplex
 			cliMode: true,
 		});
 
@@ -2067,7 +2083,7 @@ describe('TestTokenizedDriftVaults', () => {
 		await delegateDriftClient.subscribe();
 
 		const user = delegateDriftClient.getUser(0, vault);
-		const s00 = user.getSpotPosition(0);
+		const s00 = user.getSpotPosition(0)!;
 		const vaultUsdcBalance = getTokenAmount(
 			s00.scaledBalance,
 			usdcSpotMarket,
@@ -2278,7 +2294,7 @@ describe('TestTokenizedDriftVaults', () => {
 			program.programId,
 			vault,
 			vd0Signer.publicKey,
-			vault_0.sharesBase
+			vault_0!.sharesBase
 		);
 
 		await managerClient.initializeTokenizedVaultDepositor(
@@ -2335,11 +2351,11 @@ describe('TestTokenizedDriftVaults', () => {
 
 		await validateTotalUserShares(program, vault);
 
-		assert(vd01.vaultShares.eq(ZERO), 'vd01 has shares');
-		assert(vdt01.vaultShares.gt(ZERO), 'vdt01 has no shares');
-		assert(vd01.vaultSharesBase === 0, 'vd01 rebased');
-		assert(vd01.vaultSharesBase === vault_1.sharesBase, 'vault rebased');
-		assert(vdTokens00.value.uiAmount > 0, 'vd0 tokens');
+		assert(vd01!.vaultShares.eq(ZERO), 'vd01 has shares');
+		assert(vdt01!.vaultShares.gt(ZERO), 'vdt01 has no shares');
+		assert(vd01!.vaultSharesBase === 0, 'vd01 rebased');
+		assert(vd01!.vaultSharesBase === vault_1!.sharesBase, 'vault rebased');
+		assert(vdTokens00!.value!.uiAmount! > 0, 'vd0 tokens');
 
 		await managerDriftClient.addAndSubscribeToUsers(vault);
 		await managerDriftClient.switchActiveUser(0, vault);
@@ -2403,7 +2419,7 @@ describe('TestTokenizedDriftVaults', () => {
 			program.programId,
 			vault,
 			vd1Signer.publicKey,
-			vault_0.sharesBase
+			vault_0!.sharesBase
 		);
 
 		// vd1 deposits 1000
@@ -2485,10 +2501,13 @@ describe('TestTokenizedDriftVaults', () => {
 			tokenizedVaultDepositor
 		);
 
-		assert(vault_3.sharesBase > vault_1.sharesBase, 'vault11 didnt rebase');
-		assert(vd11.vaultSharesBase === vault_3.sharesBase, 'vault1 didnt rebase');
-		assert(vd11.vaultSharesBase > 0, 'vd11 didnt rebase');
-		assert(vdt11.vaultSharesBase > 0, 'vdt11 didnt rebase');
+		assert(vault_3!.sharesBase > vault_1!.sharesBase, 'vault11 didnt rebase');
+		assert(
+			vd11!.vaultSharesBase === vault_3!.sharesBase,
+			'vault1 didnt rebase'
+		);
+		assert(vd11!.vaultSharesBase > 0, 'vd11 didnt rebase');
+		assert(vdt11!.vaultSharesBase > 0, 'vdt11 didnt rebase');
 
 		try {
 			await vd1Client.tokenizeShares(
@@ -2555,11 +2574,11 @@ describe('TestTokenizedDriftVaults', () => {
 		});
 
 		assert(
-			vd0Values1.vaultDepositorEquity.eq(vd0Values0.ataValue),
+			vd0Values1.vaultDepositorEquity.eq(vd0Values0!.ataValue!),
 			'vd0 equity after redeem should equal ata value before redeem'
 		);
 		assert(
-			vd0Values1.ataBalance.eq(ZERO),
+			vd0Values1!.ataBalance!.eq(ZERO),
 			'vd0 ata balance after redeem should be 0'
 		);
 
@@ -2601,12 +2620,12 @@ describe('TestTokenizedDriftVaults', () => {
 			program.programId,
 			vault,
 			vd0Signer.publicKey,
-			vault_3.sharesBase
+			vault_3!.sharesBase
 		);
 		try {
 			console.log(
 				`Initializing tokenized vault for vault with shares base: ${
-					vault_3.sharesBase
+					vault_3!.sharesBase
 				}: ${tokenizedVaultDepositor2.toBase58()}`
 			);
 			await managerClient.initializeTokenizedVaultDepositor(
@@ -2669,7 +2688,7 @@ describe('TestTokenizedDriftVaults', () => {
 			});
 
 			// vd equity + new deposit = total token value
-			assert(vd0Values1.vaultDepositorEquity.add(usdcAmount).eq(ataValue));
+			assert(vd0Values1.vaultDepositorEquity.add(usdcAmount).eq(ataValue!));
 
 			await validateTotalUserShares(program, vault);
 		} catch (e) {
@@ -2704,6 +2723,7 @@ describe('TestInsuranceFundStake', () => {
 	let firstVaultInitd = false;
 
 	beforeAll(async () => {
+		console.log('HELLO?');
 		while (!adminInitialized) {
 			console.log(
 				'TestInsuranceFundStake: waiting for drift initialization...'
@@ -2729,7 +2749,7 @@ describe('TestInsuranceFundStake', () => {
 				spotMarketIndexes,
 				oracleInfos,
 			},
-			metaplex,
+			// no metaplex
 		});
 		managerClient = bootstrapManager.vaultClient;
 		managerDriftClient = bootstrapManager.driftClient;
@@ -2751,7 +2771,7 @@ describe('TestInsuranceFundStake', () => {
 				spotMarketIndexes,
 				oracleInfos,
 			},
-			metaplex,
+			// no metaplex
 		});
 		vd0Client = vd0Bootstrap.vaultClient;
 		vd0DriftClient = vd0Bootstrap.driftClient;
@@ -2773,7 +2793,7 @@ describe('TestInsuranceFundStake', () => {
 				spotMarketIndexes,
 				oracleInfos,
 			},
-			metaplex,
+			// no metaplex
 		});
 		_vd1Signer = vd1Bootstrap.signer;
 		vd1Client = vd1Bootstrap.vaultClient;
@@ -2894,11 +2914,11 @@ describe('TestInsuranceFundStake', () => {
 		}
 		const managerTokenAccountBalance =
 			await managerDriftClient.connection.getTokenAccountBalance(
-				managerTokenAccount
+				managerTokenAccount!
 			);
 
 		const vd0TokenAccountBalance =
-			await vd0DriftClient.connection.getTokenAccountBalance(vd0TokenAccount);
+			await vd0DriftClient.connection.getTokenAccountBalance(vd0TokenAccount!);
 
 		// test only manager can add stake
 		try {
@@ -2906,7 +2926,7 @@ describe('TestInsuranceFundStake', () => {
 				vault,
 				marketIndex,
 				new BN(vd0TokenAccountBalance.value.amount),
-				vd0TokenAccount
+				vd0TokenAccount!
 			);
 			assert(false, 'vd0 should not be able to add to IF stake');
 		} catch (e) {
@@ -2919,7 +2939,7 @@ describe('TestInsuranceFundStake', () => {
 			vault,
 			marketIndex,
 			ifStakeAmount,
-			managerTokenAccount,
+			managerTokenAccount!,
 			{ noLut: true }
 		);
 
@@ -2981,13 +3001,13 @@ describe('TestInsuranceFundStake', () => {
 		await managerClient.removeInsuranceFundStake(
 			vault,
 			marketIndex,
-			managerTokenAccount,
+			managerTokenAccount!,
 			{ noLut: true }
 		);
 
 		const tokenBalanceAfter =
 			await managerDriftClient.connection.getTokenAccountBalance(
-				managerTokenAccount
+				managerTokenAccount!
 			);
 		assert(
 			new BN(tokenBalanceAfter.value.amount).eq(requestRemoveAmount),
@@ -3045,7 +3065,7 @@ describe('TestSOLDenomindatedVault', () => {
 				opts,
 				activeSubAccountId: 0,
 			},
-			metaplex,
+			// no metaplex
 		});
 		managerClient = bootstrapManager.vaultClient;
 		managerDriftClient = bootstrapManager.driftClient;
@@ -3063,7 +3083,7 @@ describe('TestSOLDenomindatedVault', () => {
 				opts,
 				activeSubAccountId: 0,
 			},
-			metaplex,
+			// no metaplex
 		});
 		vd0Signer = vd0Bootstrap.signer;
 		vd0Client = vd0Bootstrap.vaultClient;
@@ -3106,7 +3126,7 @@ describe('TestSOLDenomindatedVault', () => {
 		const vault = await program.account.vault.fetch(commonVaultKey);
 		assert(vault.spotMarketIndex === 1, 'Vault spot market index is not 1');
 
-		const spotMarket1 = vd0DriftClient.getSpotMarketAccount(1);
+		const spotMarket1 = vd0DriftClient.getSpotMarketAccount(1)!;
 		assert(
 			spotMarket1.mint.equals(WRAPPED_SOL_MINT),
 			'Spot market mint is not SOL'
@@ -3245,7 +3265,7 @@ describe('TestWithdrawFromVaults', () => {
 				opts,
 				activeSubAccountId: 0,
 			},
-			metaplex,
+			// no metaplex
 		});
 		managerSigner = bootstrapManager.signer;
 		managerClient = bootstrapManager.vaultClient;
@@ -3265,7 +3285,7 @@ describe('TestWithdrawFromVaults', () => {
 				opts,
 				activeSubAccountId: 0,
 			},
-			metaplex,
+			// no metaplex
 		});
 		vd0Signer = vd0Bootstrap.signer;
 		vd0Client = vd0Bootstrap.vaultClient;
@@ -3327,7 +3347,7 @@ describe('TestWithdrawFromVaults', () => {
 			);
 			// asserts "exit" was called on VaultProtocol to define the discriminator
 			const vpAcctInfo = await connection.getAccountInfo(vp);
-			assert(vpAcctInfo.data.includes(Buffer.from(VAULT_PROTOCOL_DISCRIM)));
+			assert(vpAcctInfo!.data.includes(Buffer.from(VAULT_PROTOCOL_DISCRIM)));
 
 			// asserts Vault and VaultProtocol fields were set properly
 			const vpAcct = await program.account.vaultProtocol.fetch(vp);
@@ -3450,7 +3470,7 @@ describe('TestWithdrawFromVaults', () => {
 
 		console.log(
 			'vaultState0 usdc balance',
-			(await connection.getTokenAccountBalance(vaultState0.tokenAccount)).value
+			(await connection.getTokenAccountBalance(vaultState0!.tokenAccount)).value
 				.uiAmountString
 		);
 
@@ -3472,11 +3492,11 @@ describe('TestWithdrawFromVaults', () => {
 					userTokenAccount: vd0UsdcAccount,
 					vault: commonVaultKey,
 					vaultDepositor: vdKey,
-					vaultTokenAccount: vaultState0.tokenAccount,
-					driftUser: vaultState0.user,
-					driftUserStats: vaultState0.userStats,
+					vaultTokenAccount: vaultState0!.tokenAccount,
+					driftUser: vaultState0!.user,
+					driftUserStats: vaultState0!.userStats,
 					driftState: await adminClient.getStatePublicKey(),
-					driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
+					driftSpotMarketVault: adminClient.getSpotMarketAccount(0)!.vault,
 					driftSigner: adminClient.getStateAccount().signer,
 					driftProgram: adminClient.program.programId,
 				})
@@ -3507,11 +3527,11 @@ describe('TestWithdrawFromVaults', () => {
 					userTokenAccount: managerUsdcAccount,
 					manager: managerSigner.publicKey,
 					vault: commonVaultKey,
-					vaultTokenAccount: vaultState0.tokenAccount,
-					driftUser: vaultState0.user,
-					driftUserStats: vaultState0.userStats,
+					vaultTokenAccount: vaultState0!.tokenAccount,
+					driftUser: vaultState0!.user,
+					driftUserStats: vaultState0!.userStats,
 					driftState: await adminClient.getStatePublicKey(),
-					driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
+					driftSpotMarketVault: adminClient.getSpotMarketAccount(0)!.vault,
 					driftSigner: adminClient.getStateAccount().signer,
 					driftProgram: adminClient.program.programId,
 				})
@@ -3543,7 +3563,7 @@ describe('TestWithdrawFromVaults', () => {
 			vd0UsdcAccount
 		);
 		const vaultTokenBalance1 = await connection.getTokenAccountBalance(
-			vaultState1.tokenAccount
+			vaultState1!.tokenAccount
 		);
 
 		console.log(
@@ -3670,7 +3690,7 @@ describe('TestWithdrawFromVaults', () => {
 		const { vault: vaultState1 } = await fetchAccountStates(commonVaultKey);
 
 		assert(
-			vaultState1.totalShares.eq(vaultState0.totalShares),
+			vaultState1!.totalShares.eq(vaultState0!.totalShares),
 			'total shares should be the same after canceling withdraws'
 		);
 
