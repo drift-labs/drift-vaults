@@ -71,7 +71,6 @@ import {
 	IDL,
 	VaultClient,
 } from '../../ts/sdk/lib';
-import { Metaplex } from '@metaplex-foundation/js';
 import 'jest-expect-message';
 import { BankrunContextWrapper } from './bankrunConnection';
 import { BankrunProvider } from 'anchor-bankrun';
@@ -1113,7 +1112,6 @@ export async function bootstrapSignerClientAndUser(params: {
 	vaultClientCliMode?: boolean;
 	skipUser?: boolean;
 	driftClientConfig?: Omit<DriftClientConfig, 'connection' | 'wallet'>;
-	metaplex?: Metaplex;
 }): Promise<{
 	signer: Keypair;
 	wallet: anchor.Wallet;
@@ -1160,7 +1158,6 @@ export async function bootstrapSignerClientAndUser(params: {
 		// @ts-ignore
 		program,
 		cliMode: vaultClientCliMode ?? true,
-		metaplex: params.metaplex,
 	});
 	const userUSDCAccount = await mockUserUSDCAccount(
 		usdcMint,
@@ -1668,7 +1665,6 @@ export async function bootstrapSignerClientAndUserBankrun(params: {
 	skipUser?: boolean;
 	driftClientConfig?: Omit<DriftClientConfig, 'connection' | 'wallet'>;
 	userMapConfig?: UserMapConfig;
-	metaplex?: Metaplex;
 }): Promise<{
 	signer: Keypair;
 	wallet: Wallet;
@@ -1713,7 +1709,6 @@ export async function bootstrapSignerClientAndUserBankrun(params: {
 		// @ts-ignore
 		program,
 		cliMode: vaultClientCliMode ?? true,
-		metaplex: params.metaplex,
 		userMapConfig: params.userMapConfig,
 	});
 
