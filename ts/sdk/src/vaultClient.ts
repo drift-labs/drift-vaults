@@ -95,6 +95,7 @@ export class VaultClient {
 	driftClient: DriftClient;
 	program: Program<DriftVaults>;
 	cliMode: boolean;
+	_metaplex: any;
 
 	/**
 	 * Cache map of drift user accounts of vaults.
@@ -104,6 +105,7 @@ export class VaultClient {
 	constructor({
 		driftClient,
 		program,
+		// @deprecated, no longer used, kept for backwards compatibility
 		metaplex,
 		// @deprecated, no longer used
 		cliMode,
@@ -111,6 +113,7 @@ export class VaultClient {
 	}: {
 		driftClient: DriftClient;
 		program: Program<DriftVaults>;
+		// @deprecated, no longer used, kept for backwards compatibility
 		metaplex?: any;
 		// @deprecated, no longer used
 		cliMode?: boolean;
@@ -119,6 +122,7 @@ export class VaultClient {
 		this.driftClient = driftClient;
 		this.program = program;
 		this.cliMode = !!cliMode;
+		this._metaplex = metaplex;
 
 		if (!userMapConfig) {
 			this.vaultUsers = new UserMap({
