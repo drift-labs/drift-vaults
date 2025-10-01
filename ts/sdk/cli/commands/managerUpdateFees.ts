@@ -24,8 +24,7 @@ export const managerUpdateFees = async (program: Command, cmdOpts: OptionValues)
 
     const timelockDuration = cmdOpts.timelockDuration;
     let timelockDurationBN: BN | null = null;
-    // const minTimelockDurationBN = new BN(Math.max(1 * 24 * 60 * 60, vault.redeemPeriod.toNumber()));
-    const minTimelockDurationBN = new BN(Math.max(1 * 60 * 60, vault.redeemPeriod.toNumber()));
+    const minTimelockDurationBN = new BN(Math.max(7 * 24 * 60 * 60, vault.redeemPeriod.toNumber() * 2));
     if (timelockDuration !== undefined && timelockDuration !== null) {
         timelockDurationBN = new BN(parseInt(timelockDuration));
         if (timelockDurationBN.lt(minTimelockDurationBN)) {

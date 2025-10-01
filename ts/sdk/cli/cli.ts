@@ -219,7 +219,7 @@ program
     .command("manager-update-fees")
     .description("Update vault fees for a manager")
     .addOption(new Option("--vault-address <address>", "Address of the vault to update").makeOptionMandatory(true))
-    .option("-t, --timelock-duration <number>", "The new timelock duration in seconds, must be at least the greater of 1 day, or the current redeem period (default: minimum duration)")
+    .option("-t, --timelock-duration <number>", "The timelock before the new fees take effect, in seconds, minimum is max(7 days, 2x redeem period) (default: minimum duration)")
     .option("-m, --management-fee <percent>", "The new management fee percentage")
     .option("-s, --profit-share <percent>", "The new profit share percentage")
     .option("-h, --hurdle-rate <percent>", "The new hurdle rate percentage")
