@@ -83,7 +83,7 @@ yarn cli manager-deposit --vault-address=<VAULT_ADDRESS> --amount=<DEPOSIT_AMOUN
 
 Make a withdraw request from a vault as the manager (`SHARES` in raw precision):
 ```
-yarn cli manager-request-withdraw --vault-address=<VAULT_ADDRESS> --amount=<SHARES>
+yarn cli manager-request-withdraw --vault-address=<VAULT_ADDRESS> --shares=<SHARES>
 ```
 
 After the redeem period has passed, the manager can complete the withdraw:
