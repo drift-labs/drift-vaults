@@ -1,13 +1,13 @@
 {
 	"name": "@drift-labs/vaults-sdk",
-	"version": "0.9.263",
+	"version": "0.9.264",
 	"main": "lib/index.js",
 	"types": "lib/index.d.ts",
 	"directories": {
 		"lib": "lib"
 	},
 	"dependencies": {
-		"@drift-labs/sdk": "2.155.0-beta.4",
+		"@drift-labs/sdk": "2.155.0-beta.5",
 		"@metaplex-foundation/js": "0.20.1",
 		"commander": "11.1.0",
 		"dotenv": "16.4.5",
