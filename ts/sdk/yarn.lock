@@ -76,10 +76,10 @@
   dependencies:
     "@jridgewell/trace-mapping" "0.3.9"
 
-"@drift-labs/sdk@2.156.0-beta.0":
-  version "2.156.0-beta.0"
-  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.156.0-beta.0.tgz#685e060f288689c2e6dac5e629f1dff280f3903f"
-  integrity sha512-zUpguPfkMaW76E3/wiFVFJ9VaTIc83XVQ0Tte+iWefo86Ht0/iFOUnn7oFcl9boffxwtD8xH9nWZjkq243EkqA==
+"@drift-labs/sdk@2.157.0-beta.1":
+  version "2.157.0-beta.1"
+  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.157.0-beta.1.tgz#2c0a9c1b8f38c7d8dc84fa5d902a2190cd24302c"
+  integrity sha512-lyxuM5Lb5Vr7zLE765Ua6My21ZL1ahkl1loccq6aKe9CMCNmqqSf8C1QQdh1rBYBRdeeMdh06tdxXDskrzuebQ==
   dependencies:
     "@coral-xyz/anchor" "0.29.0"
     "@coral-xyz/anchor-30" "npm:@coral-xyz/anchor@0.30.1"
@@ -90,6 +90,7 @@
     "@project-serum/serum" "0.13.65"
     "@pythnetwork/client" "2.5.3"
     "@pythnetwork/price-service-sdk" "1.7.1"
+    "@pythnetwork/pyth-lazer-sdk" "5.2.1"
     "@solana/spl-token" "0.4.13"
     "@solana/web3.js" "1.98.0"
     "@switchboard-xyz/common" "3.0.14"
@@ -97,10 +98,8 @@
     "@triton-one/yellowstone-grpc" "1.4.1"
     anchor-bankrun "0.3.0"
     gill "^0.10.2"
-    helius-laserstream "0.1.8"
     nanoid "3.3.4"
     node-cache "5.1.2"
-    rpc-websockets "7.5.1"
     solana-bankrun "0.3.1"
     strict-event-emitter-types "2.0.0"
     tweetnacl "1.0.3"
@@ -109,6 +108,8 @@
     yargs "17.7.2"
     zod "4.0.17"
     zstddec "0.1.0"
+  optionalDependencies:
+    helius-laserstream "0.1.8"
 
 "@ellipsis-labs/phoenix-sdk@1.4.5":
   version "1.4.5"
@@ -1164,6 +1165,17 @@
   integrity sha512-xr2boVXTyv1KUt/c6llUTfbv2jpud99pWlMJbFaHGUBoygQsByuy7WbjIJKZ+0Blg1itLZl0Lp/pJGGg8SdJoQ==
   dependencies:
     bn.js "^5.2.1"
+
+"@pythnetwork/pyth-lazer-sdk@5.2.1":
+  version "5.2.1"
+  resolved "https://registry.yarnpkg.com/@pythnetwork/pyth-lazer-sdk/-/pyth-lazer-sdk-5.2.1.tgz#7a35573f30c214c6e3014dcffbdec0053b3f7116"
+  integrity sha512-/0rrPi6sZdVH+cWtW+X/hmQzw+nP2fIF6BlrJRTrqwK2IXWZWW+40sHoj839HrbyUXOJyG9zKyco37eFuTE/nA==
+  dependencies:
+    "@isaacs/ttlcache" "^1.4.1"
+    buffer "^6.0.3"
+    isomorphic-ws "^5.0.0"
+    ts-log "^2.2.7"
+    ws "^8.18.0"
 
 "@randlabs/communication-bridge@1.0.1":
   version "1.0.1"
@@ -3191,6 +3203,11 @@ isomorphic-ws@^4.0.1:
   resolved "https://registry.yarnpkg.com/isomorphic-ws/-/isomorphic-ws-4.0.1.tgz#55fd4cd6c5e6491e76dc125938dd863f5cd4f2dc"
   integrity sha512-BhBvN2MBpWTaSHdWRb/bwdZJ1WaehQ2L1KngkCkfLUGF0mAWAT1sQUQacEmQ0jXkFw/czDXPNQSL5u2/Krsz1w==
 
+isomorphic-ws@^5.0.0:
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/isomorphic-ws/-/isomorphic-ws-5.0.0.tgz#e5529148912ecb9b451b46ed44d53dae1ce04bbf"
+  integrity sha512-muId7Zzn9ywDsyXgTIafTry2sV3nySZeUDe6YedVd1Hvuuep5AsIlqK+XefWpYTyJG5e503F2xIuT2lcU6rCSw==
+
 jayson@^4.1.1:
   version "4.2.0"
   resolved "https://registry.yarnpkg.com/jayson/-/jayson-4.2.0.tgz#b71762393fa40bc9637eaf734ca6f40d3b8c0c93"
@@ -3725,7 +3742,7 @@ ripemd160@^2.0.0, ripemd160@^2.0.1:
     hash-base "^3.0.0"
     inherits "^2.0.1"
 
-rpc-websockets@10.0.0, rpc-websockets@7.5.1, rpc-websockets@^9.0.2:
+rpc-websockets@10.0.0, rpc-websockets@^9.0.2:
   version "10.0.0"
   resolved "https://registry.yarnpkg.com/rpc-websockets/-/rpc-websockets-10.0.0.tgz#51ac56503114cce2b7a8d2c3669b8e7a52395c50"
   integrity sha512-ci68pI2x0TZdrRbpFx8oiBosNUKR1a2Y9kADVwwhX6UUq+B1E9oqNXnxq20WvTwR7+3Dsow1qAtU8pPGoZE4sw==
@@ -4068,6 +4085,11 @@ treeify@^1.1.0:
   resolved "https://registry.yarnpkg.com/treeify/-/treeify-1.1.0.tgz#4e31c6a463accd0943879f30667c4fdaff411bb8"
   integrity sha512-1m4RA7xVAJrSGrrXGs0L3YTwyvBs2S8PbRHaLZAkFw7JR8oIFwYtysxlBZhYIa7xSyiYJKZ3iGrrk55cGA3i9A==
 
+ts-log@^2.2.7:
+  version "2.2.7"
+  resolved "https://registry.yarnpkg.com/ts-log/-/ts-log-2.2.7.tgz#4f4512144898b77c9984e91587076fcb8518688e"
+  integrity sha512-320x5Ggei84AxzlXp91QkIGSw5wgaLT6GeAH0KsqDmRZdVWW2OiSeVvElVoatk3f7nicwXlElXsoFkARiGE2yg==
+
 ts-node@10.9.2:
   version "10.9.2"
   resolved "https://registry.yarnpkg.com/ts-node/-/ts-node-10.9.2.tgz#70f021c9e185bccdca820e26dc413805c101c71f"
@@ -4284,6 +4306,11 @@ ws@^7.5.10:
   version "7.5.10"
   resolved "https://registry.yarnpkg.com/ws/-/ws-7.5.10.tgz#58b5c20dc281633f6c19113f39b349bd8bd558d9"
   integrity sha512-+dbF1tHwZpXcbOJdVOkzLDxZP1ailvSxM6ZweXTegylPny803bFhA+vqBYw4s31NSAk4S2Qz+AKXK9a4wkdjcQ==
+
+ws@^8.18.0:
+  version "8.19.0"
+  resolved "https://registry.yarnpkg.com/ws/-/ws-8.19.0.tgz#ddc2bdfa5b9ad860204f5a72a4863a8895fd8c8b"
+  integrity sha512-blAT2mjOEIi0ZzruJfIhb3nps74PRWTCz1IjglWEEpQl5XS/UNama6u2/rjFkDDouqr4L67ry+1aGIALViWjDg==
 
 ws@^8.5.0:
   version "8.18.3"
