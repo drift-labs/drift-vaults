@@ -27,10 +27,10 @@
 	},
 	"devDependencies": {
 		"@coral-xyz/anchor": "0.29.0",
-		"@types/bn.js": "5.1.3"
+		"@types/bn.js": "5.1.6"
 	},
 	"engines": {
-		"node": ">=22.14.x"
+		"node": "^24.0.0"
 	},
 	"scripts": {
 		"cli": "ts-node cli/cli.ts",
@@ -38,7 +38,7 @@
 		"build": "yarn clean && tsc"
 	},
 	"resolutions": {
-		"@types/bn.js": "5.1.3",
+		"@types/bn.js": "5.1.6",
 		"rpc-websockets": "10.0.0",
 		"@solana/web3.js": "1.98.0"
 	}
