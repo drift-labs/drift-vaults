@@ -1,4 +1,3 @@
-import * as anchor from '@coral-xyz/anchor';
 import { BN, Program } from '@coral-xyz/anchor';
 import { describe, it } from '@jest/globals';
 import { BankrunContextWrapper } from './common/bankrunConnection';
