@@ -28,7 +28,11 @@ pub fn transfer_vault_depositor_shares<'info>(
         "Cannot transfer shares to the same depositor"
     )?;
 
-    validate!(amount > 0, ErrorCode::InvalidVaultWithdrawSize, "Transfer amount must be greater than 0")?;
+    validate!(
+        amount > 0,
+        ErrorCode::InvalidVaultWithdrawSize,
+        "Transfer amount must be greater than 0"
+    )?;
 
     let mut vault_depositor = ctx.accounts.vault_depositor.load_mut()?;
     let mut to_vault_depositor = ctx.accounts.to_vault_depositor.load_mut()?;
