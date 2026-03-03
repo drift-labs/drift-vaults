@@ -1887,7 +1887,7 @@
         },
         {
           "name": "driftUser",
-          "isMut": true,
+          "isMut": false,
           "isSigner": false
         }
       ],

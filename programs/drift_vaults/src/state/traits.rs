@@ -307,8 +307,8 @@ pub trait VaultDepositorBase {
         let to_depositor_shares_after = to.checked_vault_shares(vault)?;
 
         validate!(
-            from_depositor_shares_before.safe_add(to_depositor_shares_before)
-                == from_depositor_shares_after.safe_add(to_depositor_shares_after),
+            from_depositor_shares_before.safe_add(to_depositor_shares_before)?
+                == from_depositor_shares_after.safe_add(to_depositor_shares_after)?,
             ErrorCode::InvalidVaultSharesDetected,
             "VaultDepositor: total shares mismatch"
         )?;

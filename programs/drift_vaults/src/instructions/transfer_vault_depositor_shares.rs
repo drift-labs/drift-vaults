@@ -22,6 +22,14 @@ pub fn transfer_vault_depositor_shares<'info>(
 
     validate!(!vault.in_liquidation(), ErrorCode::OngoingLiquidation)?;
 
+    validate!(
+        ctx.accounts.vault_depositor.key() != ctx.accounts.to_vault_depositor.key(),
+        ErrorCode::InvalidVaultDeposit,
+        "Cannot transfer shares to the same depositor"
+    )?;
+
+    validate!(amount > 0, ErrorCode::InvalidVaultWithdrawSize, "Transfer amount must be greater than 0")?;
+
     let mut vault_depositor = ctx.accounts.vault_depositor.load_mut()?;
     let mut to_vault_depositor = ctx.accounts.to_vault_depositor.load_mut()?;
 
@@ -52,6 +60,12 @@ pub fn transfer_vault_depositor_shares<'info>(
         !vault_depositor.last_withdraw_request.pending(),
         ErrorCode::InvalidVaultDeposit,
         "Cannot transfer shares with a pending withdraw request"
+    )?;
+
+    validate!(
+        !to_vault_depositor.last_withdraw_request.pending(),
+        ErrorCode::InvalidVaultDeposit,
+        "Cannot transfer shares to a depositor with a pending withdraw request"
     )?;
 
     let spot_market = spot_market_map.get_ref(&spot_market_index)?;
@@ -104,9 +118,7 @@ pub struct TransferVaultDepositorShares<'info> {
     )]
     pub to_vault_depositor: AccountLoader<'info, VaultDepositor>,
     #[account(
-        mut,
         constraint = is_user_for_vault(&vault, &drift_user.key())?
     )]
-    /// CHECK: checked in drift cpi
     pub drift_user: AccountLoader<'info, User>,
 }
