@@ -2025,6 +2025,72 @@ export class VaultClient {
 		return await this.createAndSendTxn(ixs, txParams);
 	}
 
+	public async createTransferVaultDepositorSharesIx(
+		fromVaultDepositor: PublicKey,
+		toVaultDepositor: PublicKey,
+		amount: BN,
+		withdrawUnit: WithdrawUnit
+	): Promise<TransactionInstruction[]> {
+		const vaultDepositorAccount =
+			await this.program.account.vaultDepositor.fetch(fromVaultDepositor);
+		const vaultAccount = await this.program.account.vault.fetch(
+			vaultDepositorAccount.vault
+		);
+
+		const user = await this.getSubscribedVaultUser(vaultAccount.user);
+		const userStatsKey = getUserStatsAccountPublicKey(
+			this.driftClient.program.programId,
+			vaultDepositorAccount.vault
+		);
+		const userStats = (await this.driftClient.program.account.userStats.fetch(
+			userStatsKey
+		)) as UserStatsAccount;
+		const remainingAccounts = this.getRemainingAccountsForUser(
+			[user.getUserAccount()],
+			[vaultAccount.spotMarketIndex],
+			vaultAccount,
+			userStats,
+			false,
+			true,
+			true
+		);
+
+		const ixs: TransactionInstruction[] = [];
+
+		ixs.push(
+			await this.program.methods
+				// @ts-ignore
+				.transferVaultDepositorShares(amount, withdrawUnit)
+				.accounts({
+					vault: vaultDepositorAccount.vault,
+					vaultDepositor: fromVaultDepositor,
+					authority: this.driftClient.wallet.publicKey,
+					toVaultDepositor,
+					driftUser: vaultAccount.user,
+				})
+				.remainingAccounts(remainingAccounts)
+				.instruction()
+		);
+
+		return ixs;
+	}
+
+	public async transferVaultDepositorShares(
+		fromVaultDepositor: PublicKey,
+		toVaultDepositor: PublicKey,
+		amount: BN,
+		withdrawUnit: WithdrawUnit,
+		txParams?: TxParams
+	): Promise<TransactionSignature> {
+		const ixs = await this.createTransferVaultDepositorSharesIx(
+			fromVaultDepositor,
+			toVaultDepositor,
+			amount,
+			withdrawUnit
+		);
+		return await this.createAndSendTxn(ixs, txParams);
+	}
+
 	public async createRedeemTokensIx(
 		vaultDepositor: PublicKey,
 		tokensToBurn: BN,

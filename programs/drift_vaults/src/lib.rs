@@ -310,6 +310,14 @@ pub mod drift_vaults {
         instructions::cancel_request_remove_insurance_fund_stake(ctx, market_index)
     }
 
+    pub fn transfer_vault_depositor_shares<'info>(
+        ctx: Context<'_, '_, 'info, 'info, TransferVaultDepositorShares<'info>>,
+        amount: u64,
+        withdraw_unit: WithdrawUnit,
+    ) -> Result<()> {
+        instructions::transfer_vault_depositor_shares(ctx, amount, withdraw_unit)
+    }
+
     pub fn protocol_request_withdraw<'c: 'info, 'info>(
         ctx: Context<'_, '_, 'c, 'info, ProtocolRequestWithdraw<'info>>,
         withdraw_amount: u64,

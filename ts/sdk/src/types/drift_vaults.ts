@@ -1863,6 +1863,48 @@ export type DriftVaults = {
 			];
 		},
 		{
+			name: 'transferVaultDepositorShares';
+			accounts: [
+				{
+					name: 'vault';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'vaultDepositor';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'authority';
+					isMut: false;
+					isSigner: true;
+				},
+				{
+					name: 'toVaultDepositor';
+					isMut: true;
+					isSigner: false;
+				},
+				{
+					name: 'driftUser';
+					isMut: true;
+					isSigner: false;
+				}
+			];
+			args: [
+				{
+					name: 'amount';
+					type: 'u64';
+				},
+				{
+					name: 'withdrawUnit';
+					type: {
+						defined: 'WithdrawUnit';
+					};
+				}
+			];
+		},
+		{
 			name: 'protocolRequestWithdraw';
 			accounts: [
 				{
@@ -5517,6 +5559,48 @@ export const IDL: DriftVaults = {
 				{
 					name: 'marketIndex',
 					type: 'u16',
+				},
+			],
+		},
+		{
+			name: 'transferVaultDepositorShares',
+			accounts: [
+				{
+					name: 'vault',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'vaultDepositor',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'authority',
+					isMut: false,
+					isSigner: true,
+				},
+				{
+					name: 'toVaultDepositor',
+					isMut: true,
+					isSigner: false,
+				},
+				{
+					name: 'driftUser',
+					isMut: true,
+					isSigner: false,
+				},
+			],
+			args: [
+				{
+					name: 'amount',
+					type: 'u64',
+				},
+				{
+					name: 'withdrawUnit',
+					type: {
+						defined: 'WithdrawUnit',
+					},
 				},
 			],
 		},
