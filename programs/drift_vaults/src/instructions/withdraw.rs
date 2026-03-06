@@ -73,6 +73,13 @@ pub fn withdraw<'c: 'info, 'info>(ctx: Context<'_, '_, 'c, 'info, Withdraw<'info
 
     msg!("user_withdraw_amount: {}", user_withdraw_amount);
 
+    validate!(
+        !vault.is_trusted_vault_class(),
+        ErrorCode::InvalidVaultClass,
+        "Trusted vaults requires manager to send withdraw"
+    )?;
+
+
     drop(spot_market);
     drop(vault);
     drop(user);
@@ -92,6 +99,7 @@ pub fn withdraw<'c: 'info, 'info>(ctx: Context<'_, '_, 'c, 'info, Withdraw<'info
         ctx.drift_update_user_delegate(vault_delegate)?;
         ctx.drift_update_user_reduce_only(false)?;
     }
+
 
     Ok(())
 }
