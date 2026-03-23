@@ -365,26 +365,25 @@
     bn.js "^5.1.2"
     buffer-layout "^1.2.0"
 
-"@drift-labs/sdk@2.158.0-beta.3":
-  version "2.158.0-beta.3"
-  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.158.0-beta.3.tgz#6a95c356d2425b4ee163c3a680160d5c15d39945"
-  integrity sha512-0WeePoti0xKArZDtq2dPN+R7P9+WQIZCBoyd9xOhZCHsbR3LXQE9IcBX1x1jkpuhd8KmlDlraWAQuXSPjFjqRA==
+"@drift-labs/sdk@2.161.0-beta.2":
+  version "2.161.0-beta.2"
+  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.161.0-beta.2.tgz#7a41eb405272200ba0bb365154210969c411c43f"
+  integrity sha512-5X3i5rQHTO6Q3YQlXBBY9bmvXstjb1Z+Tgd74MrJmhQcFr38x1ivtCBg9MjB7HYoWD0F1cy8ojkUh3hVYeEHQA==
   dependencies:
     "@coral-xyz/anchor" "0.29.0"
     "@coral-xyz/anchor-30" "npm:@coral-xyz/anchor@0.30.1"
     "@ellipsis-labs/phoenix-sdk" "1.4.5"
-    "@grpc/grpc-js" "1.14.0"
     "@msgpack/msgpack" "^3.1.2"
     "@openbook-dex/openbook-v2" "0.2.10"
     "@project-serum/serum" "0.13.65"
     "@pythnetwork/client" "2.5.3"
     "@pythnetwork/price-service-sdk" "1.7.1"
-    "@pythnetwork/pyth-lazer-sdk" "5.2.1"
+    "@pythnetwork/pyth-lazer-sdk" "6.0.0"
     "@solana/spl-token" "0.4.13"
     "@solana/web3.js" "1.98.0"
     "@switchboard-xyz/common" "3.0.14"
     "@switchboard-xyz/on-demand" "2.4.1"
-    "@triton-one/yellowstone-grpc" "5.0.2"
+    "@triton-one/yellowstone-grpc" "5.0.5"
     anchor-bankrun "0.3.0"
     gill "^0.10.2"
     nanoid "3.3.4"
@@ -764,24 +763,6 @@
     "@ethersproject/properties" "^5.7.0"
     "@ethersproject/strings" "^5.7.0"
 
-"@grpc/grpc-js@1.14.0":
-  version "1.14.0"
-  resolved "https://registry.yarnpkg.com/@grpc/grpc-js/-/grpc-js-1.14.0.tgz#a3c47e7816ca2b4d5490cba9e06a3cf324e675ad"
-  integrity sha512-N8Jx6PaYzcTRNzirReJCtADVoq4z7+1KQ4E70jTg/koQiMoUSN1kbNjPOqpPbhMFhfU1/l7ixspPl8dNY+FoUg==
-  dependencies:
-    "@grpc/proto-loader" "^0.8.0"
-    "@js-sdsl/ordered-map" "^4.4.2"
-
-"@grpc/proto-loader@^0.8.0":
-  version "0.8.0"
-  resolved "https://registry.yarnpkg.com/@grpc/proto-loader/-/proto-loader-0.8.0.tgz#b6c324dd909c458a0e4aa9bfd3d69cf78a4b9bd8"
-  integrity sha512-rc1hOQtjIWGxcxpb9aHAfLpIctjEnsDehj0DAiVfBlmT84uvR0uUtN2hEi/ecvWVjXUGf5qPF4qEgiLOx1YIMQ==
-  dependencies:
-    lodash.camelcase "^4.3.0"
-    long "^5.0.0"
-    protobufjs "^7.5.3"
-    yargs "^17.7.2"
-
 "@irys/arweave@^0.0.2":
   version "0.0.2"
   resolved "https://registry.yarnpkg.com/@irys/arweave/-/arweave-0.0.2.tgz#c0e73eb8c15e323342d33ea92701d4036fd22ae3"
@@ -1076,11 +1057,6 @@
   dependencies:
     "@jridgewell/resolve-uri" "^3.1.0"
     "@jridgewell/sourcemap-codec" "^1.4.14"
-
-"@js-sdsl/ordered-map@^4.4.2":
-  version "4.4.2"
-  resolved "https://registry.yarnpkg.com/@js-sdsl/ordered-map/-/ordered-map-4.4.2.tgz#9299f82874bab9e4c7f9c48d865becbfe8d6907c"
-  integrity sha512-iUKgm52T8HOE/makSxjqoWhe95ZJA1/G1sYsGev2JDKUSS14KAgg1LHb+Ba+IPow0xflbnSkOsZcO08C7w1gYw==
 
 "@metaplex-foundation/beet-solana@0.4.0":
   version "0.4.0"
@@ -1607,10 +1583,10 @@
   dependencies:
     bn.js "^5.2.1"
 
-"@pythnetwork/pyth-lazer-sdk@5.2.1":
-  version "5.2.1"
-  resolved "https://registry.yarnpkg.com/@pythnetwork/pyth-lazer-sdk/-/pyth-lazer-sdk-5.2.1.tgz#7a35573f30c214c6e3014dcffbdec0053b3f7116"
-  integrity sha512-/0rrPi6sZdVH+cWtW+X/hmQzw+nP2fIF6BlrJRTrqwK2IXWZWW+40sHoj839HrbyUXOJyG9zKyco37eFuTE/nA==
+"@pythnetwork/pyth-lazer-sdk@6.0.0":
+  version "6.0.0"
+  resolved "https://registry.yarnpkg.com/@pythnetwork/pyth-lazer-sdk/-/pyth-lazer-sdk-6.0.0.tgz#6972ee03f72cc72fb198f42983c2292ab007eaa0"
+  integrity sha512-cty4/M4zQOUtFnm1ZsCfMs9x3sLk4ZmEwW0CPqMtDZFai94QGsXHkKvi5LkBPRL4aQg96EuVzOa37H0lHqANeQ==
   dependencies:
     "@isaacs/ttlcache" "^1.4.1"
     buffer "^6.0.3"
@@ -2505,40 +2481,40 @@
     buffer "^6.0.3"
     js-yaml "^4.1.0"
 
-"@triton-one/yellowstone-grpc-napi-darwin-arm64@0.0.6":
-  version "0.0.6"
-  resolved "https://registry.yarnpkg.com/@triton-one/yellowstone-grpc-napi-darwin-arm64/-/yellowstone-grpc-napi-darwin-arm64-0.0.6.tgz#14711575f1d5b76d5a3463fb202dcd6525ae4133"
-  integrity sha512-sQ+0wPnDX4vBbqWotgs+T7eJas64CRMhGL3mCYqk35zaU5k+1C9XKTghYao9sp+/8635oo3r1K2of1ZPI0m4tg==
+"@triton-one/yellowstone-grpc-napi-darwin-arm64@0.0.10":
+  version "0.0.10"
+  resolved "https://registry.yarnpkg.com/@triton-one/yellowstone-grpc-napi-darwin-arm64/-/yellowstone-grpc-napi-darwin-arm64-0.0.10.tgz#17d3f1cfccff393ebfcd4afffe2c9445fd63b41e"
+  integrity sha512-fTFuQazULSZEQ/KS1IiMarpj5ysLs4cNq1jYWb+X+HeanRFghhvoRh7Y+gH8/70pq/dSLJa4YZiPQ2rBI6C5tw==
 
-"@triton-one/yellowstone-grpc-napi-darwin-x64@0.0.6":
-  version "0.0.6"
-  resolved "https://registry.yarnpkg.com/@triton-one/yellowstone-grpc-napi-darwin-x64/-/yellowstone-grpc-napi-darwin-x64-0.0.6.tgz#290deed342c319acfc38ecc101fa66a59864e3bc"
-  integrity sha512-hWP6TDtX8kG01l7Y3bSmuH95ESgB7ZsNMB9Kr57qTWgRWgcj2tyy7QjxZNZC8f9n0iGxjCgCZB78rsAkIVjrag==
+"@triton-one/yellowstone-grpc-napi-darwin-x64@0.0.10":
+  version "0.0.10"
+  resolved "https://registry.yarnpkg.com/@triton-one/yellowstone-grpc-napi-darwin-x64/-/yellowstone-grpc-napi-darwin-x64-0.0.10.tgz#d96cb22da2850bde4dbec1ceea1ad35c909e45fe"
+  integrity sha512-Gic2c9mEA1EqvBLlcwoHXy2nYpYmP2YWprLWPgfzsqIRN5axJWKgf1UARB2/sTmhKgl1b1le2ozulGC7M37+ug==
 
-"@triton-one/yellowstone-grpc-napi-linux-x64-gnu@0.0.6":
-  version "0.0.6"
-  resolved "https://registry.yarnpkg.com/@triton-one/yellowstone-grpc-napi-linux-x64-gnu/-/yellowstone-grpc-napi-linux-x64-gnu-0.0.6.tgz#e5d7d7c97c60202e9375a6cdaaaec16708d84353"
-  integrity sha512-ZMbSNp1I4dvVIdY50zlKO7iiiBNsDdbmGl5cDSOwGG39bxPx+N8Vk1B2ZIQShc5ja7V7pmdYA3maplgkp/Fjjw==
+"@triton-one/yellowstone-grpc-napi-linux-x64-gnu@0.0.10":
+  version "0.0.10"
+  resolved "https://registry.yarnpkg.com/@triton-one/yellowstone-grpc-napi-linux-x64-gnu/-/yellowstone-grpc-napi-linux-x64-gnu-0.0.10.tgz#e7f9586a1e0dbbcf18282f3330cdeb73a8b7fd98"
+  integrity sha512-rXdGGx8cjSIY4oR1Pae69SEQzzg2m4uw+QfTQvZWs5DjrMS+24oE1hDuQhGyuYeU6kRfmRT+7DolSjKrdsGILg==
 
-"@triton-one/yellowstone-grpc-napi-linux-x64-musl@0.0.6":
-  version "0.0.6"
-  resolved "https://registry.yarnpkg.com/@triton-one/yellowstone-grpc-napi-linux-x64-musl/-/yellowstone-grpc-napi-linux-x64-musl-0.0.6.tgz#32f7d0197e5cb8ab0c8ff0532690a511d4ae9ab1"
-  integrity sha512-kORs4rX1aTzReidLLbFhrK8oGj4R3hVP3aDhR8tKFm8modbhaEZPyqY2MPyTS3VNYyFeMQrKTLllOJ5wsUeVkQ==
+"@triton-one/yellowstone-grpc-napi-linux-x64-musl@0.0.10":
+  version "0.0.10"
+  resolved "https://registry.yarnpkg.com/@triton-one/yellowstone-grpc-napi-linux-x64-musl/-/yellowstone-grpc-napi-linux-x64-musl-0.0.10.tgz#53d0e864ccc208c11413e9fe33a3a7bb7f3ecd71"
+  integrity sha512-Y3KlvcCy59xIqQYk/HpRSKCyCY83hEWg6bzOZ1k7+vyy7zfLwNW6rK5BkdHSezk2rJU9gTeduKvcq1P8ixJYbg==
 
-"@triton-one/yellowstone-grpc@5.0.2":
-  version "5.0.2"
-  resolved "https://registry.yarnpkg.com/@triton-one/yellowstone-grpc/-/yellowstone-grpc-5.0.2.tgz#9cb1adb3291c2e4198352b9b9839eed86bbef7ea"
-  integrity sha512-RR4X+W6GcvtcSCi+vtUm+6EC1rU9irLmu6bfhNl2MEh8nZakd+y79RLKU815OPZTosXWnbZMu6cQExKy6ixKPQ==
+"@triton-one/yellowstone-grpc@5.0.5":
+  version "5.0.5"
+  resolved "https://registry.yarnpkg.com/@triton-one/yellowstone-grpc/-/yellowstone-grpc-5.0.5.tgz#56e82451f1bac4fe0d7be438242ba4ab647cdd9d"
+  integrity sha512-RCD4GwS3lQSdPazdsfbXdKRatM9OOh1+7QEOTZEGhExpya0Gxcmvdb4sRvNy7B/eLQDfDuSu9MgIvmIKwOWsEQ==
   dependencies:
     "@bufbuild/protobuf" "=2.10.2"
     "@solana/addresses" "=5.1.0"
     "@solana/rpc-api" "=5.1.0"
     "@solana/rpc-types" "=5.1.0"
   optionalDependencies:
-    "@triton-one/yellowstone-grpc-napi-darwin-arm64" "0.0.6"
-    "@triton-one/yellowstone-grpc-napi-darwin-x64" "0.0.6"
-    "@triton-one/yellowstone-grpc-napi-linux-x64-gnu" "0.0.6"
-    "@triton-one/yellowstone-grpc-napi-linux-x64-musl" "0.0.6"
+    "@triton-one/yellowstone-grpc-napi-darwin-arm64" "0.0.10"
+    "@triton-one/yellowstone-grpc-napi-darwin-x64" "0.0.10"
+    "@triton-one/yellowstone-grpc-napi-linux-x64-gnu" "0.0.10"
+    "@triton-one/yellowstone-grpc-napi-linux-x64-musl" "0.0.10"
 
 "@types/babel__core@^7.1.14":
   version "7.20.5"
@@ -5316,11 +5292,6 @@ locate-path@^5.0.0:
   dependencies:
     p-locate "^4.1.0"
 
-lodash.camelcase@^4.3.0:
-  version "4.3.0"
-  resolved "https://registry.yarnpkg.com/lodash.camelcase/-/lodash.camelcase-4.3.0.tgz#b28aa6288a2b9fc651035c7711f65ab6190331a6"
-  integrity sha512-TwuEnCnxbc3rAvhf/LbG7tJUDzhqXyFnv3dtzLOPgCG/hODL7WFnsbwktkD7yUV0RrreP/l1PALq/YSg6VvjlA==
-
 lodash.clonedeep@^4.5.0:
   version "4.5.0"
   resolved "https://registry.yarnpkg.com/lodash.clonedeep/-/lodash.clonedeep-4.5.0.tgz#e23f3f9c4f8fbdde872529c1071857a086e5ccef"
@@ -6831,7 +6802,7 @@ yargs-parser@^21.1.1:
   resolved "https://registry.yarnpkg.com/yargs-parser/-/yargs-parser-21.1.1.tgz#9096bceebf990d21bb31fa9516e0ede294a77d35"
   integrity sha512-tVpsJW7DdjecAiFpbIB1e3qxIQsE6NoPc5/eTdrbbIC4h0LVsWhnoa3g+m2HclBIujHzsxZ4VJVA+GUuc2/LBw==
 
-yargs@17.7.2, yargs@^17.3.1, yargs@^17.7.2:
+yargs@17.7.2, yargs@^17.3.1:
   version "17.7.2"
   resolved "https://registry.yarnpkg.com/yargs/-/yargs-17.7.2.tgz#991df39aca675a192b816e1e0363f9d75d2aa269"
   integrity sha512-7dSzzRQ++CKnNI/krKnYRV7JKKPUXMEh61soaHKg9mrWEhzFWhFnxPxGl+69cD1Ou63C13NUPCnmIcrvqCuM6w==
