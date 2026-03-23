@@ -11,4 +11,5 @@ ts/sdk/lib/
 ts/sdk/src/**/*.js
 ts/sdk/src/**/*.js.map
 vendor
+.cargo/config.toml
 .env
