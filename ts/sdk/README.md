@@ -20,7 +20,7 @@ yarn cli --help
 
 ## Manager Commands
 
-The following commands are menat to be run by Vault Managers. `KEYPAIR_PATH` should be the manager's keypair.
+The following commands are meant to be run by Vault Managers. `KEYPAIR_PATH` should be the manager's keypair.
 
 ### Initialize a new vault
 
@@ -112,7 +112,7 @@ yarn cli init-vault-depositor --vault-address=<VAULT_ADDRESS> --deposit-authorit
 ```
 
 
-#### Permissioneless Vaults
+#### Permissionless Vaults
 
 Permissionless vaults allow anyone to deposit. The `deposit` instruction will initialize a `VaultDepositor` account if one does not exist.
 `DEPOSIT_AMOUNT` in human precision of the deposit token (e.g. 5 for 5 USDC).
