@@ -12,6 +12,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Breaking
 
+## [0.11.0] - 2026-03-30
+
+### Features
+
+* program: allow non-VaultDepositor to pay for VaultDeposit account
+
+### Fixes
+
+### Breaking
+
+
+
 ## [0.10.0] - 2026-03-06
 
 ### Features
