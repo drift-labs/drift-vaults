@@ -16,8 +16,8 @@ use drift::math::safe_math::SafeMath;
 use drift::program::Drift;
 use drift::state::user::{FuelOverflowStatus, User, UserStats};
 
-pub fn manager_repay<'c: 'info, 'info>(
-    ctx: Context<'_, '_, 'c, 'info, ManagerRepay<'info>>,
+pub fn manager_repay<'info>(
+    ctx: Context<'info, ManagerRepay<'info>>,
     repay_spot_market_index: u16,
     repay_amount: u64,
     repay_value: Option<u64>,
@@ -179,11 +179,11 @@ pub struct ManagerRepay<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-impl<'info> ManagerRepayCPI for Context<'_, '_, '_, 'info, ManagerRepay<'info>> {
+impl<'info> ManagerRepayCPI for Context<'info, ManagerRepay<'info>> {
     fn drift_deposit(&self, market_index: u16, amount: u64) -> Result<()> {
         declare_vault_seeds!(self.accounts.vault, seeds);
 
-        let cpi_program = self.accounts.drift_program.to_account_info().clone();
+        let cpi_program = self.accounts.drift_program.key();
         let cpi_accounts = DriftDeposit {
             state: self.accounts.drift_state.clone(),
             user: self.accounts.drift_user.to_account_info().clone(),
@@ -205,14 +205,14 @@ impl<'info> ManagerRepayCPI for Context<'_, '_, '_, 'info, ManagerRepay<'info>> 
     }
 }
 
-impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, ManagerRepay<'info>> {
+impl<'info> TokenTransferCPI for Context<'info, ManagerRepay<'info>> {
     fn token_transfer(&self, amount: u64) -> Result<()> {
         let cpi_accounts = Transfer {
             from: self.accounts.user_token_account.to_account_info().clone(),
             to: self.accounts.vault_token_account.to_account_info().clone(),
             authority: self.accounts.manager.to_account_info().clone(),
         };
-        let token_program = self.accounts.token_program.to_account_info().clone();
+        let token_program = self.accounts.token_program.key();
         let cpi_context = CpiContext::new(token_program, cpi_accounts);
 
         token::transfer(cpi_context, amount)?;

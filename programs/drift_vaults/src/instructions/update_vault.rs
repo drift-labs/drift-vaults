@@ -4,7 +4,7 @@ use crate::{error::ErrorCode, validate, Vault};
 use anchor_lang::prelude::*;
 
 pub fn update_vault<'info>(
-    ctx: Context<'_, '_, '_, 'info, UpdateVault<'info>>,
+    ctx: Context<'info, UpdateVault<'info>>,
     params: UpdateVaultParams,
 ) -> Result<()> {
     let mut vault = ctx.accounts.vault.load_mut()?;

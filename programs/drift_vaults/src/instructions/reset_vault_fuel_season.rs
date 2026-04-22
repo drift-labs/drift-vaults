@@ -3,8 +3,8 @@ use anchor_lang::prelude::*;
 use drift::ids::admin_hot_wallet;
 use drift::state::state::State;
 
-pub fn reset_vault_fuel_season<'c: 'info, 'info>(
-    ctx: Context<'_, '_, 'c, 'info, ResetVaultFuelSeason<'info>>,
+pub fn reset_vault_fuel_season<'info>(
+    ctx: Context<'info, ResetVaultFuelSeason<'info>>,
 ) -> Result<()> {
     let clock = &Clock::get()?;
 

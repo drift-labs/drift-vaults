@@ -13,8 +13,8 @@
         "anchor-tests": "yarn update-types && yarn update-idl && yarn update-drift && yarn update-pyth && yarn update-drift && yarn update-pyth && yarn run jest --runInBand --forceExit"
     },
     "devDependencies": {
-        "@coral-xyz/anchor": "0.29.0",
-        "@drift-labs/sdk": "2.162.0-beta.1",
+        "@coral-xyz/anchor": "0.32.1",
+        "@drift-labs/sdk": "link:../protocol-v2-shadow/sdk",
         "@solana/web3.js": "1.73.2",
         "@types/bn.js": "5.1.0",
         "@types/jest": "29.5.14",

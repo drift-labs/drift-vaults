@@ -9,7 +9,7 @@ use crate::drift_cpi::InitializeInsuranceFundStakeCPI;
 use crate::{declare_vault_seeds, Vault};
 
 pub fn initialize_insurance_fund_stake<'info>(
-    ctx: Context<'_, '_, '_, 'info, InitializeInsuranceFundStake<'info>>,
+    ctx: Context<'info, InitializeInsuranceFundStake<'info>>,
     market_index: u16,
 ) -> Result<()> {
     ctx.drift_initialize_insurance_fund_stake(market_index)?;
@@ -70,7 +70,7 @@ pub struct InitializeInsuranceFundStake<'info> {
 }
 
 impl<'info> InitializeInsuranceFundStakeCPI
-    for Context<'_, '_, '_, 'info, InitializeInsuranceFundStake<'info>>
+    for Context<'info, InitializeInsuranceFundStake<'info>>
 {
     fn drift_initialize_insurance_fund_stake(&self, market_index: u16) -> Result<()> {
         declare_vault_seeds!(self.accounts.vault, seeds);
@@ -86,7 +86,7 @@ impl<'info> InitializeInsuranceFundStakeCPI
             system_program: self.accounts.system_program.to_account_info().clone(),
         };
 
-        let drift_program = self.accounts.drift_program.to_account_info().clone();
+        let drift_program = self.accounts.drift_program.key();
         let cpi_context = CpiContext::new_with_signer(drift_program, cpi_accounts, seeds)
             .with_remaining_accounts(self.remaining_accounts.into());
         drift::cpi::initialize_insurance_fund_stake(cpi_context, market_index)?;

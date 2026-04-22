@@ -7,8 +7,8 @@ use crate::state::VaultProtocolProvider;
 use crate::AccountMapProvider;
 use crate::{Vault, WithdrawUnit};
 
-pub fn manager_request_withdraw<'c: 'info, 'info>(
-    ctx: Context<'_, '_, 'c, 'info, ManagerRequestWithdraw<'info>>,
+pub fn manager_request_withdraw<'info>(
+    ctx: Context<'info, ManagerRequestWithdraw<'info>>,
     withdraw_amount: u64,
     withdraw_unit: WithdrawUnit,
 ) -> Result<()> {

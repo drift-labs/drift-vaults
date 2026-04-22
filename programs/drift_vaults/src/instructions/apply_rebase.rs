@@ -5,9 +5,7 @@ use drift::state::user::User;
 use crate::constraints::{is_user_for_vault, is_vault_for_vault_depositor};
 use crate::{AccountMapProvider, Vault, VaultDepositor, VaultProtocolProvider};
 
-pub fn apply_rebase<'c: 'info, 'info>(
-    ctx: Context<'_, '_, 'c, 'info, ApplyRebase<'info>>,
-) -> Result<()> {
+pub fn apply_rebase<'info>(ctx: Context<'info, ApplyRebase<'info>>) -> Result<()> {
     let clock = &Clock::get()?;
 
     let mut vault = ctx.accounts.vault.load_mut()?;

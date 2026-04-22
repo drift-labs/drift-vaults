@@ -12,8 +12,8 @@ use crate::state::{
 };
 use crate::{VaultDepositor, WithdrawUnit};
 
-pub fn request_withdraw<'c: 'info, 'info>(
-    ctx: Context<'_, '_, 'c, 'info, RequestWithdraw<'info>>,
+pub fn request_withdraw<'info>(
+    ctx: Context<'info, RequestWithdraw<'info>>,
     withdraw_amount: u64,
     withdraw_unit: WithdrawUnit,
 ) -> Result<()> {

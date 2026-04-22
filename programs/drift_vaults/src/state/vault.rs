@@ -1,7 +1,6 @@
 use std::cell::RefMut;
 
 use anchor_lang::prelude::*;
-use borsh::{BorshDeserialize, BorshSerialize};
 use drift::math::casting::Cast;
 use drift::math::constants::{ONE_YEAR, PERCENTAGE_PRECISION, PERCENTAGE_PRECISION_I128};
 use drift::math::insurance::calculate_rebase_info;
@@ -53,6 +52,11 @@ pub struct Vault {
     /// The sum of all shares: deposits from users, manager deposits, manager profit/fee, and protocol profit/fee.
     /// The manager deposits are total_shares - user_shares - protocol_profit_and_fee_shares.
     pub total_shares: u128,
+    /// The cumulative fuel per share (scaled up by 1e6 to avoid losing precision)
+    pub cumulative_fuel_per_share: u128,
+    /// The total fuel accumulated
+    pub cumulative_fuel: u128,
+    pub last_manager_withdraw_request: WithdrawRequest,
     /// Last fee update unix timestamp
     pub last_fee_update_ts: i64,
     /// When the liquidation starts
@@ -87,13 +91,18 @@ pub struct Vault {
     pub manager_total_profit_share: u64,
     /// The minimum deposit amount
     pub min_deposit_amount: u64,
-    pub last_manager_withdraw_request: WithdrawRequest,
+    /// The total value (in deposit asset) of borrows the manager has outstanding.
+    /// Purely for informational purposes for assets that have left the vault that the manager
+    /// is expected to return.
+    pub manager_borrowed_value: u64,
     /// The base 10 exponent of the shares (given massive share inflation can occur at near zero vault equity)
     pub shares_base: u32,
     /// Percentage the manager charges on all profits realized by depositors: PERCENTAGE_PRECISION
     pub profit_share: u32,
     /// Vault manager only collect incentive fees during periods when returns are higher than this amount: PERCENTAGE_PRECISION
     pub hurdle_rate: u32,
+    /// The timestamp cumulative_fuel_per_share was last updated
+    pub last_cumulative_fuel_per_share_ts: u32,
     /// The spot market index the vault deposits into/withdraws from
     pub spot_market_index: u16,
     /// The bump for the vault pda
@@ -110,16 +119,6 @@ pub struct Vault {
     pub fee_update_status: u8,
     /// The class of the vault [`VaultClass`]. Default is `VaultClass::Normal`
     pub vault_class: u8,
-    /// The timestamp cumulative_fuel_per_share was last updated
-    pub last_cumulative_fuel_per_share_ts: u32,
-    /// The cumulative fuel per share (scaled up by 1e6 to avoid losing precision)
-    pub cumulative_fuel_per_share: u128,
-    /// The total fuel accumulated
-    pub cumulative_fuel: u128,
-    /// The total value (in deposit asset) of borrows the manager has outstanding.
-    /// Purely for informational purposes for assets that have left the vault that the manager
-    /// is expected to return.
-    pub manager_borrowed_value: u64,
     pub padding: [u64; 2],
 }
 
@@ -1339,7 +1338,8 @@ impl Vault {
     }
 }
 
-#[derive(Clone, Copy, BorshSerialize, BorshDeserialize, PartialEq, Debug, Eq)]
+#[derive(Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Debug, Eq)]
+#[borsh(use_discriminant = true)]
 #[repr(u8)]
 pub enum FuelDistributionMode {
     UsersOnly = 0b00000000,

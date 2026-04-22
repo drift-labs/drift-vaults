@@ -12,7 +12,7 @@ use crate::{validate, AccountMapProvider};
 use crate::{Vault, VaultDepositor, VaultProtocolProvider, WithdrawUnit};
 
 pub fn transfer_vault_depositor_shares<'info>(
-    ctx: Context<'_, '_, 'info, 'info, TransferVaultDepositorShares<'info>>,
+    ctx: Context<'info, TransferVaultDepositorShares<'info>>,
     amount: u64,
     withdraw_unit: WithdrawUnit,
 ) -> Result<()> {

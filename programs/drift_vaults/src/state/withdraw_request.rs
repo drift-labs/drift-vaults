@@ -17,6 +17,7 @@ use static_assertions::const_assert_eq;
 #[derive(
     Default, AnchorSerialize, AnchorDeserialize, Copy, Clone, Eq, PartialEq, Debug, Zeroable,
 )]
+#[repr(C)]
 pub struct WithdrawRequest {
     /// request shares of vault withdraw
     pub shares: u128,

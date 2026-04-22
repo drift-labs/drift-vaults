@@ -13,9 +13,7 @@ use crate::state::{Vault, VaultDepositor};
 use crate::{declare_vault_seeds, implement_update_user_delegate_cpi};
 use crate::{implement_update_user_reduce_only_cpi, AccountMapProvider, VaultProtocolProvider};
 
-pub fn liquidate<'c: 'info, 'info>(
-    ctx: Context<'_, '_, 'c, 'info, Liquidate<'info>>,
-) -> Result<()> {
+pub fn liquidate<'info>(ctx: Context<'info, Liquidate<'info>>) -> Result<()> {
     let clock = &Clock::get()?;
     let now = Clock::get()?.unix_timestamp;
 
@@ -105,14 +103,14 @@ pub struct Liquidate<'info> {
     pub drift_program: Program<'info, Drift>,
 }
 
-impl<'info> UpdateUserDelegateCPI for Context<'_, '_, '_, 'info, Liquidate<'info>> {
+impl<'info> UpdateUserDelegateCPI for Context<'info, Liquidate<'info>> {
     fn drift_update_user_delegate(&self, delegate: Pubkey) -> Result<()> {
         implement_update_user_delegate_cpi!(self, delegate);
         Ok(())
     }
 }
 
-impl<'info> UpdateUserReduceOnlyCPI for Context<'_, '_, '_, 'info, Liquidate<'info>> {
+impl<'info> UpdateUserReduceOnlyCPI for Context<'info, Liquidate<'info>> {
     fn drift_update_user_reduce_only(&self, reduce_only: bool) -> Result<()> {
         implement_update_user_reduce_only_cpi!(self, reduce_only);
         Ok(())

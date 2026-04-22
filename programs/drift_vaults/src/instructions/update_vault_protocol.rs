@@ -4,8 +4,8 @@ use crate::constraints::{is_protocol_for_vault, is_vault_protocol_for_vault};
 use crate::state::{Vault, VaultProtocol};
 use crate::{error::ErrorCode, validate};
 
-pub fn update_vault_protocol<'c: 'info, 'info>(
-    ctx: Context<'_, '_, 'c, 'info, UpdateVaultProtocol<'info>>,
+pub fn update_vault_protocol<'info>(
+    ctx: Context<'info, UpdateVaultProtocol<'info>>,
     params: UpdateVaultProtocolParams,
 ) -> Result<()> {
     let vault = ctx.accounts.vault.load_mut()?;

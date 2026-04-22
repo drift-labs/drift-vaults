@@ -12,7 +12,7 @@ use crate::{
     declare_vault_seeds, implement_update_user_delegate_cpi, implement_update_user_reduce_only_cpi,
 };
 
-pub fn reset_delegate<'info>(ctx: Context<'_, '_, '_, 'info, ResetDelegate<'info>>) -> Result<()> {
+pub fn reset_delegate<'info>(ctx: Context<'info, ResetDelegate<'info>>) -> Result<()> {
     let mut vault = ctx.accounts.vault.load_mut()?;
 
     validate!(
@@ -48,14 +48,14 @@ pub struct ResetDelegate<'info> {
     pub drift_program: Program<'info, Drift>,
 }
 
-impl<'info> UpdateUserDelegateCPI for Context<'_, '_, '_, 'info, ResetDelegate<'info>> {
+impl<'info> UpdateUserDelegateCPI for Context<'info, ResetDelegate<'info>> {
     fn drift_update_user_delegate(&self, delegate: Pubkey) -> Result<()> {
         implement_update_user_delegate_cpi!(self, delegate);
         Ok(())
     }
 }
 
-impl<'info> UpdateUserReduceOnlyCPI for Context<'_, '_, '_, 'info, ResetDelegate<'info>> {
+impl<'info> UpdateUserReduceOnlyCPI for Context<'info, ResetDelegate<'info>> {
     fn drift_update_user_reduce_only(&self, reduce_only: bool) -> Result<()> {
         implement_update_user_reduce_only_cpi!(self, reduce_only);
         Ok(())

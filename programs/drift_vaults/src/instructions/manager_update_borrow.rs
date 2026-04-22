@@ -9,8 +9,8 @@ use anchor_lang::prelude::*;
 use drift::instructions::optional_accounts::AccountMaps;
 use drift::state::user::{FuelOverflowStatus, User, UserStats};
 
-pub fn manager_update_borrow<'c: 'info, 'info>(
-    ctx: Context<'_, '_, 'c, 'info, ManagerUpdateBorrow<'info>>,
+pub fn manager_update_borrow<'info>(
+    ctx: Context<'info, ManagerUpdateBorrow<'info>>,
     new_borrow_value: u64,
 ) -> Result<()> {
     let mut vault = ctx.accounts.vault.load_mut()?;

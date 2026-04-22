@@ -279,7 +279,7 @@ export class VaultClient {
 				memcmp: {
 					offset: 0,
 					bytes: bs58.encode(
-						BorshAccountsCoder.accountDiscriminator('VaultDepositor')
+						(this.program.coder.accounts as BorshAccountsCoder).accountDiscriminator('vaultDepositor')
 					),
 				},
 			},
@@ -313,7 +313,7 @@ export class VaultClient {
 				memcmp: {
 					offset: 0,
 					bytes: bs58.encode(
-						BorshAccountsCoder.accountDiscriminator('VaultDepositor')
+						(this.program.coder.accounts as BorshAccountsCoder).accountDiscriminator('vaultDepositor')
 					),
 				},
 			},
@@ -342,7 +342,7 @@ export class VaultClient {
 				memcmp: {
 					offset: 0,
 					bytes: bs58.encode(
-						BorshAccountsCoder.accountDiscriminator('VaultDepositor')
+						(this.program.coder.accounts as BorshAccountsCoder).accountDiscriminator('vaultDepositor')
 					),
 				},
 			},

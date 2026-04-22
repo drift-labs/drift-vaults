@@ -17,8 +17,8 @@ use drift::math::safe_math::SafeMath;
 use drift::program::Drift;
 use drift::state::user::{FuelOverflowStatus, User, UserStats};
 
-pub fn manager_borrow<'c: 'info, 'info>(
-    ctx: Context<'_, '_, 'c, 'info, ManagerBorrow<'info>>,
+pub fn manager_borrow<'info>(
+    ctx: Context<'info, ManagerBorrow<'info>>,
     borrow_spot_market_index: u16,
     borrow_amount: u64,
 ) -> Result<()> {
@@ -183,7 +183,7 @@ pub struct ManagerBorrow<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-impl<'info> ManagerBorrowCPI for Context<'_, '_, '_, 'info, ManagerBorrow<'info>> {
+impl<'info> ManagerBorrowCPI for Context<'info, ManagerBorrow<'info>> {
     fn drift_withdraw(&self, market_index: u16, amount: u64) -> Result<()> {
         declare_vault_seeds!(self.accounts.vault, seeds);
 
@@ -202,7 +202,7 @@ impl<'info> ManagerBorrowCPI for Context<'_, '_, '_, 'info, ManagerBorrow<'info>
             token_program: self.accounts.token_program.to_account_info().clone(),
         };
 
-        let drift_program = self.accounts.drift_program.to_account_info().clone();
+        let drift_program = self.accounts.drift_program.key();
         let cpi_context = CpiContext::new_with_signer(drift_program, cpi_accounts, seeds)
             .with_remaining_accounts(self.remaining_accounts.into());
         drift::cpi::withdraw(cpi_context, market_index, amount, false)?;
@@ -211,7 +211,7 @@ impl<'info> ManagerBorrowCPI for Context<'_, '_, '_, 'info, ManagerBorrow<'info>
     }
 }
 
-impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, ManagerBorrow<'info>> {
+impl<'info> TokenTransferCPI for Context<'info, ManagerBorrow<'info>> {
     fn token_transfer(&self, amount: u64) -> Result<()> {
         declare_vault_seeds!(self.accounts.vault, seeds);
 
@@ -220,7 +220,7 @@ impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, ManagerBorrow<'info>
             to: self.accounts.user_token_account.to_account_info().clone(),
             authority: self.accounts.vault.to_account_info().clone(),
         };
-        let token_program = self.accounts.token_program.to_account_info().clone();
+        let token_program = self.accounts.token_program.key();
         let cpi_context = CpiContext::new_with_signer(token_program, cpi_accounts, seeds);
 
         token::transfer(cpi_context, amount)?;

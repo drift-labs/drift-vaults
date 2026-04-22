@@ -29,7 +29,7 @@ pub fn initialize_tokenized_vault_depositor(
 
     create_metadata_accounts_v3(
         CpiContext::new_with_signer(
-            ctx.accounts.token_metadata_program.to_account_info(),
+            ctx.accounts.token_metadata_program.key(),
             CreateMetadataAccountsV3 {
                 metadata: ctx.accounts.metadata_account.to_account_info(),
                 mint: ctx.accounts.mint_account.to_account_info(),

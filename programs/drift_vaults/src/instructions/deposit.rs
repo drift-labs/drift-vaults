@@ -17,10 +17,7 @@ use crate::state::{
 use crate::token_cpi::TokenTransferCPI;
 use crate::{declare_vault_seeds, implement_deposit, validate, AccountMapProvider};
 
-pub fn deposit<'c: 'info, 'info>(
-    ctx: Context<'_, '_, 'c, 'info, Deposit<'info>>,
-    amount: u64,
-) -> Result<()> {
+pub fn deposit<'info>(ctx: Context<'info, Deposit<'info>>, amount: u64) -> Result<()> {
     let clock = &Clock::get()?;
 
     let mut vault = ctx.accounts.vault.load_mut()?;
@@ -147,14 +144,14 @@ pub struct Deposit<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, Deposit<'info>> {
+impl<'info> TokenTransferCPI for Context<'info, Deposit<'info>> {
     fn token_transfer(&self, amount: u64) -> Result<()> {
         let cpi_accounts = Transfer {
             from: self.accounts.user_token_account.to_account_info().clone(),
             to: self.accounts.vault_token_account.to_account_info().clone(),
             authority: self.accounts.authority.to_account_info().clone(),
         };
-        let token_program = self.accounts.token_program.to_account_info().clone();
+        let token_program = self.accounts.token_program.key();
         let cpi_context = CpiContext::new(token_program, cpi_accounts);
 
         token::transfer(cpi_context, amount)?;
@@ -163,7 +160,7 @@ impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, Deposit<'info>> {
     }
 }
 
-impl<'info> DepositCPI for Context<'_, '_, '_, 'info, Deposit<'info>> {
+impl<'info> DepositCPI for Context<'info, Deposit<'info>> {
     fn drift_deposit(&self, amount: u64) -> Result<()> {
         implement_deposit!(self, amount);
         Ok(())

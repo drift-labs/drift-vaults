@@ -16,9 +16,7 @@ use crate::{validate, AccountMapProvider};
 
 use super::constraints::is_admin;
 
-pub fn apply_profit_share<'c: 'info, 'info>(
-    ctx: Context<'_, '_, 'c, 'info, ApplyProfitShare<'info>>,
-) -> Result<()> {
+pub fn apply_profit_share<'info>(ctx: Context<'info, ApplyProfitShare<'info>>) -> Result<()> {
     let clock = &Clock::get()?;
 
     let mut vault = ctx.accounts.vault.load_mut()?;

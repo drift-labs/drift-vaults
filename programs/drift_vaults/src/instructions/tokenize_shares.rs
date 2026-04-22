@@ -16,7 +16,7 @@ use drift::state::user::User;
 use super::constraints::is_vault_shares_base_for_tokenized_depositor;
 
 pub fn tokenize_shares<'info>(
-    ctx: Context<'_, '_, 'info, 'info, TokenizeShares<'info>>,
+    ctx: Context<'info, TokenizeShares<'info>>,
     amount: u64,
     unit: WithdrawUnit,
 ) -> Result<()> {
@@ -184,7 +184,7 @@ pub struct TokenizeShares<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-impl<'info> MintTokensCPI for Context<'_, '_, '_, 'info, TokenizeShares<'info>> {
+impl<'info> MintTokensCPI for Context<'info, TokenizeShares<'info>> {
     fn mint(&self, vault_name: [u8; 32], vault_bump: u8, amount: u64) -> Result<()> {
         let signature_seeds = Vault::get_vault_signer_seeds(&vault_name, &vault_bump);
         let signers = &[&signature_seeds[..]];
@@ -195,11 +195,8 @@ impl<'info> MintTokensCPI for Context<'_, '_, '_, 'info, TokenizeShares<'info>> 
             authority: self.accounts.vault.to_account_info(),
         };
 
-        let cpi_context = CpiContext::new_with_signer(
-            self.accounts.token_program.to_account_info(),
-            cpi_accounts,
-            signers,
-        );
+        let cpi_context =
+            CpiContext::new_with_signer(self.accounts.token_program.key(), cpi_accounts, signers);
 
         mint_to(cpi_context, amount)?;
 

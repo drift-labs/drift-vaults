@@ -1,10 +1,10 @@
 import { AnchorProvider } from '@coral-xyz/anchor';
 import { DriftClient, IWallet } from '@drift-labs/sdk';
 import { Connection, PublicKey, TransactionInstruction } from '@solana/web3.js';
-import { DriftVaults, IDL } from './types/drift_vaults';
+import { DriftVaults } from './types/drift_vaults';
+import driftVaultsIDL from './idl/drift_vaults.json';
 import { VaultClient } from './vaultClient';
 import * as anchor from '@coral-xyz/anchor';
-import { VAULT_PROGRAM_ID } from './types/types';
 import {
 	createAssociatedTokenAccountInstruction,
 	getAssociatedTokenAddress,
@@ -16,7 +16,10 @@ export const getDriftVaultProgram = (
 ): anchor.Program<DriftVaults> => {
 	const provider = new AnchorProvider(connection, wallet as anchor.Wallet, {});
 	anchor.setProvider(provider);
-	const vaultProgram = new anchor.Program(IDL, VAULT_PROGRAM_ID, provider);
+	const vaultProgram = new anchor.Program<DriftVaults>(
+		driftVaultsIDL as DriftVaults,
+		provider
+	);
 
 	return vaultProgram;
 };

@@ -51,11 +51,11 @@ pub struct TokenizedVaultDepositor {
     /// The bump for the vault pda
     pub bump: u8,
     pub padding1: [u8; 3],
-    pub padding: [u64; 10],
+    pub padding: [u64; 11],
 }
 
 impl Size for TokenizedVaultDepositor {
-    const SIZE: usize = 264 + 8;
+    const SIZE: usize = 272 + 8;
 }
 
 const_assert_eq!(
@@ -131,7 +131,7 @@ impl TokenizedVaultDepositor {
             vault_shares_base,
             bump,
             padding1: [0; 3],
-            padding: [0; 10],
+            padding: [0; 11],
         }
     }
 

@@ -10,11 +10,11 @@ use static_assertions::const_assert_eq;
 #[derive(Default, Eq, PartialEq, Debug)]
 #[repr(C)]
 pub struct FeeUpdate {
+    pub padding: [u128; 10],
     pub incoming_update_ts: i64,
     pub incoming_management_fee: i64,
     pub incoming_profit_share: u32,
     pub incoming_hurdle_rate: u32,
-    pub padding: [u128; 10],
     pub padding2: [u8; 8],
 }
 

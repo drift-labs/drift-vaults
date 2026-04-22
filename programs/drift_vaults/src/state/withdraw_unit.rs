@@ -2,7 +2,7 @@ use crate::error::{ErrorCode, VaultResult};
 use crate::validate;
 use anchor_lang::prelude::*;
 use anchor_lang::solana_program::msg;
-use borsh::{BorshDeserialize, BorshSerialize};
+
 use drift::math::casting::Cast;
 use drift::math::safe_math::SafeMath;
 
@@ -11,7 +11,7 @@ use drift::math::insurance::{
     vault_amount_to_if_shares as vault_amount_to_depositor_shares,
 };
 
-#[derive(Debug, Clone, Copy, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
 pub enum WithdrawUnit {
     Shares,
     Token,

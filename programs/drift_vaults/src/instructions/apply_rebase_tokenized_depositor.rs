@@ -6,8 +6,8 @@ use crate::constraints::{is_tokenized_depositor_for_vault, is_user_for_vault};
 use crate::state::traits::VaultDepositorBase;
 use crate::{AccountMapProvider, TokenizedVaultDepositor, Vault, VaultProtocolProvider};
 
-pub fn apply_rebase_tokenized_depositor<'c: 'info, 'info>(
-    ctx: Context<'_, '_, 'c, 'info, ApplyRebaseTokenizedDepositor<'info>>,
+pub fn apply_rebase_tokenized_depositor<'info>(
+    ctx: Context<'info, ApplyRebaseTokenizedDepositor<'info>>,
 ) -> Result<()> {
     let clock = &Clock::get()?;
 

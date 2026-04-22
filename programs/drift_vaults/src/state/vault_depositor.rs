@@ -43,6 +43,10 @@ pub struct VaultDepositor {
     pub authority: Pubkey,
     /// share of vault owned by this depositor. vault_shares / vault.total_shares is depositor's ownership of vault_equity
     vault_shares: u128,
+    /// precision: FUEL_SHARE_PRECISION
+    pub cumulative_fuel_per_share_amount: u128,
+    /// precision: none
+    pub fuel_amount: u128,
     /// last withdraw request
     pub last_withdraw_request: WithdrawRequest,
     /// creation ts of vault depositor
@@ -59,15 +63,11 @@ pub struct VaultDepositor {
     /// the exponent for vault_shares decimal places
     pub vault_shares_base: u32,
     pub last_fuel_update_ts: u32, // overflows on 2106-02-07 06:28:15 UTC
-    /// precision: FUEL_SHARE_PRECISION
-    pub cumulative_fuel_per_share_amount: u128,
-    /// precision: none
-    pub fuel_amount: u128,
-    pub padding: [u64; 4],
+    pub padding: [u64; 5],
 }
 
 impl Size for VaultDepositor {
-    const SIZE: usize = 264 + 8;
+    const SIZE: usize = 272 + 8;
 }
 
 const_assert_eq!(
@@ -137,7 +137,7 @@ impl VaultDepositor {
             last_fuel_update_ts: MAGIC_FUEL_START_TS,
             cumulative_fuel_per_share_amount: 0,
             fuel_amount: 0,
-            padding: [0u64; 4],
+            padding: [0u64; 5],
         }
     }
 

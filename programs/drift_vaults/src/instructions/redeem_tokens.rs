@@ -14,7 +14,7 @@ use drift::math::safe_math::SafeMath;
 use drift::state::user::User;
 
 pub fn redeem_tokens<'info>(
-    ctx: Context<'_, '_, 'info, 'info, RedeemTokens<'info>>,
+    ctx: Context<'info, RedeemTokens<'info>>,
     tokens_to_burn: u64,
 ) -> Result<()> {
     let clock = &Clock::get()?;
@@ -184,14 +184,14 @@ pub struct RedeemTokens<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, RedeemTokens<'info>> {
+impl<'info> TokenTransferCPI for Context<'info, RedeemTokens<'info>> {
     fn token_transfer(&self, amount: u64) -> Result<()> {
         let cpi_accounts = Transfer {
             from: self.accounts.user_token_account.to_account_info(),
             to: self.accounts.vault_token_account.to_account_info(),
             authority: self.accounts.authority.to_account_info(),
         };
-        let token_program = self.accounts.token_program.to_account_info();
+        let token_program = self.accounts.token_program.key();
         let cpi_context = CpiContext::new(token_program, cpi_accounts);
 
         transfer(cpi_context, amount)?;
@@ -200,7 +200,7 @@ impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, RedeemTokens<'info>>
     }
 }
 
-impl<'info> BurnTokensCPI for Context<'_, '_, '_, 'info, RedeemTokens<'info>> {
+impl<'info> BurnTokensCPI for Context<'info, RedeemTokens<'info>> {
     fn burn(&self, vault_name: [u8; 32], vault_bump: u8, amount: u64) -> Result<()> {
         let signature_seeds = Vault::get_vault_signer_seeds(&vault_name, &vault_bump);
         let signers = &[&signature_seeds[..]];
@@ -211,11 +211,8 @@ impl<'info> BurnTokensCPI for Context<'_, '_, '_, 'info, RedeemTokens<'info>> {
             authority: self.accounts.vault.to_account_info(),
         };
 
-        let cpi_context = CpiContext::new_with_signer(
-            self.accounts.token_program.to_account_info(),
-            cpi_accounts,
-            signers,
-        );
+        let cpi_context =
+            CpiContext::new_with_signer(self.accounts.token_program.key(), cpi_accounts, signers);
 
         burn(cpi_context, amount)?;
 

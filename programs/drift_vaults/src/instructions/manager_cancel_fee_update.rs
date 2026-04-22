@@ -5,7 +5,7 @@ use crate::{error::ErrorCode, validate, Vault};
 use anchor_lang::prelude::*;
 
 pub fn manager_cancel_fee_update<'info>(
-    ctx: Context<'_, '_, '_, 'info, ManagerCancelFeeUpdate<'info>>,
+    ctx: Context<'info, ManagerCancelFeeUpdate<'info>>,
 ) -> Result<()> {
     let mut vault = ctx.accounts.vault.load_mut()?;
     let mut fee_update = ctx.accounts.fee_update.load_mut()?;

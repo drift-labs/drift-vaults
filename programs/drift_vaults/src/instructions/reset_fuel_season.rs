@@ -7,9 +7,7 @@ use crate::constraints::{is_user_stats_for_vault, is_vault_for_vault_depositor};
 use crate::state::{FuelOverflowProvider, Vault, VaultProtocolProvider};
 use crate::VaultDepositor;
 
-pub fn reset_fuel_season<'c: 'info, 'info>(
-    ctx: Context<'_, '_, 'c, 'info, ResetFuelSeason<'info>>,
-) -> Result<()> {
+pub fn reset_fuel_season<'info>(ctx: Context<'info, ResetFuelSeason<'info>>) -> Result<()> {
     let clock = &Clock::get()?;
 
     let mut vault = ctx.accounts.vault.load_mut()?;

@@ -7,8 +7,8 @@ use crate::constraints::{
 };
 use crate::{AccountMapProvider, Vault, VaultProtocol, WithdrawUnit};
 
-pub fn protocol_request_withdraw<'c: 'info, 'info>(
-    ctx: Context<'_, '_, 'c, 'info, ProtocolRequestWithdraw<'info>>,
+pub fn protocol_request_withdraw<'info>(
+    ctx: Context<'info, ProtocolRequestWithdraw<'info>>,
     withdraw_amount: u64,
     withdraw_unit: WithdrawUnit,
 ) -> Result<()> {

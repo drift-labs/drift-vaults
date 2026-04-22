@@ -15,9 +15,7 @@ use crate::token_cpi::TokenTransferCPI;
 use crate::VaultProtocolProvider;
 use crate::{declare_vault_seeds, AccountMapProvider};
 
-pub fn force_withdraw<'c: 'info, 'info>(
-    ctx: Context<'_, '_, 'c, 'info, ForceWithdraw<'info>>,
-) -> Result<()> {
+pub fn force_withdraw<'info>(ctx: Context<'info, ForceWithdraw<'info>>) -> Result<()> {
     let clock = &Clock::get()?;
     let mut vault = ctx.accounts.vault.load_mut()?;
     let mut vault_depositor = ctx.accounts.vault_depositor.load_mut()?;
@@ -133,7 +131,7 @@ pub struct ForceWithdraw<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-impl<'info> WithdrawCPI for Context<'_, '_, '_, 'info, ForceWithdraw<'info>> {
+impl<'info> WithdrawCPI for Context<'info, ForceWithdraw<'info>> {
     fn drift_withdraw(&self, amount: u64) -> Result<()> {
         declare_vault_seeds!(self.accounts.vault, seeds);
         let spot_market_index = self.accounts.vault.load()?.spot_market_index;
@@ -153,7 +151,7 @@ impl<'info> WithdrawCPI for Context<'_, '_, '_, 'info, ForceWithdraw<'info>> {
             token_program: self.accounts.token_program.to_account_info().clone(),
         };
 
-        let drift_program = self.accounts.drift_program.to_account_info().clone();
+        let drift_program = self.accounts.drift_program.key();
         let cpi_context = CpiContext::new_with_signer(drift_program, cpi_accounts, seeds)
             .with_remaining_accounts(self.remaining_accounts.into());
         drift::cpi::withdraw(cpi_context, spot_market_index, amount, false)?;
@@ -162,7 +160,7 @@ impl<'info> WithdrawCPI for Context<'_, '_, '_, 'info, ForceWithdraw<'info>> {
     }
 }
 
-impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, ForceWithdraw<'info>> {
+impl<'info> TokenTransferCPI for Context<'info, ForceWithdraw<'info>> {
     fn token_transfer(&self, amount: u64) -> Result<()> {
         declare_vault_seeds!(self.accounts.vault, seeds);
 
@@ -171,7 +169,7 @@ impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, ForceWithdraw<'info>
             to: self.accounts.user_token_account.to_account_info().clone(),
             authority: self.accounts.vault.to_account_info().clone(),
         };
-        let token_program = self.accounts.token_program.to_account_info().clone();
+        let token_program = self.accounts.token_program.key();
         let cpi_context = CpiContext::new_with_signer(token_program, cpi_accounts, seeds);
 
         token::transfer(cpi_context, amount)?;

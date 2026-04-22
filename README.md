@@ -6,24 +6,24 @@ soon^TM
 
 # Development
 
-* anchor 0.29.0
-* rust 1.70.0
-* solana 1.16.27
+* anchor 1.0.0
+* rust 1.91.1
+* solana / agave 2.3.11
 
 ```shell
 # if you don't have avm, install it here:
 # https://book.anchor-lang.com/getting_started/installation.html
-avm use 0.29.0
+avm use 1.0.0
 
 # if on Apple Silicon:
-# rustup override set 1.70.0-x86_64-apple-darwin
+# rustup override set 1.91.1-x86_64-apple-darwin
 # else
-rustup override set 1.70.0
+rustup override set 1.91.1
 
-# if you already have solana:
-# solana-install init 1.16.27
+# if you already have solana/agave:
+# agave-install init 2.3.11
 # else:
-sh -c "$(curl -sSfL https://release.solana.com/v1.16.27/install)"
+sh -c "$(curl -sSfL https://release.anza.xyz/v2.3.11/install)"
 ```
 
 If on Mac and getting this error:

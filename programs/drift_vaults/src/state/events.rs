@@ -1,5 +1,4 @@
 use anchor_lang::prelude::*;
-use borsh::{BorshDeserialize, BorshSerialize};
 
 #[event]
 #[derive(Default)]
@@ -74,7 +73,7 @@ pub struct VaultDepositorV1Record {
     pub deposit_oracle_price: i64,
 }
 
-#[derive(Clone, Copy, BorshSerialize, BorshDeserialize, PartialEq, Eq, Default)]
+#[derive(Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq, Default)]
 pub enum VaultDepositorAction {
     #[default]
     Deposit,
@@ -114,7 +113,7 @@ pub struct FuelSeasonRecord {
     pub fuel_total: u128,
 }
 
-#[derive(Clone, Copy, BorshSerialize, BorshDeserialize, PartialEq, Eq)]
+#[derive(Clone, Copy, AnchorSerialize, AnchorDeserialize, PartialEq, Eq)]
 pub enum FeeUpdateAction {
     Pending,
     Applied,

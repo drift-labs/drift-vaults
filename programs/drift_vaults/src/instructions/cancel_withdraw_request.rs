@@ -10,8 +10,8 @@ use crate::state::FuelOverflowProvider;
 use crate::AccountMapProvider;
 use crate::{FeeUpdateProvider, FeeUpdateStatus, Vault, VaultDepositor, VaultProtocolProvider};
 
-pub fn cancel_withdraw_request<'c: 'info, 'info>(
-    ctx: Context<'_, '_, 'c, 'info, CancelWithdrawRequest<'info>>,
+pub fn cancel_withdraw_request<'info>(
+    ctx: Context<'info, CancelWithdrawRequest<'info>>,
 ) -> Result<()> {
     let clock = &Clock::get()?;
     let mut vault = ctx.accounts.vault.load_mut()?;

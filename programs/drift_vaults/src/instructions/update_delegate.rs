@@ -9,7 +9,7 @@ use crate::Vault;
 use crate::{declare_vault_seeds, implement_update_user_delegate_cpi};
 
 pub fn update_delegate<'info>(
-    ctx: Context<'_, '_, '_, 'info, UpdateDelegate<'info>>,
+    ctx: Context<'info, UpdateDelegate<'info>>,
     delegate: Pubkey,
 ) -> Result<()> {
     let mut vault = ctx.accounts.vault.load_mut()?;
@@ -46,7 +46,7 @@ pub struct UpdateDelegate<'info> {
     pub drift_program: Program<'info, Drift>,
 }
 
-impl<'info> UpdateUserDelegateCPI for Context<'_, '_, '_, 'info, UpdateDelegate<'info>> {
+impl<'info> UpdateUserDelegateCPI for Context<'info, UpdateDelegate<'info>> {
     fn drift_update_user_delegate(&self, delegate: Pubkey) -> Result<()> {
         implement_update_user_delegate_cpi!(self, delegate);
         Ok(())

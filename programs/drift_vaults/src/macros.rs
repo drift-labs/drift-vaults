@@ -42,7 +42,7 @@ macro_rules! implement_update_user_delegate_cpi {
             authority: $self.accounts.vault.to_account_info().clone(),
         };
 
-        let drift_program = $self.accounts.drift_program.to_account_info().clone();
+        let drift_program = $self.accounts.drift_program.key();
         let cpi_context = CpiContext::new_with_signer(drift_program, cpi_accounts, seeds);
         drift::cpi::update_user_delegate(cpi_context, 0, $delegate)?;
     };
@@ -58,7 +58,7 @@ macro_rules! implement_update_user_reduce_only_cpi {
             authority: $self.accounts.vault.to_account_info().clone(),
         };
 
-        let drift_program = $self.accounts.drift_program.to_account_info().clone();
+        let drift_program = $self.accounts.drift_program.key();
         let cpi_context = CpiContext::new_with_signer(drift_program, cpi_accounts, seeds);
         drift::cpi::update_user_reduce_only(cpi_context, 0, $reduce_only)?;
     };
@@ -86,7 +86,7 @@ macro_rules! implement_withdraw {
             token_program: $self.accounts.token_program.to_account_info().clone(),
         };
 
-        let drift_program = $self.accounts.drift_program.to_account_info().clone();
+        let drift_program = $self.accounts.drift_program.key();
         let cpi_context = CpiContext::new_with_signer(drift_program, cpi_accounts, seeds)
             .with_remaining_accounts($self.remaining_accounts.into());
         drift::cpi::withdraw(cpi_context, spot_market_index, $amount, false)?;
@@ -100,7 +100,7 @@ macro_rules! implement_deposit {
 
         let spot_market_index = $self.accounts.vault.load()?.spot_market_index;
 
-        let cpi_program = $self.accounts.drift_program.to_account_info().clone();
+        let cpi_program = $self.accounts.drift_program.key();
         let cpi_accounts = DriftDeposit {
             state: $self.accounts.drift_state.clone(),
             user: $self.accounts.drift_user.to_account_info().clone(),

@@ -20,9 +20,7 @@ pub trait AccountMapProvider<'a> {
     ) -> DriftResult<AccountMaps<'a>>;
 }
 
-impl<'a: 'info, 'info, T: anchor_lang::Bumps> AccountMapProvider<'a>
-    for Context<'_, '_, 'a, 'info, T>
-{
+impl<'info, T: anchor_lang::Bumps> AccountMapProvider<'info> for Context<'info, T> {
     fn load_maps(
         &self,
         slot: u64,
@@ -30,7 +28,7 @@ impl<'a: 'info, 'info, T: anchor_lang::Bumps> AccountMapProvider<'a>
         has_vault_protocol: bool,
         has_fuel_overflow: bool,
         has_fee_update: bool,
-    ) -> DriftResult<AccountMaps<'a>> {
+    ) -> DriftResult<AccountMaps<'info>> {
         // if [`VaultProtocol`] exists it will be the last index in the remaining_accounts, so we need to skip it.
         let mut end_index = self.remaining_accounts.len() - (has_vault_protocol as usize);
         // if there is a [`FuelOverflow`], we need to skip one more account
@@ -56,15 +54,10 @@ pub trait VaultProtocolProvider<'a> {
 }
 
 /// Provides the last remaining account as a [`VaultProtocol`].
-impl<'a: 'info, 'info, T: anchor_lang::Bumps> VaultProtocolProvider<'a>
-    for Context<'_, '_, 'a, 'info, T>
-{
-    fn vault_protocol(&self) -> Option<AccountLoader<'a, VaultProtocol>> {
-        let acct = match self.remaining_accounts.last() {
-            Some(acct) => acct,
-            None => return None,
-        };
-        AccountLoader::<'a, VaultProtocol>::try_from(acct).ok()
+impl<'info, T: anchor_lang::Bumps> VaultProtocolProvider<'info> for Context<'info, T> {
+    fn vault_protocol(&self) -> Option<AccountLoader<'info, VaultProtocol>> {
+        let acct = self.remaining_accounts.last()?;
+        AccountLoader::<'info, VaultProtocol>::try_from(acct).ok()
     }
 }
 
@@ -77,14 +70,12 @@ pub trait FuelOverflowProvider<'a> {
 }
 
 /// Provides [`FuelOverflow`] from remaining_accounts, respects whether the vault has a VaultProtocol.
-impl<'a: 'info, 'info, T: anchor_lang::Bumps> FuelOverflowProvider<'a>
-    for Context<'_, '_, 'a, 'info, T>
-{
+impl<'info, T: anchor_lang::Bumps> FuelOverflowProvider<'info> for Context<'info, T> {
     fn fuel_overflow(
         &self,
         has_vp: bool,
         has_fuel_overflow: bool,
-    ) -> Option<AccountLoader<'a, FuelOverflow>> {
+    ) -> Option<AccountLoader<'info, FuelOverflow>> {
         if !has_fuel_overflow {
             None
         } else {
@@ -97,7 +88,7 @@ impl<'a: 'info, 'info, T: anchor_lang::Bumps> FuelOverflowProvider<'a>
             };
             let acct = self.remaining_accounts.get(acct_idx)?;
 
-            AccountLoader::<'a, FuelOverflow>::try_from(acct).ok()
+            AccountLoader::<'info, FuelOverflow>::try_from(acct).ok()
         }
     }
 }
@@ -112,15 +103,13 @@ pub trait FeeUpdateProvider<'a> {
 }
 
 /// Provides [`FeeUpdate`] from remaining_accounts, respects whether the vault has a VaultProtocol and FuelOverflow.
-impl<'a: 'info, 'info, T: anchor_lang::Bumps> FeeUpdateProvider<'a>
-    for Context<'_, '_, 'a, 'info, T>
-{
+impl<'info, T: anchor_lang::Bumps> FeeUpdateProvider<'info> for Context<'info, T> {
     fn fee_update(
         &self,
         has_vp: bool,
         has_fuel_overflow: bool,
         has_fee_update: bool,
-    ) -> Option<AccountLoader<'a, FeeUpdate>> {
+    ) -> Option<AccountLoader<'info, FeeUpdate>> {
         if !has_fee_update {
             None
         } else {
@@ -141,7 +130,7 @@ impl<'a: 'info, 'info, T: anchor_lang::Bumps> FeeUpdateProvider<'a>
             };
             let acct = self.remaining_accounts.get(acct_idx)?;
 
-            AccountLoader::<'a, FeeUpdate>::try_from(acct).ok()
+            AccountLoader::<'info, FeeUpdate>::try_from(acct).ok()
         }
     }
 }

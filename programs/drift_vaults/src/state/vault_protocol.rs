@@ -37,11 +37,11 @@ pub struct VaultProtocol {
     pub protocol_profit_share: u32,
     pub bump: u8,
     pub version: u8,
-    pub padding: [u8; 2],
+    pub padding: [u8; 10],
 }
 
 impl Size for VaultProtocol {
-    const SIZE: usize = 120 + 8;
+    const SIZE: usize = 128 + 8;
 }
 const_assert_eq!(
     VaultProtocol::SIZE,

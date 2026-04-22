@@ -10,8 +10,8 @@ use crate::VaultDepositor;
 
 use super::constraints::is_authority_for_vault_depositor;
 
-pub fn update_cumulative_fuel_amount<'c: 'info, 'info>(
-    ctx: Context<'_, '_, 'c, 'info, UpdateCumulativeFuelAmount<'info>>,
+pub fn update_cumulative_fuel_amount<'info>(
+    ctx: Context<'info, UpdateCumulativeFuelAmount<'info>>,
 ) -> Result<()> {
     let clock = &Clock::get()?;
 

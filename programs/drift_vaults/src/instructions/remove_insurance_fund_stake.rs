@@ -12,7 +12,7 @@ use crate::token_cpi::TokenTransferCPI;
 use crate::{declare_vault_seeds, Vault};
 
 pub fn remove_insurance_fund_stake<'info>(
-    ctx: Context<'_, '_, '_, 'info, RemoveInsuranceFundStake<'info>>,
+    ctx: Context<'info, RemoveInsuranceFundStake<'info>>,
     market_index: u16,
 ) -> Result<()> {
     let token_balance_before = ctx.accounts.vault_if_token_account.amount;
@@ -88,7 +88,7 @@ pub struct RemoveInsuranceFundStake<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, RemoveInsuranceFundStake<'info>> {
+impl<'info> TokenTransferCPI for Context<'info, RemoveInsuranceFundStake<'info>> {
     fn token_transfer(&self, amount: u64) -> Result<()> {
         declare_vault_seeds!(self.accounts.vault, seeds);
 
@@ -105,7 +105,7 @@ impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, RemoveInsuranceFundS
                 .clone(),
             authority: self.accounts.vault.to_account_info().clone(),
         };
-        let token_program = self.accounts.token_program.to_account_info().clone();
+        let token_program = self.accounts.token_program.key();
         let cpi_context = CpiContext::new_with_signer(token_program, cpi_accounts, seeds);
 
         token::transfer(cpi_context, amount)?;
@@ -114,9 +114,7 @@ impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, RemoveInsuranceFundS
     }
 }
 
-impl<'info> RemoveInsuranceFundStakeCPI
-    for Context<'_, '_, '_, 'info, RemoveInsuranceFundStake<'info>>
-{
+impl<'info> RemoveInsuranceFundStakeCPI for Context<'info, RemoveInsuranceFundStake<'info>> {
     fn drift_remove_insurance_fund_stake(&self, market_index: u16) -> Result<()> {
         declare_vault_seeds!(self.accounts.vault, seeds);
 
@@ -136,7 +134,7 @@ impl<'info> RemoveInsuranceFundStakeCPI
             drift_signer: self.accounts.drift_signer.clone(),
         };
 
-        let drift_program = self.accounts.drift_program.to_account_info().clone();
+        let drift_program = self.accounts.drift_program.key();
         let cpi_context = CpiContext::new_with_signer(drift_program, cpi_accounts, seeds)
             .with_remaining_accounts(self.remaining_accounts.into());
         drift::cpi::remove_insurance_fund_stake(cpi_context, market_index)?;

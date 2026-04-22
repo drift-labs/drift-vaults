@@ -10,7 +10,7 @@ use crate::drift_cpi::RequestRemoveInsuranceFundStakeCPI;
 use crate::{declare_vault_seeds, Vault};
 
 pub fn request_remove_insurance_fund_stake<'info>(
-    ctx: Context<'_, '_, '_, 'info, RequestRemoveInsuranceFundStake<'info>>,
+    ctx: Context<'info, RequestRemoveInsuranceFundStake<'info>>,
     market_index: u16,
     amount: u64,
 ) -> Result<()> {
@@ -59,7 +59,7 @@ pub struct RequestRemoveInsuranceFundStake<'info> {
 }
 
 impl<'info> RequestRemoveInsuranceFundStakeCPI
-    for Context<'_, '_, '_, 'info, RequestRemoveInsuranceFundStake<'info>>
+    for Context<'info, RequestRemoveInsuranceFundStake<'info>>
 {
     fn drift_request_remove_insurance_fund_stake(
         &self,
@@ -76,7 +76,7 @@ impl<'info> RequestRemoveInsuranceFundStakeCPI
             insurance_fund_vault: self.accounts.insurance_fund_vault.to_account_info().clone(),
         };
 
-        let drift_program = self.accounts.drift_program.to_account_info().clone();
+        let drift_program = self.accounts.drift_program.key();
         let cpi_context = CpiContext::new_with_signer(drift_program, cpi_accounts, seeds)
             .with_remaining_accounts(self.remaining_accounts.into());
         drift::cpi::request_remove_insurance_fund_stake(cpi_context, market_index, amount)?;

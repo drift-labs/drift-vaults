@@ -11,7 +11,7 @@ use crate::token_cpi::TokenTransferCPI;
 use crate::{declare_vault_seeds, Vault};
 
 pub fn add_insurance_fund_stake<'info>(
-    ctx: Context<'_, '_, '_, 'info, AddInsuranceFundStake<'info>>,
+    ctx: Context<'info, AddInsuranceFundStake<'info>>,
     market_index: u16,
     amount: u64,
 ) -> Result<()> {
@@ -87,7 +87,7 @@ pub struct AddInsuranceFundStake<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, AddInsuranceFundStake<'info>> {
+impl<'info> TokenTransferCPI for Context<'info, AddInsuranceFundStake<'info>> {
     fn token_transfer(&self, amount: u64) -> Result<()> {
         let cpi_accounts = Transfer {
             from: self
@@ -102,7 +102,7 @@ impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, AddInsuranceFundStak
                 .clone(),
             authority: self.accounts.manager.to_account_info().clone(),
         };
-        let token_program = self.accounts.token_program.to_account_info().clone();
+        let token_program = self.accounts.token_program.key();
         let cpi_context = CpiContext::new(token_program, cpi_accounts);
 
         token::transfer(cpi_context, amount)?;
@@ -111,7 +111,7 @@ impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, AddInsuranceFundStak
     }
 }
 
-impl<'info> AddInsuranceFundStakeCPI for Context<'_, '_, '_, 'info, AddInsuranceFundStake<'info>> {
+impl<'info> AddInsuranceFundStakeCPI for Context<'info, AddInsuranceFundStake<'info>> {
     fn drift_add_insurance_fund_stake(&self, market_index: u16, amount: u64) -> Result<()> {
         declare_vault_seeds!(self.accounts.vault, seeds);
 
@@ -136,7 +136,7 @@ impl<'info> AddInsuranceFundStakeCPI for Context<'_, '_, '_, 'info, AddInsurance
             drift_signer: self.accounts.drift_signer.clone(),
         };
 
-        let drift_program = self.accounts.drift_program.to_account_info().clone();
+        let drift_program = self.accounts.drift_program.key();
         let cpi_context = CpiContext::new_with_signer(drift_program, cpi_accounts, seeds)
             .with_remaining_accounts(self.remaining_accounts.into());
         drift::cpi::add_insurance_fund_stake(cpi_context, market_index, amount)?;

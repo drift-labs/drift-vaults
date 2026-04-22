@@ -1,6 +1,5 @@
-[features]
-seeds = false
-skip-lint = false
+[toolchain]
+anchor_version = "1.0.0"
 
 [programs.localnet]
 drift_vaults = "vAuLTsyrvSfZRuRB3XgvkPwNGgYSs9YRYymVebLKoxR"

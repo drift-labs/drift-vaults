@@ -11,8 +11,8 @@ use crate::drift_cpi::InitializeUserCPI;
 use crate::state::{Vault, VaultProtocol};
 use crate::{error::ErrorCode, validate, Size};
 
-pub fn initialize_vault_with_protocol<'c: 'info, 'info>(
-    ctx: Context<'_, '_, 'c, 'info, InitializeVaultWithProtocol<'info>>,
+pub fn initialize_vault_with_protocol<'info>(
+    ctx: Context<'info, InitializeVaultWithProtocol<'info>>,
     params: VaultWithProtocolParams,
 ) -> Result<()> {
     let bump = ctx.bumps.vault;
@@ -166,12 +166,12 @@ pub struct InitializeVaultWithProtocol<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-impl<'info> InitializeUserCPI for Context<'_, '_, '_, 'info, InitializeVaultWithProtocol<'info>> {
+impl<'info> InitializeUserCPI for Context<'info, InitializeVaultWithProtocol<'info>> {
     fn drift_initialize_user(&self, name: [u8; 32], bump: u8) -> Result<()> {
         let signature_seeds = Vault::get_vault_signer_seeds(&name, &bump);
         let signers = &[&signature_seeds[..]];
 
-        let cpi_program = self.accounts.drift_program.to_account_info().clone();
+        let cpi_program = self.accounts.drift_program.key();
         let cpi_accounts = InitializeUser {
             user_stats: self.accounts.drift_user_stats.clone(),
             user: self.accounts.drift_user.clone(),
@@ -192,7 +192,7 @@ impl<'info> InitializeUserCPI for Context<'_, '_, '_, 'info, InitializeVaultWith
         let signature_seeds = Vault::get_vault_signer_seeds(&name, &bump);
         let signers = &[&signature_seeds[..]];
 
-        let cpi_program = self.accounts.drift_program.to_account_info().clone();
+        let cpi_program = self.accounts.drift_program.key();
         let cpi_accounts = InitializeUserStats {
             user_stats: self.accounts.drift_user_stats.clone(),
             state: self.accounts.drift_state.clone(),

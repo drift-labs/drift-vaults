@@ -7,7 +7,7 @@ use anchor_lang::prelude::*;
 use drift::math::safe_math::SafeMath;
 
 pub fn manager_update_fees<'info>(
-    ctx: Context<'_, '_, '_, 'info, ManagerUpdateFees<'info>>,
+    ctx: Context<'info, ManagerUpdateFees<'info>>,
     params: ManagerUpdateFeesParams,
 ) -> Result<()> {
     let mut vault = ctx.accounts.vault.load_mut()?;

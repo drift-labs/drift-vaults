@@ -1,2 +1,2 @@
 [toolchain]
-channel = "1.70.0"
+channel = "1.91.1-x86_64-apple-darwin"

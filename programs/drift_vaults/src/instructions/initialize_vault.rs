@@ -10,7 +10,7 @@ use drift::program::Drift;
 use drift::state::spot_market::SpotMarket;
 
 pub fn initialize_vault<'info>(
-    ctx: Context<'_, '_, '_, 'info, InitializeVault<'info>>,
+    ctx: Context<'info, InitializeVault<'info>>,
     params: VaultParams,
 ) -> Result<()> {
     let bump = ctx.bumps.vault;
@@ -120,12 +120,12 @@ pub struct InitializeVault<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-impl<'info> InitializeUserCPI for Context<'_, '_, '_, 'info, InitializeVault<'info>> {
+impl<'info> InitializeUserCPI for Context<'info, InitializeVault<'info>> {
     fn drift_initialize_user(&self, name: [u8; 32], bump: u8) -> Result<()> {
         let signature_seeds = Vault::get_vault_signer_seeds(&name, &bump);
         let signers = &[&signature_seeds[..]];
 
-        let cpi_program = self.accounts.drift_program.to_account_info().clone();
+        let cpi_program = self.accounts.drift_program.key();
         let cpi_accounts = InitializeUser {
             user_stats: self.accounts.drift_user_stats.clone(),
             user: self.accounts.drift_user.clone(),
@@ -146,7 +146,7 @@ impl<'info> InitializeUserCPI for Context<'_, '_, '_, 'info, InitializeVault<'in
         let signature_seeds = Vault::get_vault_signer_seeds(&name, &bump);
         let signers = &[&signature_seeds[..]];
 
-        let cpi_program = self.accounts.drift_program.to_account_info().clone();
+        let cpi_program = self.accounts.drift_program.key();
         let cpi_accounts = InitializeUserStats {
             user_stats: self.accounts.drift_user_stats.clone(),
             state: self.accounts.drift_state.clone(),

@@ -5,9 +5,7 @@ use crate::state::traits::Size;
 use crate::state::{FeeUpdate, FeeUpdateStatus, Vault};
 use crate::{error::ErrorCode, validate};
 
-pub fn admin_init_fee_update<'info>(
-    ctx: Context<'_, '_, '_, 'info, AdminInitFeeUpdate<'info>>,
-) -> Result<()> {
+pub fn admin_init_fee_update<'info>(ctx: Context<'info, AdminInitFeeUpdate<'info>>) -> Result<()> {
     let vault = ctx.accounts.vault.load_mut()?;
     let mut fee_update = ctx.accounts.fee_update.load_init()?;
 

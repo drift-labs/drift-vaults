@@ -7,7 +7,7 @@ pub fn create_account_info<'a>(
     bytes: &'a mut [u8],
     owner: &'a Pubkey,
 ) -> AccountInfo<'a> {
-    AccountInfo::new(key, false, is_writable, lamports, bytes, owner, false, 0)
+    AccountInfo::new(key, false, is_writable, lamports, bytes, owner, false)
 }
 
 #[macro_export]

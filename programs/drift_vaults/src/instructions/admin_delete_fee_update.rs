@@ -5,7 +5,7 @@ use crate::state::events::{FeeUpdateAction, FeeUpdateRecord};
 use crate::state::{FeeUpdate, FeeUpdateStatus, Vault};
 
 pub fn admin_delete_fee_update<'info>(
-    ctx: Context<'_, '_, '_, 'info, AdminDeleteFeeUpdate<'info>>,
+    ctx: Context<'info, AdminDeleteFeeUpdate<'info>>,
 ) -> Result<()> {
     let mut vault = ctx.accounts.vault.load_mut()?;
 

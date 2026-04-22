@@ -20,7 +20,7 @@ use crate::{
     implement_withdraw, AccountMapProvider,
 };
 
-pub fn withdraw<'c: 'info, 'info>(ctx: Context<'_, '_, 'c, 'info, Withdraw<'info>>) -> Result<()> {
+pub fn withdraw<'info>(ctx: Context<'info, Withdraw<'info>>) -> Result<()> {
     let clock = &Clock::get()?;
     let mut vault = ctx.accounts.vault.load_mut()?;
     let mut vault_depositor = ctx.accounts.vault_depositor.load_mut()?;
@@ -145,14 +145,14 @@ pub struct Withdraw<'info> {
     pub token_program: Program<'info, Token>,
 }
 
-impl<'info> WithdrawCPI for Context<'_, '_, '_, 'info, Withdraw<'info>> {
+impl<'info> WithdrawCPI for Context<'info, Withdraw<'info>> {
     fn drift_withdraw(&self, amount: u64) -> Result<()> {
         implement_withdraw!(self, amount);
         Ok(())
     }
 }
 
-impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, Withdraw<'info>> {
+impl<'info> TokenTransferCPI for Context<'info, Withdraw<'info>> {
     fn token_transfer(&self, amount: u64) -> Result<()> {
         declare_vault_seeds!(self.accounts.vault, seeds);
 
@@ -161,7 +161,7 @@ impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, Withdraw<'info>> {
             to: self.accounts.user_token_account.to_account_info().clone(),
             authority: self.accounts.vault.to_account_info().clone(),
         };
-        let token_program = self.accounts.token_program.to_account_info().clone();
+        let token_program = self.accounts.token_program.key();
         let cpi_context = CpiContext::new_with_signer(token_program, cpi_accounts, seeds);
 
         token::transfer(cpi_context, amount)?;
@@ -170,14 +170,14 @@ impl<'info> TokenTransferCPI for Context<'_, '_, '_, 'info, Withdraw<'info>> {
     }
 }
 
-impl<'info> UpdateUserDelegateCPI for Context<'_, '_, '_, 'info, Withdraw<'info>> {
+impl<'info> UpdateUserDelegateCPI for Context<'info, Withdraw<'info>> {
     fn drift_update_user_delegate(&self, delegate: Pubkey) -> Result<()> {
         implement_update_user_delegate_cpi!(self, delegate);
         Ok(())
     }
 }
 
-impl<'info> UpdateUserReduceOnlyCPI for Context<'_, '_, '_, 'info, Withdraw<'info>> {
+impl<'info> UpdateUserReduceOnlyCPI for Context<'info, Withdraw<'info>> {
     fn drift_update_user_reduce_only(&self, reduce_only: bool) -> Result<()> {
         implement_update_user_reduce_only_cpi!(self, reduce_only);
         Ok(())

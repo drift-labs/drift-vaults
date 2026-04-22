@@ -10,7 +10,7 @@ use crate::Vault;
 use crate::{declare_vault_seeds, validate};
 
 pub fn update_margin_trading_enabled<'info>(
-    ctx: Context<'_, '_, '_, 'info, UpdateMarginTradingEnabled<'info>>,
+    ctx: Context<'info, UpdateMarginTradingEnabled<'info>>,
     enabled: bool,
 ) -> Result<()> {
     validate!(
@@ -41,7 +41,7 @@ pub struct UpdateMarginTradingEnabled<'info> {
 }
 
 impl<'info> UpdateUserMarginTradingEnabledCPI
-    for Context<'_, '_, '_, 'info, UpdateMarginTradingEnabled<'info>>
+    for Context<'info, UpdateMarginTradingEnabled<'info>>
 {
     fn drift_update_user_margin_trading_enabled(&self, enabled: bool) -> Result<()> {
         declare_vault_seeds!(self.accounts.vault, seeds);
@@ -51,7 +51,7 @@ impl<'info> UpdateUserMarginTradingEnabledCPI
             authority: self.accounts.vault.to_account_info().clone(),
         };
 
-        let drift_program = self.accounts.drift_program.to_account_info().clone();
+        let drift_program = self.accounts.drift_program.key();
         let cpi_context = CpiContext::new_with_signer(drift_program, cpi_accounts, seeds)
             .with_remaining_accounts(self.remaining_accounts.into());
         drift::cpi::update_user_margin_trading_enabled(cpi_context, 0, enabled)?;

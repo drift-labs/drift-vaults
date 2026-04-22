@@ -5,7 +5,7 @@ use crate::state::Vault;
 use crate::{error::ErrorCode, validate};
 
 pub fn admin_update_vault_class<'info>(
-    ctx: Context<'_, '_, '_, 'info, AdminUpdateVaultClass<'info>>,
+    ctx: Context<'info, AdminUpdateVaultClass<'info>>,
     new_vault_class: u8,
 ) -> Result<()> {
     let mut vault = ctx.accounts.vault.load_mut()?;
