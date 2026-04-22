@@ -75,9 +75,9 @@ fi
 # start anchor localnet in background
 # "bkg" suppresses validator output to build/test output aren't hard to find
 if [[ $no_build == false ]]; then
-  bkg anchor localnet --skip-build
+  bkg anchor localnet --skip-build --ignore-keys
 else
-  bkg anchor localnet
+  bkg anchor localnet --ignore-keys
 fi
 
 # warm up validator (spurious errors may occur if this is not done)

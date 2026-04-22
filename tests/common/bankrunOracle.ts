@@ -275,13 +275,7 @@ export async function mockOracleNoProgram(
 		}
 	);
 
-	const program = new Program(
-		{
-			...(pythIDL as unknown as anchor.Idl),
-			address: 'FsJ3A3u2vn5cTVofAjvy6y5kwABJAqYWpe4975bi2epH',
-		} as unknown as anchor.Idl,
-		provider
-	);
+	const program = new Program(pythIDL as unknown as anchor.Idl, provider);
 
 	const priceFeedAddress = await createPriceFeedBankrun({
 		oracleProgram: program,
