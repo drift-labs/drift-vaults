@@ -147,8 +147,8 @@ export async function mockUSDCMint(
 		[provider.wallet.payer, fakeUSDCMint],
 		{
 			skipPreflight: false,
-			commitment: 'recent',
-			preflightCommitment: 'recent',
+			commitment: 'confirmed',
+			preflightCommitment: 'confirmed',
 		}
 	);
 	return fakeUSDCMint;
@@ -202,8 +202,8 @@ export async function mockUserUSDCAccount(
 			[provider.wallet.payer, userUSDCAccount],
 			{
 				skipPreflight: false,
-				commitment: 'recent',
-				preflightCommitment: 'recent',
+				commitment: 'confirmed',
+				preflightCommitment: 'confirmed',
 			}
 		);
 		return userUSDCAccount;
@@ -249,8 +249,8 @@ export async function mintUSDCToUser(
 		[provider.wallet.payer],
 		{
 			skipPreflight: false,
-			commitment: 'recent',
-			preflightCommitment: 'recent',
+			commitment: 'confirmed',
+			preflightCommitment: 'confirmed',
 		}
 	);
 }
@@ -580,8 +580,8 @@ export async function mintToInsuranceFund(
 		[provider.wallet.payer],
 		{
 			skipPreflight: false,
-			commitment: 'recent',
-			preflightCommitment: 'recent',
+			commitment: 'confirmed',
+			preflightCommitment: 'confirmed',
 		}
 	);
 }

@@ -72,13 +72,17 @@ if [[ -n $solana_pid ]]; then
   pkill -f solana
 fi
 
-# start anchor localnet in background
-# "bkg" suppresses validator output to build/test output aren't hard to find
-if [[ $no_build == false ]]; then
-  bkg anchor localnet --skip-build --ignore-keys
-else
-  bkg anchor localnet --ignore-keys
-fi
+# start solana-test-validator directly in the background.
+# (anchor 1.0's `anchor localnet` shells out to surfpool, which requires a
+# txtx runbook this project doesn't have, and also panics on stdin-EOF when
+# backgrounded. solana-test-validator takes the genesis programs from
+# Anchor.toml directly as --bpf-program flags.)
+bkg solana-test-validator --reset --quiet \
+  --bpf-program dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH tests/fixtures/drift.so \
+  --bpf-program gSbePebfvPy7tRqimPoVecS2UsBvYv46ynrzWocc92s tests/fixtures/pyth.so \
+  --bpf-program metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s tests/fixtures/metaplex/metaplex.so \
+  --bpf-program vAuLTsyrvSfZRuRB3XgvkPwNGgYSs9YRYymVebLKoxR target/deploy/drift_vaults.so \
+  --account PwDiXFxQsGra4sFFTT8r1QWRMd4vfumiWC1jfWNfdYT tests/fixtures/metaplex/PwDiXFxQsGra4sFFTT8r1QWRMd4vfumiWC1jfWNfdYT.json
 
 # warm up validator (spurious errors may occur if this is not done)
 sleep 5
