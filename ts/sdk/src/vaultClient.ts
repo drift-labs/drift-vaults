@@ -681,9 +681,6 @@ export class VaultClient {
 		};
 
 		if (vaultProtocolParams) {
-			const vaultProtocol = this.getVaultProtocolAddress(
-				getVaultAddressSync(this.program.programId, params.name)
-			);
 			const _params: VaultWithProtocolParams = {
 				...vaultParams,
 				vaultProtocol: vaultProtocolParams,
@@ -694,8 +691,6 @@ export class VaultClient {
 				.initializeVaultWithProtocol(_params)
 				.accounts({
 					...accounts,
-					// @ts-ignore anchor 0.32 auto-resolves PDA vault_protocol
-					vaultProtocol,
 					payer: params.manager ?? uiAuthority,
 					manager: params.manager ?? uiAuthority,
 				})
@@ -1356,9 +1351,6 @@ export class VaultClient {
 					driftSpotMarketVault: spotMarket.vault,
 					driftSigner: this.driftClient.getStateAccount().signer,
 					userTokenAccount: managerTokenAccount,
-					// @ts-ignore anchor 0.32 auto-resolves drift_program by declared address
-					driftProgram: this.driftClient.program.programId,
-					tokenProgram: TOKEN_PROGRAM_ID,
 				})
 				.remainingAccounts(remainingAccounts)
 				.instruction(),
@@ -1495,9 +1487,6 @@ export class VaultClient {
 					driftSpotMarketVault: spotMarket.vault,
 					driftSigner: this.driftClient.getStateAccount().signer,
 					userTokenAccount: managerTokenAccount,
-					// @ts-ignore anchor 0.32 auto-resolves drift_program by declared address
-					driftProgram: this.driftClient.program.programId,
-					tokenProgram: TOKEN_PROGRAM_ID,
 				})
 				.remainingAccounts(remainingAccounts)
 				.instruction(),
@@ -2002,17 +1991,13 @@ export class VaultClient {
 				.accounts({
 					authority: this.driftClient.wallet.publicKey,
 					vault: vaultDepositorAccount.vault,
-					// @ts-ignore anchor 0.32 auto-resolves PDA vault_depositor
-					vaultDepositor,
 					tokenizedVaultDepositor: getTokenizedVaultAddressSync(
 						this.program.programId,
 						vaultDepositorAccount.vault,
 						vaultAccount.sharesBase
 					),
-					mint,
 					userTokenAccount: userAta,
 					driftUser: vaultAccount.user,
-					tokenProgram: TOKEN_PROGRAM_ID,
 				})
 				.remainingAccounts(remainingAccounts)
 				.instruction()
@@ -2075,8 +2060,6 @@ export class VaultClient {
 				.transferVaultDepositorShares(amount, withdrawUnit)
 				.accounts({
 					vault: vaultDepositorAccount.vault,
-					// @ts-ignore anchor 0.32 auto-resolves PDA vault_depositor
-					vaultDepositor: fromVaultDepositor,
 					authority: this.driftClient.wallet.publicKey,
 					toVaultDepositor,
 					driftUser: vaultAccount.user,
@@ -2156,8 +2139,6 @@ export class VaultClient {
 			.accounts({
 				authority: this.driftClient.wallet.publicKey,
 				vault: vaultDepositorAccount.vault,
-				// @ts-ignore anchor 0.32 auto-resolves PDA vault_depositor
-				vaultDepositor,
 				tokenizedVaultDepositor: getTokenizedVaultAddressSync(
 					this.program.programId,
 					vaultDepositorAccount.vault,
@@ -2167,7 +2148,6 @@ export class VaultClient {
 				userTokenAccount: userAta,
 				vaultTokenAccount: vaultTokenAta,
 				driftUser: vaultAccount.user,
-				tokenProgram: TOKEN_PROGRAM_ID,
 			})
 			.remainingAccounts(remainingAccounts)
 			.instruction();
@@ -2954,7 +2934,7 @@ export class VaultClient {
 	): Promise<TransactionInstruction> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
 
-		const ifStakeAccountPublicKey = getInsuranceFundStakeAccountPublicKey(
+		const _ifStakeAccountPublicKey = getInsuranceFundStakeAccountPublicKey(
 			this.driftClient.program.programId,
 			vault,
 			spotMarketIndex
@@ -2967,7 +2947,7 @@ export class VaultClient {
 			);
 		}
 
-		const ifVaultTokenAccount = getInsuranceFundTokenVaultAddressSync(
+		const _ifVaultTokenAccount = getInsuranceFundTokenVaultAddressSync(
 			this.program.programId,
 			vault,
 			spotMarketIndex
@@ -2977,14 +2957,9 @@ export class VaultClient {
 			.initializeInsuranceFundStake(spotMarketIndex)
 			.accounts({
 				vault: vault,
-				// @ts-ignore anchor 0.32 auto-resolves PDA drift_spot_market
-				driftSpotMarket: spotMarket.pubkey,
 				driftSpotMarketMint: spotMarket.mint,
-				vaultTokenAccount: ifVaultTokenAccount,
-				insuranceFundStake: ifStakeAccountPublicKey,
 				driftUserStats: vaultAccount.userStats,
 				driftState: await this.driftClient.getStatePublicKey(),
-				driftProgram: this.driftClient.program.programId,
 			})
 			.instruction();
 	}
@@ -3026,12 +3001,12 @@ export class VaultClient {
 			);
 		}
 
-		const ifStakeAccountPublicKey = getInsuranceFundStakeAccountPublicKey(
+		const _ifStakeAccountPublicKey = getInsuranceFundStakeAccountPublicKey(
 			this.driftClient.program.programId,
 			vault,
 			spotMarketIndex
 		);
-		const ifVaultPublicKey = await getInsuranceFundVaultPublicKey(
+		const _ifVaultPublicKey = await getInsuranceFundVaultPublicKey(
 			this.driftClient.program.programId,
 			spotMarketIndex
 		);
@@ -3051,7 +3026,7 @@ export class VaultClient {
 			);
 		}
 
-		const ifVaultTokenAccount = getInsuranceFundTokenVaultAddressSync(
+		const _ifVaultTokenAccount = getInsuranceFundTokenVaultAddressSync(
 			this.program.programId,
 			vault,
 			spotMarketIndex
@@ -3061,18 +3036,10 @@ export class VaultClient {
 			.addInsuranceFundStake(spotMarketIndex, amount)
 			.accounts({
 				vault: vault,
-				// @ts-ignore anchor 0.32 auto-resolves PDA drift_spot_market
-				driftSpotMarket: spotMarket.pubkey,
-				driftSpotMarketVault: spotMarket.vault,
-				insuranceFundStake: ifStakeAccountPublicKey,
-				insuranceFundVault: ifVaultPublicKey,
 				managerTokenAccount,
-				vaultIfTokenAccount: ifVaultTokenAccount,
 				driftUserStats: vaultAccount.userStats,
 				driftState: await this.driftClient.getStatePublicKey(),
-				driftProgram: this.driftClient.program.programId,
 				driftSigner: this.driftClient.getStateAccount().signer,
-				tokenProgram: TOKEN_PROGRAM_ID,
 			})
 			.instruction();
 	}
@@ -3097,12 +3064,12 @@ export class VaultClient {
 		amount: BN
 	): Promise<TransactionInstruction> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
-		const ifStakeAccountPublicKey = getInsuranceFundStakeAccountPublicKey(
+		const _ifStakeAccountPublicKey = getInsuranceFundStakeAccountPublicKey(
 			this.driftClient.program.programId,
 			vault,
 			spotMarketIndex
 		);
-		const ifVaultPublicKey = await getInsuranceFundVaultPublicKey(
+		const _ifVaultPublicKey = await getInsuranceFundVaultPublicKey(
 			this.driftClient.program.programId,
 			spotMarketIndex
 		);
@@ -3119,12 +3086,7 @@ export class VaultClient {
 			.accounts({
 				vault,
 				manager: vaultAccount.manager,
-				// @ts-ignore anchor 0.32 auto-resolves PDA drift_spot_market
-				driftSpotMarket: spotMarket.pubkey,
-				insuranceFundStake: ifStakeAccountPublicKey,
-				insuranceFundVault: ifVaultPublicKey,
 				driftUserStats: vaultAccount.userStats,
-				driftProgram: this.driftClient.program.programId,
 			})
 			.instruction();
 	}
@@ -3146,12 +3108,12 @@ export class VaultClient {
 		spotMarketIndex: number
 	): Promise<TransactionInstruction> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
-		const ifStakeAccountPublicKey = getInsuranceFundStakeAccountPublicKey(
+		const _ifStakeAccountPublicKey = getInsuranceFundStakeAccountPublicKey(
 			this.driftClient.program.programId,
 			vault,
 			spotMarketIndex
 		);
-		const ifVaultPublicKey = await getInsuranceFundVaultPublicKey(
+		const _ifVaultPublicKey = await getInsuranceFundVaultPublicKey(
 			this.driftClient.program.programId,
 			spotMarketIndex
 		);
@@ -3167,12 +3129,7 @@ export class VaultClient {
 			.accounts({
 				vault: vault,
 				manager: vaultAccount.manager,
-				// @ts-ignore anchor 0.32 auto-resolves PDA drift_spot_market
-				driftSpotMarket: spotMarket.pubkey,
-				insuranceFundStake: ifStakeAccountPublicKey,
-				insuranceFundVault: ifVaultPublicKey,
 				driftUserStats: vaultAccount.userStats,
-				driftProgram: this.driftClient.program.programId,
 			})
 			.instruction();
 	}
@@ -3197,12 +3154,12 @@ export class VaultClient {
 		managerTokenAccount?: PublicKey
 	): Promise<TransactionInstruction> {
 		const vaultAccount = await this.program.account.vault.fetch(vault);
-		const ifStakeAccountPublicKey = getInsuranceFundStakeAccountPublicKey(
+		const _ifStakeAccountPublicKey = getInsuranceFundStakeAccountPublicKey(
 			this.driftClient.program.programId,
 			vault,
 			spotMarketIndex
 		);
-		const ifVaultPublicKey = await getInsuranceFundVaultPublicKey(
+		const _ifVaultPublicKey = await getInsuranceFundVaultPublicKey(
 			this.driftClient.program.programId,
 			spotMarketIndex
 		);
@@ -3221,7 +3178,7 @@ export class VaultClient {
 			);
 		}
 
-		const ifVaultTokenAccount = getInsuranceFundTokenVaultAddressSync(
+		const _ifVaultTokenAccount = getInsuranceFundTokenVaultAddressSync(
 			this.program.programId,
 			vault,
 			spotMarketIndex
@@ -3231,17 +3188,10 @@ export class VaultClient {
 			.removeInsuranceFundStake(spotMarketIndex)
 			.accounts({
 				vault: vault,
-				// @ts-ignore anchor 0.32 auto-resolves PDA drift_spot_market
-				driftSpotMarket: spotMarket.pubkey,
-				insuranceFundStake: ifStakeAccountPublicKey,
-				insuranceFundVault: ifVaultPublicKey,
 				managerTokenAccount,
-				vaultIfTokenAccount: ifVaultTokenAccount,
 				driftState: await this.driftClient.getStatePublicKey(),
 				driftUserStats: vaultAccount.userStats,
 				driftSigner: this.driftClient.getStateAccount().signer,
-				driftProgram: this.driftClient.program.programId,
-				tokenProgram: TOKEN_PROGRAM_ID,
 			})
 			.instruction();
 	}

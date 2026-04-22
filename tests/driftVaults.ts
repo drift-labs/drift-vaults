@@ -348,14 +348,10 @@ describe('driftVaults', () => {
 			.accounts({
 				userTokenAccount: vd2UserUSDCAccount,
 				vault,
-				// @ts-ignore anchor 0.32 auto-resolves
-				vaultDepositor,
-				vaultTokenAccount: vaultAccount.tokenAccount,
 				driftUser: vaultAccount.user,
 				driftUserStats: vaultAccount.userStats,
 				driftState: await adminClient.getStatePublicKey(),
 				driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
-				driftProgram: adminClient.program.programId,
 			})
 			.remainingAccounts(remainingAccounts)
 			.rpc();
@@ -393,8 +389,6 @@ describe('driftVaults', () => {
 			.requestWithdraw(usdcAmount, WithdrawUnit.TOKEN)
 			.accounts({
 				vault,
-				// @ts-ignore anchor 0.32 auto-resolves
-				vaultDepositor,
 				driftUser: vaultAccount.user,
 				driftUserStats: vaultAccount.userStats,
 			})
@@ -421,15 +415,11 @@ describe('driftVaults', () => {
 				.accounts({
 					userTokenAccount: vd2UserUSDCAccount,
 					vault,
-					// @ts-ignore anchor 0.32 auto-resolves
-					vaultDepositor,
-					vaultTokenAccount: vaultAccount.tokenAccount,
 					driftUser: vaultAccount.user,
 					driftUserStats: vaultAccount.userStats,
 					driftState: await adminClient.getStatePublicKey(),
 					driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
 					driftSigner: adminClient.getStateAccount().signer,
-					driftProgram: adminClient.program.programId,
 				})
 				.remainingAccounts(remainingAccounts)
 				.rpc();
@@ -450,8 +440,6 @@ describe('driftVaults', () => {
 			.accounts({
 				vault,
 				driftUser: vaultAccount.user,
-				// @ts-ignore anchor 0.32 auto-resolves
-				driftProgram: adminClient.program.programId,
 			})
 			.rpc();
 
@@ -732,8 +720,6 @@ describe('TestProtocolVaults', () => {
 			.accounts({
 				vault: protocolVault,
 				driftUser: vaultAccount.user,
-				// @ts-ignore anchor 0.32 auto-resolves
-				driftProgram: adminClient.program.programId,
 			})
 			.rpc();
 		const user = (await (adminClient.program as any).account.user.fetch(
@@ -763,11 +749,6 @@ describe('TestProtocolVaults', () => {
 	// vault depositor deposits USDC to the vault
 	it('Vault Depositor Deposit', async () => {
 		const vaultAccount = await program.account.vault.fetch(protocolVault);
-		const vaultDepositor = getVaultDepositorAddressSync(
-			program.programId,
-			protocolVault,
-			vd.publicKey
-		);
 		const remainingAccounts = vdClient.driftClient.getRemainingAccounts({
 			userAccounts: [],
 			writableSpotMarketIndexes: [0],
@@ -789,15 +770,11 @@ describe('TestProtocolVaults', () => {
 			.deposit(usdcAmount)
 			.accounts({
 				vault: protocolVault,
-				// @ts-ignore anchor 0.32 auto-resolves
-				vaultDepositor,
-				vaultTokenAccount: vaultAccount.tokenAccount,
 				driftUserStats: vaultAccount.userStats,
 				driftUser: vaultAccount.user,
 				driftState: await adminClient.getStatePublicKey(),
 				userTokenAccount: vdUserUSDCAccount,
 				driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
-				driftProgram: adminClient.program.programId,
 			})
 			.remainingAccounts(remainingAccounts)
 			.rpc();
@@ -1216,8 +1193,6 @@ describe('TestProtocolVaults', () => {
 				.requestWithdraw(withdrawAmount, WithdrawUnit.TOKEN)
 				.accounts({
 					vault: protocolVault,
-					// @ts-ignore anchor 0.32 auto-resolves
-					vaultDepositor,
 					driftUserStats: vaultAccount.userStats,
 					driftUser: vaultAccount.user,
 				})
@@ -1260,15 +1235,11 @@ describe('TestProtocolVaults', () => {
 				.accounts({
 					userTokenAccount: vdUserUSDCAccount,
 					vault: protocolVault,
-					// @ts-ignore anchor 0.32 auto-resolves
-					vaultDepositor,
-					vaultTokenAccount: vaultAccount.tokenAccount,
 					driftUser: vaultAccount.user,
 					driftUserStats: vaultAccount.userStats,
 					driftState: await adminClient.getStatePublicKey(),
 					driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
 					driftSigner: adminClient.getStateAccount().signer,
-					driftProgram: adminClient.program.programId,
 				})
 				.remainingAccounts(remainingAccounts)
 				.rpc();
@@ -1372,14 +1343,11 @@ describe('TestProtocolVaults', () => {
 					userTokenAccount: protocolVdUserUSDCAccount,
 					vault: protocolVault,
 					vaultProtocol,
-					// @ts-ignore anchor 0.32 auto-resolves
-					vaultTokenAccount: vaultAccount.tokenAccount,
 					driftUser: vaultAccount.user,
 					driftUserStats: vaultAccount.userStats,
 					driftState: await adminClient.getStatePublicKey(),
 					driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
 					driftSigner: adminClient.getStateAccount().signer,
-					driftProgram: adminClient.program.programId,
 				})
 				.remainingAccounts(remainingAccounts)
 				.rpc();
@@ -3485,15 +3453,11 @@ describe('TestWithdrawFromVaults', () => {
 				.accounts({
 					userTokenAccount: vd0UsdcAccount,
 					vault: commonVaultKey,
-					// @ts-ignore anchor 0.32 auto-resolves
-					vaultDepositor: vdKey,
-					vaultTokenAccount: vaultState0.tokenAccount,
 					driftUser: vaultState0.user,
 					driftUserStats: vaultState0.userStats,
 					driftState: await adminClient.getStatePublicKey(),
 					driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
 					driftSigner: adminClient.getStateAccount().signer,
-					driftProgram: adminClient.program.programId,
 				})
 				.remainingAccounts(remainingAccounts)
 				.rpc();
@@ -3522,14 +3486,11 @@ describe('TestWithdrawFromVaults', () => {
 					userTokenAccount: managerUsdcAccount,
 					manager: managerSigner.publicKey,
 					vault: commonVaultKey,
-					// @ts-ignore anchor 0.32 auto-resolves
-					vaultTokenAccount: vaultState0.tokenAccount,
 					driftUser: vaultState0.user,
 					driftUserStats: vaultState0.userStats,
 					driftState: await adminClient.getStatePublicKey(),
 					driftSpotMarketVault: adminClient.getSpotMarketAccount(0).vault,
 					driftSigner: adminClient.getStateAccount().signer,
-					driftProgram: adminClient.program.programId,
 				})
 				.remainingAccounts(remainingAccounts)
 				.rpc();
