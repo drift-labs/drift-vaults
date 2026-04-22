@@ -20,7 +20,7 @@ anchor-lang = "1.0.0"
 anchor-spl = { version = "1.0.0", features = ["metadata"] }
 solana-program = "3"
 borsh = "1"
-drift = { path = "../../../protocol-v2-shadow/programs/drift", features = ["cpi", "mainnet-beta"] }
+drift = { path = "../../../protocol-v2-shadow/programs/drift", default-features = false, features = ["cpi"] }
 bytemuck = { version = "1.4.0" }
 static_assertions = "1.1.0"
 drift-macros = { git = "https://github.com/drift-labs/drift-macros.git", rev = "c57d87" }

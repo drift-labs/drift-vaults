@@ -87,7 +87,7 @@ export async function getUserStatsDecoded(
 	);
 	const userStatsBefore: UserStatsAccount =
 		(driftClient.program as any).account.userStats.coder.accounts.decode(
-			'UserStats',
+			'userStats',
 			accountInfo!.data
 		);
 
@@ -108,7 +108,7 @@ export async function overWriteUserStats(
 		owner: userStats.owner,
 		lamports: userStats.lamports,
 		data: await (driftClient.program as any).account.userStats.coder.accounts.encode(
-			'UserStats',
+			'userStats',
 			userStats.data
 		),
 		rentEpoch: userStats.rentEpoch,
@@ -192,7 +192,7 @@ export async function getUserDecoded(
 	);
 	const user: UserAccount =
 		(driftClient.program as any).account.user.coder.accounts.decodeUnchecked(
-			'User',
+			'user',
 			accountInfo!.data
 		);
 
@@ -213,7 +213,7 @@ export async function overWriteUser(
 		owner: user.owner,
 		lamports: user.lamports,
 		data: await (driftClient.program as any).account.user.coder.accounts.encode(
-			'User',
+			'user',
 			user.data
 		),
 		rentEpoch: user.rentEpoch,

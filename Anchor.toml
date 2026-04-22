@@ -4,7 +4,7 @@ anchor_version = "1.0.0"
 [programs.localnet]
 drift_vaults = "vAuLTsyrvSfZRuRB3XgvkPwNGgYSs9YRYymVebLKoxR"
 drift = "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
-pyth = "FsJ3A3u2vn5cTVofAjvy6y5kwABJAqYWpe4975bi2epH"
+pyth = "gSbePebfvPy7tRqimPoVecS2UsBvYv46ynrzWocc92s"
 
 [registry]
 url = "https://api.apr.dev"
@@ -18,7 +18,7 @@ address = "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
 program = "./tests/fixtures/drift.so"
 
 [[test.genesis]]
-address = "FsJ3A3u2vn5cTVofAjvy6y5kwABJAqYWpe4975bi2epH"
+address = "gSbePebfvPy7tRqimPoVecS2UsBvYv46ynrzWocc92s"
 program = "./tests/fixtures/pyth.so"
 
 [[test.genesis]]

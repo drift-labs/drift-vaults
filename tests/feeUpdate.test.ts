@@ -522,7 +522,7 @@ describe('feeUpdate', () => {
 			// @ts-ignore
 			vaultProgram
 		);
-		const feeUpdateEvent = events1.find((e) => e.name === 'FeeUpdateRecord');
+		const feeUpdateEvent = events1.find((e) => e.name === 'feeUpdateRecord');
 		expect(feeUpdateEvent).not.toBeNull();
 		expect(getVariant(feeUpdateEvent?.data.action)).toEqual('applied');
 
