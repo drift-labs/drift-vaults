@@ -1126,7 +1126,7 @@ export async function bootstrapSignerClientAndUser(params: {
 }> {
 	const {
 		payer,
-		programId,
+		programId: _programId,
 		usdcMint,
 		usdcAmount,
 		depositCollateral,
@@ -1154,7 +1154,7 @@ export async function bootstrapSignerClientAndUser(params: {
 		new anchor.Wallet(signer),
 		opts
 	);
-	const program = new Program(IDL, programId, provider);
+	const program = new Program(IDL, provider);
 	const vaultClient = new VaultClient({
 		driftClient,
 		// @ts-ignore
@@ -1707,7 +1707,7 @@ export async function bootstrapSignerClientAndUserBankrun(params: {
 	});
 
 	const provider = new BankrunProvider(bankrunContext.context, wallet as anchor.Wallet);
-	const program = new Program(IDL, params.programId, provider);
+	const program = new Program(IDL, provider);
 	const vaultClient = new VaultClient({
 		driftClient,
 		// @ts-ignore

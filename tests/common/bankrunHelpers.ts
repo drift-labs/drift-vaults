@@ -53,16 +53,16 @@ export async function createVaultWithFuelOverflow(
 	await driftClient.initializeFuelOverflow(commonVaultKey);
 	await driftClient.sweepFuel(commonVaultKey);
 
-	const userStatsAfterSweep = await driftClient.program.account.userStats.fetch(
-		userStatsKey
-	);
+	const userStatsAfterSweep = await (
+		(driftClient.program as any).account.userStats
+	).fetch(userStatsKey);
 	expect(userStatsAfterSweep.fuelTaker).toBe(0);
 	expect(
 		userStatsAfterSweep.fuelOverflowStatus as number & FuelOverflowStatus.Exists
 	).toBe(FuelOverflowStatus.Exists);
 
 	const userFuelSweepAccount =
-		await driftClient.program.account.fuelOverflow.fetch(
+		await (driftClient.program as any).account.fuelOverflow.fetch(
 			getFuelOverflowAccountPublicKey(
 				driftClient.program.programId,
 				commonVaultKey
@@ -86,7 +86,7 @@ export async function getUserStatsDecoded(
 		userStatsKey
 	);
 	const userStatsBefore: UserStatsAccount =
-		driftClient.program.account.userStats.coder.accounts.decode(
+		(driftClient.program as any).account.userStats.coder.accounts.decode(
 			'UserStats',
 			accountInfo!.data
 		);
@@ -107,7 +107,7 @@ export async function overWriteUserStats(
 		executable: userStats.executable,
 		owner: userStats.owner,
 		lamports: userStats.lamports,
-		data: await driftClient.program.account.userStats.coder.accounts.encode(
+		data: await (driftClient.program as any).account.userStats.coder.accounts.encode(
 			'UserStats',
 			userStats.data
 		),
@@ -191,7 +191,7 @@ export async function getUserDecoded(
 		userKey
 	);
 	const user: UserAccount =
-		driftClient.program.account.user.coder.accounts.decodeUnchecked(
+		(driftClient.program as any).account.user.coder.accounts.decodeUnchecked(
 			'User',
 			accountInfo!.data
 		);
@@ -212,7 +212,7 @@ export async function overWriteUser(
 		executable: user.executable,
 		owner: user.owner,
 		lamports: user.lamports,
-		data: await driftClient.program.account.user.coder.accounts.encode(
+		data: await (driftClient.program as any).account.user.coder.accounts.encode(
 			'User',
 			user.data
 		),

@@ -279,7 +279,9 @@ export class VaultClient {
 				memcmp: {
 					offset: 0,
 					bytes: bs58.encode(
-						(this.program.coder.accounts as BorshAccountsCoder).accountDiscriminator('vaultDepositor')
+						(
+							this.program.coder.accounts as BorshAccountsCoder
+						).accountDiscriminator('vaultDepositor')
 					),
 				},
 			},
@@ -313,7 +315,9 @@ export class VaultClient {
 				memcmp: {
 					offset: 0,
 					bytes: bs58.encode(
-						(this.program.coder.accounts as BorshAccountsCoder).accountDiscriminator('vaultDepositor')
+						(
+							this.program.coder.accounts as BorshAccountsCoder
+						).accountDiscriminator('vaultDepositor')
 					),
 				},
 			},
@@ -342,7 +346,9 @@ export class VaultClient {
 				memcmp: {
 					offset: 0,
 					bytes: bs58.encode(
-						(this.program.coder.accounts as BorshAccountsCoder).accountDiscriminator('vaultDepositor')
+						(
+							this.program.coder.accounts as BorshAccountsCoder
+						).accountDiscriminator('vaultDepositor')
 					),
 				},
 			},
@@ -688,6 +694,7 @@ export class VaultClient {
 				.initializeVaultWithProtocol(_params)
 				.accounts({
 					...accounts,
+					// @ts-ignore anchor 0.32 auto-resolves PDA vault_protocol
 					vaultProtocol,
 					payer: params.manager ?? uiAuthority,
 					manager: params.manager ?? uiAuthority,
@@ -788,7 +795,8 @@ export class VaultClient {
 				this.driftClient.program.programId,
 				vault
 			);
-			const userStats = (await this.driftClient.program.account.userStats.fetch(
+			const driftProgram = this.driftClient.program as any;
+			const userStats = (await driftProgram.account.userStats.fetch(
 				userStatsKey
 			)) as UserStatsAccount;
 			remainingAccounts.push(
@@ -861,7 +869,8 @@ export class VaultClient {
 				this.driftClient.program.programId,
 				vault
 			);
-			const userStats = (await this.driftClient.program.account.userStats.fetch(
+			const driftProgram = this.driftClient.program as any;
+			const userStats = (await driftProgram.account.userStats.fetch(
 				userStatsKey
 			)) as UserStatsAccount;
 			remainingAccounts.push(
@@ -959,9 +968,9 @@ export class VaultClient {
 			this.driftClient.program.programId,
 			vault
 		);
-		const userStats = (await this.driftClient.program.account.userStats.fetch(
-			userStatsKey
-		)) as UserStatsAccount;
+		const userStats = (await (
+			this.driftClient.program as any
+		).account.userStats.fetch(userStatsKey)) as UserStatsAccount;
 		const remainingAccounts = this.getRemainingAccountsForUser(
 			[user.getUserAccount()],
 			[vaultAccount.spotMarketIndex],
@@ -1044,9 +1053,9 @@ export class VaultClient {
 			this.driftClient.program.programId,
 			vault
 		);
-		const userStats = (await this.driftClient.program.account.userStats.fetch(
-			userStatsKey
-		)) as UserStatsAccount;
+		const userStats = (await (
+			this.driftClient.program as any
+		).account.userStats.fetch(userStatsKey)) as UserStatsAccount;
 		const remainingAccounts = this.getRemainingAccountsForUser(
 			[user.getUserAccount()],
 			[vaultAccount.spotMarketIndex],
@@ -1103,9 +1112,9 @@ export class VaultClient {
 		};
 
 		const user = await this.getSubscribedVaultUser(vaultAccount.user);
-		const userStats = (await this.driftClient.program.account.userStats.fetch(
-			userStatsKey
-		)) as UserStatsAccount;
+		const userStats = (await (
+			this.driftClient.program as any
+		).account.userStats.fetch(userStatsKey)) as UserStatsAccount;
 		const remainingAccounts = this.getRemainingAccountsForUser(
 			[user.getUserAccount()],
 			[],
@@ -1140,9 +1149,9 @@ export class VaultClient {
 			this.driftClient.program.programId,
 			vault
 		);
-		const userStats = (await this.driftClient.program.account.userStats.fetch(
-			userStatsKey
-		)) as UserStatsAccount;
+		const userStats = (await (
+			this.driftClient.program as any
+		).account.userStats.fetch(userStatsKey)) as UserStatsAccount;
 		const remainingAccounts = this.getRemainingAccountsForUser(
 			[user.getUserAccount()],
 			[vaultAccount.spotMarketIndex],
@@ -1275,9 +1284,9 @@ export class VaultClient {
 			this.driftClient.program.programId,
 			vault
 		);
-		const userStats = (await this.driftClient.program.account.userStats.fetch(
-			userStatsKey
-		)) as UserStatsAccount;
+		const userStats = (await (
+			this.driftClient.program as any
+		).account.userStats.fetch(userStatsKey)) as UserStatsAccount;
 		const remainingAccounts = this.getRemainingAccountsForUser(
 			[user.getUserAccount()],
 			[borrowSpotMarketIndex, vaultAccount.spotMarketIndex],
@@ -1347,6 +1356,7 @@ export class VaultClient {
 					driftSpotMarketVault: spotMarket.vault,
 					driftSigner: this.driftClient.getStateAccount().signer,
 					userTokenAccount: managerTokenAccount,
+					// @ts-ignore anchor 0.32 auto-resolves drift_program by declared address
 					driftProgram: this.driftClient.program.programId,
 					tokenProgram: TOKEN_PROGRAM_ID,
 				})
@@ -1458,9 +1468,9 @@ export class VaultClient {
 			vault
 		);
 		const user = await this.getSubscribedVaultUser(vaultAccount.user);
-		const userStats = (await this.driftClient.program.account.userStats.fetch(
-			userStatsKey
-		)) as UserStatsAccount;
+		const userStats = (await (
+			this.driftClient.program as any
+		).account.userStats.fetch(userStatsKey)) as UserStatsAccount;
 		const remainingAccounts = this.getRemainingAccountsForUser(
 			[user.getUserAccount()],
 			[repaySpotMarketIndex, vaultAccount.spotMarketIndex],
@@ -1485,6 +1495,7 @@ export class VaultClient {
 					driftSpotMarketVault: spotMarket.vault,
 					driftSigner: this.driftClient.getStateAccount().signer,
 					userTokenAccount: managerTokenAccount,
+					// @ts-ignore anchor 0.32 auto-resolves drift_program by declared address
 					driftProgram: this.driftClient.program.programId,
 					tokenProgram: TOKEN_PROGRAM_ID,
 				})
@@ -1514,9 +1525,9 @@ export class VaultClient {
 			this.driftClient.program.programId,
 			vault
 		);
-		const userStats = (await this.driftClient.program.account.userStats.fetch(
-			userStatsKey
-		)) as UserStatsAccount;
+		const userStats = (await (
+			this.driftClient.program as any
+		).account.userStats.fetch(userStatsKey)) as UserStatsAccount;
 		const remainingAccounts = this.getRemainingAccountsForUser(
 			[user.getUserAccount()],
 			[],
@@ -1628,9 +1639,9 @@ export class VaultClient {
 			this.driftClient.program.programId,
 			vault
 		);
-		const userStats = (await this.driftClient.program.account.userStats.fetch(
-			userStatsKey
-		)) as UserStatsAccount;
+		const userStats = (await (
+			this.driftClient.program as any
+		).account.userStats.fetch(userStatsKey)) as UserStatsAccount;
 		const remainingAccounts = this.getRemainingAccountsForUser(
 			[user.getUserAccount()],
 			[vaultAccount.spotMarketIndex],
@@ -1687,9 +1698,9 @@ export class VaultClient {
 			this.driftClient.program.programId,
 			vault
 		);
-		const userStats = (await this.driftClient.program.account.userStats.fetch(
-			userStatsKey
-		)) as UserStatsAccount;
+		const userStats = (await (
+			this.driftClient.program as any
+		).account.userStats.fetch(userStatsKey)) as UserStatsAccount;
 		const remainingAccounts = this.getRemainingAccountsForUser(
 			[user.getUserAccount()],
 			[vaultAccount.spotMarketIndex],
@@ -1750,9 +1761,9 @@ export class VaultClient {
 			this.driftClient.program.programId,
 			vault
 		);
-		const userStats = (await this.driftClient.program.account.userStats.fetch(
-			userStatsKey
-		)) as UserStatsAccount;
+		const userStats = (await (
+			this.driftClient.program as any
+		).account.userStats.fetch(userStatsKey)) as UserStatsAccount;
 		const remainingAccounts = this.getRemainingAccountsForUser(
 			[user.getUserAccount()],
 			[vaultAccount.spotMarketIndex],
@@ -1970,9 +1981,9 @@ export class VaultClient {
 			this.driftClient.program.programId,
 			vaultDepositorAccount.vault
 		);
-		const userStats = (await this.driftClient.program.account.userStats.fetch(
-			userStatsKey
-		)) as UserStatsAccount;
+		const userStats = (await (
+			this.driftClient.program as any
+		).account.userStats.fetch(userStatsKey)) as UserStatsAccount;
 		const remainingAccounts = this.getRemainingAccountsForUser(
 			[user.getUserAccount()],
 			[vaultAccount.spotMarketIndex],
@@ -1986,11 +1997,12 @@ export class VaultClient {
 		ixs.push(
 			await this.program.methods
 				// anchor idl bug: https://github.com/coral-xyz/anchor/issues/2914
-				// @ts-ignore
+				// @ts-ignore args tuple vs anchor 0.32 IDL recursion limit
 				.tokenizeShares(amount, unit)
 				.accounts({
 					authority: this.driftClient.wallet.publicKey,
 					vault: vaultDepositorAccount.vault,
+					// @ts-ignore anchor 0.32 auto-resolves PDA vault_depositor
 					vaultDepositor,
 					tokenizedVaultDepositor: getTokenizedVaultAddressSync(
 						this.program.programId,
@@ -2042,9 +2054,9 @@ export class VaultClient {
 			this.driftClient.program.programId,
 			vaultDepositorAccount.vault
 		);
-		const userStats = (await this.driftClient.program.account.userStats.fetch(
-			userStatsKey
-		)) as UserStatsAccount;
+		const userStats = (await (
+			this.driftClient.program as any
+		).account.userStats.fetch(userStatsKey)) as UserStatsAccount;
 		const remainingAccounts = this.getRemainingAccountsForUser(
 			[user.getUserAccount()],
 			[vaultAccount.spotMarketIndex],
@@ -2059,10 +2071,11 @@ export class VaultClient {
 
 		ixs.push(
 			await this.program.methods
-				// @ts-ignore
+				// @ts-ignore args tuple vs anchor 0.32 IDL recursion limit
 				.transferVaultDepositorShares(amount, withdrawUnit)
 				.accounts({
 					vault: vaultDepositorAccount.vault,
+					// @ts-ignore anchor 0.32 auto-resolves PDA vault_depositor
 					vaultDepositor: fromVaultDepositor,
 					authority: this.driftClient.wallet.publicKey,
 					toVaultDepositor,
@@ -2125,9 +2138,9 @@ export class VaultClient {
 			this.driftClient.program.programId,
 			vaultDepositorAccount.vault
 		);
-		const userStats = (await this.driftClient.program.account.userStats.fetch(
-			userStatsKey
-		)) as UserStatsAccount;
+		const userStats = (await (
+			this.driftClient.program as any
+		).account.userStats.fetch(userStatsKey)) as UserStatsAccount;
 		const remainingAccounts = this.getRemainingAccountsForUser(
 			[user.getUserAccount()],
 			[vaultAccount.spotMarketIndex],
@@ -2143,6 +2156,7 @@ export class VaultClient {
 			.accounts({
 				authority: this.driftClient.wallet.publicKey,
 				vault: vaultDepositorAccount.vault,
+				// @ts-ignore anchor 0.32 auto-resolves PDA vault_depositor
 				vaultDepositor,
 				tokenizedVaultDepositor: getTokenizedVaultAddressSync(
 					this.program.programId,
@@ -2206,9 +2220,9 @@ export class VaultClient {
 			this.driftClient.program.programId,
 			vaultPubKey
 		);
-		const userStats = (await this.driftClient.program.account.userStats.fetch(
-			userStatsKey
-		)) as UserStatsAccount;
+		const userStats = (await (
+			this.driftClient.program as any
+		).account.userStats.fetch(userStatsKey)) as UserStatsAccount;
 		const remainingAccounts = this.getRemainingAccountsForUser(
 			[user.getUserAccount()],
 			[vaultAccount.spotMarketIndex],
@@ -2384,9 +2398,9 @@ export class VaultClient {
 			this.driftClient.program.programId,
 			vaultDepositorAccount.vault
 		);
-		const userStats = (await this.driftClient.program.account.userStats.fetch(
-			userStatsKey
-		)) as UserStatsAccount;
+		const userStats = (await (
+			this.driftClient.program as any
+		).account.userStats.fetch(userStatsKey)) as UserStatsAccount;
 		const remainingAccounts = this.getRemainingAccountsForUser(
 			[user.getUserAccount()],
 			[vaultAccount.spotMarketIndex],
@@ -2453,9 +2467,9 @@ export class VaultClient {
 			this.driftClient.program.programId,
 			vaultDepositorAccount.vault
 		);
-		const userStats = (await this.driftClient.program.account.userStats.fetch(
-			userStatsKey
-		)) as UserStatsAccount;
+		const userStats = (await (
+			this.driftClient.program as any
+		).account.userStats.fetch(userStatsKey)) as UserStatsAccount;
 		const remainingAccounts = this.getRemainingAccountsForUser(
 			[user.getUserAccount()],
 			[vaultAccount.spotMarketIndex],
@@ -2577,9 +2591,9 @@ export class VaultClient {
 			this.driftClient.program.programId,
 			vaultDepositorAccount.vault
 		);
-		const userStats = (await this.driftClient.program.account.userStats.fetch(
-			userStatsKey
-		)) as UserStatsAccount;
+		const userStats = (await (
+			this.driftClient.program as any
+		).account.userStats.fetch(userStatsKey)) as UserStatsAccount;
 		const remainingAccounts = this.getRemainingAccountsForUser(
 			[user.getUserAccount()],
 			[vaultAccount.spotMarketIndex],
@@ -2691,9 +2705,9 @@ export class VaultClient {
 		};
 
 		const user = await this.getSubscribedVaultUser(vaultAccount.user);
-		const userStats = (await this.driftClient.program.account.userStats.fetch(
-			userStatsKey
-		)) as UserStatsAccount;
+		const userStats = (await (
+			this.driftClient.program as any
+		).account.userStats.fetch(userStatsKey)) as UserStatsAccount;
 		const remainingAccounts = this.getRemainingAccountsForUser(
 			[user.getUserAccount()],
 			[vaultAccount.spotMarketIndex],
@@ -2761,9 +2775,9 @@ export class VaultClient {
 			this.driftClient.program.programId,
 			vault
 		);
-		const userStats = (await this.driftClient.program.account.userStats.fetch(
-			userStatsKey
-		)) as UserStatsAccount;
+		const userStats = (await (
+			this.driftClient.program as any
+		).account.userStats.fetch(userStatsKey)) as UserStatsAccount;
 		const remainingAccounts = this.getRemainingAccountsForUser(
 			[user.getUserAccount()],
 			[vaultAccount.spotMarketIndex],
@@ -2963,6 +2977,7 @@ export class VaultClient {
 			.initializeInsuranceFundStake(spotMarketIndex)
 			.accounts({
 				vault: vault,
+				// @ts-ignore anchor 0.32 auto-resolves PDA drift_spot_market
 				driftSpotMarket: spotMarket.pubkey,
 				driftSpotMarketMint: spotMarket.mint,
 				vaultTokenAccount: ifVaultTokenAccount,
@@ -3046,6 +3061,7 @@ export class VaultClient {
 			.addInsuranceFundStake(spotMarketIndex, amount)
 			.accounts({
 				vault: vault,
+				// @ts-ignore anchor 0.32 auto-resolves PDA drift_spot_market
 				driftSpotMarket: spotMarket.pubkey,
 				driftSpotMarketVault: spotMarket.vault,
 				insuranceFundStake: ifStakeAccountPublicKey,
@@ -3103,6 +3119,7 @@ export class VaultClient {
 			.accounts({
 				vault,
 				manager: vaultAccount.manager,
+				// @ts-ignore anchor 0.32 auto-resolves PDA drift_spot_market
 				driftSpotMarket: spotMarket.pubkey,
 				insuranceFundStake: ifStakeAccountPublicKey,
 				insuranceFundVault: ifVaultPublicKey,
@@ -3150,6 +3167,7 @@ export class VaultClient {
 			.accounts({
 				vault: vault,
 				manager: vaultAccount.manager,
+				// @ts-ignore anchor 0.32 auto-resolves PDA drift_spot_market
 				driftSpotMarket: spotMarket.pubkey,
 				insuranceFundStake: ifStakeAccountPublicKey,
 				insuranceFundVault: ifVaultPublicKey,
@@ -3213,6 +3231,7 @@ export class VaultClient {
 			.removeInsuranceFundStake(spotMarketIndex)
 			.accounts({
 				vault: vault,
+				// @ts-ignore anchor 0.32 auto-resolves PDA drift_spot_market
 				driftSpotMarket: spotMarket.pubkey,
 				insuranceFundStake: ifStakeAccountPublicKey,
 				insuranceFundVault: ifVaultPublicKey,
@@ -3264,9 +3283,9 @@ export class VaultClient {
 			this.driftClient.program.programId,
 			vault
 		);
-		const userStats = (await this.driftClient.program.account.userStats.fetch(
-			userStatsKey
-		)) as UserStatsAccount;
+		const userStats = (await (
+			this.driftClient.program as any
+		).account.userStats.fetch(userStatsKey)) as UserStatsAccount;
 		const remainingAccounts = this.getRemainingAccountsForUser(
 			[user.getUserAccount()],
 			[],
@@ -3334,9 +3353,9 @@ export class VaultClient {
 		};
 
 		const user = await this.getSubscribedVaultUser(vaultAccount.user);
-		const userStats = (await this.driftClient.program.account.userStats.fetch(
-			userStatsKey
-		)) as UserStatsAccount;
+		const userStats = (await (
+			this.driftClient.program as any
+		).account.userStats.fetch(userStatsKey)) as UserStatsAccount;
 		const remainingAccounts = this.getRemainingAccountsForUser(
 			[user.getUserAccount()],
 			[],
@@ -3391,9 +3410,9 @@ export class VaultClient {
 			this.driftClient.program.programId,
 			vault
 		);
-		const userStats = (await this.driftClient.program.account.userStats.fetch(
-			userStatsKey
-		)) as UserStatsAccount;
+		const userStats = (await (
+			this.driftClient.program as any
+		).account.userStats.fetch(userStatsKey)) as UserStatsAccount;
 		const remainingAccounts = this.getRemainingAccountsForUser(
 			[user.getUserAccount()],
 			[],
@@ -3683,9 +3702,9 @@ export class VaultClient {
 		);
 		let userStats = vaultUserStats;
 		if (!userStats) {
-			userStats = (await this.driftClient.program.account.userStats.fetch(
-				userStatsKey
-			)) as UserStatsAccount;
+			userStats = (await (
+				this.driftClient.program as any
+			).account.userStats.fetch(userStatsKey)) as UserStatsAccount;
 		}
 
 		const remainingAccounts = this.getRemainingAccountsForUser(
@@ -3734,9 +3753,9 @@ export class VaultClient {
 			this.driftClient.program.programId,
 			vaultDepositorAccount.vault
 		);
-		const userStats = (await this.driftClient.program.account.userStats.fetch(
-			userStatsKey
-		)) as UserStatsAccount;
+		const userStats = (await (
+			this.driftClient.program as any
+		).account.userStats.fetch(userStatsKey)) as UserStatsAccount;
 		const remainingAccounts = this.getRemainingAccountsForUser(
 			[user.getUserAccount()],
 			[],

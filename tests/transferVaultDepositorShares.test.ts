@@ -101,7 +101,6 @@ describe('transferVaultDepositorShares', () => {
 
 		vaultProgram = new Program<DriftVaults>(
 			IDL,
-			VAULT_PROGRAM_ID,
 			bankrunContextWrapper.provider
 		);
 

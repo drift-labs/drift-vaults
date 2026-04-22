@@ -348,6 +348,7 @@ describe('driftVaults', () => {
 			.accounts({
 				userTokenAccount: vd2UserUSDCAccount,
 				vault,
+				// @ts-ignore anchor 0.32 auto-resolves
 				vaultDepositor,
 				vaultTokenAccount: vaultAccount.tokenAccount,
 				driftUser: vaultAccount.user,
@@ -392,6 +393,7 @@ describe('driftVaults', () => {
 			.requestWithdraw(usdcAmount, WithdrawUnit.TOKEN)
 			.accounts({
 				vault,
+				// @ts-ignore anchor 0.32 auto-resolves
 				vaultDepositor,
 				driftUser: vaultAccount.user,
 				driftUserStats: vaultAccount.userStats,
@@ -419,6 +421,7 @@ describe('driftVaults', () => {
 				.accounts({
 					userTokenAccount: vd2UserUSDCAccount,
 					vault,
+					// @ts-ignore anchor 0.32 auto-resolves
 					vaultDepositor,
 					vaultTokenAccount: vaultAccount.tokenAccount,
 					driftUser: vaultAccount.user,
@@ -447,11 +450,12 @@ describe('driftVaults', () => {
 			.accounts({
 				vault,
 				driftUser: vaultAccount.user,
+				// @ts-ignore anchor 0.32 auto-resolves
 				driftProgram: adminClient.program.programId,
 			})
 			.rpc();
 
-		const user = (await adminClient.program.account.user.fetch(
+		const user = (await (adminClient.program as any).account.user.fetch(
 			vaultAccount.user
 		)) as UserAccount;
 		assert(user.delegate.equals(delegateKeyPair.publicKey));
@@ -728,10 +732,11 @@ describe('TestProtocolVaults', () => {
 			.accounts({
 				vault: protocolVault,
 				driftUser: vaultAccount.user,
+				// @ts-ignore anchor 0.32 auto-resolves
 				driftProgram: adminClient.program.programId,
 			})
 			.rpc();
-		const user = (await adminClient.program.account.user.fetch(
+		const user = (await (adminClient.program as any).account.user.fetch(
 			vaultAccount.user
 		)) as UserAccount;
 		assert(user.delegate.equals(delegate.publicKey));
@@ -784,6 +789,7 @@ describe('TestProtocolVaults', () => {
 			.deposit(usdcAmount)
 			.accounts({
 				vault: protocolVault,
+				// @ts-ignore anchor 0.32 auto-resolves
 				vaultDepositor,
 				vaultTokenAccount: vaultAccount.tokenAccount,
 				driftUserStats: vaultAccount.userStats,
@@ -890,19 +896,20 @@ describe('TestProtocolVaults', () => {
 			);
 
 			const takerOrderId = order.orderId;
-			const placeAndMakeOrderIx =
-				await delegateClient.driftClient.program.methods
-					.placeAndMakePerpOrder(orderParams, takerOrderId)
-					.accounts({
-						state: await delegateClient.driftClient.getStatePublicKey(),
-						user: delegateActiveUser.userAccountPublicKey,
-						userStats: userStatsPublicKey,
-						taker: fillerUser.userAccountPublicKey,
-						takerStats: fillerClient.driftClient.getUserStatsAccountPublicKey(),
-						authority: delegateClient.driftClient.wallet.publicKey,
-					})
-					.remainingAccounts(remainingAccounts)
-					.instruction();
+			const placeAndMakeOrderIx = await (
+				delegateClient.driftClient.program.methods as any
+			)
+				.placeAndMakePerpOrder(orderParams, takerOrderId)
+				.accounts({
+					state: await delegateClient.driftClient.getStatePublicKey(),
+					user: delegateActiveUser.userAccountPublicKey,
+					userStats: userStatsPublicKey,
+					taker: fillerUser.userAccountPublicKey,
+					takerStats: fillerClient.driftClient.getUserStatsAccountPublicKey(),
+					authority: delegateClient.driftClient.wallet.publicKey,
+				})
+				.remainingAccounts(remainingAccounts)
+				.instruction();
 
 			const { slot } = await delegateClient.driftClient.sendTransaction(
 				await delegateClient.driftClient.buildTransaction(
@@ -1038,19 +1045,20 @@ describe('TestProtocolVaults', () => {
 			);
 
 			const takerOrderId = order.orderId;
-			const placeAndMakeOrderIx =
-				await delegateClient.driftClient.program.methods
-					.placeAndMakePerpOrder(orderParams, takerOrderId)
-					.accounts({
-						state: await delegateClient.driftClient.getStatePublicKey(),
-						user: delegateActiveUser.userAccountPublicKey,
-						userStats: userStatsPublicKey,
-						taker: fillerUser.userAccountPublicKey,
-						takerStats: fillerClient.driftClient.getUserStatsAccountPublicKey(),
-						authority: delegateClient.driftClient.wallet.publicKey,
-					})
-					.remainingAccounts(remainingAccounts)
-					.instruction();
+			const placeAndMakeOrderIx = await (
+				delegateClient.driftClient.program.methods as any
+			)
+				.placeAndMakePerpOrder(orderParams, takerOrderId)
+				.accounts({
+					state: await delegateClient.driftClient.getStatePublicKey(),
+					user: delegateActiveUser.userAccountPublicKey,
+					userStats: userStatsPublicKey,
+					taker: fillerUser.userAccountPublicKey,
+					takerStats: fillerClient.driftClient.getUserStatsAccountPublicKey(),
+					authority: delegateClient.driftClient.wallet.publicKey,
+				})
+				.remainingAccounts(remainingAccounts)
+				.instruction();
 
 			const { slot } = await delegateClient.driftClient.sendTransaction(
 				await delegateClient.driftClient.buildTransaction(
@@ -1208,6 +1216,7 @@ describe('TestProtocolVaults', () => {
 				.requestWithdraw(withdrawAmount, WithdrawUnit.TOKEN)
 				.accounts({
 					vault: protocolVault,
+					// @ts-ignore anchor 0.32 auto-resolves
 					vaultDepositor,
 					driftUserStats: vaultAccount.userStats,
 					driftUser: vaultAccount.user,
@@ -1251,6 +1260,7 @@ describe('TestProtocolVaults', () => {
 				.accounts({
 					userTokenAccount: vdUserUSDCAccount,
 					vault: protocolVault,
+					// @ts-ignore anchor 0.32 auto-resolves
 					vaultDepositor,
 					vaultTokenAccount: vaultAccount.tokenAccount,
 					driftUser: vaultAccount.user,
@@ -1362,6 +1372,7 @@ describe('TestProtocolVaults', () => {
 					userTokenAccount: protocolVdUserUSDCAccount,
 					vault: protocolVault,
 					vaultProtocol,
+					// @ts-ignore anchor 0.32 auto-resolves
 					vaultTokenAccount: vaultAccount.tokenAccount,
 					driftUser: vaultAccount.user,
 					driftUserStats: vaultAccount.userStats,
@@ -1892,7 +1903,7 @@ describe('TestTokenizedDriftVaults', () => {
 			usdcMint,
 			new anchor.Program(
 				managerDriftClient.program.idl as anchor.Idl,
-				managerDriftClient.program.programId,
+
 				provider
 			),
 			usdcDepositAmount,
@@ -1912,7 +1923,7 @@ describe('TestTokenizedDriftVaults', () => {
 				usdcMint,
 				new anchor.Program(
 					managerDriftClient.program.idl as anchor.Idl,
-					managerDriftClient.program.programId,
+
 					provider
 				),
 				[
@@ -1941,7 +1952,6 @@ describe('TestTokenizedDriftVaults', () => {
 			// @ts-ignore
 			program: new anchor.Program(
 				program.idl,
-				program.programId,
 				new anchor.AnchorProvider(provider.connection, new anchor.Wallet(kp), {
 					preflightCommitment: 'confirmed',
 					skipPreflight: false,
@@ -2230,7 +2240,7 @@ describe('TestTokenizedDriftVaults', () => {
 				usdcMint,
 				new anchor.Program(
 					managerDriftClient.program.idl as anchor.Idl,
-					managerDriftClient.program.programId,
+
 					provider
 				),
 				[
@@ -2865,10 +2875,11 @@ describe('TestInsuranceFundStake', () => {
 			vault,
 			marketIndex
 		);
-		const ifStakeAccount =
-			(await managerDriftClient.program.account.insuranceFundStake.fetch(
-				ifStakeAccountPublicKey
-			)) as InsuranceFundStake;
+		const ifStakeAccount = (await (
+			managerDriftClient.program as any
+		).account.insuranceFundStake.fetch(
+			ifStakeAccountPublicKey
+		)) as InsuranceFundStake;
 
 		assert(ifStakeAccount !== null, "Couldn't fetch IF stake account");
 		assert(
@@ -2923,10 +2934,11 @@ describe('TestInsuranceFundStake', () => {
 			{ noLut: true }
 		);
 
-		const ifStakeAccount1 =
-			(await managerDriftClient.program.account.insuranceFundStake.fetch(
-				ifStakeAccountPublicKey
-			)) as InsuranceFundStake;
+		const ifStakeAccount1 = (await (
+			managerDriftClient.program as any
+		).account.insuranceFundStake.fetch(
+			ifStakeAccountPublicKey
+		)) as InsuranceFundStake;
 		await managerDriftClient.fetchAccounts();
 		assert(
 			ifStakeAccount1.ifShares.eq(ifStakeAmount),
@@ -2942,10 +2954,11 @@ describe('TestInsuranceFundStake', () => {
 			{ noLut: true }
 		);
 
-		const ifStakeAccount2 =
-			(await managerDriftClient.program.account.insuranceFundStake.fetch(
-				ifStakeAccountPublicKey
-			)) as InsuranceFundStake;
+		const ifStakeAccount2 = (await (
+			managerDriftClient.program as any
+		).account.insuranceFundStake.fetch(
+			ifStakeAccountPublicKey
+		)) as InsuranceFundStake;
 		assert(
 			ifStakeAccount2.lastWithdrawRequestShares.eq(requestRemoveAmount),
 			'Failed to request remove stake'
@@ -2958,10 +2971,11 @@ describe('TestInsuranceFundStake', () => {
 			{ noLut: true }
 		);
 
-		const ifStakeAccount3 =
-			(await managerDriftClient.program.account.insuranceFundStake.fetch(
-				ifStakeAccountPublicKey
-			)) as InsuranceFundStake;
+		const ifStakeAccount3 = (await (
+			managerDriftClient.program as any
+		).account.insuranceFundStake.fetch(
+			ifStakeAccountPublicKey
+		)) as InsuranceFundStake;
 		assert(
 			ifStakeAccount3.lastWithdrawRequestShares.eq(ZERO),
 			'Failed to cancel remove stake request'
@@ -3471,6 +3485,7 @@ describe('TestWithdrawFromVaults', () => {
 				.accounts({
 					userTokenAccount: vd0UsdcAccount,
 					vault: commonVaultKey,
+					// @ts-ignore anchor 0.32 auto-resolves
 					vaultDepositor: vdKey,
 					vaultTokenAccount: vaultState0.tokenAccount,
 					driftUser: vaultState0.user,
@@ -3507,6 +3522,7 @@ describe('TestWithdrawFromVaults', () => {
 					userTokenAccount: managerUsdcAccount,
 					manager: managerSigner.publicKey,
 					vault: commonVaultKey,
+					// @ts-ignore anchor 0.32 auto-resolves
 					vaultTokenAccount: vaultState0.tokenAccount,
 					driftUser: vaultState0.user,
 					driftUserStats: vaultState0.userStats,
@@ -3561,7 +3577,7 @@ describe('TestWithdrawFromVaults', () => {
 				usdcMint,
 				new anchor.Program(
 					managerDriftClient.program.idl as anchor.Idl,
-					managerDriftClient.program.programId,
+
 					provider
 				),
 				[

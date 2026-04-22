@@ -3,6 +3,8 @@ import { DriftClient, IWallet } from '@drift-labs/sdk';
 import { Connection, PublicKey, TransactionInstruction } from '@solana/web3.js';
 import { DriftVaults } from './types/drift_vaults';
 import driftVaultsIDL from './idl/drift_vaults.json';
+
+export const IDL = driftVaultsIDL as DriftVaults;
 import { VaultClient } from './vaultClient';
 import * as anchor from '@coral-xyz/anchor';
 import {

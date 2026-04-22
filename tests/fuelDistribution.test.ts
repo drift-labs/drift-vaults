@@ -121,7 +121,6 @@ describe('driftVaults', () => {
 
 		vaultProgram = new Program<DriftVaults>(
 			IDL,
-			VAULT_PROGRAM_ID,
 			bankrunContextWrapper.provider
 		);
 
@@ -204,7 +203,7 @@ describe('driftVaults', () => {
 			bankrunContextWrapper.context,
 			adminDriftClient.wallet as anchor.Wallet
 		);
-		const program = new Program(IDL, VAULT_PROGRAM_ID, provider);
+		const program = new Program(IDL, provider);
 		adminClient = new VaultClient({
 			// @ts-ignore
 			driftClient: adminDriftClient,
