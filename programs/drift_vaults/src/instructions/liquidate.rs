@@ -56,13 +56,13 @@ pub fn liquidate<'info>(ctx: Context<'info, Liquidate<'info>>) -> Result<()> {
     // 3. Check that the vault is not already in liquidation
     vault.check_available_for_liquidation(now)?;
 
-    vault.set_liquidation_delegate(admin::id(), now);
+    vault.set_liquidation_delegate(admin::ID, now);
 
     drop(user);
     drop(vault);
     drop(vp);
 
-    ctx.drift_update_user_delegate(admin::id())?;
+    ctx.drift_update_user_delegate(admin::ID)?;
     ctx.drift_update_user_reduce_only(true)?;
 
     Ok(())

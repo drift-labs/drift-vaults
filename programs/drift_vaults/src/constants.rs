@@ -6,12 +6,12 @@ pub const ONE_DAY: i64 = ONE_HOUR * 24;
 pub const ONE_WEEK: i64 = ONE_DAY * 7;
 
 pub mod admin {
-    use anchor_lang::prelude::declare_id;
+    use anchor_lang::prelude::{pubkey, Pubkey};
     #[cfg(not(feature = "anchor-test"))]
-    declare_id!("4wbNjWbj3kPDbyKnSq8SXVEtAJw4uzE8mJ2QwuK1BCYZ");
+    pub const ID: Pubkey = pubkey!("4wbNjWbj3kPDbyKnSq8SXVEtAJw4uzE8mJ2QwuK1BCYZ");
 
     #[cfg(feature = "anchor-test")]
-    declare_id!("45HdJoU4aHmRzYBpd2zSvjvyfMUdzbrgBDkqLLcW45yA");
+    pub const ID: Pubkey = pubkey!("45HdJoU4aHmRzYBpd2zSvjvyfMUdzbrgBDkqLLcW45yA");
 }
 
 pub const FUEL_SHARE_PRECISION: u128 = 1_000_000_000_000_000_000; // expo -18

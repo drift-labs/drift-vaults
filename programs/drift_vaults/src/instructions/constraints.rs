@@ -32,7 +32,7 @@ pub fn is_manager_for_vault(vault: &AccountLoader<Vault>, signer: &Signer) -> Re
 }
 
 pub fn is_admin(signer: &Signer) -> Result<bool> {
-    Ok(signer.key.eq(&admin::id()))
+    Ok(signer.key.eq(&admin::ID))
 }
 
 pub fn is_protocol_for_vault(
