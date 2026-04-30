@@ -3,7 +3,7 @@ anchor_version = "1.0.0"
 
 [programs.localnet]
 drift_vaults = "vAuLTsyrvSfZRuRB3XgvkPwNGgYSs9YRYymVebLKoxR"
-drift = "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
+drift = "vELoC1audYbSYVRXn1vPaV8Axoa9oU6BYmNGZZBDZ1P"
 pyth = "gSbePebfvPy7tRqimPoVecS2UsBvYv46ynrzWocc92s"
 
 [registry]
@@ -14,7 +14,7 @@ cluster = "Localnet"
 wallet = "~/.config/solana/id.json"
 
 [[test.genesis]]
-address = "dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH"
+address = "vELoC1audYbSYVRXn1vPaV8Axoa9oU6BYmNGZZBDZ1P"
 program = "./tests/fixtures/drift.so"
 
 [[test.genesis]]

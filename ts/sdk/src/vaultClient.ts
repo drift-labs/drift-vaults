@@ -74,7 +74,6 @@ import { VAULT_ADMIN_KEY, VAULT_SHARES_PRECISION_EXP } from './constants';
 type OracleFeedConfig = {
 	feed: PublicKey;
 	oracleSource: OracleSource;
-	pythFeedId?: string;
 	pythLazerId?: number;
 };
 
@@ -85,7 +84,6 @@ export type TxParams = {
 	lookupTables?: AddressLookupTableAccount[];
 	oracleFeedsToCrank?: {
 		feedsToCrank: OracleFeedConfig[];
-		pythPullVaaGetter?: (feedIds: string[]) => Promise<string>;
 		pythLazerMsgHexGetter?: (feedIds: number[]) => Promise<string>;
 	};
 	noLut?: boolean;
@@ -1988,7 +1986,10 @@ export class VaultClient {
 				// anchor idl bug: https://github.com/coral-xyz/anchor/issues/2914
 				// @ts-ignore args tuple vs anchor 0.32 IDL recursion limit
 				.tokenizeShares(amount, unit)
-				.accounts({
+				// `mint` is auto-resolved from IDL seeds, but anchor 1.0's IDL
+				// generator can't encode `vault.shares_base.to_string().as_bytes()`
+				// and emits broken seeds. Pass it explicitly to override.
+				.accountsPartial({
 					authority: this.driftClient.wallet.publicKey,
 					vault: vaultDepositorAccount.vault,
 					tokenizedVaultDepositor: getTokenizedVaultAddressSync(
@@ -1996,6 +1997,7 @@ export class VaultClient {
 						vaultDepositorAccount.vault,
 						vaultAccount.sharesBase
 					),
+					mint,
 					userTokenAccount: userAta,
 					driftUser: vaultAccount.user,
 				})
@@ -3407,88 +3409,6 @@ export class VaultClient {
 		return [ix];
 	}
 
-	private async getSwitchboardOracleCrankIxs(
-		oracleFeedsToCrank: OracleFeedConfig[] = []
-	) {
-		try {
-			const switchboardOracles = oracleFeedsToCrank.filter(
-				(config) =>
-					JSON.stringify(config.oracleSource) ===
-					JSON.stringify(OracleSource.SWITCHBOARD_ON_DEMAND)
-			);
-
-			if (switchboardOracles.length === 0) {
-				return [];
-			}
-
-			const switchboardOracleFeedsToCrankIx: TransactionInstruction[] =
-				(await Promise.all(
-					switchboardOracles.map(async (feedConfig) => {
-						return this.driftClient.getPostSwitchboardOnDemandUpdateAtomicIx(
-							feedConfig.feed
-						);
-					})
-				)) as TransactionInstruction[];
-
-			return switchboardOracleFeedsToCrankIx;
-		} catch (err) {
-			console.error('Error cranking switchboard oracles', err);
-			return [];
-		}
-	}
-
-	private async getPythPullOracleCrankIxs(
-		oracleFeedsToCrank: OracleFeedConfig[] = [],
-		pythVaaGetter?: (feedIds: string[]) => Promise<string>
-	) {
-		try {
-			const isPythPullOracle = (oracleSource: OracleSource) => {
-				const pythPullStr = JSON.stringify(OracleSource.PYTH_PULL);
-				const pythPull1kStr = JSON.stringify(OracleSource.PYTH_1K_PULL);
-				const pythPull1mStr = JSON.stringify(OracleSource.PYTH_1M_PULL);
-				const pythStableCoinPullStr = JSON.stringify(
-					OracleSource.PYTH_STABLE_COIN_PULL
-				);
-				const targetOracleSourceStr = JSON.stringify(oracleSource);
-				return (
-					targetOracleSourceStr === pythPullStr ||
-					targetOracleSourceStr === pythPull1kStr ||
-					targetOracleSourceStr === pythPull1mStr ||
-					targetOracleSourceStr === pythStableCoinPullStr
-				);
-			};
-
-			const pythOracles = oracleFeedsToCrank.filter((config) =>
-				isPythPullOracle(config.oracleSource)
-			);
-
-			if (pythOracles.length === 0) {
-				return [];
-			}
-
-			if (!pythVaaGetter) {
-				console.error('pythVaaGetter is required to crank pyth pull oracles');
-				return [];
-			}
-
-			const pythFeedIds = pythOracles
-				.map((config) => config.pythFeedId)
-				.filter(Boolean) as string[];
-			const vaaString = await pythVaaGetter(pythFeedIds);
-
-			const pythOracleFeedsToCrankIx: TransactionInstruction[] =
-				await this.driftClient.getPostPythPullOracleUpdateAtomicIxs(
-					vaaString,
-					pythFeedIds
-				);
-
-			return pythOracleFeedsToCrankIx;
-		} catch (err) {
-			console.error('Error cranking pyth pull oracles', err);
-			return [];
-		}
-	}
-
 	private async getPythLazerOracleCrankIxs(
 		oracleFeedsToCrank: OracleFeedConfig[] = [],
 		pythLazerMsgHexGetter?: (feedIds: number[]) => Promise<string>
@@ -3552,22 +3472,10 @@ export class VaultClient {
 			return [];
 		}
 
-		const oracleFeedsToCrankIxs: TransactionInstruction[] = (
-			await Promise.all([
-				// TODO: may not be working at this moment
-				// this.getPythLazerOracleCrankIxs( // pyth lazer oracle cranks need to be first because num of preceeding ixs matters to it
-				// 	oracleFeedsToCrank.feedsToCrank,
-				// 	oracleFeedsToCrank.pythLazerMsgHexGetter
-				// ),
-				this.getPythPullOracleCrankIxs(
-					oracleFeedsToCrank.feedsToCrank,
-					oracleFeedsToCrank.pythPullVaaGetter
-				),
-				this.getSwitchboardOracleCrankIxs(oracleFeedsToCrank.feedsToCrank),
-			])
-		).flat();
-
-		return oracleFeedsToCrankIxs;
+		return await this.getPythLazerOracleCrankIxs(
+			oracleFeedsToCrank.feedsToCrank,
+			oracleFeedsToCrank.pythLazerMsgHexGetter
+		);
 	}
 
 	public async updateVaultProtocol(

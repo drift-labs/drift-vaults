@@ -226,7 +226,7 @@ export type DriftVaults = {
 				},
 				{
 					name: 'driftProgram';
-					address: 'dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH';
+					address: 'vELoC1audYbSYVRXn1vPaV8Axoa9oU6BYmNGZZBDZ1P';
 				},
 				{
 					name: 'tokenProgram';
@@ -369,7 +369,7 @@ export type DriftVaults = {
 				},
 				{
 					name: 'driftProgram';
-					address: 'dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH';
+					address: 'vELoC1audYbSYVRXn1vPaV8Axoa9oU6BYmNGZZBDZ1P';
 				}
 			];
 			args: [];
@@ -536,7 +536,7 @@ export type DriftVaults = {
 				},
 				{
 					name: 'driftProgram';
-					address: 'dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH';
+					address: 'vELoC1audYbSYVRXn1vPaV8Axoa9oU6BYmNGZZBDZ1P';
 				}
 			];
 			args: [
@@ -708,7 +708,7 @@ export type DriftVaults = {
 				},
 				{
 					name: 'driftProgram';
-					address: 'dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH';
+					address: 'vELoC1audYbSYVRXn1vPaV8Axoa9oU6BYmNGZZBDZ1P';
 				},
 				{
 					name: 'tokenProgram';
@@ -798,7 +798,7 @@ export type DriftVaults = {
 				},
 				{
 					name: 'driftProgram';
-					address: 'dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH';
+					address: 'vELoC1audYbSYVRXn1vPaV8Axoa9oU6BYmNGZZBDZ1P';
 				},
 				{
 					name: 'tokenProgram';
@@ -945,7 +945,7 @@ export type DriftVaults = {
 				},
 				{
 					name: 'driftProgram';
-					address: 'dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH';
+					address: 'vELoC1audYbSYVRXn1vPaV8Axoa9oU6BYmNGZZBDZ1P';
 				},
 				{
 					name: 'tokenProgram';
@@ -1186,7 +1186,7 @@ export type DriftVaults = {
 				},
 				{
 					name: 'driftProgram';
-					address: 'dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH';
+					address: 'vELoC1audYbSYVRXn1vPaV8Axoa9oU6BYmNGZZBDZ1P';
 				},
 				{
 					name: 'tokenProgram';
@@ -1390,7 +1390,7 @@ export type DriftVaults = {
 				},
 				{
 					name: 'driftProgram';
-					address: 'dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH';
+					address: 'vELoC1audYbSYVRXn1vPaV8Axoa9oU6BYmNGZZBDZ1P';
 				},
 				{
 					name: 'tokenProgram';
@@ -1470,7 +1470,7 @@ export type DriftVaults = {
 				},
 				{
 					name: 'driftProgram';
-					address: 'dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH';
+					address: 'vELoC1audYbSYVRXn1vPaV8Axoa9oU6BYmNGZZBDZ1P';
 				}
 			];
 			args: [];
@@ -1515,7 +1515,7 @@ export type DriftVaults = {
 				},
 				{
 					name: 'driftProgram';
-					address: 'dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH';
+					address: 'vELoC1audYbSYVRXn1vPaV8Axoa9oU6BYmNGZZBDZ1P';
 				},
 				{
 					name: 'tokenProgram';
@@ -1633,7 +1633,7 @@ export type DriftVaults = {
 				},
 				{
 					name: 'driftProgram';
-					address: 'dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH';
+					address: 'vELoC1audYbSYVRXn1vPaV8Axoa9oU6BYmNGZZBDZ1P';
 				},
 				{
 					name: 'tokenProgram';
@@ -1687,7 +1687,7 @@ export type DriftVaults = {
 				},
 				{
 					name: 'driftProgram';
-					address: 'dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH';
+					address: 'vELoC1audYbSYVRXn1vPaV8Axoa9oU6BYmNGZZBDZ1P';
 				},
 				{
 					name: 'tokenProgram';
@@ -1905,7 +1905,7 @@ export type DriftVaults = {
 				},
 				{
 					name: 'driftProgram';
-					address: 'dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH';
+					address: 'vELoC1audYbSYVRXn1vPaV8Axoa9oU6BYmNGZZBDZ1P';
 				},
 				{
 					name: 'tokenProgram';
@@ -2074,7 +2074,7 @@ export type DriftVaults = {
 				},
 				{
 					name: 'driftProgram';
-					address: 'dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH';
+					address: 'vELoC1audYbSYVRXn1vPaV8Axoa9oU6BYmNGZZBDZ1P';
 				},
 				{
 					name: 'tokenProgram';
@@ -2337,7 +2337,7 @@ export type DriftVaults = {
 				},
 				{
 					name: 'driftProgram';
-					address: 'dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH';
+					address: 'vELoC1audYbSYVRXn1vPaV8Axoa9oU6BYmNGZZBDZ1P';
 				},
 				{
 					name: 'tokenProgram';
@@ -2475,7 +2475,7 @@ export type DriftVaults = {
 				},
 				{
 					name: 'driftProgram';
-					address: 'dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH';
+					address: 'vELoC1audYbSYVRXn1vPaV8Axoa9oU6BYmNGZZBDZ1P';
 				}
 			];
 			args: [
@@ -2573,7 +2573,7 @@ export type DriftVaults = {
 				},
 				{
 					name: 'driftProgram';
-					address: 'dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH';
+					address: 'vELoC1audYbSYVRXn1vPaV8Axoa9oU6BYmNGZZBDZ1P';
 				}
 			];
 			args: [];
@@ -2833,7 +2833,7 @@ export type DriftVaults = {
 				},
 				{
 					name: 'driftProgram';
-					address: 'dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH';
+					address: 'vELoC1audYbSYVRXn1vPaV8Axoa9oU6BYmNGZZBDZ1P';
 				}
 			];
 			args: [
@@ -2861,7 +2861,7 @@ export type DriftVaults = {
 				},
 				{
 					name: 'driftProgram';
-					address: 'dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH';
+					address: 'vELoC1audYbSYVRXn1vPaV8Axoa9oU6BYmNGZZBDZ1P';
 				}
 			];
 			args: [
@@ -2889,7 +2889,7 @@ export type DriftVaults = {
 				},
 				{
 					name: 'driftProgram';
-					address: 'dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH';
+					address: 'vELoC1audYbSYVRXn1vPaV8Axoa9oU6BYmNGZZBDZ1P';
 				}
 			];
 			args: [
@@ -3079,7 +3079,7 @@ export type DriftVaults = {
 				},
 				{
 					name: 'driftProgram';
-					address: 'dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH';
+					address: 'vELoC1audYbSYVRXn1vPaV8Axoa9oU6BYmNGZZBDZ1P';
 				},
 				{
 					name: 'tokenProgram';

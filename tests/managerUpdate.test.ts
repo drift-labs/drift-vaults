@@ -66,7 +66,7 @@ describe('driftVaults', () => {
 				{
 					name: 'drift',
 					programId: new PublicKey(
-						'dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH'
+						'vELoC1audYbSYVRXn1vPaV8Axoa9oU6BYmNGZZBDZ1P'
 					),
 				},
 			],
@@ -119,7 +119,8 @@ describe('driftVaults', () => {
 			ammInitialBaseAssetReserve,
 			ammInitialQuoteAssetReserve,
 			new BN(0), // 1 HOUR
-			new BN(initialSolPerpPrice).mul(PEG_PRECISION)
+			new BN(initialSolPerpPrice).mul(PEG_PRECISION),
+			OracleSource.PYTH
 		);
 
 		await adminDriftClient.fetchAccounts();

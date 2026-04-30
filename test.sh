@@ -78,7 +78,7 @@ fi
 # backgrounded. solana-test-validator takes the genesis programs from
 # Anchor.toml directly as --bpf-program flags.)
 bkg solana-test-validator --reset --quiet \
-  --bpf-program dRiftyHA39MWEi3m9aunc5MzRF1JYuBsbn6VPcn33UH tests/fixtures/drift.so \
+  --bpf-program vELoC1audYbSYVRXn1vPaV8Axoa9oU6BYmNGZZBDZ1P tests/fixtures/drift.so \
   --bpf-program gSbePebfvPy7tRqimPoVecS2UsBvYv46ynrzWocc92s tests/fixtures/pyth.so \
   --bpf-program metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s tests/fixtures/metaplex/metaplex.so \
   --bpf-program vAuLTsyrvSfZRuRB3XgvkPwNGgYSs9YRYymVebLKoxR target/deploy/drift_vaults.so \

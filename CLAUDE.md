@@ -104,3 +104,9 @@ Jest integration tests run against `anchor localnet` (started by `test.sh`). `te
 - The macOS "blockstore error" on `anchor test` is fixed by installing `gnu-tar` and putting it ahead of BSD tar on `PATH` (see README).
 - On Apple Silicon, the program is built with the x86 rust toolchain — do not switch to aarch64.
 - `ahash` is pinned to `0.8.11` in `Cargo.lock`; older `0.8.6` uses the removed `#[feature(stdsimd)]` and will fail to compile on Rust 1.91. If you regenerate `Cargo.lock`, confirm ahash is ≥ 0.8.7.
+- Shadow SDK's `adminClient.initializePerpMarket` defaults `oracleSource` to `PythLazer`. Tests mock a regular Pyth oracle, so every call site must pass `OracleSource.PYTH` explicitly — otherwise drift panics in `oracle.rs` trying to deserialize a Pyth account as a Lazer message.
+- 7 tests in `tests/driftVaults.ts` are `it.skip`d as known follow-ups (`grep "TODO(anchor-1.0 migration)"`): two profit-share withdraw paths, four `SpotDlobTradingDisabled` tokenize/redeem flows, and one manager-cancel-withdraw. None block CI; they're tracked for re-enablement once the matching drift behaviors land.
+
+## CI
+
+`.github/workflows/main.yml` checks out `protocol-v2-shadow` as a sibling of the drift-vaults checkout (using `secrets.GH_PAT`) so the path/link deps resolve. The pinned commit is set via `SHADOW_REF` in the workflow `env`. The verified-build job is gated `if: false` until the drift crate is published — `solana-verify build` vendors crates and can't follow a path dep outside the workspace.
