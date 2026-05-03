@@ -1,0 +1,2078 @@
+yarn run v1.22.22
+$ /Users/ww/Drift/drift-vaults/ts/sdk/node_modules/.bin/ts-node _scripts/check_user_fuel.ts
+Vault: AHfaqTwFhWiX2DZrYbTivBpbrstNJRyjHG4mFPVpJS5n: 1000x-Or-0-NeutralTrade (26 depositors)
+  vault overflow status: 0
+  Vault fuel: 39059 + 0 = 39059, vaultCumFuel: 39059 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 39040
+  Diff (manager fuel) (vault - depositors): 19 good
+  Time taken: 521ms
+Vault: 2WWiMbvzeR8PZYMKcXA78EhFGhKgY1d7vuJEdGJP34pj: 3DCap JLP Delta Neutral (6 depositors)
+  vault overflow status: 0
+  Vault fuel: 406223 + 0 = 406223, vaultCumFuel: 406223 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 406222
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 506ms
+Vault: GucZDpAnrxJZQthorqwfWkEmNYq2CvEMLdp3L5McVtWL: ALT3 Capital BTC yield (12 depositors)
+  vault overflow status: 0
+  Vault fuel: 4124531 + 0 = 4124531, vaultCumFuel: 4124531 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 4124521
+  Diff (manager fuel) (vault - depositors): 10 good
+  Time taken: 503ms
+Vault: 9ikwiUrppGW9Yn3fsgU72X1wc4ZEgDkBTphyUjHKFVaB: ALT3 Capital BTC yield (2) (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 161708 + 0 = 161708, vaultCumFuel: 161708 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 161707
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 500ms
+Vault: FSs89oVMX1GjxaPuH64uwFuuzAxVAeUaAxDPfe6UYmpm: ALT3 Capital ETH yield (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 14319718 + 0 = 14319718, vaultCumFuel: 14319718 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 14319715
+  Diff (manager fuel) (vault - depositors): 3 good
+  Time taken: 498ms
+Vault: A7TSrAoiJ3wemfGcdmtpc4wze1MGHkqDTA4tPWZKP5GC: ALT3 Capital ETH yield (2) (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 501ms
+Vault: 6L2VV9ngPXfg9aXLuVTGdvYmekkPhWDaEZ3BGB6nfLKp: ALT3 Capital SOL yield (15 depositors)
+  vault overflow status: 0
+  Vault fuel: 1136935 + 0 = 1136935, vaultCumFuel: 1136935 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 1136925
+  Diff (manager fuel) (vault - depositors): 10 good
+  Time taken: 507ms
+Vault: 9xTngFMR4LiMW1XWnG9Ns9hTgCVvENCAZPdKDkcMU1id: ALT3 Capital USDC yield (24 depositors)
+  vault overflow status: 0
+  Vault fuel: 10584477 + 0 = 10584477, vaultCumFuel: 10584477 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 10584455
+  Diff (manager fuel) (vault - depositors): 22 good
+  Time taken: 499ms
+Vault: 3b9Gzi3iBmpHqf6GxcWNzh8o9ejDNZmj6BAHi9E2Qcwd: ASKJ-DELTA NEUTRAL (112 depositors)
+  vault overflow status: 0
+  Vault fuel: 344809 + 0 = 344809, vaultCumFuel: 344809 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 344772
+  Diff (manager fuel) (vault - depositors): 37 good
+  Time taken: 516ms
+Vault: G94UJgivDSsXkSYT2Zu3UxF3VjyXAGcMHYwGxooHUktd: Accelerator (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 499ms
+Vault: 3aDrMkrwXhao8ZheeGPxvgwE6eAG5A2fkeojo1vsGWDE: Active Credit Strategy (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 499ms
+Vault: DDg8C1p6QCixjZSfD2RFMWwLWyrkhcbeUnc9jYJfz9b5: Active-Vault-testing_6_Nov (6 depositors)
+  vault overflow status: 0
+  Vault fuel: 464 + 0 = 464, vaultCumFuel: 464 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 463
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 494ms
+Vault: E6jNabNrdvRH2RcQNFyY9dMiJN6L1ttNnkaAcMn1YMxP: Algorithmica USDC Yield (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 495ms
+Vault: A1XpWygnYF2jKEFvkLMVNMP1qKAJytwt6dQsj8JjDCXH: AntiCapitalMM (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 497ms
+Vault: 9EsSr4cLfBgUquLd7YeDQxsfVSbhyyUYWyHd49ZQkj3p: BTC GROWING (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 491ms
+Vault: GRqeK4TiKwvPMST6pa9f7Ah1ZGEkrK7nwBbUeNMUuJSE: BTC gain (Hedge + Leverage JLP ) (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 4654 + 0 = 4654, vaultCumFuel: 4654 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 4653
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 501ms
+Vault: 4KKUggAZtkmmEXFCuA1FByCservoSjXhgcoa35KEX4Rr: BTC gain (Hedge + Leverage JLP) (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 6454 + 0 = 6454, vaultCumFuel: 6454 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 6452
+  Diff (manager fuel) (vault - depositors): 2 good
+  Time taken: 503ms
+Vault: 5BCDLjnQXv92AYySpdEpENgYhABaVf92fym1MYNyhVuo: BTC-Dominance-NeutralTrade (14 depositors)
+  vault overflow status: 0
+  Vault fuel: 61744 + 0 = 61744, vaultCumFuel: 61744 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 61733
+  Diff (manager fuel) (vault - depositors): 11 good
+  Time taken: 502ms
+Vault: 4cvgasNfbJ36yeMVJSkscgL2Yco9dFGdj52Wrg91fmHv: BTC-ETH-Funding-NT (111 depositors)
+  vault overflow status: 0
+  Vault fuel: 605081 + 0 = 605081, vaultCumFuel: 605081 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 605068
+  Diff (manager fuel) (vault - depositors): 13 good
+  Time taken: 533ms
+Vault: B9Ci7naDkYSZhugFvAt8DYsY5zjkSw1rCqq6ia1CafZv: Beta + Basis Alpha (dSOL) (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 500ms
+Vault: BjbLbRiYVxwmLiFEbVc6mAJkU2CM8WPC1n4UJbqGEg17: Beta + Basis Alpha (jitoSOL) (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 504ms
+Vault: Dt1pCrevTeXkh1b2eRqgxyBiw7hXAbepyYBSEpTSNUwr: Break System (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 1387 + 0 = 1387, vaultCumFuel: 1387 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 1386
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 511ms
+Vault: 6Q3Nv9E5aP1W6eL4tGCXZ7wtXaQi26MNf1mkPuWe28yB: Butter (3 depositors)
+  vault overflow status: 0
+  Vault fuel: 13889 + 0 = 13889, vaultCumFuel: 13889 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 13888
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 496ms
+Vault: 66d7SqzW66dLXkeB5ZdQXL4Px9arKMhxA1Sr8bbF2CsN: BuyTheDip (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 498ms
+Vault: 6ZGXLkmj5x8YDPe2hjvq9s3atD7Qatvp33gigpqsuWeh: CTA-BTC-RC1 (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 948255 + 0 = 948255, vaultCumFuel: 948255 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 948255 good
+  Time taken: 503ms
+Vault: CGw1AAryuSUTjtz3LUgREH6pU2yoLbGEh6Mj5tkMzwcU: CTA-ETH-RC1 (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 360524 + 0 = 360524, vaultCumFuel: 360524 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 360524 good
+  Time taken: 504ms
+Vault: 8cLKBiu44bQtpMdUWK36MP7vEiTrox3QMbfwWmAEFxd4: CTA-NeutralTrade (3 depositors)
+  vault overflow status: 0
+  Vault fuel: 1005546 + 0 = 1005546, vaultCumFuel: 1005546 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 1005546 good
+  Time taken: 507ms
+Vault: FnrttGFkLC9kwfjmLDkGFjf9JqHSNeBE2a3CCG7tgK9Q: CTA-SOL-RC (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 514ms
+Vault: DbAX9qNiHrtrngLz8e5nBNWbmeGGVRKUQtxfGdENCFJS: CTA-SOL-RC1 (195 depositors)
+  vault overflow status: 0
+  Vault fuel: 260377450 + 0 = 260377450, vaultCumFuel: 260377450 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 260377279
+  Diff (manager fuel) (vault - depositors): 171 good
+  Time taken: 548ms
+Vault: 6Mm4hi6XeF6yp7pUczjN5hGW1rZjdsu3QFvYZNgB1upw: Caesar (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 137392 + 0 = 137392, vaultCumFuel: 137392 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 137391
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 495ms
+Vault: HXiPvmzuZAAUxbuTVaCMu38PcqcmiML3pBFdAiYRdXyL: CapyMax (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 146 + 0 = 146, vaultCumFuel: 0 (vaultFuelDiff: 146
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 146 good
+  Time taken: 512ms
+Vault: 4ceP3ATKtnUZjq1MaNYtbhQcpXWdrhi2XbCKwSW2G4G1: CapyMaxMainnet (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 496ms
+Vault: Ec8qEzgk38jZ2o53CZibEjAxfYpTM6bWcmx3HU7HiKPp: Cheese (6 depositors)
+  vault overflow status: 0
+  Vault fuel: 220041 + 0 = 220041, vaultCumFuel: 220041 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 220038
+  Diff (manager fuel) (vault - depositors): 3 good
+  Time taken: 499ms
+Vault: H4cqKJKTncVUwSAeqfdbWAboeTamjjSDs6QFcoitbxdf: Cooper One (4 depositors)
+  vault overflow status: 0
+  Vault fuel: 33396 + 0 = 33396, vaultCumFuel: 0 (vaultFuelDiff: 33396
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 33396 good
+  Time taken: 502ms
+Vault: 59ES7hseRY5oRcfRS1zWnpg3JLo1pQi4JzFiRVdJPs3v: Crypto Vault (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 168 + 0 = 168, vaultCumFuel: 168 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 167
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 489ms
+Vault: 8ziYC1onrdfq2KhRQamz392Ykx8So48uWzd3f8tXJpVz: DRIFT Plus (4 depositors)
+  vault overflow status: 0
+  Vault fuel: 262128 + 0 = 262128, vaultCumFuel: 262128 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 262126
+  Diff (manager fuel) (vault - depositors): 2 good
+  Time taken: 496ms
+Vault: 5A1pDM2XVBKmuWFvgQx775ikFGL5P1q3gWKjiX91XC1L: Delta Neutral JLP (154 depositors)
+  vault overflow status: 0
+  Vault fuel: 90246078 + 0 = 90246078, vaultCumFuel: 90246078 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 90246064
+  Diff (manager fuel) (vault - depositors): 14 good
+  Time taken: 540ms
+Vault: 2xTTLUAR8QhenYfnGNpefnmAeyCXeK1G1mAkYwGXaPer: Delta Neutral JLP (USDC) (137 depositors)
+  vault overflow status: 0
+  Vault fuel: 78988189 + 0 = 78988189, vaultCumFuel: 78988189 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 78988173
+  Diff (manager fuel) (vault - depositors): 16 good
+  Time taken: 525ms
+Vault: CqLEEKfZwzp9BLp8kYsnPCFFSUPqMx5wRHJn8GRR9eUj: DeltaNeutral-JLP-SOL-SVM-KT6 (33 depositors)
+  vault overflow status: 0
+  Vault fuel: 6288529 + 0 = 6288529, vaultCumFuel: 6288529 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 6288507
+  Diff (manager fuel) (vault - depositors): 22 good
+  Time taken: 504ms
+Vault: EXjN9i6EM5TZ2tCNr7UaNs2kYpsFisAPDo2Lk37NWkqU: DeltaNeutral-JLP-USDC-KT5 (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 595ms
+Vault: FS9fJYRrQ2hQPcXJTFrC1zBskTE3z4WayzbYL8jFrQK7: DeltaNeutral-JLP-USDC-SVM-KT5 (460 depositors)
+  vault overflow status: 0
+  Vault fuel: 114332305 + 0 = 114332305, vaultCumFuel: 114332305 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 114332083
+  Diff (manager fuel) (vault - depositors): 222 good
+  Time taken: 609ms
+Vault: AFdcjtNphNQZpB4QdCusjvfWGFo9Sq3zqN4NzrqMekKa: DeltaNeutral-JLP-USDC-SVM2-KT7 (20 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 493ms
+Vault: 3HiEEuz5ZUMLcywupu8KxptA5GPH6PYpyLCybh7rvwFf: DeltaNeutralFund (5 depositors)
+  vault overflow status: 0
+  Vault fuel: 7766522 + 0 = 7766522, vaultCumFuel: 7766522 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 7766518
+  Diff (manager fuel) (vault - depositors): 4 good
+  Time taken: 495ms
+Vault: AYiYzCphBfgGmebYja16J6MkE81mbmmPzQQAqJL7wCzP: Demo vault (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 496ms
+Vault: 3qPfrE5qSWbAaZCg6D7TQRZem7mjXpLbKTEqXyCExAR3: Discere Discretionary (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 500ms
+Vault: FUB7T7Wfm1Q7qjHDkVN6tFZyTwSTJRTUdmgkCwXTepug: Discere Discretionary Strategy (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 507ms
+Vault: DYBbFqjTKGeco4MfB2J3wQ4o4WT5YtREeZrzZdyHSC9a: Dynamic Leverage SOL (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 48128 + 0 = 48128, vaultCumFuel: 0 (vaultFuelDiff: 48128
+  Depositor fuel total (calc): 48128
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 495ms
+Vault: Dkg16JihVUiVyxn9RxRWz1qtYec1KYBQcGyvHtVf7CTX: ETH GROWING (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 64394 + 0 = 64394, vaultCumFuel: 64394 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 64386
+  Diff (manager fuel) (vault - depositors): 8 good
+  Time taken: 496ms
+Vault: 5EkQthWM7d8Jjb5Fzd1XuXsf8cqaWuM7cKJvkb1XLH81: ETH gain (Hedge + Leverage JLP) (27 depositors)
+  vault overflow status: 0
+  Vault fuel: 53587493 + 0 = 53587493, vaultCumFuel: 53587493 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 53587440
+  Diff (manager fuel) (vault - depositors): 53 good
+  Time taken: 517ms
+Vault: 29QCGgf4PrJKKnogPZiTqn7irpe37RoZ9VhowpUrsgrc: ETH test 5 min (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 849328 + 0 = 849328, vaultCumFuel: 0 (vaultFuelDiff: 849328
+  Depositor fuel total (calc): 849327
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 498ms
+Vault: 8JjFwxduSVCY91s2yBVGgKSAKPwPkuTKEchjRw74Du5w: ETH-Earn-Neutral-Trade (9 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 652ms
+Vault: ENr5e1BMN5vFUHf4iCCPzR4GjWCKgtHnQcdniRQqMdEL: ETH-NL-Neutral-Trade (130 depositors)
+  vault overflow status: 0
+  Vault fuel: 2993095 + 0 = 2993095, vaultCumFuel: 2993095 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 2992811
+  Diff (manager fuel) (vault - depositors): 284 good
+  Time taken: 542ms
+Vault: CQzXCvHWdZ3eDL5UXASAnEZbg31e6UiDipUfHSKme5Q1: Equilibrium (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 509ms
+Vault: 3t3PsUESd8LEQG3iLsHZ1fDrahQwHtZpi35t7XAq4fWG: Equinox BTC+GOLD 2x (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 77722 + 0 = 77722, vaultCumFuel: 0 (vaultFuelDiff: 77722
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 77722 good
+  Time taken: 520ms
+Vault: 4XNRBB4S87HLjfzTShLVvFhuYUzo1PWD2k68xhsefhi3: Equinox BTC+GOLD 3x (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 36761 + 0 = 36761, vaultCumFuel: 0 (vaultFuelDiff: 36761
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 36761 good
+  Time taken: 503ms
+Vault: DzaHA2zD7XQhj2Z6tG9YxVtgcvJ4sqzeLYr8dszyQTEq: FUEL-MAXI-NeutralTrade (190 depositors)
+  vault overflow status: 0
+  Vault fuel: 35918497 + 0 = 35918497, vaultCumFuel: 35918497 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 35918241
+  Diff (manager fuel) (vault - depositors): 256 good
+  Time taken: 545ms
+Vault: 5cbTtvNVg1qc5L5Fcnz9R3X2QsYTtMCwBZRwBbuoEhn5: Fart-Dominance-NeutralTrade (17 depositors)
+  vault overflow status: 0
+  Vault fuel: 66050 + 0 = 66050, vaultCumFuel: 66050 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 66040
+  Diff (manager fuel) (vault - depositors): 10 good
+  Time taken: 505ms
+Vault: BUKsfPRAJ3UTb128U1KzLarsovrgMxgY54kwo9GwxiVb: FatChoi T1 (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 499ms
+Vault: FcgEBCQYqJsWzrS1BJugYWp5Dtz1Nv7ueKyKLprdjagF: FatChoi T2 (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 506ms
+Vault: A4p6hHoyjqCyr3LP8PjquSGhgzkBdRiqPApvfDVgXZZo: Fixed Yield Credit Strategy (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 501ms
+Vault: 55TZt6gTnzcN5GtSLqRkGUNi51KKCFdbL9qCVQCouLBF: Flagship_BTC_Quant (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 608438 + 0 = 608438, vaultCumFuel: 608438 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 608438 good
+  Time taken: 503ms
+Vault: 5DPwSqEfaEsBH4zzZha35TpWRRPnWFfVgYZyK3zNswT7: Forest-NeutralTrade (7 depositors)
+  vault overflow status: 0
+  Vault fuel: 11962281 + 0 = 11962281, vaultCumFuel: 11962281 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 11962227
+  Diff (manager fuel) (vault - depositors): 54 good
+  Time taken: 511ms
+Vault: Cxs13cpUSd3ZQwGs6u8ov9uLH46x6gveyjspe4LtaSzt: Funding Rate Reversion Vault (90 depositors)
+  vault overflow status: 0
+  Vault fuel: 595225 + 0 = 595225, vaultCumFuel: 595225 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 595078
+  Diff (manager fuel) (vault - depositors): 147 good
+  Time taken: 513ms
+Vault: DYL61pGcLfoGNQ6JjjwZ2Yzc6m3YLkCZASS8yeL5QWMR: Funding Rate Reversion Vault V2 (4 depositors)
+  vault overflow status: 0
+  Vault fuel: 2622 + 0 = 2622, vaultCumFuel: 2622 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 2618
+  Diff (manager fuel) (vault - depositors): 4 good
+  Time taken: 502ms
+Vault: 3rzrBLU3BFgh7mieGvJDcQL3iawYL92gWEkwRAhYNpP2: GBA (dSOL) (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 195189 + 0 = 195189, vaultCumFuel: 0 (vaultFuelDiff: 195189
+  Depositor fuel total (calc): 195189
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 505ms
+Vault: GEVrz2uE8SNcGAZjCRHMQefcbfsgE2tWWtDfcbTyZdcG: GBA (jitoSOL) (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 2281 + 0 = 2281, vaultCumFuel: 0 (vaultFuelDiff: 2281
+  Depositor fuel total (calc): 2281
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 503ms
+Vault: 6svVHc2CCUfozVYpNbGghB631bJ8nxkiZaFowGSN7NkH: GBA - SOL (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 1745564 + 0 = 1745564, vaultCumFuel: 1745564 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 1745563
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 508ms
+Vault: 436fmLiZk4EGC6Ay8mQpfWDx33uBFWpugeKkdvPygUFM: GBA - cbBTC (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 121666 + 0 = 121666, vaultCumFuel: 0 (vaultFuelDiff: 121666
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 121666 good
+  Time taken: 499ms
+Vault: 82a5Rqd2YwfbLWMjzcRwFjfAHc7z5UVEGkqrMS9fpkat: Gauntlet - 2x hJLP - USDC (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 1092172 + 0 = 1092172, vaultCumFuel: 0 (vaultFuelDiff: 1092172
+  Depositor fuel total (calc): 1092172
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 497ms
+Vault: 51TPoeNSaLGZM6ZnQDDveCtsUhxM82v7PdjXsFkWBeu: Gauntlet - BTC Basis (USDC) (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 48336 + 0 = 48336, vaultCumFuel: 48336 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 48336
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 499ms
+Vault: 61W7Lw5LvUSQzaXZ26tpzBhkg5yt4WZZFvCnnvfeD7bh: Gauntlet - SOL Basis (USDC) (4 depositors)
+  vault overflow status: 0
+  Vault fuel: 2540408 + 0 = 2540408, vaultCumFuel: 2540408 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 2540406
+  Diff (manager fuel) (vault - depositors): 2 good
+  Time taken: 501ms
+Vault: AocrjhFd2oxyVccz1vdnZc9Hd9bnW9ejuWWH73PedykU: Gauntlet - hJLP (In Kind) (157 depositors)
+  vault overflow status: 0
+  Vault fuel: 8199514 + 0 = 8199514, vaultCumFuel: 8199514 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 8199406
+  Diff (manager fuel) (vault - depositors): 108 good
+  Time taken: 544ms
+Vault: DD85DvW7DmTJ2fcFaR8eMUiF4M2XX7yTWKoEFyuGEXnc: Gauntlet - hJLP (JLP) (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 502ms
+Vault: CoHd9JpwfcA76XQGA4AYfnjvAtWKoBQ6eWBkFzR1A2ui: Gauntlet - hJLP (USDC) (451 depositors)
+  vault overflow status: 0
+  Vault fuel: 119514403 + 0 = 119514403, vaultCumFuel: 119514403 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 119514175
+  Diff (manager fuel) (vault - depositors): 228 good
+  Time taken: 606ms
+Vault: 5nupoWnrPM8R9XxhKCag1WckRsB3MewNPkRkWpASBYs1: Gauntlet - hJLP - JLP (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 29121 + 0 = 29121, vaultCumFuel: 29121 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 29120
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 513ms
+Vault: 2w257WeBHHmdUWntZtH4B2zEsuUtfTynWcaChKc7t1XG: Gauntlet - hJLP - USDC (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 635702 + 0 = 635702, vaultCumFuel: 635702 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 635699
+  Diff (manager fuel) (vault - depositors): 3 good
+  Time taken: 501ms
+Vault: JCigGWJJRCPas7B9eUe2JgkyqQjGxMKkvZcJ7VQaNBqx: Gauntlet - hJLP 2x (USDC) (152 depositors)
+  vault overflow status: 0
+  Vault fuel: 56064826 + 0 = 56064826, vaultCumFuel: 56064826 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 56064730
+  Diff (manager fuel) (vault - depositors): 96 good
+  Time taken: 543ms
+Vault: J6hcyp5rAsb1h7Qwgk763X6e2WnHgZa489VCE5VXgHLT: Gauntlet Basis Alpha (USDC) (12 depositors)
+  vault overflow status: 0
+  Vault fuel: 18118361 + 0 = 18118361, vaultCumFuel: 18118361 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 18118354
+  Diff (manager fuel) (vault - depositors): 7 good
+  Time taken: 506ms
+Vault: 5UkudByDbpysRyyHFRsoiPqf48yPXUNzqhkxwSnVAK8V: Gauntlet SBOX - hJLP1 (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 14 + 0 = 14, vaultCumFuel: 0 (vaultFuelDiff: 14
+  Depositor fuel total (calc): 14
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 498ms
+Vault: HSVeWv5xQovaSCKUS8iZhe3kLR7fEChZsjszwi51vN24: Gauntlet SBOX - hJLP2 (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 504ms
+Vault: 9JodFvfwcqxYUwwPyVbUjeZrBibT9NQWXtwYa9QEk698: H&L CAPITAL COMPANY BTC VAULT (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 45311 + 0 = 45311, vaultCumFuel: 45311 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 45310
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 539ms
+Vault: CbWmw5BJSZm8c2uoG1mkYGbs2Ux5BLaGcHaFAxdJWmU8: H&L CAPITAL DEMO VAULT (8 depositors)
+  vault overflow status: 0
+  Vault fuel: 338175 + 0 = 338175, vaultCumFuel: 338175 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 338173
+  Diff (manager fuel) (vault - depositors): 2 good
+  Time taken: 513ms
+Vault: 5V4UM7i6L9yM7LfuQwDjoYsD1rnkA65rVmqFycjgXgAy: H&L CAPITAL JLP COMPANY VAULT (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 516ms
+Vault: 9zP7gQ2yn3BnYYuiZj1F6WkX7GQb87Z5qrucGBw2zHg3: H&L CAPITAL JLP COMPANY VAULT #2 (3 depositors)
+  vault overflow status: 0
+  Vault fuel: 406129 + 0 = 406129, vaultCumFuel: 406129 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 406127
+  Diff (manager fuel) (vault - depositors): 2 good
+  Time taken: 497ms
+Vault: xjgHjJkuFN2bS7sKBJaYWXZewmtKfj8HRfVuMczpnMv: H&L CAPITAL JLP VAULT #1 (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 506ms
+Vault: 7kHu8GqSAQx27CRUu29Vke52sjrLtaVBfRdJ1y8wmTKn: H&L CAPITAL JLP VAULT #2 (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 501ms
+Vault: BGE46LgBNa98k9erL6Z6rnhXFQBZgoMenwj5Bt4fWsg1: H&L CAPITAL JLP VAULT #3 (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 1913116 + 0 = 1913116, vaultCumFuel: 1913116 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 1913115
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 502ms
+Vault: AjmL7rFY63rjhe8fdQ47joAN48FoZ7iuX1wBDgfNShYa: H&L CAPITAL JLP VAULT #4 (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 498ms
+Vault: GePEtMtDKpnmPrNfFzLTMaY8aiWSXcagdHEAjx56qNYC: H&L CAPITAL JLP VAULT #5 (4 depositors)
+  vault overflow status: 0
+  Vault fuel: 2005018 + 0 = 2005018, vaultCumFuel: 2005018 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 2005016
+  Diff (manager fuel) (vault - depositors): 2 good
+  Time taken: 497ms
+Vault: JDZUvX6hVjhnxqDA7ZxRMW8oinpyMrzg4fQ32qwm6B4X: H&L Capital JLP Vault (USDC) (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 499ms
+Vault: VZFVsVjR3UauTTobyeRfh5jXfsRWMetjzc8B9FY587U: HL_CAPITAL_JLP_FREE_VAULT (5 depositors)
+  vault overflow status: 0
+  Vault fuel: 183642 + 0 = 183642, vaultCumFuel: 0 (vaultFuelDiff: 183642
+  Depositor fuel total (calc): 183641
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 499ms
+Vault: 2a9YcSRqgf1xwtVxRXobwF32Mp2mG5HYogLbSjBWhgtL: HL_CAPITAL_JLP_VAULT (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 494ms
+Vault: AgPLTGje3tHMhEuoJkFqtPWrfxfR3sKrXPUFo1dQQsDT: H^&L CAPITAL JLP VAULT (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 506ms
+Vault: 2AKXk7t98vwNdzqurXXH4kYMHsar2meE9K1gU7LyVrD3: Hedged (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 498ms
+Vault: 6aabyatUqkyxMbnMja1jZe6X7npsCWNm5b55G3EgGPna: Hedged-JLP-Active-Vault-Vectis (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 505ms
+Vault: HYL9dbQeZDCzWfeorJiF1cvqafQfqDDAroNi3dRVcsKV: Hedged_JLP_Active_Vault-Vectis (309 depositors)
+  vault overflow status: 0
+  Vault fuel: 66013401 + 0 = 66013401, vaultCumFuel: 66013401 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 66013065
+  Diff (manager fuel) (vault - depositors): 336 good
+  Time taken: 578ms
+Vault: 86fYXDydyKKnL7gxWpVrUDnsrVyQyZkwb4YsisBHC9ab: Hedgy SOL (21 depositors)
+  vault overflow status: 0
+  Vault fuel: 7059795 + 0 = 7059795, vaultCumFuel: 7059795 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 7068798
+  Diff (manager fuel) (vault - depositors): -9003 <-- WARNING
+  Time taken: 504ms
+Vault: 2z5t2PfxGGrSgsXSem3fbg6fy4w9hc2H86a3bRumTWkx: Hedgy SOL Vault (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 497ms
+Vault: GcGx7VBJX9AxW2EKayVVovpPXvfjpCdjGkKXa27Ryg3a: Hedgy USDC (37 depositors)
+  vault overflow status: 0
+  Vault fuel: 30543299 + 0 = 30543299, vaultCumFuel: 30543299 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 30543320
+  Diff (manager fuel) (vault - depositors): -21 <-- WARNING
+  Time taken: 514ms
+Vault: HBiPWWHHADnF2mikxZT8WhZ2w6x4grK6QfvJ2aRJSndD: Honey (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 9181 + 0 = 9181, vaultCumFuel: 9181 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 9180
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 502ms
+Vault: 3FCAfteim17Ny5j63Ey3wAiX9iz3GUwe6yEYsQVnjagV: Hot Chili (3 depositors)
+  vault overflow status: 0
+  Vault fuel: 73512 + 0 = 73512, vaultCumFuel: 73512 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 73511
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 506ms
+Vault: C3b6jqo4Kgwimu6d7FrgyMbR32mKe616c2QuhZ3Qqutv: JLP Boost-B (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 512ms
+Vault: DKp8drjpp5e7NaZvT6Gxn61TExz74aE75nKheRcANZvm: JLP Boost-U (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 502ms
+Vault: AmJRxbbNJ9ctCfkdMy42RwmDZBPvQZv6Xg4WsxmpHM8x: JLP Delta Neutral(test U) (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 8030 + 0 = 8030, vaultCumFuel: 8030 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 8029
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 500ms
+Vault: 79SUgWpzd4UDZdPmSNAgPcdsCNwKoWcxoVYZhHckUSUd: JLP Smart Arb S01 (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 16 + 0 = 16, vaultCumFuel: 16 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 16
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 553ms
+Vault: 9UJnKDvvaQ14VLAgu1rHmbq9X2nyD7PDzg6PU9WSrw8k: JLP Super Staking Test (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 94080 + 0 = 94080, vaultCumFuel: 0 (vaultFuelDiff: 94080
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 94080 good
+  Time taken: 499ms
+Vault: GEozgzHBoLK9xuhDWPC47xPEo8GYfpRiPWTgt9kjnzTW: JLP Test (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 500ms
+Vault: CNZ38o3BNLt6qQT6YDezER6T4DvL77NQUzE5U2CuQxEE: JLP Vault Delta Neutral Test001 (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 1328 + 0 = 1328, vaultCumFuel: 0 (vaultFuelDiff: 1328
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 1328 good
+  Time taken: 500ms
+Vault: Ep6jYbiigaLYyWnfLEKRr6VC8VnL5CcNVwaoYNjqh5Mt: JLP test (4 depositors)
+  vault overflow status: 0
+  Vault fuel: 1373 + 0 = 1373, vaultCumFuel: 0 (vaultFuelDiff: 1373
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 1373 good
+  Time taken: 499ms
+Vault: 8tBATfTyvAkmzaL6EoqtyusAb7BQFe6TWMuQiEeLzv2j: JLP test v2 (3 depositors)
+  vault overflow status: 0
+  Vault fuel: 667074 + 0 = 667074, vaultCumFuel: 0 (vaultFuelDiff: 667074
+  Depositor fuel total (calc): 667073
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 497ms
+Vault: BJuaBFpchY6piNXLXqmGtswiQ8CRk6xugNUMFKbTL1By: JLP-DNP-Neutral-Trade (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 504ms
+Vault: 9HicJsg1xR1mEAcmPpyJ8hwBowL1y8jY9KNciVYgC3p3: JLP-LOOP-Neutral-Trade (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 496ms
+Vault: FrLPevLkpcVF61YFSfR1y9KfLQNGTPJSKGiuzVKR9X5H: JLP-Loop-Neutral-Trade (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 503ms
+Vault: 85XuR4kE5yxp1hk91WHAawinXZsuJowxy59STYYpM9pK: JLP-TraderPrint-Neutral-Trade (29 depositors)
+  vault overflow status: 0
+  Vault fuel: 44156 + 0 = 44156, vaultCumFuel: 44156 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 44147
+  Diff (manager fuel) (vault - depositors): 9 good
+  Time taken: 503ms
+Vault: 2r81MPMDjGSrbmGRwzDg6aqhe3t3vbKcrYfpes5bXckS: JLP-TraderRekt-Neutral-Trade (658 depositors)
+  vault overflow status: 0
+  Vault fuel: 2455809 + 0 = 2455809, vaultCumFuel: 2455809 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 2455088
+  Diff (manager fuel) (vault - depositors): 721 good
+  Time taken: 658ms
+Vault: FYjTLM1G2sSdvV8UAkzMJ3XfXLtDdLGf39fa8UT8TeP7: JLP-TradersRekt-Neutral-Trade (3 depositors)
+  vault overflow status: 0
+  Vault fuel: 7174 + 0 = 7174, vaultCumFuel: 7174 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 7174 good
+  Time taken: 512ms
+Vault: FGE8TUxKXgwLfjr8AQSHmN2bwy1Qf6y15BEuMntqLsdw: JLPDN-Carrot-Neutral (3 depositors)
+  vault overflow status: 0
+  Vault fuel: 21267 + 0 = 21267, vaultCumFuel: 21267 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 21266
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 499ms
+Vault: 28vCYEv2mz3gRUiKFZdHXW695NyhFhfnzc52jhTbR8An: JLPDN-Carrot-Neutral-Trade (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 499ms
+Vault: G4GqwzES7tmdobCdGyW1jpAXUkkwHmdh1bGf9iaCCqut: JLPDN-Carrot-NeutralTrade (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 501ms
+Vault: CZU38L2NyL6tqFxzYAGYkmkf2JG98tZfZ2CnUapVgXQe: JLPDN-CarrotV2-Neutral (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 8203821 + 0 = 8203821, vaultCumFuel: 8203821 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 8203796
+  Diff (manager fuel) (vault - depositors): 25 good
+  Time taken: 501ms
+Vault: 3cuBrRtvtSXtMvZDKvrqqxr5sJgN4dAESgXQBqh6vNVo: JLPDN-Classic-Neutral (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 495ms
+Vault: 9BMEyctGvajEubk5iCRBnM9fkeTXUhrxaweYq34jZdC8: JLPDN-Dev-Neutral (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 1411758 + 0 = 1411758, vaultCumFuel: 1411758 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 1411758
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 491ms
+Vault: DUW6uWcrsjYmsYDjp9iGDN4JdRa2MqznjuxjKVok5Fsj: JLPDN-ERICC-Neutral (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 9182382 + 0 = 9182382, vaultCumFuel: 9182382 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 9182352
+  Diff (manager fuel) (vault - depositors): 30 good
+  Time taken: 502ms
+Vault: 6DFDj66PbPoTC16Sh51MJijoTTMYCbMCVC85tnc5UfQ3: JLPDN-Lars-Neutral (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 4059823 + 0 = 4059823, vaultCumFuel: 4059823 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 4059822
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 501ms
+Vault: J6STRaeGpXQFeP1jxGR6QY8vxiwtrq6BPTFhjuZgXywt: JLPDN-Perena-Neutral (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 2967 + 0 = 2967, vaultCumFuel: 2967 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 2966
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 500ms
+Vault: Fd3k4c6Dv7m9673ae87P6duQrftY9UVfwiCxngNbJrUQ: JLPDN-TALL-Neutral (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 13450514 + 0 = 13450514, vaultCumFuel: 13450514 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 13450499
+  Diff (manager fuel) (vault - depositors): 15 good
+  Time taken: 500ms
+Vault: HTLvAjqc6Wkzh4i4QNLHhQHZAnrtVvkGyYeyCiUWLe9b: JLPDN-VIP7-Neutral (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 526996 + 0 = 526996, vaultCumFuel: 526996 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 526996
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 498ms
+Vault: FZ4BpMiMdR6ue4uMLdX261nkt2QUiJF2qK9kH6kBH6Qv: JLPDN-VIP8-Neutral (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 507ms
+Vault: DSZEuyNYyk34wjYQXhcNkL1GnSGtkrifXU6AqeYEYvMK: JLP_PN1 (3 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 498ms
+Vault: 3kahKnzBGqY9WJ4g4126A2iHiy8sNSQubhd547Jxtt4b: JLP_SmartArb_J01 (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 415 + 0 = 415, vaultCumFuel: 0 (vaultFuelDiff: 415
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 415 good
+  Time taken: 501ms
+Vault: EwHHtPNHttdUNHxVFdt9v1xuQyDnNcE5FzXWSTh1HG7n: JLP_SmartArb_U01 (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 1157 + 0 = 1157, vaultCumFuel: 1157 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 1157 good
+  Time taken: 500ms
+Vault: 2UvZ8zCMcDGhvvBNjcPLQzNfz7pFJJ6QzZ4pLkfkJmyF: JLP_Smart_Arb_J01 (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 495ms
+Vault: EwupH6DH1NF4mum679xjRMzQ7GVrVhoLZAZjgWg1UU3x: JLP_Smart_Arb_U01 (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 558ms
+Vault: 5M13RDhVWSGiuUPU3ewnxLWdMjcYx5zCzBLgvMjVuZ2K: JTO Plus (5 depositors)
+  vault overflow status: 0
+  Vault fuel: 29780 + 0 = 29780, vaultCumFuel: 29780 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 29776
+  Diff (manager fuel) (vault - depositors): 4 good
+  Time taken: 663ms
+Vault: EJz8sm1EnNcWte9KS4nm854fn7rkZXfKuWgSARRomcN2: JTTT (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 506ms
+Vault: B1NAbrzCLMosf2TfchzCzjoGWoiQH9qzvhbX2dCW7u4p: JVUFdQPGGOjQ2JmI8uDQX8eWvobLKcqW (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 553ms
+Vault: 9msrw5KvfZnfTiVfTBoTpTK8WmZ2yoFS5rVoTTy2CWL5: Jlp Delta Neutral Test(U) (4 depositors)
+  vault overflow status: 0
+  Vault fuel: 20318 + 0 = 20318, vaultCumFuel: 20318 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 20316
+  Diff (manager fuel) (vault - depositors): 2 good
+  Time taken: 503ms
+Vault: 8TbfDJM6fWuzNpMgDQbdDszJYMZye7u1mwRcV2mRohYT: Jlp Delta Neutral Yielding Test (4 depositors)
+  vault overflow status: 0
+  Vault fuel: 4005 + 0 = 4005, vaultCumFuel: 4005 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 4004
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 526ms
+Vault: 93gLh83YceGb6Cm3oYdutZ8xY9si5JX5dU7Ei6LkZHbJ: KVT_ALPHA_U01 (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 498ms
+Vault: 3cCwK3CTBMAE46LQwaanVTgKNUAhWR3w9nfRiherp7kG: Kronos_mm (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 57911309 + 0 = 57911309, vaultCumFuel: 57911309 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 57911308
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 490ms
+Vault: GZSrXLx7wVMxP2Ee161w9GdQwPGd6GTWbJqZGVupGLxV: LST Hedged (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 172336 + 0 = 172336, vaultCumFuel: 0 (vaultFuelDiff: 172336
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 172336 good
+  Time taken: 495ms
+Vault: GZqs7L6UFBJrbPDvvkbHC9SehX7iMwBvxs23s82rax4D: Leveraged Funding Rate Test (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 42495 + 0 = 42495, vaultCumFuel: 42495 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 42494
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 526ms
+Vault: DvbTJb2YFUptM3bGRqe67Tw93QfQgrkjjVPkRqpppWTx: Lucky Vault 01 (72 depositors)
+  vault overflow status: 0
+  Vault fuel: 127997034 + 0 = 127997034, vaultCumFuel: 127997034 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 127996986
+  Diff (manager fuel) (vault - depositors): 48 good
+  Time taken: 521ms
+Vault: Bbydi4XqY493dCNyHNm8xjRUrbxovKL5qQPEbxEcxMMv: Lucky Vault 02 (18 depositors)
+  vault overflow status: 0
+  Vault fuel: 10006583 + 0 = 10006583, vaultCumFuel: 10006583 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 10006575
+  Diff (manager fuel) (vault - depositors): 8 good
+  Time taken: 515ms
+Vault: Ae82MYmU3hWRhh1sm2kd5xEJp8FbZFCFDX6e8QPN6G8w: Lucky Vault 03 (45 depositors)
+  vault overflow status: 0
+  Vault fuel: 14946092 + 0 = 14946092, vaultCumFuel: 14946092 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 14946057
+  Diff (manager fuel) (vault - depositors): 35 good
+  Time taken: 509ms
+Vault: 451jmtyuyd7JmfiLxkY7ZqeWFQNX4qMB2uSUAdPMvGfq: Lucky Vault 04 (3 depositors)
+  vault overflow status: 0
+  Vault fuel: 16589961 + 0 = 16589961, vaultCumFuel: 16589961 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 16563244
+  Diff (manager fuel) (vault - depositors): 26717 good
+  Time taken: 519ms
+Vault: J6cr1Nrd21CBXNdTLe84SDMJkLweX9XQkNYvAfNHGkjL: Lucky Vault 05 (4 depositors)
+  vault overflow status: 0
+  Vault fuel: 15399114 + 0 = 15399114, vaultCumFuel: 15399114 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 15257504
+  Diff (manager fuel) (vault - depositors): 141610 good
+  Time taken: 503ms
+Vault: 22BGgiq1TzLdwAmhW6mAvDdFfUCNfqrKDwGfpEui45bS: Lucky Vault 06 (3 depositors)
+  vault overflow status: 0
+  Vault fuel: 16265691 + 0 = 16265691, vaultCumFuel: 16265691 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 16246089
+  Diff (manager fuel) (vault - depositors): 19602 good
+  Time taken: 507ms
+Vault: F4gZSnDujwbtwoVsCpwsvNe3xxtjoDaJz2kV2yc28NWF: Lucky Vault 07 (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 285604 + 0 = 285604, vaultCumFuel: 0 (vaultFuelDiff: 285604
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 285604 good
+  Time taken: 499ms
+Vault: 8QQoXEh5nth1jk6SJCVZR6c2uTBoVov6kf9h9GZnMcur: Lucky Vault 08 (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 400637 + 0 = 400637, vaultCumFuel: 0 (vaultFuelDiff: 400637
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 400637 good
+  Time taken: 502ms
+Vault: 3ivYY7UrPx3kDrZxPzQkKdiXLggv7Naz7EYsedycJ5Mw: Lucky Vault 09 (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 49918 + 0 = 49918, vaultCumFuel: 0 (vaultFuelDiff: 49918
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 49918 good
+  Time taken: 494ms
+Vault: 8vFVqHSMYruK9BgWjormtQcjXuUfKjvqGEjEDAD4aKLy: Lucky Vault 10 (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 65114 + 0 = 65114, vaultCumFuel: 0 (vaultFuelDiff: 65114
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 65114 good
+  Time taken: 553ms
+Vault: 57vA4gLSzqhHkducG1ddkRtCXHgWAv6MS4XvrFmx9tmB: Lucky Vault 11 (3 depositors)
+  vault overflow status: 0
+  Vault fuel: 771158 + 0 = 771158, vaultCumFuel: 771158 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 771155
+  Diff (manager fuel) (vault - depositors): 3 good
+  Time taken: 494ms
+Vault: 5YEMhbs7q8pqjmXgxZf6mRfwCzRUyQi339GDF6Kzih3t: M1 (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 507ms
+Vault: 678FDyJ399oHgi5qKky5roEa57WV1Q6Sy69tDeMHADuq: M1 BTC yield (26 depositors)
+  vault overflow status: 0
+  Vault fuel: 22614413 + 0 = 22614413, vaultCumFuel: 22614413 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 22614380
+  Diff (manager fuel) (vault - depositors): 33 good
+  Time taken: 512ms
+Vault: 8YtJYiQb8yGHbSCp5ShCoFp1X6ijFX9xi9kbXMgYJ3AH: M1 Capital - hJLP Enhanced Yield (3 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 502ms
+Vault: 8NTaaWpemnWyxawofbhk4xGhL41Jod7H4sKYNkMhDT7y: M1 Delta Neutral JLP (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 504ms
+Vault: FbaXoNjvii97vwqM6m6rgdEarekTJ3ZAdsc1JH5Ym9Gb: M1 Delta Neutral JLP+ (550 depositors)
+  vault overflow status: 0
+  Vault fuel: 344135553 + 0 = 344135553, vaultCumFuel: 344135553 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 344134962
+  Diff (manager fuel) (vault - depositors): 591 good
+  Time taken: 611ms
+Vault: 4CfPmaKBBWtyXhckvFrBmQBZBU8BisSuUHxTEqVGwQuh: M1 ETH Yield (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 56519 + 0 = 56519, vaultCumFuel: 56519 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 56514
+  Diff (manager fuel) (vault - depositors): 5 good
+  Time taken: 491ms
+Vault: Acx7QYzkyWeXhhtjAqDZnmewoEoV6vxxR26YxcBUnrov: M1 SOL Yield (5 depositors)
+  vault overflow status: 0
+  Vault fuel: 2687057 + 0 = 2687057, vaultCumFuel: 2687057 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 2687053
+  Diff (manager fuel) (vault - depositors): 4 good
+  Time taken: 502ms
+Vault: 6un71hP7xhpc8nqWWnbYPiamjAckEGH1A6zzenpGdZLf: Minne-NeutralTrade (24 depositors)
+  vault overflow status: 0
+  Vault fuel: 2840706 + 0 = 2840706, vaultCumFuel: 2840706 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 2840626
+  Diff (manager fuel) (vault - depositors): 80 good
+  Time taken: 500ms
+Vault: 38DUUchPKpGuccmdyDPawuaTF7ZsatEDM4h24DBDMpqp: My first vault (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 497ms
+Vault: 5rGEccnStTNDLq3n8LqAP6KWBJSih9zJi4L4jozJKfNo: NX CapyMax Vip Vault (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 499ms
+Vault: HYHnL9BB3tqSPxkVbdcAn9CAa4hyqNYUh1FwDc4he7aD: NX Jlp Delta Neutral Vault (388 depositors)
+  vault overflow status: 0
+  Vault fuel: 15688768 + 0 = 15688768, vaultCumFuel: 15688768 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 15666691
+  Diff (manager fuel) (vault - depositors): 22077 good
+  Time taken: 587ms
+Vault: H77yKTWRUQjx9rDzeSdEL98msMinE7E1A5Zs9tfiP6yU: Neutra (10 depositors)
+  vault overflow status: 0
+  Vault fuel: 493420 + 0 = 493420, vaultCumFuel: 493420 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 493419
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 503ms
+Vault: mc1UFoEpaiyPVY4njGGerwLL7XzTVCQiwx6eUtuoDfR: Neutral Hedged JLP NX (3 depositors)
+  vault overflow status: 0
+  Vault fuel: 2213478 + 0 = 2213478, vaultCumFuel: 2213478 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 2213476
+  Diff (manager fuel) (vault - depositors): 2 good
+  Time taken: 546ms
+Vault: ETyhDJLrwLEQ4zQvrmUbuo9Yo7PeuxQVJs89TumY8wyP: Neutral Hedged JLP Nx (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 500ms
+Vault: CuN8z26QcrWQq4vdhEDn6bzG7DK14Q1FokhGjE9X2GbZ: NeutralTestVault (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 1471 + 0 = 1471, vaultCumFuel: 0 (vaultFuelDiff: 1471
+  Depositor fuel total (calc): 1470
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 505ms
+Vault: CG2zv4wsSetgs6mAucEKnHPwSoZSLYMwGroembTUNeaU: NeutralizedJLP-Neutral-Trade (870 depositors)
+  vault overflow status: 0
+  Vault fuel: 7618127 + 0 = 7618127, vaultCumFuel: 7618127 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 7617293
+  Diff (manager fuel) (vault - depositors): 834 good
+  Time taken: 680ms
+Vault: DK68iZ1w6o1jqnhPxtCSzktRbfJ49Wa8D4bSosDjAB8G: Nx Test Usdc (6 depositors)
+  vault overflow status: 0
+  Vault fuel: 1669 + 0 = 1669, vaultCumFuel: 1669 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 1665
+  Diff (manager fuel) (vault - depositors): 4 good
+  Time taken: 499ms
+Vault: BpfVcpzEtYLMu8FannaYgcTLhnf7uzGuq6AHPCLjuKLs: Nx Test Usdc market (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 8898 + 0 = 8898, vaultCumFuel: 8898 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 8897
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 498ms
+Vault: AtKMmwz3aq4miMaqoexUH29Pknq8Qr4Xz5puDidohio6: OW1Tl4zMQL7VnIz (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 498ms
+Vault: DvSZBt5LaHt7Q4N8UnzJPqXCMUsXMo5FuwB2NXTfhJh: PN_BW1 (4 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 500ms
+Vault: 2dNSa3fBPMoxcs46NhtdLeTJuLasDt6VYNG4vopa7mWw: PN_JLP1 (27 depositors)
+  vault overflow status: 0
+  Vault fuel: 6236338 + 0 = 6236338, vaultCumFuel: 6236338 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 6236318
+  Diff (manager fuel) (vault - depositors): 20 good
+  Time taken: 500ms
+Vault: 8kjypdKyWc6QFYvm7Tz9uHXaeD9dKzRTHcwb8N8y6qvf: PN_t1 (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 494ms
+Vault: 425JLbAYgkQiRfyZLB3jDdibzCFT4SJFfyHHemZMpHpJ: Prod - Carrot hJLP (USDC) (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 1631771 + 0 = 1631771, vaultCumFuel: 1631771 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 1631752
+  Diff (manager fuel) (vault - depositors): 19 good
+  Time taken: 498ms
+Vault: Hh2B4rP9b4cTKHXxjJ6eYsjexdu8oKK4Dd43eeTTCejj: RoboNet Vault (3 depositors)
+  vault overflow status: 0
+  Vault fuel: 15102 + 0 = 15102, vaultCumFuel: 15102 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 14092
+  Diff (manager fuel) (vault - depositors): 1010 good
+  Time taken: 497ms
+Vault: FTKm3WgS8K5AkDKL9UZnmD12JdhFnvxvNN1mF6adGXH9: SOL CPPI (USDC) (4 depositors)
+  vault overflow status: 0
+  Vault fuel: 2410 + 0 = 2410, vaultCumFuel: 2410 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 2407
+  Diff (manager fuel) (vault - depositors): 3 good
+  Time taken: 502ms
+Vault: 6N7iBJfRQFVpv4oQcSz8TvshbtmSgPkozMLpZ9WPCWSp: SOL GROWING (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 269 + 0 = 269, vaultCumFuel: 0 (vaultFuelDiff: 269
+  Depositor fuel total (calc): 269
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 497ms
+Vault: AAMqcyowCHa9dH7ixvQXbcCMYfUmrpCiGNsCEqF6dwxG: SOL Super Staking (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 154251 + 0 = 154251, vaultCumFuel: 0 (vaultFuelDiff: 154251
+  Depositor fuel total (calc): 154251
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 493ms
+Vault: 3EXe9uzf3trp4oiqa2n7wnc1UD4VCRrU1mrps1PKQ9Jx: SOL gain (Hedge + Leverage JLP ) (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 497ms
+Vault: yy3rCHQvao96D1gM9QjGggW4VdpANVMPZ1j7Qwr83LZ: SOL gain (Hedge + Leverage JLP) (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 6842 + 0 = 6842, vaultCumFuel: 6842 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 6835
+  Diff (manager fuel) (vault - depositors): 7 good
+  Time taken: 500ms
+Vault: 8pMJJePvf9sxWZSk5HUcra7HBDV7SAHGBrsxeFNcjpfP: SOL test (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 693275 + 0 = 693275, vaultCumFuel: 0 (vaultFuelDiff: 693275
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 693275 good
+  Time taken: 508ms
+Vault: CxL8eQmGhN9LKSoHj7bU95JekFPtyZoUc57mbehb5A56: SOL-Basis-NeutralTrade (348 depositors)
+  vault overflow status: 0
+  Vault fuel: 4616636 + 0 = 4616636, vaultCumFuel: 4616636 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 4616512
+  Diff (manager fuel) (vault - depositors): 124 good
+  Time taken: 590ms
+Vault: 2zsHAfvD2BpmZbuPhc32dija8cXu8ow6n2yzyZTMvQ8V: SOL-ETH-NeutralTrade (102 depositors)
+  vault overflow status: 0
+  Vault fuel: 20967700 + 0 = 20967700, vaultCumFuel: 20967700 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 20967514
+  Diff (manager fuel) (vault - depositors): 186 good
+  Time taken: 524ms
+Vault: A6cPV4DrePTUUamBM87MDqK9kBy9vbucjhrCxtxzExK9: SOL-Earn-NeutralTrade (54 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 512ms
+Vault: FJQiH8imm2jRZhW8437RL6ZUmpVWTwEA2epr8h8K1QmD: SOL-INF-NL-Neutral-Trade (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 498ms
+Vault: EuSLjg23BrtwYAk1t4TFe5ArYSXCVXLBqrHRBfWQiTeJ: SOL-NL-Neutral-Trade (1175 depositors)
+  vault overflow status: 0
+  Vault fuel: 885106397 + 0 = 885106397, vaultCumFuel: 885106397 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 885102457
+  Diff (manager fuel) (vault - depositors): 3940 good
+  Time taken: 706ms
+Vault: CYUyHzu6Z3JyBhfkQpZZwWqa2zpcmzaK1xXS96n8ea1U: SOL-VIP8-NL-Neutral-Trade (3 depositors)
+  vault overflow status: 0
+  Vault fuel: 234180230 + 0 = 234180230, vaultCumFuel: 234180230 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 234180220
+  Diff (manager fuel) (vault - depositors): 10 good
+  Time taken: 499ms
+Vault: C8NCUhqh668fH34PkJ4A6rmgaSkdfuJA8VaqkVyw8hYS: Signal Vault (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 87514 + 0 = 87514, vaultCumFuel: 87514 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 87100
+  Diff (manager fuel) (vault - depositors): 414 good
+  Time taken: 494ms
+Vault: 9XNvti5japv4Uy4PXoHsJdrMHLQrDkuhG3Pxs1ZQGLnx: Staging - Carrot hJLP (USDC) (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 3148 + 0 = 3148, vaultCumFuel: 3148 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 3147
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 497ms
+Vault: FH2tn95JTrgq8YwUpniXNuftvVFkYzVAxLauF2MYtxRJ: StallTest-Neutral-Trade (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 3667 + 0 = 3667, vaultCumFuel: 3667 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 3666
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 504ms
+Vault: H5gb5twhpfSj3CEQXvuY2F4naTrRtCzgshHce4hS48LV: Supercharger (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 498ms
+Vault: GXyE3Snk3pPYX4Nz9QRVBrnBfbJRTAQYxuy5DRdnebAn: Supercharger Vault (5198 depositors)
+  vault overflow status: 1
+  Vault fuel: 224384717 + 5241857082 = 5466241799, vaultCumFuel: 5466241799 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 5424109736
+  Diff (manager fuel) (vault - depositors): 42132063 good
+  Time taken: 1148ms
+Vault: A1B9MVput3r1jS91iu8ckdDiMSugXbQeEtvJEQsUHsPi: Synthetic-JLP-Neutral-Trade (352 depositors)
+  vault overflow status: 0
+  Vault fuel: 26566340 + 0 = 26566340, vaultCumFuel: 26566340 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 26565672
+  Diff (manager fuel) (vault - depositors): 668 good
+  Time taken: 535ms
+Vault: HS2anXrdps1S2DZCHepgzfcoaqSUWBBuuqTRMugJisP2: Tangem-USDCJLPDN-Neutral-Trade (4 depositors)
+  vault overflow status: 0
+  Vault fuel: 789357 + 0 = 789357, vaultCumFuel: 789357 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 789343
+  Diff (manager fuel) (vault - depositors): 14 good
+  Time taken: 499ms
+Vault: 6E2sh7ygUzXFJAafXX5sMeSj7eK6YkYqpoAzXm7bYtCw: Tangem-WBTC-Neutral-Trade (3 depositors)
+  vault overflow status: 0
+  Vault fuel: 292949 + 0 = 292949, vaultCumFuel: 292949 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 292948
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 509ms
+Vault: FBYp9toQEqNiGeP8BzyvRD1FUauJBFk5eYUEkgqvigZ5: Team-NeutralTrade (3 depositors)
+  vault overflow status: 0
+  Vault fuel: 281314 + 0 = 281314, vaultCumFuel: 281314 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 281313
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 492ms
+Vault: J9zqs5Jq6PQEy44eRw8NLhq3e1uafMfYwcn6YCbdF7At: Test-Neutral-Trade (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 34 + 0 = 34, vaultCumFuel: 0 (vaultFuelDiff: 34
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 34 good
+  Time taken: 494ms
+Vault: GLJS6EhPnqkqhVXCNTSiCN2QEtHZXToA45cMXTvukjNW: Test-setting-manager (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 495ms
+Vault: 5984Saoz7PfkoZBjgUJXHrE3jpFkSivUrR4ugmiebUTR: TestVault (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 871ms
+Vault: CTo7oSAQCmhDZKGAwzHv6EDvv8zbE7HykPdBexN3PZiW: TestVault2 (5 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 501ms
+Vault: 2WZGt5apmJzUKTydA53dsqdnGAhEkgWt4Zuq4CjNnYt6: TestVault2025.AskJimmy.Test1 (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 7124 + 0 = 7124, vaultCumFuel: 7124 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 6931
+  Diff (manager fuel) (vault - depositors): 193 good
+  Time taken: 498ms
+Vault: GzpkmjHzWsAC1cUjPfQ8XZVMEyTdrW9gyRnnt8jGfef3: TestVault2025.AskJimmy.Test2 (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 510ms
+Vault: 3xWNqkuJwDJkdaPdKWKVJrLG49zAk35TGgspV7j4Vo4W: TestVault2025.Test3 (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 497ms
+Vault: 3optDXfSZSzpkjS47Unwj48NUs1nm658LjH6hkQAKauA: TestVault3 (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 508ms
+Vault: EcTYmhBu2W4XPX5tGAmXzQQovC6gQKXA5x9ozDY6kioY: TestVault4 (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 497ms
+Vault: 2csxi2M4uMijHW3CvnHqAYJ9CcLcZbGmDNKSz1qjRAVQ: TheBigShort-NeutralTrade (21 depositors)
+  vault overflow status: 0
+  Vault fuel: 94973 + 0 = 94973, vaultCumFuel: 94973 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 94941
+  Diff (manager fuel) (vault - depositors): 32 good
+  Time taken: 500ms
+Vault: F3no8aqNZRSkxvMEARC4feHJfvvrST2ZrHzr2NBVyJUr: Turbocharger Vault (3147 depositors)
+  vault overflow status: 0
+  Vault fuel: 5250871580 + 0 = 5250871580, vaultCumFuel: 5250871580 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 5141137147
+  Diff (manager fuel) (vault - depositors): 109734433 good
+  Time taken: 734ms
+Vault: 3iKsMR2ht886uWHq9ynJhgXnKL12RxWrNcJmgpZKdDgw: USDC GROWING (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 45594 + 0 = 45594, vaultCumFuel: 45594 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 45592
+  Diff (manager fuel) (vault - depositors): 2 good
+  Time taken: 501ms
+Vault: EKmh5iYyouaczpnAjhcUSueU4UXcpLoDaRziPUeTSTAW: USDC gain (Hedge + Leverage JLP) (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 2427 + 0 = 2427, vaultCumFuel: 2427 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 2425
+  Diff (manager fuel) (vault - depositors): 2 good
+  Time taken: 500ms
+Vault: EyFonjT7uzMk5zrWWTuXdUyDVZ5fdBNd8yaLUusoqvyy: USDC gain (Hedge+Leverage JLP) (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 503ms
+Vault: 5C5Yj1xZ8BLvXzSoz69xGycqvMf3WPjHirWvqEGkdX6H: USDC staking v1.0 (19 depositors)
+  vault overflow status: 0
+  Vault fuel: 2350937 + 0 = 2350937, vaultCumFuel: 2350937 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 2350826
+  Diff (manager fuel) (vault - depositors): 111 good
+  Time taken: 511ms
+Vault: 4i2L5zvzUM5LXqUYm35Ytv4BGSmnFVTqG5xtFfJesm14: USDC-Earn-NeutralTrade (52 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 515ms
+Vault: AA5p2dH2rCh1ei1zujkQvb44buU3XXHMXkDwDaMUUcqE: USDC1 (3 depositors)
+  vault overflow status: 0
+  Vault fuel: 506518 + 0 = 506518, vaultCumFuel: 506518 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 506517
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 503ms
+Vault: 9kwoKmpNtPEK4fESLf7YnrGtZqvHcnYoN7aVWWdvkhSP: USDn1 (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 75523 + 0 = 75523, vaultCumFuel: 75523 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 75520
+  Diff (manager fuel) (vault - depositors): 3 good
+  Time taken: 506ms
+Vault: 5Wv7V9zLGD3g7JTXfYjpzFEs42kjowXqUHh7wQ5ryVef: VIP10-NeutralTrade (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 499ms
+Vault: HhLwXF15V3MTVG9ucGGmT6mcEuqt2BjHuTCJBi4Zvi4K: VIP11-NeutralTrade (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 2413799 + 0 = 2413799, vaultCumFuel: 2413799 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 2413783
+  Diff (manager fuel) (vault - depositors): 16 good
+  Time taken: 509ms
+Vault: GpMcLVnUqE1RyEB5rRFsFQJGKiPBBXqrpFsdbfUPgbqv: VIP12-NeutralTrade (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 2345978 + 0 = 2345978, vaultCumFuel: 2345978 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 2345977
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 501ms
+Vault: 9V2LggfMo1EjaBbq3qBRBifD287m8zryrZgTR72grcCp: VIP13-NeutralTrade (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 3140772 + 0 = 3140772, vaultCumFuel: 3140772 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 3140772
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 513ms
+Vault: 5S3p6QDXZ9iT6A4VRtQihi6nSjp7UFLehmts5ZTEyRRj: VIP13-SOL-NeutralTrade (3 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 877ms
+Vault: 4iSH214QLwWnJQNwTH6VfH4oNcPccr7HnMmsybjnTtez: VIP14-Neutral-Trade (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 2647661 + 0 = 2647661, vaultCumFuel: 2647661 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 2647661
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 496ms
+Vault: ES2C16XjnMer2YSoMdAHS1UCKkjEB64FRqp9NXLGpuZU: VIP14-NeutralTrade (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 503ms
+Vault: AwVR9y8Qw5erzrzE8hcs1j1se86yBwmrRidWb1qzaAy2: VIP15-Neutral-Trade (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 3788019 + 0 = 3788019, vaultCumFuel: 3788019 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 3787987
+  Diff (manager fuel) (vault - depositors): 32 good
+  Time taken: 508ms
+Vault: 4H3wAK5tkT7G1vFrj6J9jWGvbaqVGkzPPBsp9qyKUYz9: VIP16-Neutral-Trade (6 depositors)
+  vault overflow status: 0
+  Vault fuel: 8531539 + 0 = 8531539, vaultCumFuel: 8531539 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 8531535
+  Diff (manager fuel) (vault - depositors): 4 good
+  Time taken: 505ms
+Vault: 3UhqS9P4AhKMrCv7yE1LujgQS2xjFnRhANC5dPf2bZem: VIP17-Neutral-Trade (4 depositors)
+  vault overflow status: 0
+  Vault fuel: 7299165 + 0 = 7299165, vaultCumFuel: 7299165 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 7299160
+  Diff (manager fuel) (vault - depositors): 5 good
+  Time taken: 504ms
+Vault: 1CUvZgVGaxV6sDUjFrWHyzukWBD2amUi3dQkvh9KKVA: VIP18-Neutral-Trade (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 18233 + 0 = 18233, vaultCumFuel: 18233 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 18233 good
+  Time taken: 500ms
+Vault: HCcQGnRuUmREPJFJVTicjR2EzEh34sZbqmxZnTZYtBeV: VIP1Vault-Neutral-Trade (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 502ms
+Vault: 5FqiXogZCcyZoNeTZzNvywY5s9ZRzNsPPkZ2Q4YRu6ww: VIP1Vault-NeutralTrade (28 depositors)
+  vault overflow status: 0
+  Vault fuel: 13680755 + 0 = 13680755, vaultCumFuel: 13680755 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 13680626
+  Diff (manager fuel) (vault - depositors): 129 good
+  Time taken: 518ms
+Vault: p21N9D238ziNeNZQ5oUcfR1yV2WPdn2vh5xjpDaSwbr: Vault Delta Neutral Test (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 51 + 0 = 51, vaultCumFuel: 0 (vaultFuelDiff: 51
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 51 good
+  Time taken: 503ms
+Vault: 73ih5XXshhATj4mmWpvY5FYiuNr4y5DkixwJmFZbTTwM: Vectis-Allora-AITrading (40 depositors)
+  vault overflow status: 0
+  Vault fuel: 1183529 + 0 = 1183529, vaultCumFuel: 1183529 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 1183497
+  Diff (manager fuel) (vault - depositors): 32 good
+  Time taken: 518ms
+Vault: A6TRPyCuyth1Li7kuo15SKyAHcTbBQcPn1rkVErqt5bW: Vectis-Allora-Trading (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 55296 + 0 = 55296, vaultCumFuel: 55296 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 55293
+  Diff (manager fuel) (vault - depositors): 3 good
+  Time taken: 499ms
+Vault: BBzwJMPvdms94eyHEwgGaYmHqLqGXZR4NggQZrBdzgxp: Vectis-Fuel-Flow (109 depositors)
+  vault overflow status: 0
+  Vault fuel: 154514217 + 0 = 154514217, vaultCumFuel: 154514217 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 154514085
+  Diff (manager fuel) (vault - depositors): 132 good
+  Time taken: 516ms
+Vault: FwSbTADV75Fb41zFK79kVT4JebCi2AK2FBADgx9dKTg9: Vectis-Fuel-Grid (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 7136074 + 0 = 7136074, vaultCumFuel: 7136074 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 7136073
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 504ms
+Vault: 2N6rV473d1tawijCHB7j4boiCgAHTtHDK1YJtAF9j9FZ: Vectis-Fuel-Maxi (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 24566 + 0 = 24566, vaultCumFuel: 24566 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 24566 good
+  Time taken: 505ms
+Vault: E9RnVt2kjTJhCzmcNfwofm6nXhdZWtYvRy6FwrG4i4Ar: Vectis-JLP-Navigator-C (206 depositors)
+  vault overflow status: 0
+  Vault fuel: 36103725 + 0 = 36103725, vaultCumFuel: 36103725 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 36103651
+  Diff (manager fuel) (vault - depositors): 74 good
+  Time taken: 523ms
+Vault: 6N3pZwVW5bxAX5NrNJRgqteLj5w9W6VEPzZSHVcikQAo: Vectis-JLP_Navigator_B (364 depositors)
+  vault overflow status: 0
+  Vault fuel: 42492201 + 0 = 42492201, vaultCumFuel: 42492201 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 42492013
+  Diff (manager fuel) (vault - depositors): 188 good
+  Time taken: 538ms
+Vault: PbchnM85zch9Hiyk4mfk4cMCiLQ1FsoVFokaTJ1Wsqa: Vectis-JLP_Navigator_D (324 depositors)
+  vault overflow status: 0
+  Vault fuel: 32341501 + 0 = 32341501, vaultCumFuel: 32341501 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 32341400
+  Diff (manager fuel) (vault - depositors): 101 good
+  Time taken: 544ms
+Vault: 7qqwsuhAdskqLszLB7Aqv1xEtwNtqEQAMCyHth3D5QWT: Vectis-JLP_Navigator_E (346 depositors)
+  vault overflow status: 0
+  Vault fuel: 24405901 + 0 = 24405901, vaultCumFuel: 24405901 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 24405731
+  Diff (manager fuel) (vault - depositors): 170 good
+  Time taken: 547ms
+Vault: HBbtqdaZ9F6dGTKVrxEXeE3SABjbae35HoAW1efKR7sV: Vectis-JLP_Navigator_Garvis (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 502635 + 0 = 502635, vaultCumFuel: 502635 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 502632
+  Diff (manager fuel) (vault - depositors): 3 good
+  Time taken: 501ms
+Vault: 2BN8finD8gZXVxKj459vBekpE96Yi32pHBmynWo84KNN: Vectis-JLP_Navigator_PrimeA (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 504ms
+Vault: H7y32fc64QNUgTeC4CxhKzYLxtWri4LU5ytN8kdEpnwK: Vectis-JLP_Navigator_PrimeB (4 depositors)
+  vault overflow status: 0
+  Vault fuel: 6407733 + 0 = 6407733, vaultCumFuel: 6407733 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 6407729
+  Diff (manager fuel) (vault - depositors): 4 good
+  Time taken: 500ms
+Vault: BqYDg9dV2T4EKqRtdKjTMNPnzsWaxGMgJwkaza4sm9V7: Vectis-JLP_Navigator_PrimeC (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 9039801 + 0 = 9039801, vaultCumFuel: 9039801 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 9039787
+  Diff (manager fuel) (vault - depositors): 14 good
+  Time taken: 515ms
+Vault: 26EZHMHGZ4vxkS9MDXQByWgMa6H92bPocnUBKKh3Ca8H: Vectis-JLP_Navigator_PrimeD (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 498ms
+Vault: De6h3zHHcKNVmKrpFpYWJR8SfkgahNckcDhesTfJk4Ua: Vectis-JLP_Navigator_PrimeE (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 1269832 + 0 = 1269832, vaultCumFuel: 1269832 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 1269831
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 502ms
+Vault: FGxPeaYqSkwKrhwSNJnqLpSa1c55zwfa8Cz8R4ka3MzX: Vectis-JLP_Navigator_PrimeF (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 5683521 + 0 = 5683521, vaultCumFuel: 5683521 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 5683510
+  Diff (manager fuel) (vault - depositors): 11 good
+  Time taken: 507ms
+Vault: EFpHe2oDbU6S5CudfwiyuqJFM4oApjZKrruk5xdzkBt9: Vectis-JLP_Navigator_PrimeG (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 1684378 + 0 = 1684378, vaultCumFuel: 1684378 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 1684378 good
+  Time taken: 494ms
+Vault: J4i9wNmDFWKEqzyc69yJMwJ3dm3PoeGn4uw1N4VdG9p4: Vectis-JLP_Navigator_PrimeH (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 2938152 + 0 = 2938152, vaultCumFuel: 2938152 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 2938130
+  Diff (manager fuel) (vault - depositors): 22 good
+  Time taken: 545ms
+Vault: Fuk6JYsq8VzGTXhNoxx4SfgKBq4i3qi39EewYeWCRR3d: Vectis-JLP_Navigator_Std_Prime (6 depositors)
+  vault overflow status: 0
+  Vault fuel: 8978381 + 0 = 8978381, vaultCumFuel: 8978381 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 8978379
+  Diff (manager fuel) (vault - depositors): 2 good
+  Time taken: 500ms
+Vault: HeiJuf2UFiLCYrfWKBJ54grjUNyuKZsbFxXTdXSeKZNj: Vectis-JLP_Navigator_inJLP_A (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 3 + 0 = 3, vaultCumFuel: 0 (vaultFuelDiff: 3
+  Depositor fuel total (calc): 2
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 505ms
+Vault: BHQZqCmf6Mt75oracsuQ6vUU4MoRxHNHCAm4s76z5LAz: Vectis-JLP_Navigator_in_JLP_A (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 140 + 0 = 140, vaultCumFuel: 140 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 139
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 500ms
+Vault: HzTh6Ww4VaGvCDQL94x5Y5tNctknv3xJNXxDNrqjFE1L: Vectis-LST_Compass (5 depositors)
+  vault overflow status: 0
+  Vault fuel: 269731 + 0 = 269731, vaultCumFuel: 0 (vaultFuelDiff: 269731
+  Depositor fuel total (calc): 269729
+  Diff (manager fuel) (vault - depositors): 2 good
+  Time taken: 497ms
+Vault: H9Jr8C4ADFXazJA4BAFHaG1jRkVqM9LiUdBym9gV5wRy: Vectis-LST__Compass (122 depositors)
+  vault overflow status: 0
+  Vault fuel: 46210039 + 0 = 46210039, vaultCumFuel: 46210039 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 46210020
+  Diff (manager fuel) (vault - depositors): 19 good
+  Time taken: 512ms
+Vault: 6DSysFXrq8y2NdY6kcaNW6z2MkXkDXvXFfKx5kQ5aCXs: Vectis-dSOL_Anchor (4 depositors)
+  vault overflow status: 0
+  Vault fuel: 1940606 + 0 = 1940606, vaultCumFuel: 0 (vaultFuelDiff: 1940606
+  Depositor fuel total (calc): 1940604
+  Diff (manager fuel) (vault - depositors): 2 good
+  Time taken: 517ms
+Vault: CNFFhKqGXZWhSHbt2BSh26mcQei1UZkUXiBdVc82TyQm: Vectis-dSOL__Anchor (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 331281 + 0 = 331281, vaultCumFuel: 0 (vaultFuelDiff: 331281
+  Depositor fuel total (calc): 331281
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 500ms
+Vault: FVrmSq6i174GKrWnGon1n3AkuadFi8g9CXfEyB1AKPVB: Vectis-hJLP (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 25560 + 0 = 25560, vaultCumFuel: 0 (vaultFuelDiff: 25560
+  Depositor fuel total (calc): 25560
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 498ms
+Vault: 494C23vX4h7Bhfyz92hScg71PXn9huG9SqY8mFYhRJoK: WBTC-Earn-Neutral-Trade (7 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 500ms
+Vault: BVddkVtFJLCihbVrtLo8e3iEd9NftuLunaznAxFFW8vf: WBTC-NL-Neutral-Trade (128 depositors)
+  vault overflow status: 0
+  Vault fuel: 1423576 + 0 = 1423576, vaultCumFuel: 1423576 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 1423493
+  Diff (manager fuel) (vault - depositors): 83 good
+  Time taken: 520ms
+Vault: 2Cz7SpwDETSUdFkZr3jTu3kvw834FySVdZ1bLQW9RMtV: WIF-NL-Neutral-Trade (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 502ms
+Vault: DvsabKEdapgfaEMGkkPDwbpnV1oR2upuQCCf2K6zbG5i: YieldCompass-Fund-Vectis (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 20385516 + 0 = 20385516, vaultCumFuel: 20385516 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 20385507
+  Diff (manager fuel) (vault - depositors): 9 good
+  Time taken: 496ms
+Vault: ENfbMeHWvzFjyL8DegrPaHLFxsobQ6A2XwKhFRNBq4tD: YieldCompass_Fund-Vectis_B (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 23710529 + 0 = 23710529, vaultCumFuel: 23710529 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 23710513
+  Diff (manager fuel) (vault - depositors): 16 good
+  Time taken: 496ms
+Vault: 27ja74LWwkfLD5PdjpJJshb5KaghCAoumv7RtqyiM64y: YouZongTestVault (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 504ms
+Vault: 3JVvLGunuZtwdcSPU4dZuwywup67CuWLgUVAAPsHNqDp: YouZongTestVault0 (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 495ms
+Vault: DK1t6NqwF5XvD33ZENpAUTVwdVwFvduJuaCfLEfkBnou: YouZongTestVault1 (4 depositors)
+  vault overflow status: 0
+  Vault fuel: 1102 + 0 = 1102, vaultCumFuel: 1102 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 1100
+  Diff (manager fuel) (vault - depositors): 2 good
+  Time taken: 495ms
+Vault: GqhFvVUoAgjXxiphxd5pC8w77f2Np5BXj73nb9EHsnZH: YouZongVaultAlpha (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 36710 + 0 = 36710, vaultCumFuel: 0 (vaultFuelDiff: 36710
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 36710 good
+  Time taken: 492ms
+Vault: AAiykf4cgdFxz4kyRNuCFf9xFwy7c1gHiWacydmi1jLS: Zac-NeutralTrade (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 990736 + 0 = 990736, vaultCumFuel: 990736 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 990735
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 497ms
+Vault: 4knfhn49RsowiVziAj9xW1V9HTzYnahV3wcXPEkZHhP1: aSl5wPSLEswdaLjp8mkwF7N2h4RTOCct (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 500ms
+Vault: 86gghkfy6rKWqsEefYUzQTmvAJnQezJuXQwRQJdC9y6: amos_test_vault (3 depositors)
+  vault overflow status: 0
+  Vault fuel: 52 + 0 = 52, vaultCumFuel: 52 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 49
+  Diff (manager fuel) (vault - depositors): 3 good
+  Time taken: 493ms
+Vault: 2bZjrNA899GzFWgjo7fXEkTJK7t3AhZRXCDmaNNBJVLf: amos_test_vault_share (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 587 + 0 = 587, vaultCumFuel: 587 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 586
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 499ms
+Vault: 497AAbjyjZxDjWB9T6JZvBo3ndaNRtykZ2TJ5HQM72dh: amos_vault (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 2678 + 0 = 2678, vaultCumFuel: 2678 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 2677
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 501ms
+Vault: 9mpSe6HxCk1GMzP4DzNASxd8K9XwrKqXXfEehVbjJv8R: amos_vault3 (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 13613 + 0 = 13613, vaultCumFuel: 0 (vaultFuelDiff: 13613
+  Depositor fuel total (calc): 13612
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 503ms
+Vault: H3K1LBVTqQoV1dZoKaSzoxyKHB5vZvgxvxbCmG1X4ySi: amos_vault5 (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 507ms
+Vault: 6W7hDgqnnhkjwgieH7UWbsMwkXCH1iLgowafV2KYC5MF: askj-m2 (5 depositors)
+  vault overflow status: 0
+  Vault fuel: 13322 + 0 = 13322, vaultCumFuel: 13322 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 13321
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 498ms
+Vault: 46414KhRaUYvJYfqJjENnitttrCRsaV8rKeKGQwA4wfT: banana (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 496ms
+Vault: 5LVLbAddNbAiKscWqYV8GHwv6STb3xmqhhc6W5HoHVVg: cbBTC Beta + Basis Alpha (cbBTC) (7 depositors)
+  vault overflow status: 0
+  Vault fuel: 10623955 + 0 = 10623955, vaultCumFuel: 10623955 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 10623948
+  Diff (manager fuel) (vault - depositors): 7 good
+  Time taken: 503ms
+Vault: 2YRHwueKwG39WsT7aVyaSnnmNvq5cpPpYDNRksPmg8vf: crypto-x-ray-test (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 1273 + 0 = 1273, vaultCumFuel: 1273 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 1272
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 494ms
+Vault: 4r3HvmEMqWFc5jgwfNQvzDnk7xb8JdhQ6AtcqQVLNXgP: dSOL Beta + Basis Alpha (SOL) (17 depositors)
+  vault overflow status: 0
+  Vault fuel: 147041840 + 0 = 147041840, vaultCumFuel: 147041840 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 147041827
+  Diff (manager fuel) (vault - depositors): 13 good
+  Time taken: 508ms
+Vault: 6aowo7AoE6rw8CS6knd746XiRysuiEjs9YpZyHRAMnor: dSOL Plus (11 depositors)
+  vault overflow status: 0
+  Vault fuel: 145056440 + 0 = 145056440, vaultCumFuel: 145056440 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 145056431
+  Diff (manager fuel) (vault - depositors): 9 good
+  Time taken: 506ms
+Vault: Fpj2NhUFRnYqbctsEQpKsp1RYKTRPjzDikYsmKahmtZP: dannpl (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 499ms
+Vault: YszK1bEuFZ2fYyj4bnJxLKv8Rxvc6vZSjJWASBmNYd5: dev-jlp-usdc (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 503ms
+Vault: Bv5J6egHXo7Tu5RaFD4NdEVRxd1b7o4LavLKpEKTbJFh: dnJLP-USDC-Neutral-Trade (4 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 500ms
+Vault: 41Y8C4oxk4zgJT1KXyQr35UhZcfsp5mP86Z2G7UUzojU: dnJLP-USDC-NeutralTrade (1071 depositors)
+  vault overflow status: 0
+  Vault fuel: 54992568 + 0 = 54992568, vaultCumFuel: 54992568 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 54982596
+  Diff (manager fuel) (vault - depositors): 9972 good
+  Time taken: 587ms
+Vault: 7ngzeBygEksaBvKzHEeihqoLpDpWqTNRMVh2wCyb6NP8: dnJLPv3-USDC-NeutralTrade (636 depositors)
+  vault overflow status: 0
+  Vault fuel: 20789337 + 0 = 20789337, vaultCumFuel: 20789337 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 20769378
+  Diff (manager fuel) (vault - depositors): 19959 good
+  Time taken: 560ms
+Vault: 46fQeq1UX5djNkrY5d942inhRHjp1cTZmWBeCUZoqWT3: dnJLPv4-USDC-NeutralTrade (574 depositors)
+  vault overflow status: 0
+  Vault fuel: 11994690 + 0 = 11994690, vaultCumFuel: 11994690 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 11992243
+  Diff (manager fuel) (vault - depositors): 2447 good
+  Time taken: 559ms
+Vault: 9omhWDzVxpX1vPBxAhJpVao7baoVzZpNib32vozZLxGm: dnJLPv5-USDC-NeutralTrade (623 depositors)
+  vault overflow status: 0
+  Vault fuel: 16671517 + 0 = 16671517, vaultCumFuel: 16671517 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 16668405
+  Diff (manager fuel) (vault - depositors): 3112 good
+  Time taken: 556ms
+Vault: 9FZgWXmoQQXW94egVf7SXRpYFyTkVm3xkCmXgzpoa2QG: dnJLPv6-USDC-NeutralTrade (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 502ms
+Vault: EJ1zsEEZzo2vBE1jfvJQ7kvezcUfxtvuB3weNRZSYP3K: dopamine.askjimmy.xyz (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 499ms
+Vault: FHKzNqLnravL2emqCf8qQ9X8rzVrFwzkK3wybYv8kJnB: grCOaOwL5F6MlXHyFmHH9pD9K0aRBHHH (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 496ms
+Vault: HRFBXdymY7QePWfxvqvPoU7Z2UWZZPZ7SND9kR8Sxfc: hJLP-Vectis (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 9353 + 0 = 9353, vaultCumFuel: 0 (vaultFuelDiff: 9353
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 9353 good
+  Time taken: 638ms
+Vault: 5WZD2mWWPmthfXPZtysNhpxYhBCGzBvj27JEwuySemn3: hJLP-Vectis- (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 5002 + 0 = 5002, vaultCumFuel: 0 (vaultFuelDiff: 5002
+  Depositor fuel total (calc): 5002
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 499ms
+Vault: 9sh86RBy4HoKdevouo6KnHg4YynzNEipQb8MgXGdVzWn: hJLP_Vectis (802 depositors)
+  vault overflow status: 0
+  Vault fuel: 38972895 + 0 = 38972895, vaultCumFuel: 38972895 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 38972152
+  Diff (manager fuel) (vault - depositors): 743 good
+  Time taken: 589ms
+Vault: GwTNJ3EPupKYty47tGoZgVRrzHnWrMdG4qj6M9du8Ta2: hV4KfeqK13fhF3vGrH0Ksbd8K1QeEEHr (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 503ms
+Vault: ACmnVY5gf1z9UGhzBgnr2bf3h2ZwXW2EDW1w8RC9cQk4: jitoSOL Basis Vault (343 depositors)
+  vault overflow status: 0
+  Vault fuel: 5753162114 + 0 = 5753162114, vaultCumFuel: 5753162114 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 5736234039
+  Diff (manager fuel) (vault - depositors): 16928075 good
+  Time taken: 529ms
+Vault: 4F7c7v9cZHatcZLy9TZFv1jrRrReACLBxciMkbDqVkfQ: jitoSOL Plus (15 depositors)
+  vault overflow status: 0
+  Vault fuel: 710722 + 0 = 710722, vaultCumFuel: 710722 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 710711
+  Diff (manager fuel) (vault - depositors): 11 good
+  Time taken: 500ms
+Vault: DiUpefGjTqguQdt6FkMVTf38YP7UrJBxkbEzAG2PYgWJ: lc test vault experiment (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 1246 + 0 = 1246, vaultCumFuel: 900 (vaultFuelDiff: 346
+  Depositor fuel total (calc): 897
+  Diff (manager fuel) (vault - depositors): 349 good
+  Time taken: 497ms
+Vault: EGWyka6WaVrDvbyNDkukgoZaPCiBSDf1z7Q1jzWXU2UH: lele test vault (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 498ms
+Vault: EwENyRcEtwrH7TSeShZcLTaThkMAfoh82yRo64rWw8Zc: leverage-delta-neutral (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 7220 + 0 = 7220, vaultCumFuel: 3745 (vaultFuelDiff: 3475
+  Depositor fuel total (calc): 3474
+  Diff (manager fuel) (vault - depositors): 3746 good
+  Time taken: 497ms
+Vault: BAuHAwQxWYgetPcgB85fwXNJXa8qBQoDTg36XZJ6FcV7: ligigy-vault (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 499ms
+Vault: 4rqg9QLCw2xP7ghXF4gsdyHYAoQQGraRcajE4qf49AKZ: lucky vault test (3 depositors)
+  vault overflow status: 0
+  Vault fuel: 74968 + 0 = 74968, vaultCumFuel: 74968 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 74967
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 499ms
+Vault: 5fAZkBvMyWuVGC5bvQJbUHuympHn5kLYUKoPqSkxbDD1: m2_solana (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 9261 + 0 = 9261, vaultCumFuel: 1119 (vaultFuelDiff: 8142
+  Depositor fuel total (calc): 8849
+  Diff (manager fuel) (vault - depositors): 412 good
+  Time taken: 500ms
+Vault: 2uLbg1gDsQDE4Kz6cX24e8MHnNe7myjA9oN1WgXXoXQA: michaels-test-vault (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 17 + 0 = 17, vaultCumFuel: 0 (vaultFuelDiff: 17
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 17 good
+  Time taken: 496ms
+Vault: CB4u8FfQEY6jjs8sMGkqLCYXtAFQvf1n81cRqxJJ9pL3: my new vault (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 496ms
+Vault: CidzhiznPQmU8WCqtHj2EifQofmt27jQue7gXttrgTSd: neutra (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 495ms
+Vault: 8HdffCBBrEQFoEQJ3CFGDSby2a6qhDfGRkojV7TJM1LF: nsheng-test (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 209361 + 0 = 209361, vaultCumFuel: 0 (vaultFuelDiff: 209361
+  Depositor fuel total (calc): 209360
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 504ms
+Vault: 91aXK3zaqXtPHWXDJQYaMXypjvCGE4tfzHK8D2gjx7Q9: nsheng-test2 (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 503ms
+Vault: GpemSrYEsbxYYcAEJZ5h1RTpqrHXoafBELWSNDhJtmbx: nsheng-test3 (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 497ms
+Vault: Ax2zyyvPMigf1ksedUtjUMPqJbaauuJ1gMnaNULNgC8f: p4_test_vault_1 (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 483 + 0 = 483, vaultCumFuel: 0 (vaultFuelDiff: 483
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 483 good
+  Time taken: 502ms
+Vault: 6xgZwH5kZNnTGZSUHURQxfh8V2KwfJHraPJdEpNVeTaz: rgZGvgxeaE35sOZkqPgQguiFvzFbhqvO (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 512ms
+Vault: 4HqyfKkM73KwvzNsMZyraEHGUyNTwh3YtaVFyYhY3Hgb: test (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 498ms
+Vault: GLHTNWsYKonnba4bDbigekwV4Jp7UpXrr45mYVzBvvda: test vault (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 503ms
+Vault: GCQWdDcRxsFewTEjmu9npe4MUrJ6YZLNGBtU3nuKtaFK: test vault 2 hl-capital (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 493ms
+Vault: 2utbfm9iMQvUFzRX3GBByPtfLxp6g59u1xiWvneM4tY9: test vault 7756453868908706964 (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 515ms
+Vault: 5GDv98ZFFk4WbKb9XEttxM3Mbsz7XF1gEZ8223maYFcL: test vault hl-capital (3 depositors)
+  vault overflow status: 0
+  Vault fuel: 34 + 0 = 34, vaultCumFuel: 0 (vaultFuelDiff: 34
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 34 good
+  Time taken: 493ms
+Vault: B1eazeaYALQy9g1Kv8oeDW6bUq5Lp7rJvn9SYzn4mLkW: test vault nadar nadar (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 490ms
+Vault: HeBXkEKy3eXJn6nPgNUiF9dg7H4b9AuoMWCQe48kfVMe: test-alon-vault1 (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 492ms
+Vault: 8v9scusseJaAG6vkffCSUiinZUqQ3DA1JtR2Ynz98Gk5: test-alon-vault2 (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 492ms
+Vault: J7t2B4xY7XBNoryUNz6d3Dk9vRM6ByTZuhZ19e2KYAEE: test-by-latopia (6 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 497ms
+Vault: 8v831M6mXQjyAVXEqcAdXYhp5Z3sYoz7pw9EBU2oEUZL: test-vault-1 (3 depositors)
+  vault overflow status: 0
+  Vault fuel: 203 + 0 = 203, vaultCumFuel: 203 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 201
+  Diff (manager fuel) (vault - depositors): 2 good
+  Time taken: 498ms
+Vault: CVgitZvc3yWMqLmkqBxgq3j21Qbvv5WovZ183Bmo36ui: test-withdraw-2min (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 505ms
+Vault: 5HqjmFyqEgKpMKWY1S19QmS1btULJDiKkPQvXr1PasD6: test1 (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 498ms
+Vault: 5WNkabywHWBybuF9FRTAmYcRw21DKzA4MDMhvDVrhYJx: test_202412181854 (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 501ms
+Vault: 7nhmRnVwbxwHfxcq3skg3gMs9JhkAQof8hrNndVpwxRS: test_202412181925 (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 496ms
+Vault: GLxoQSEf5zqH2D52jFVnwjxDhp9KAJGGp32CwkzLEKvp: test_202412190000 (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 506ms
+Vault: CHDEXQKuUSTnaKQiuUBPke29KhiUcSXpTCYssDgUYXH4: test_202501040113 (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 497ms
+Vault: HWHAB4PCEai3YD1aMytL8mk3RzoPbmnW4Aa8JRHJnS8Z: test_drikt (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 102 + 0 = 102, vaultCumFuel: 0 (vaultFuelDiff: 102
+  Depositor fuel total (calc): 101
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 497ms
+Vault: 6yx6dUCPXheiLoGPBfRjjHLJX4nv3tL4BcbSQDV79oBT: test_sub_202501052154 (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 498ms
+Vault: FtJR1obLsMxf9yC24epaV3HChQPpPhQ45McrYsHjjFgM: test_vault (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 500ms
+Vault: FZ9yiuv91MZ2qNfPGpEgZ4WYaKkvVfrmBWRqXgh5Fppq: test_vault_20241218 (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 498ms
+Vault: AoUZX16MaH2G12mEkMLfJeWJmbH9kmtm3LQqG8uAJBUi: testwbot vault (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 74 + 0 = 74, vaultCumFuel: 0 (vaultFuelDiff: 74
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 74 good
+  Time taken: 506ms
+Vault: BSeSrHeAceFY6C6NfkrUJz4dckdbradeztPZHS1hs4Ev: tlZJZ9kWEWkNdwPXY1aCtRYDZCurXo2v (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 508ms
+Vault: 5MSsVzTC3aph8Hiu4xDrxCkYyBv2PHyGy49aUz2X9gTJ: tv (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 503ms
+Vault: AMgMGFkKyr7QafY8VWmx737SRPQK2h1W7dE12Y5TPXsS: ubet-vault (3 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 503ms
+Vault: AmVm6uHcFPNJurBmKzhEaPT42gLAQqtv22XbBZsZy5K1: vnmAT9XesrFtmNA63I2H1LKdAJx53k6R (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 508ms
+Vault: 3SzaiSpvt296vJeyBiz1si8sjfoqDP2dv1BL5iBXb7aM: vuPXUP2MVYccRdxganfnC8hacmeuRvYX (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 496ms
+Vault: BSJxMkEZFJgvwvNW8fPFRUM7LEHu9us4JHjNGaJTxb2B: vxyz (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 495ms
+Vault: DAFeTZdBRmpawFXV61NuVF93ad79d67YEGQGFuWR2LfS: wETH Basis Vault (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 500ms
+Vault: 7udw6rR7vw5F9MZx3urMDExZDqNUXzQMAvPR1m6QFQm: wf test eth vault (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 1022 + 0 = 1022, vaultCumFuel: 804 (vaultFuelDiff: 218
+  Depositor fuel total (calc): 232
+  Diff (manager fuel) (vault - depositors): 790 good
+  Time taken: 500ms
+Vault: 6cjpLHysmQaMHHmDZtKLEZLc3iQaUo9qAkHete6TefpW: wf test usdc vault (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 690 + 0 = 690, vaultCumFuel: 588 (vaultFuelDiff: 102
+  Depositor fuel total (calc): 239
+  Diff (manager fuel) (vault - depositors): 451 good
+  Time taken: 510ms
+Vault: 2wEpNctksKoLN6oUvcixbBPyBGU8spHzqx9pQBU24gyF: “ (0 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 506ms
+Vault: 8vTtAngtYUunxEchpbkJoKMf5zqXTBTZczXrpHhFMPZ8: “crest-private-vaul (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 2946 + 0 = 2946, vaultCumFuel: 426 (vaultFuelDiff: 2520
+  Depositor fuel total (calc): 425
+  Diff (manager fuel) (vault - depositors): 2521 good
+  Time taken: 501ms
+Vault: GiAZd6SeJAdioStqcrKYtfnJMXhBRk1KC9GVbtwKTa6e: “crest-vault- (3 depositors)
+  vault overflow status: 0
+  Vault fuel: 5684 + 0 = 5684, vaultCumFuel: 0 (vaultFuelDiff: 5684
+  Depositor fuel total (calc): 5683
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 496ms
+Vault: E8W8MP869kXuSL552vKL8T4bevuQkTKiGBetXm6fzsbc: “crest_fra_valu (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 3364 + 0 = 3364, vaultCumFuel: 0 (vaultFuelDiff: 3364
+  Depositor fuel total (calc): 3363
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 499ms
+Vault: 8MQpFrtDjBVBobWdofxUF6KFEKZofYfhChb6t71iQ3jB: “crest_short_sol_bn_valu (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 2023 + 0 = 2023, vaultCumFuel: 0 (vaultFuelDiff: 2023
+  Depositor fuel total (calc): 2023
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 502ms
+Vault: EH8PFyMzuJ5wV8TsMiN3XZiGDtY97e8Dbckd1gNkVNUW: “crest_valut_v (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 337 + 0 = 337, vaultCumFuel: 337 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 337
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 496ms
+Vault: HHJjvHYnyDDYZNjBnaaSq7fEZSL7259KtwmgBGRfSUfy: “test (2 depositors)
+  vault overflow status: 0
+  Vault fuel: 4586 + 0 = 4586, vaultCumFuel: 0 (vaultFuelDiff: 4586
+  Depositor fuel total (calc): 4585
+  Diff (manager fuel) (vault - depositors): 1 good
+  Time taken: 494ms
+Vault: 63Tm3kJZeGyxMUFX3SUKkb2ipPX8oRNVLBgzekxhiWWr: ” (1 depositors)
+  vault overflow status: 0
+  Vault fuel: 0 + 0 = 0, vaultCumFuel: 0 (vaultFuelDiff: 0
+  Depositor fuel total (calc): 0
+  Diff (manager fuel) (vault - depositors): 0 good
+  Time taken: 498ms

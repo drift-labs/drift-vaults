@@ -35,6 +35,22 @@ export const withdraw = async (program: Command, cmdOpts: OptionValues) => {
         vaultDepositorAddress = getVaultDepositorAddressSync(VAULT_PROGRAM_ID, vaultAddress, authority);
     }
 
-    const tx = await driftVault.withdraw(vaultDepositorAddress);
-    console.log(`Withdrew from vault: https://solana.fm/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet-solana" : ""}`);
+    if (cmdOpts.simulate) {
+        // Simulate the transaction
+        const authority = cmdOpts.authority ? new PublicKey(cmdOpts.authority) : driftVault.driftClient.wallet.publicKey;
+        console.log(`\nSimulating withdraw as authority: ${authority}`);
+        
+        try {
+            await driftVault.withdraw(vaultDepositorAddress, {
+                simulateTransaction: true,
+                simulationAuthority: authority
+            });
+        } catch (error) {
+            // Error details are already logged by vaultClient
+            process.exit(1);
+        }
+    } else {
+        const tx = await driftVault.withdraw(vaultDepositorAddress);
+        console.log(`Withdrew from vault: https://solana.fm/tx/${tx}${driftClient.env === "devnet" ? "?cluster=devnet-solana" : ""}`);
+    }
 };
