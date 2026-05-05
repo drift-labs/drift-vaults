@@ -426,7 +426,11 @@ export async function initializeSolSpotMarketMaker(
 	oracleInfos: OracleInfo[] = [],
 	solAmount?: BN,
 	usdcAmount?: BN,
-	accountLoader?: BulkAccountLoader
+	accountLoader?: BulkAccountLoader,
+	// Shadow drift permanently disables spot-DLOB trading (ErrorCode::SpotDlobTradingDisabled),
+	// so MM defaults to quoting SOL-PERP (market index 0). Pass MarketType.SPOT only if/when
+	// shadow re-enables the spot DLOB.
+	mmMarketType: MarketType = MarketType.PERP
 ): Promise<{
 	driftClient: TestClient;
 	solAccount: PublicKey;
@@ -437,6 +441,8 @@ export async function initializeSolSpotMarketMaker(
 	const solDepositAmount = solAmount ?? new BN(10_000 * LAMPORTS_PER_SOL);
 	const usdcDepositAmount = usdcAmount ?? new BN(1_000_000 * 1e6);
 
+	// Subscribe to SOL-PERP (idx 0) so the MM can quote perp when mmMarketType=PERP and so
+	// `getPerpMarketAccount(0)` works for tick-size/oracle lookups below.
 	const [driftClient, solAccount, usdcAccount, userKeyPair] =
 		await createUserWithUSDCAndWSOLAccount(
 			provider,
@@ -444,7 +450,7 @@ export async function initializeSolSpotMarketMaker(
 			chProgram,
 			solDepositAmount,
 			usdcDepositAmount,
-			[],
+			[0],
 			[0, 1],
 			oracleInfos,
 			accountLoader
@@ -464,14 +470,22 @@ export async function initializeSolSpotMarketMaker(
 	await driftClient.deposit(usdcDepositAmount, 0, usdcAccount);
 	await driftClient.deposit(solDepositAmount, 1, solAccount);
 
+	// SOL is at spot index 1 and perp index 0.
+	const isPerp = isVariant(mmMarketType, 'perp');
+	const marketIndex = isPerp ? 0 : 1;
+	const tickSize = isPerp
+		? driftClient.getPerpMarketAccount(marketIndex)!.amm.orderTickSize
+		: solMarket.orderTickSize;
+	const oracleFn = isPerp
+		? () => driftClient.getOracleDataForPerpMarket(marketIndex)
+		: () => driftClient.getOracleDataForSpotMarket(marketIndex);
+
 	const requoteFunc = async (bid?: BN, ask?: BN, print?: boolean) => {
 		await driftClient.fetchAccounts();
-		const solOracle = driftClient.getOracleDataForSpotMarket(1);
+		const oracle = oracleFn();
 
-		const bidPrice =
-			bid ?? solOracle.price.sub(new BN(10).mul(solMarket.orderTickSize));
-		const askPrice =
-			ask ?? solOracle.price.add(new BN(10).mul(solMarket.orderTickSize));
+		const bidPrice = bid ?? oracle.price.sub(new BN(10).mul(tickSize));
+		const askPrice = ask ?? oracle.price.add(new BN(10).mul(tickSize));
 
 		const solPos = driftClient.getUser().getSpotPosition(1);
 		const solBal = getSignedTokenAmount(
@@ -482,39 +496,44 @@ export async function initializeSolSpotMarketMaker(
 		const solPrec = TEN.pow(new BN(solMarket.decimals));
 
 		try {
-			const askAmount = convertToNumber(solBal, solPrec) / 10;
-			const bidAmount = askAmount;
+			// Perp uses BASE_PRECISION (1e9), spot uses the SOL mint's decimals (1e9 too here, but
+			// kept distinct for clarity if the mint changes).
+			const sizeNumber = convertToNumber(solBal, solPrec) / 10;
+			const sizePrecision = isPerp ? BASE_PRECISION : solPrec;
+			const baseAmount = new BN(sizeNumber * sizePrecision.toNumber());
 			if (print) {
 				console.log(
-					`mm ${driftClient.authority.toBase58()} requoting around ${convertToNumber(
-						solOracle.price
-					)}. bid: ${bidAmount}@$${convertToNumber(
+					`mm ${driftClient.authority.toBase58()} requoting ${
+						isPerp ? 'PERP' : 'SPOT'
+					} around ${convertToNumber(
+						oracle.price
+					)}. bid: ${sizeNumber}@$${convertToNumber(
 						bidPrice
-					)}, ask: ${askAmount}@$${convertToNumber(askPrice)}`
+					)}, ask: ${sizeNumber}@$${convertToNumber(askPrice)}`
 				);
 			}
 
 			await driftClient.cancelAndPlaceOrders(
 				{
-					marketType: MarketType.SPOT,
-					marketIndex: 1,
+					marketType: mmMarketType,
+					marketIndex,
 				},
 				[
 					getOrderParams({
 						orderType: OrderType.LIMIT,
-						marketType: MarketType.SPOT,
-						marketIndex: 1,
+						marketType: mmMarketType,
+						marketIndex,
 						direction: PositionDirection.LONG,
 						price: bidPrice,
-						baseAssetAmount: new BN(bidAmount * solPrec.toNumber()),
+						baseAssetAmount: baseAmount,
 					}),
 					getOrderParams({
 						orderType: OrderType.LIMIT,
-						marketType: MarketType.SPOT,
-						marketIndex: 1,
+						marketType: mmMarketType,
+						marketIndex,
 						direction: PositionDirection.SHORT,
 						price: askPrice,
-						baseAssetAmount: new BN(askAmount * solPrec.toNumber()),
+						baseAssetAmount: baseAmount,
 					}),
 				]
 			);
@@ -1463,6 +1482,23 @@ export async function doWashTrading({
 	mmQuoteSpreadBps = 500,
 	mmQuoteOffsetBps = 0,
 	doSell = true,
+	// Defaults to PERP because shadow drift disables spot DLOB trading. Set this and the MM's
+	// `mmMarketType` together if both ends should still trade spot.
+	marketType = MarketType.PERP,
+	// Optional gradual-drain mode. When `oracleNudgeBpsPerIter` is non-zero AND `oracleAccount`
+	// + `oracleProgram` are supplied, the oracle is nudged by that bps after each iteration.
+	// Negative bps drains a long position; positive drains a short. Useful for hitting deep
+	// drawdowns (e.g. rebase thresholds) without one-shot oracle crashes — keeps each step
+	// well below drift's `too_volatile_ratio` (default 5x oracle/twap), and exercises the
+	// drift CPI → vault state mutation loop repeatedly. See docs/spot-e2e-coverage-handoff.md.
+	oracleNudgeBpsPerIter = 0,
+	oracleAccount,
+	oracleProgram,
+	// Optional async hook fired every `midLoopHookEvery` iterations (after the trade + oracle
+	// nudge). Use this to interleave vault state mutations (apply_rebase, apply_profit_share,
+	// validate invariants) inside the drain loop.
+	midLoopHook,
+	midLoopHookEvery = 0,
 }: {
 	mmDriftClient: DriftClient;
 	traderDriftClient: DriftClient;
@@ -1477,13 +1513,22 @@ export async function doWashTrading({
 	mmQuoteSpreadBps?: number;
 	mmQuoteOffsetBps?: number;
 	doSell?: boolean;
+	marketType?: MarketType;
+	oracleNudgeBpsPerIter?: number;
+	oracleAccount?: PublicKey;
+	oracleProgram?: Program;
+	midLoopHook?: (iter: number, currentEquity: BN) => Promise<void>;
+	midLoopHookEvery?: number;
 }) {
 	let diff = 1;
 	let i = 0;
 	stopPnlDiffPct = stopPnlDiffPct ?? -0.999;
 	maxIters = maxIters ?? 100;
+	const isPerp = isVariant(marketType, 'perp');
 	console.log(
-		`Trading against MM until pnl is ${stopPnlDiffPct * 100
+		`Trading against ${
+			isPerp ? 'PERP' : 'SPOT'
+		} MM until pnl is ${stopPnlDiffPct * 100
 		}%, starting at ${convertToNumber(
 			startVaultEquity,
 			QUOTE_PRECISION
@@ -1496,14 +1541,19 @@ export async function doWashTrading({
 		throw new Error('No USDC spot market at idx 0, misconfigured?');
 	}
 
-	const marketIndex = 1;
+	// SOL is at spot index 1 and perp index 0.
+	const marketIndex = isPerp ? 0 : 1;
+	const oracleFn = isPerp
+		? () => mmDriftClient.getOracleDataForPerpMarket(marketIndex)
+		: () => mmDriftClient.getOracleDataForSpotMarket(marketIndex);
+	const marketTypeVariant = isPerp ? 'perp' : 'spot';
 
 	while (diff > stopPnlDiffPct && i < maxIters) {
 		try {
-			const oracle = mmDriftClient.getOracleDataForSpotMarket(marketIndex);
+			const oracle = oracleFn();
 			if (!oracle) {
 				throw new Error(
-					`No oracle for spot market at idx ${marketIndex}, misconfigured?`
+					`No oracle for ${marketTypeVariant} market at idx ${marketIndex}, misconfigured?`
 				);
 			}
 			const oraclePrice = convertToNumber(oracle.price, PRICE_PRECISION);
@@ -1528,7 +1578,7 @@ export async function doWashTrading({
 				.getOpenOrders()
 				.find(
 					(o) =>
-						isVariant(o.marketType, 'spot') &&
+						isVariant(o.marketType, marketTypeVariant) &&
 						o.marketIndex === marketIndex &&
 						isVariant(o.direction, 'short')
 				);
@@ -1536,71 +1586,105 @@ export async function doWashTrading({
 				.getOpenOrders()
 				.find(
 					(o) =>
-						isVariant(o.marketType, 'spot') &&
+						isVariant(o.marketType, marketTypeVariant) &&
 						o.marketIndex === marketIndex &&
 						isVariant(o.direction, 'long')
 				);
 			assert(mmOffer !== undefined, 'mm has no offers');
 			assert(mmBid !== undefined, 'mm has no bids');
 
-			const vaultSpotPos0 = traderDriftClient
-				.getUser(traderSubAccount, traderAuthority)
-				.getSpotPosition(0);
-			const vaultUsdcBalance = getTokenAmount(
-				vaultSpotPos0.scaledBalance,
-				usdcSpotMarket,
-				vaultSpotPos0.balanceType
-			)
-				.mul(new BN(90))
-				.div(new BN(100));
-
-			const bidAmount = vaultUsdcBalance.mul(BASE_PRECISION).div(mmOffer.price);
-
-			await traderDriftClient.placeAndTakeSpotOrder(
-				{
-					orderType: OrderType.LIMIT,
-					marketIndex,
-					baseAssetAmount: bidAmount,
-					price: mmOffer.price,
-					direction: PositionDirection.LONG,
-					auctionDuration: 0,
-					bitFlags: OrderParamsBitFlag.ImmediateOrCancel,
-				},
-				undefined,
-				{
-					maker: mmUser.getUserAccountPublicKey(),
-					makerStats: getUserStatsAccountPublicKey(
-						new PublicKey(DRIFT_PROGRAM_ID),
-						mmDriftClient.authority
-					),
-					makerUserAccount: mmUser.getUserAccount(),
-					order: mmOffer,
-				}
+			// Size each round-trip at 90% of free collateral worth of base units.
+			// For perp this gives ~1x leverage (drives PnL changes); for spot it's a
+			// USDC→SOL→USDC cycle that loses fees+spread.
+			const traderUser = traderDriftClient.getUser(
+				traderSubAccount,
+				traderAuthority
 			);
+			const collateralBn = traderUser.getFreeCollateral();
+			const tradeSize = collateralBn
+				.mul(new BN(90))
+				.div(new BN(100))
+				.mul(BASE_PRECISION)
+				.div(mmOffer.price);
 
-			if (doSell) {
-				await traderDriftClient.placeAndTakeSpotOrder(
-					{
-						orderType: OrderType.LIMIT,
-						marketIndex,
-						baseAssetAmount: bidAmount,
-						price: mmBid.price,
-						direction: PositionDirection.SHORT,
-						auctionDuration: 0,
-						reduceOnly: true,
-						bitFlags: OrderParamsBitFlag.ImmediateOrCancel,
-					},
-					undefined,
-					{
-						maker: mmUser.getUserAccountPublicKey(),
-						makerStats: getUserStatsAccountPublicKey(
-							new PublicKey(DRIFT_PROGRAM_ID),
-							mmDriftClient.authority
-						),
-						makerUserAccount: mmUser.getUserAccount(),
-						order: mmBid,
-					}
+			const makerInfo = {
+				maker: mmUser.getUserAccountPublicKey(),
+				makerStats: getUserStatsAccountPublicKey(
+					new PublicKey(DRIFT_PROGRAM_ID),
+					mmDriftClient.authority
+				),
+				makerUserAccount: mmUser.getUserAccount(),
+				order: mmOffer,
+			};
+			const longOrderParams = {
+				orderType: OrderType.LIMIT,
+				marketIndex,
+				baseAssetAmount: tradeSize,
+				price: mmOffer.price,
+				direction: PositionDirection.LONG,
+				auctionDuration: 0,
+				bitFlags: OrderParamsBitFlag.ImmediateOrCancel,
+			};
+			const shortOrderParams = {
+				orderType: OrderType.LIMIT,
+				marketIndex,
+				baseAssetAmount: tradeSize,
+				price: mmBid.price,
+				direction: PositionDirection.SHORT,
+				auctionDuration: 0,
+				reduceOnly: true,
+				bitFlags: OrderParamsBitFlag.ImmediateOrCancel,
+			};
+
+			// placeAndTakePerpOrder & placeAndTakeSpotOrder have different argument shapes —
+			// perp takes makerInfo at index 1; spot takes fulfillmentConfig at index 1 then
+			// makerInfo at index 2. Branch instead of bind() to keep types correct.
+			if (isPerp) {
+				await traderDriftClient.placeAndTakePerpOrder(
+					longOrderParams,
+					makerInfo
 				);
+				if (doSell) {
+					await traderDriftClient.placeAndTakePerpOrder(shortOrderParams, {
+						...makerInfo,
+						order: mmBid,
+					});
+				}
+			} else {
+				await traderDriftClient.placeAndTakeSpotOrder(
+					longOrderParams,
+					undefined,
+					makerInfo
+				);
+				if (doSell) {
+					await traderDriftClient.placeAndTakeSpotOrder(
+						shortOrderParams,
+						undefined,
+						{ ...makerInfo, order: mmBid }
+					);
+				}
+			}
+
+			// Optional gradual oracle nudge: shifts the oracle by `oracleNudgeBpsPerIter`
+			// bps so the trader's open position accrues PnL between iters. Cheaper than
+			// a single big jump and keeps current/twap inside drift's volatility band.
+			// Drift's `validate_fill_price_within_price_bands` (orders.rs:511) rejects
+			// fills that diverge from the 5-min twap by more than
+			// `oracle_twap_5min_percent_divergence` (default 50%). Bringing the twap along
+			// with the spot price avoids tripping that check on later iters once the
+			// cumulative drift exceeds the band.
+			if (
+				oracleNudgeBpsPerIter !== 0 &&
+				oracleAccount &&
+				oracleProgram
+			) {
+				const oracleNow = oracleFn();
+				const newOraclePrice =
+					convertToNumber(oracleNow.price, PRICE_PRECISION) *
+					(1 + oracleNudgeBpsPerIter / 10_000);
+				await setFeedPrice(oracleProgram, newOraclePrice, oracleAccount);
+				await setFeedTwap(oracleProgram, newOraclePrice, oracleAccount);
+				await mmDriftClient.fetchAccounts();
 			}
 
 			vaultEquity = await vaultClient.calculateVaultEquityInDepositAsset({
@@ -1614,6 +1698,13 @@ export async function doWashTrading({
 						QUOTE_PRECISION
 					).toString()} (${diff * 100}%)`
 				);
+			}
+
+			// Mid-loop hook: typically used to apply_rebase / apply_profit_share inside
+			// the drain loop, exercising the integration of vault state mutations against
+			// a moving drift state.
+			if (midLoopHook && midLoopHookEvery > 0 && i % midLoopHookEvery === 0) {
+				await midLoopHook(i, vaultEquity);
 			}
 		} catch (e) {
 			console.error(e);
