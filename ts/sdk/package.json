@@ -7,7 +7,7 @@
 		"lib": "lib"
 	},
 	"dependencies": {
-		"@drift-labs/sdk": "link:../../../protocol-v2-shadow/sdk",
+		"@drift-labs/sdk": "2.163.0-beta.12",
 		"@metaplex-foundation/js": "0.20.1",
 		"commander": "11.1.0",
 		"dotenv": "16.4.5",

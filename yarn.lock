@@ -383,9 +383,37 @@
     bn.js "^5.1.2"
     buffer-layout "^1.2.0"
 
-"@drift-labs/sdk@link:../protocol-v2-shadow/sdk":
-  version "0.0.0"
-  uid ""
+"@drift-labs/sdk@2.163.0-beta.12":
+  version "2.163.0-beta.12"
+  resolved "https://registry.yarnpkg.com/@drift-labs/sdk/-/sdk-2.163.0-beta.12.tgz#d8d55d59c51b91a1dd1ff04b89c2bf3e2ebf6f18"
+  integrity sha512-SjVukv/oRL91P1UheaAoms50QMATC5tEWtOWUqHmOFcbf+bhuZX8fDZxHsGCzukltLDwboZtILRnMHTxc50bvg==
+  dependencies:
+    "@coral-xyz/anchor" "npm:@coral-xyz/anchor@0.32.1"
+    "@coral-xyz/anchor-29" "npm:@coral-xyz/anchor@0.29.0"
+    "@ellipsis-labs/phoenix-sdk" "1.4.5"
+    "@msgpack/msgpack" "^3.1.2"
+    "@openbook-dex/openbook-v2" "0.2.10"
+    "@project-serum/serum" "0.13.65"
+    "@pythnetwork/client" "2.5.3"
+    "@pythnetwork/price-service-sdk" "1.7.1"
+    "@pythnetwork/pyth-lazer-sdk" "6.0.0"
+    "@solana/spl-token" "0.4.13"
+    "@solana/web3.js" "1.98.0"
+    "@triton-one/yellowstone-grpc" "5.0.5"
+    anchor-bankrun "0.5.0"
+    gill "^0.10.2"
+    nanoid "3.3.4"
+    node-cache "5.1.2"
+    solana-bankrun "0.4.0"
+    strict-event-emitter-types "2.0.0"
+    tweetnacl "1.0.3"
+    tweetnacl-util "0.15.1"
+    uuid "8.3.2"
+    yargs "17.7.2"
+    zod "4.0.17"
+    zstddec "0.1.0"
+  optionalDependencies:
+    helius-laserstream "0.1.8"
 
 "@ellipsis-labs/phoenix-sdk@1.4.5":
   version "1.4.5"
